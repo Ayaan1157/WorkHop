@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend-only E2E on /freelancer/jobs (Expo web, 390x844 mobile viewport) — all 9 acceptance criteria for the new client-side search bar PASS. (1) testID search-input + search-wrap render directly above bucket-chip-row (sw_bottom=122, cr_top=130). (2) Typing 'shopify' filters list 50→1 (Shopify Dev gig); search-clear-btn appears; tapping it empties input + restores 50 cards. (3) Case-insensitive: SHOPIFY/Shopify/shopify/ShoPiFy all return 1. (4) Cross-field match: razorpay→1 (matches description), threadmoon→6 (employer_name), CFO→1 (category) — each ≥1. (5) Composes with bucket: TECH chip + 'mvp' shows exactly 2 cards — 'React dashboard for SaaS MVP' and 'Build MVP in FlutterFlow'. (6a) Dynamic empty-state: 'xyzqqq' renders testID empty-state with copy 'No matches for \"xyzqqq\"' + sub 'Try a different keyword or clear the search.' (6b) Bucket-only empty branch ('No gigs in this category') is unreachable through normal UI because every seeded bucket has ≥12 jobs — branch verified by code review (jobs.tsx:410-418) but no runtime trigger. (7) Bucket regression with empty search: creative=14, tech=12, marketing=12, ops=12, all=50 — exact match. (8) Apply-flow regression with active search filter: created verified TEST_SearchApply freelancer (POST /freelancer/pay + /freelancer/aadhaar/verify with 234567890123), typed 'shopify', tapped job-apply-btn-0, POST /api/jobs/job-15/apply returned 200, APPLIED tag rendered, quota bar decremented to '2 of 3 FREE APPLIES LEFT', and search input retained value 'shopify' throughout. (9) Sticky chrome: search-wrap y=78 and bucket-chip-row y=130 are pinned (Δ<3px) after a 1500px wheel scroll on the job list. Only carry-over: pre-existing @gorhom/bottom-sheet React-19 ref-as-prop console error (non-blocking, flagged in iter_3/4).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "@gorhom/bottom-sheet", "issue": "Console error 'Accessing element.ref was removed in React 19. ref is now a regular prop.' still emitted on /freelancer/jobs mount (carry-over from iter_3/4). Non-blocking — sheets still open/close correctly. Reference: /app/frontend/app/freelancer/jobs.tsx:19-22 imports BottomSheet from '@gorhom/bottom-sheet'."}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_5.json"],
+  "action_items": [
+    "No fixes required — all 9 acceptance criteria pass.",
+    "(Optional, carried) Bump @gorhom/bottom-sheet when a React-19-compatible release is published to silence the ref-as-prop console error.",
+    "(Optional) Bucket-empty copy 'No gigs in this category' is currently unreachable because every bucket in the seed catalog has ≥12 gigs. Consider either (a) leaving as defensive copy, or (b) trimming a bucket to 0 in a test fixture to actually exercise the branch in future regressions."
+  ],
+  "critical_code_review_comments": [
+    "jobs.tsx:123-133 filteredJobs uses a single chain (jobs.filter) with bucket-check first then case-insensitive substring match across title/category/description/employer_name. Order is correct (bucket short-circuits before any string ops); ASCII .toLowerCase() works for the English-only seed.",
+    "jobs.tsx:316 placeholder 'Search by role, skill, employer…' and autoCapitalize='none' + autoCorrect={false} are the right defaults for a keyword/role/name search input on mobile.",
+    "jobs.tsx:323 conditional render of search-clear-btn keyed on search.length>0 — correct; tap calls setSearch('') which both clears input and re-runs the filter (no useEffect needed).",
+    "jobs.tsx:404-419 empty-state copy is branch-aware (searchTerm vs bucket); good UX. Note that searchTerm is derived (search.trim().toLowerCase()) so trailing whitespace doesn't cause ghost empty states.",
+    "jobs.tsx:310-333 searchWrap sits OUTSIDE the inner ScrollView and uses fixed height 44 with border 2 + brand colors — structurally sticky alongside topBar, quotaBar, chipRowWrap, and unverifiedBanner. Verified visually that wheel scroll on list doesn't shift any of these.",
+    "jobs.tsx:759 Platform.OS==='web' applies outlineStyle:'none' — good for cleaner web look; TextInput on native unaffected.",
+    "Search is purely client-side; with the seed of 50 jobs, every keystroke filters in <1ms — no debounce needed at this scale. If the catalog grows past ~500 jobs, consider useDeferredValue or a 150ms debounce."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only iteration)", "frontend": "100% (9/9 acceptance criteria)"},
+  "seed_data_creation": "Created 1 verified freelancer via API (POST /freelancer/pay + POST /freelancer/aadhaar/verify with aadhaar 234567890123) — freelancer_id 144c21e0-25ae-4e41-8987-96ed7dace68b, prefix TEST_SearchApply. 1 application persisted against job-15 (Shopify).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend URL: https://payment-mgmt-10.preview.emergentagent.com. Search bar is purely client-side over jobs[] state. Key testIDs: search-input, search-wrap, search-clear-btn, bucket-chip-row, bucket-chip-{all|creative|tech|marketing|ops}, empty-state, job-card-{i}, job-apply-btn-{i}, job-applied-tag-{i}, apply-confirm-btn, quota-bar, verify-status-badge. To verify as a verified pro: curl POST /api/freelancer/pay {full_name,payment_method} → POST /api/freelancer/aadhaar/verify {freelancer_id, aadhaar_number:'234567890123'} (avoid 123456789012/000../111.. which are blacklisted), then localStorage.setItem('workhop_freelancer_id', fid). Browser sandbox urllib gets WAF-blocked (403) — use curl from bash for setup. Seed catalog: 50 jobs (14 Creative / 12 Tech / 12 Marketing / 12 Ops); 'shopify' uniquely identifies job-15 by title; 'razorpay' hits via description; 'threadmoon' hits 6 jobs via employer_name (Threadmoon recurs); 'CFO' hits via category. TECH+'mvp' → exactly 2 cards.",
+  "rca_of_issue": "No bugs found. The client-side search implementation in jobs.tsx is well-scoped: search-wrap sits in the sticky chrome (above chip row), filteredJobs composes correctly with the bucket filter, the clear button only renders when needed, and the empty-state copy adapts to whichever filter caused zero results. The only behavior gap is that the bucket-only-empty copy is unreachable with current seed data (every bucket has 12+ jobs), but the code path itself is correct."
+}

@@ -1,0 +1,34 @@
+{
+  "summary": "Admin Dashboard iteration 23 — 100% coverage. Backend 36/36 pytest cases pass (test_admin_dashboard.py): all 6 /api/admin/* endpoints correctly return 401 no-token, 403 non-admin, 200 admin; /api/auth/me returns is_admin true/false accurately; overview returns all 6 int counts; users list has role='freelancer|employer' + approved flag; freelancers list has full 9-field shape; approve/revoke sets status='approved|under_review' and toggles approved_by_admin (verified via GET); unknown freelancer_id → 404; payments list carries amount_rupees/discount_rupees/coupon_code; complaints returns list; coupon CRUD works — WELCOME50+FLAT100 seeded, POST creates TESTADMIN10 with public /api/coupons/validate confirming 10% off ₹199 = ₹19 discount / ₹180 final, duplicate → 409, invalid percent (150) → 400, invalid applies_to → 400, PATCH active=false disables (public validate returns 404 'Invalid coupon code.'), re-enable works, LEFT DISABLED at end per spec. Frontend (Expo web preview, mobile 375x667): (1) unauthenticated /admin shows admin-denied screen ✓; (2) non-admin token: /profile hides profile-admin row AND /admin shows admin-denied ✓; (3) admin token: /profile shows 'Admin Dashboard' row, tapping opens /admin with stats strip and 5 tabs ✓; (4) USERS tab renders EMPLOYER badges (FREELANCER badge conditional on freelancer email match) ✓; (5) PROS tab APPROVE button toggles card to 'APPROVED ✓' + status 'APPROVED' + button label to REVOKE; second click reverts ✓; (6) PAYMENTS tab shows amounts and coupon rows (🏷 WELCOME50 · saved ₹149, 🏷 FLAT100 · saved ₹100) ✓; (7) ISSUES tab renders 3 complaints ✓; (8) COUPONS tab — created UIFETEST20 (20% off, max 3 uses, 7-day expiry), appeared with LIVE badge & 'Used 0 of 3 · expires 8 Sept 26'; duplicate submit shows inline error 'A coupon with this code already exists.'; DISABLE button flips card to DISABLED with ENABLE button; test coupon cleaned up. No blockers.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PaymentsTab / IssuesTab / CouponsTab", "issue": "React console warning: 'Each child in a list should have a unique \"key\" prop' when rendering lists. Likely because some payment_orders lack order_id, or list keys use fields that can be null. Reference: /app/frontend/app/admin.tsx PaymentsTab, IssuesTab, CouponsTab render loops.", "testID": "admin-payment-* / admin-complaint-* / admin-coupon-*", "priority": "LOW"},
+      {"component": "Admin stats strip", "issue": "On 375-wide mobile viewport, the 5-tile stats strip (USERS/PROS/PAID ORDERS/REVENUE/ISSUES) horizontally overflows — only 3.5 tiles visible without horizontal scroll and the 4th tile label ('PAID ORDERS' / 'REVENUE') is clipped mid-word. Consider ScrollView horizontal, smaller tile width, or 2-row grid.", "testID": "n/a", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/admin overview strip", "issues": ["Stats strip is not fully visible on 375x667 without horizontal scroll indicator; last tile 'ISSUES' is off-screen and only revealed by manual horizontal scroll."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_admin_dashboard.py", "/app/test_reports/pytest/iteration_23.xml"],
+  "action_items": [
+    "OPTIONAL: Fix React 'unique key' warnings in PaymentsTab / IssuesTab / CouponsTab. Ensure keyExtractor uses a guaranteed-unique id (fall back to index if order_id/complaint_id is missing).",
+    "OPTIONAL UX: Make stats strip either horizontally scrollable with a hint, or wrap into a 3+2 grid on narrow viewports so all 5 admin KPIs are discoverable without swiping."
+  ],
+  "critical_code_review_comments": [
+    "Admin gating is cleanly centralized via _require_admin() reusing _user_from_bearer(); ADMIN_EMAILS is env-driven with sensible default — good.",
+    "Public routes never leak admin info — _public_user() serializes is_admin only for the caller's own /auth/me.",
+    "Approve endpoint updates approved_by_admin AND status atomically in one $set — no race.",
+    "Coupon PATCH is idempotent (toggling active twice yields consistent state).",
+    "Test coupon TESTADMIN10 left DISABLED after suite — spec compliance verified."
+  ],
+  "updated_files": ["/app/backend/tests/test_admin_dashboard.py"],
+  "success_rate": {"backend": "100% (36/36)", "frontend": "100% (all 5 tabs + gating + coupon CRUD verified)"},
+  "seed_data_creation": "Re-seeded test_token_workhop_e2e session for user_testauto0001 (was expired). Admin session test_token_workhop_admin already valid. TESTADMIN10 coupon created by pytest suite and LEFT DISABLED per spec. UIFETEST20 coupon created by UI test and DELETED from db.coupons afterwards. No existing WELCOME50/FLAT100/users/freelancers/payments were modified beyond a temporary approve→revert round-trip on the first freelancer (0079c635-... 'New Pro') that was fully reverted.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Admin dashboard is production-ready. Backend suite is regression-safe: /app/backend/tests/test_admin_dashboard.py — run before any /api/admin/* refactor. If main agent addresses the stats-strip overflow or React key warnings, quick retest = load /admin at 375x667, ensure all 5 tiles are reachable, and confirm no 'unique key' warnings in console when switching to PAYMENTS/ISSUES/COUPONS tabs.",
+  "rca_of_issue": "N/A — no functional bugs. Two cosmetic/console-warning items documented for optional polish."
+}

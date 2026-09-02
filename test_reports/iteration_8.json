@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 8: Fully verified the 4 new features — (1) Emergent Google login gate + session, (2) OSM interactive map, (3) Employer anonymization + in-app chat with 3s polling, (4) Category chips on employer leads. Backend: 66/66 pytest green (100%) including 24 new tests for /api/auth/me, /api/chats*, /api/map/pins, and anonymized /api/jobs. Frontend (mobile 390x844): all 7 requested flows PASS — (a) login gate shows login-google-btn when logged out; setting workhop_session_token='test_token_workhop_e2e' + reload shows user-row with 'Test User' + logout-btn; logout returns to gate; (b) employer screen shows OSM iframe, category chips (lead-chip-tech reduces 50→12 leads), employer-inbox-btn opens APPLICANT INBOX (21 threads), map-expand-btn navigates to /map showing 50 pros · 14 hiring companies with ALL/PROS/EMPLOYERS filter chips and legend; (c) FULL CHAT E2E: pre-verified freelancer (via API, seeded in localStorage) opens jobs feed (200 gigs, only company_name + area shown, ZERO phone numbers in DOM) → apply → success flash 'APPLIED · Chat thread opened' + MESSAGE EMPLOYER NOW button → chat opens showing LedgerLite header + privacy notice → freelancer message sent → /employer/inbox lists the thread → open thread as employer (sees freelancer name TEST_ChatUIE2E) → reply sent → freelancer view reloaded shows employer reply within ~3s polling window; (d) jobs feed topbar has jobs-map-btn and jobs-chats-btn; applied cards show job-message-btn-0 that opens the chat; (e) /freelancer/chats lists LedgerLite thread with last-message preview and opens on click. Anonymization audit: NO phone numbers found in jobs feed body text; jobs API responses contain neither employer_name nor employer_phone. Razorpay ₹199 employer checkout still loads correctly (iteration 7 confirmed full unlock path). No blocking issues. Only console noise: known React 19 element.ref warning from @gorhom/bottom-sheet.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "@gorhom/bottom-sheet", "issue": "Non-blocking React 19 warning: 'Accessing element.ref was removed in React 19'. Emitted by bottom-sheet in /app/frontend/app/employer/index.tsx and /app/frontend/app/freelancer/jobs.tsx. Known upstream; safe to ignore per task note."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_auth_chat_map.py",
+    "/app/backend/tests/test_workhop_api.py",
+    "/app/backend/tests/test_jobs_buckets.py",
+    "/app/backend/tests/test_jobs_and_status.py",
+    "/app/backend/tests/test_apply_quota.py",
+    "/app/backend/tests/test_plans.py",
+    "/app/test_reports/pytest/iteration_8.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is now ~1021 lines with 6 feature domains (leads, freelancer, jobs, quota, plans, auth, chat, map). Recommend splitting into APIRouter modules (auth_router, chat_router, map_router, jobs_router) before next feature to keep <700 lines per file.",
+    "freelancer/jobs.tsx has grown to 1111 lines; consider extracting the ApplySheet + PaywallSheet bottom sheet UI into src/components to isolate. Not urgent.",
+    "Chat polling in /app/frontend/app/chat/[id].tsx uses 3s setInterval — verified working. For production, consider swapping to server-sent events or websocket to reduce polling load once user count grows.",
+    "MongoDB _id is correctly excluded via {'_id': 0} projection in all chat/conversation/user reads (server.py). Good.",
+    "The Emergent OAuth login gate on landing correctly hides all app routes behind AuthProvider — /freelancer/jobs, /employer, /map, /chat all remain reachable ONLY after auth (verified by re-testing with cleared token)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_auth_chat_map.py (created — 24 new backend tests for auth, chat, map, anonymization)"
+  ],
+  "success_rate": {"backend": "100% (66/66 pytest)", "frontend": "100% (7/7 flows)"},
+  "seed_data_creation": "1) Re-inserted user/session in Mongo per /app/memory/test_credentials.md (user_testauto0001 + session_token test_token_workhop_e2e, +7d expiry). 2) Created verified freelancer TEST_ChatUIE2E (id 8ca86eb5-3fa4-4ff2-af65-634b72b69b6b) via /api/freelancer/pay + /api/freelancer/aadhaar/verify (Aadhaar 432112345678) and put in localStorage workhop_freelancer_id. 3) Applied to first job which created a conversation (id ab8e1483-0dd9-42c1-ae70-974afc1ef71f) with 2 test messages. All test data namespaced with TEST_ prefix.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 8 is a full pass: auth gate + OSM map + in-app chat (3s polling) + category chips all work end-to-end. Seeded auth session 'test_token_workhop_e2e' is destroyed when logout-btn is pressed (calls /api/auth/logout which deletes the row from db.user_sessions); to re-test auth-gated flows after a logout, re-seed via the snippet in /app/memory/test_credentials.md. On web AsyncStorage.getItem falls through to localStorage, so setting localStorage.workhop_freelancer_id bypasses the wizard for chat/apply flows. Razorpay checkout works but full drive-through of the iframe is not reliably automatable; the ₹99 freelancer pay and ₹199 employer unlock backend endpoints are exercised directly via API in test_workhop_api.py. Known ignorable warnings: React 19 element.ref (bottom-sheet), Razorpay iframe accelerometer/permissions/ERR_CONNECTION_REFUSED from telemetry endpoints blocked in preview.",
+  "rca_of_issue": "N/A — no bugs found."
+}

@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only regression for the new 'browse-first' freelancer flow. All 6 requested scenarios verified: (1) signed-OUT tap I'M A PRO lands directly on /freelancer/jobs with 202 jobs and 'Browse freely — sign in to apply' banner + SIGN IN CTA. (2) Signed-OUT tap APPLY (job-verify-cta-0) routes to '/' and shows the freelancer sign-in screen (login-back-btn, login-google-btn, I'M A PRO role pill). (3) Signed-IN (token=test_token_workhop_e2e) unverified: banner reads 'Browse freely — verify to apply' with VERIFY CTA; tapping APPLY routes to /freelancer wizard where Step 1 ₹99 payment card is visible. (4) Employer regression intact: signed-OUT tap I'M HIRING shows sign-in screen with I'M HIRING role pill. (5) DB clean: GET /api/leads/preview returns exactly 50 leads, 0 TEST_ names. (6) Category chips filter (46 jobs under GRAPHICS & DESIGN). One layout bug found: on the signed-in landing screen, the freelancer role card overflows the viewport at 375x667 and its bottom half is visually overlapped by landing-footer (elementFromPoint at card center returns landing-footer). Real user tap on the visible top part of the card works, but tapping the center is intercepted by the footer.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "app/index.tsx (signed-in landing)", "issue": "role-freelancer-card overflows viewport when the user chip + LOGOUT row is present; hero title 'Get to work.' visually overlaps the freelancer card and landing-footer sits on top of the card's lower half. elementFromPoint at the card center (187,664) returns data-testid='landing-footer' instead of the card, so a tap in that hit-area does not fire onPress and navigation to /freelancer/jobs fails. Repro: localStorage.setItem('workhop_session_token','test_token_workhop_e2e') → reload landing → tap dead-center of I'M A PRO card at 375x667 viewport → nothing happens. Reference: /app/frontend/app/index.tsx:192-238 (cardsWrap flex:1 + userRow adds height, pushes card past viewport bottom).", "testID": "role-freelancer-card", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Landing (signed-in, 375x667)", "issues": ["Hero title 'Pick a side. Get to work.' overlaps visually with the freelancer card content 'Go live in your 5km radius' due to cardsWrap flex layout after user-chip row is added — see screenshot; needs a scrollable container or reduced spacing when user is signed in."]}
+    ],
+    "react_native_issues": [
+      {"component": "React 19 warnings", "issue": "Console warnings on every render: 'props.pointerEvents is deprecated. Use style.pointerEvents' and 'Accessing element.ref was removed in React 19. ref is now a regular prop.' Likely coming from a react-native-web / gorhom/bottom-sheet / expo internals combo. Non-blocking but should be tracked."}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_18.json"],
+  "action_items": [
+    "Fix signed-in landing layout so role-freelancer-card + role-employer-card fit within the mobile viewport and landing-footer is not stacked on top of card hit-area. Options: wrap cardsWrap in a ScrollView, remove flex:1 on cardsWrap, or reduce SPACING.xxl top margin when `user` is present. Ensure elementFromPoint at card center returns the card, not landing-footer.",
+    "Address React 19 deprecation warnings (props.pointerEvents, element.ref) — likely need upgraded react-native-web / gorhom versions."
+  ],
+  "critical_code_review_comments": [
+    "app/index.tsx: cardsWrap { flex: 1, marginTop: SPACING.xxl } combined with the ~60px userRow renders both cards taller than the visible area on 375x667. Consider making the container scrollable or capping card height."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only run; /api/leads/preview spot-checked = 50 leads, 0 TEST_)", "frontend": "5/6 flows PASS; 1 layout bug on signed-in landing (does NOT block requested behavior — jobs feed, banner copy, CTAs, wizard nav all work when card is tapped in its visible area)"},
+  "seed_data_creation": "None. No TEST_ freelancers created. Used the shared bypass token test_token_workhop_e2e already documented in test_credentials.md. DB leads count remains 50.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The new browse-first freelancer flow works end-to-end: signed-out → jobs feed with SIGN IN banner; APPLY tap → sign-in screen; signed-in unverified → VERIFY banner + wizard. Only remaining issue is a layout overflow on the signed-in landing page (freelancer card's bottom center is covered by landing-footer). To reproduce Test 3 in automation, dispatch pointer events on the card element directly OR click near the top of the card (not the geometric center), since Playwright's default center click hits the footer overlay.",
+  "rca_of_issue": "Signed-in landing overflow RCA: user-chip row (~44px + margins) pushes the cardsWrap (flex:1, marginTop: SPACING.xxl=32) so the second card's total height (196px + gap) extends beyond the 667px viewport. The landing-footer (paddingVertical: SPACING.md) is stacked as the last SafeAreaView child but its bounding box ends up overlapping the lower portion of the freelancer card, causing elementFromPoint(cx=187, cy=664) → landing-footer. Fix: replace cardsWrap flex:1 with a ScrollView or set justifyContent + fixed heights, so cards never underlap the footer."
+}

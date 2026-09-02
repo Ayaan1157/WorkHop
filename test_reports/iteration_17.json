@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only iteration 17: verified freelancer wizard hydration, /profile pro card, and /employer real-pro leads merge for WorkHop. All 5 in-scope scenarios PASS. Backend endpoints (/api/freelancer/{fid}, /api/freelancer/{fid}/profile, /api/leads/preview) confirmed live. Wizard on /freelancer with localStorage workhop_freelancer_id='test-pro-lead1' hydrates: step1 shows 'Payment Verified · ₹99', step2 shows aadhaar-success, step3 prefills phone=9876501234, skill='Mehendi Artist', GRAPHICS & DESIGN chip active (bg #121212 black), all 9 profile-cat-* chips render, profile-location-btn present & tappable without crash. Phone validation: 5-digit triggers 'Phone must be exactly 10 digits', 10-digit hides error. /profile pro-profile-card prefilled, save with 9876500011 returns 'Saved · employers see +91 98765 00011 after unlock', 5-digit save returns 10-digit error. /employer: Asha Rao is lead-0 (name+skill visible upfront), phone row shows '+91 ••••• •••••' (blurred/locked), selecting GRAPHICS & DESIGN chip keeps Asha visible, seeded leads (Sneha, Rohan, etc.) still render, search 'logo' works.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "freelancer wizard StepBlock", "issue": "React web console warning: 'props.pointerEvents is deprecated. Use style.pointerEvents'. Reference: /app/frontend/app/freelancer/index.tsx:498 — pointerEvents is set inside the style array (correct on native) but RN Web still logs. Non-blocking; consider gating with Platform.OS !== 'web' or move to a conditional style key."},
+      {"component": "third-party (likely @gorhom/bottom-sheet or expo-router)", "issue": "React 19 console error: 'Accessing element.ref was removed in React 19. ref is now a regular prop.' Triggered on /employer page load. Non-blocking but should upgrade offending dep when patch is released."}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_17.json", "/app/test_reports/pytest/iteration_16.xml (reused - backend unchanged)"],
+  "action_items": [
+    "No functional bugs to fix — all 5 in-scope scenarios pass end-to-end.",
+    "(Optional) Silence RN-Web 'pointerEvents' deprecation in freelancer/index.tsx StepBlock by dropping the style prop key on web only.",
+    "(Optional) Track upstream fix for 'element.ref' React 19 warning (likely @gorhom/bottom-sheet used on /employer)."
+  ],
+  "critical_code_review_comments": [
+    "freelancer/index.tsx: hydration effect correctly strips '+91' & non-digits before setPhone — matches backend's normalized storage.",
+    "profile.tsx savePro trims skill to null on empty, uses PUT /api/freelancer/{fid}/profile, and displays server-formatted phone from response — good UX.",
+    "employer/index.tsx: baseLeads filter accepts either skill match OR l.category === catFilter, which is what lets Asha Rao (category='Graphics & Design', skill='Mehendi Artist') pass the G&D chip filter."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (reused iter16 xml - endpoints re-verified via curl)", "frontend": "100% (21/21 assertions - one initial false-negative on chip bg color reconciled: bg rgb(18,18,18)=COLORS.black is the active state)"},
+  "seed_data_creation": "None. Used pre-seeded freelancer 'test-pro-lead1' (Asha Rao). Note: test 3 changed her phone from 9876501234 → 9876500011 → then attempted 98765 (rejected client-side). Current DB phone is 9876500011. Main agent should reset if needed before iter18.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Wizard hydration, /profile pro card save flow, and /employer real-pro merge all working. Optional ₹199 Razorpay unlock was NOT executed (out-of-time / stated optional). If retesting, note test-pro-lead1 phone is now 9876500011 (last 4 digits differ from seed 01234).",
+  "rca_of_issue": "N/A — no issues found."
+}

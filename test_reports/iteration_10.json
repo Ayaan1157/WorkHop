@@ -1,0 +1,60 @@
+{
+  "summary": "Iteration 10 focused regression on 2 reported bug fixes + complaints BackgroundTask. BUG 2 (category chips under search bar) is FULLY FIXED and verified E2E — search bar renders, chip row directly underneath shows exactly ALL + 7 catalog chips (GRAPHICS & DESIGN, PROGRAMMING & TECH, DIGITAL MARKETING, WRITING & TRANSLATION, VIDEO & ANIMATION, AI SERVICES, BUSINESS); old CREATIVE/TECH/MARKETING/OPS chips are gone; zero-job chips (MUSIC & AUDIO, CONSULTING) are correctly hidden; tapping GRAPHICS & DESIGN filters 201→45 jobs and ALL restores 201. BUG 1 (UPI in Razorpay) IS NOT FIXED on the web preview — Razorpay checkout iframe on web shows only Cards, Netbanking, Wallet, Pay Later. NO UPI section, NO GPay/PhonePe. Root cause: (a) the described fix (config.display.blocks with UPI flows/apps) is NOT present in the code — RazorpayModal.tsx still uses only `method: { upi: true, ...}` at line 31 with no display.blocks config; (b) more importantly, on Platform.OS==='web' the app calls openWebCheckout inside /app/frontend/src/payments.tsx (lines 73-90), NOT RazorpayModal.tsx — so any fix to RazorpayModal.tsx would never affect the web preview anyway. openWebCheckout also lacks config.display.blocks. Backend: complaints endpoint returns 200 with empty RESEND_API_KEY (BackgroundTask no-op logs 'RESEND_API_KEY not set — complaints saved to DB only, no email sent.'), complaint persists to db.complaints, support_email=manarastudio22@gmail.com; /api/jobs returns 201 jobs; apply flow verified freelancer→conversation created works. Auth bypass session token still valid.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "RazorpayModal.tsx + payments.tsx (openWebCheckout)",
+        "issue": "BUG 1 NOT FIXED: Razorpay web checkout on the preview URL only shows Cards / Netbanking / Wallet / Pay Later — UPI section is entirely absent. GPay/PhonePe/Paytm are also missing. The 'config.display.blocks' change described in the review request is nowhere in the code (grep for 'display.blocks' returns 0 hits). Additionally on web (Platform.OS==='web'), payments.tsx::openWebCheckout is invoked instead of RazorpayModal.tsx — so RazorpayModal changes alone cannot fix the web experience. Both places need config.display.blocks with UPI block sequenced first. Also verify that the Razorpay TEST merchant (rzp_test_TAqEg3Dat2LQ2C) has UPI enabled in the dashboard — if the merchant lacks the UPI method entitlement, no client config will surface it.",
+        "testID": "razorpay-checkout-frame",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Razorpay web checkout (₹199 employer unlock, ₹99 verification, ₹149 quota boost)",
+        "issue": "UPI method not rendered on web preview iframe despite `method: { upi: true }` being set. Verified by driving unlock-cta-btn → pay-confirm-btn → mobile 9000000042 → Continue → payment method list. Post-continue frame text: 'All Payment Options / Cards / Netbanking / Wallet / Pay Later'. No 'UPI' string anywhere.",
+        "affected_testIDs": ["unlock-cta-btn", "pay-confirm-btn", "paywall-pay-btn", "razorpay-checkout-frame"]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "@gorhom/bottom-sheet",
+        "issue": "Non-blocking React 19 warning: 'Accessing element.ref was removed in React 19. ref is now a regular prop.' — same as iteration 9, upstream, safe to ignore."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_10_bugfixes.py",
+    "/app/test_reports/pytest/iteration_10.xml"
+  ],
+  "action_items": [
+    "PRIORITY HIGH — Add Razorpay `config.display.blocks` with UPI block (flows: [\"intent\",\"collect\",\"qr\"], apps: [\"google_pay\",\"phonepe\",\"paytm\"]) and sequence.blocks starting with 'upi' to /app/frontend/src/payments.tsx::openWebCheckout (this is the web path — the actual code path used in the preview). RazorpayModal.tsx (native path) should get the same config for consistency. Example: config: { display: { blocks: { upi: { name: 'Pay via UPI', instruments: [{method:'upi',flows:['intent','collect','qr'],apps:['google_pay','phonepe','paytm']}] } }, sequence: ['block.upi','block.cards','block.netbanking','block.wallet'], preferences: { show_default_blocks: true } } }",
+    "Verify Razorpay TEST merchant rzp_test_TAqEg3Dat2LQ2C actually has UPI method enabled in the dashboard. If it doesn't, no client-side config will make UPI appear. Consider testing with a merchant account that has UPI enabled or use a different test key.",
+    "After fix, retest by visiting /employer, tapping unlock, entering mobile 9000000042 in Razorpay iframe, clicking Continue and confirming UPI section is at the TOP of All Payment Options.",
+    "OPTIONAL — Note in UI copy that GPay/PhonePe app buttons appear only on real Android devices; on desktop web, UPI shows as ID entry + QR code — this is expected Razorpay behavior."
+  ],
+  "critical_code_review_comments": [
+    "Review request claim vs. reality mismatch: The review states that RazorpayModal.tsx was 'fixed by adding Razorpay config.display.blocks with a UPI block (flows: intent/collect/qr, apps: google_pay/phonepe/paytm) sequenced first'. Reading /app/frontend/src/components/RazorpayModal.tsx lines 16-45 confirms NO display.blocks/sequence config exists — only `method: { upi: true, card: true, netbanking: true, wallet: true }`. Either the fix was never committed or was rolled back. `grep -rn 'display.blocks' /app/frontend` returns 0 matches.",
+    "The `onShouldStartLoadWithRequest` deep-link handler (RazorpayModal.tsx:55-63) for upi://gpay://phonepe://paytm:// IS correctly present — good. But this only helps the native WebView path.",
+    "Web preview uses payments.tsx::openWebCheckout which lacks any display.blocks / sequence customization. This is the code path exercised in browser testing.",
+    "Complaint email dispatch uses FastAPI BackgroundTasks correctly and gracefully no-ops when RESEND_API_KEY is empty. Verified: 3× calls to /api/complaints returned 200; log shows warning line 'RESEND_API_KEY not set — complaints saved to DB only, no email sent.' with no exceptions.",
+    "server.py grown to 1313 lines (was 1277 in iteration 9). Still exceeding 700-line guideline; recommend router split (same comment as iteration 9)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_10_bugfixes.py (NEW — 6 focused tests: complaints w/empty RESEND, jobs feed shape+category coverage, apply flow, auth bypass)"
+  ],
+  "success_rate": {
+    "backend": "100% (6/6 iteration-10 tests pass; prior 82/82 suite unchanged)",
+    "frontend": "50% (Bug 2 category chips: FULLY FIXED and verified; Bug 1 UPI visibility: NOT FIXED on web)"
+  },
+  "seed_data_creation": "1 verified freelancer TEST_v10 ApplyPro (aadhaar 432112345678) + 1 apply to job → 1 conversation. 3 TEST_v10 complaint docs in db.complaints. No TEST_ jobs created in custom_jobs this iteration.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Bug 2 (category chips) verified working on /freelancer/jobs — testIDs category-chip-row, cat-chip-all, cat-chip-graphics-design, cat-chip-programming-tech, cat-chip-digital-marketing, cat-chip-writing-translation, cat-chip-video-animation, cat-chip-ai-services, cat-chip-business are all present. Zero-job chips (cat-chip-music-audio, cat-chip-consulting) are correctly hidden. Bug 1 (UPI) needs a real fix in /app/frontend/src/payments.tsx::openWebCheckout (not RazorpayModal.tsx which is native-only). To reproduce Bug 1: visit /employer with session token seeded, tap unlock-cta-btn → pay-confirm-btn → in Razorpay iframe enter mobile 9000000042 → Continue → observe 'All Payment Options' list shows only Cards/Netbanking/Wallet/Pay Later (no UPI). RESEND_API_KEY intentionally empty — do not populate. Auth bypass token still valid.",
+  "rca_of_issue": "BUG 1 RCA — Razorpay web checkout does not display UPI. Root causes: (1) The claimed code fix (config.display.blocks) is absent from BOTH RazorpayModal.tsx and payments.tsx::openWebCheckout — the review request's description does not match the current state of the code. (2) Even had the fix been applied to RazorpayModal.tsx only, it would have no effect on web preview since useRazorpay() branches on Platform.OS==='web' and instead calls openWebCheckout in payments.tsx which loads checkout.js directly (payments.tsx:107-108). (3) Possible secondary factor: the TEST merchant may not have UPI enabled in the Razorpay dashboard — this is dashboard-side configuration, independent of client code. Fix: add display.blocks + sequence to payments.tsx::openWebCheckout (primary) AND RazorpayModal.tsx (for native parity); verify UPI is enabled for the test merchant."
+}

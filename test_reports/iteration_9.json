@@ -1,0 +1,39 @@
+{
+  "summary": "Iteration 9 (v2 batch): Full backend + frontend E2E pass. Backend 82/82 pytest green (66 pre-existing + 16 NEW v2 tests in test_v2_features.py covering catalog, complaints, post-a-job credit gating, chat lifecycle applied→hired→completed, two-way reviews with dup/rating validation, /pros/{id} profile). Frontend flows on mobile viewport 390x844: (1) user-chip on landing → /profile shows hero + all 6 menu rows (profile-chats/-map/-categories/-plans/-support/-legal) + profile-logout-btn. (2) Support screen: FAQ accordion (faq-0 expands), complaint form submits via POST /api/complaints → complaint-sent card visible. (3) Legal screen renders Terms/Privacy/Refund sections (all three keywords present). (4) Categories screen loads /api/catalog (9 categories · 148 services), expanding cat-graphics-design and tapping sub-logo-design routes to /freelancer/jobs?q=Logo+Design with search-input prefilled ('Logo Design') and filtered feed shown. (5) Employer screen: lead-card-0 tap navigates to /pro/{id} showing pro-hero with name Rohan Verma, RATING 4.9, JOBS DONE 86, CATEGORY, PORTFOLIO link, SKILLS & TOOLS chips, REVIEWS section. (6) POST A JOB (post-job-btn) → /employer/post-job form with company/title/category/pay/area/description → submit triggers Razorpay iframe (Total Amount ₹299 — correct Single Post amount); app-level copy 'Razorpay Test Mode · UPI (GPay/PhonePe), cards & netbanking' shown under submit; the initial Razorpay iframe screen shows contact form first (payment method selector renders AFTER mobile entry — expected). (7) CHAT LIFECYCLE E2E: seeded verified freelancer (TEST_v2 ChatUser, aadhaar 432112345678) applied to cjob-916ea90b → conversation f3c2c622..., opened /chat/{id}?role=employer → HIRE PRO → MARK COMPLETED → RATE PRO opens review-modal → star-5 + text + review-submit-btn → chat-reviewed-pill visible; switched to freelancer view same thread → RATE EMPLOYER → 4⭐ submit → chat-reviewed-pill visible; both reviews confirmed persisted via GET /api/reviews (subject_type freelancer:5⭐ and company:4⭐). (8) Regression Razorpay ₹199 employer unlock: unlock-cta-btn → pay-confirm-btn → iframe Total Amount ₹199 confirmed. Only console noise: React 19 element.ref warning + props.pointerEvents deprecation (both from @gorhom/bottom-sheet, non-blocking).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "@gorhom/bottom-sheet", "issue": "Non-blocking React 19 warning: 'Accessing element.ref was removed in React 19' and 'props.pointerEvents is deprecated' — emitted from bottom-sheet on employer/freelancer screens. Known upstream, safe to ignore."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_v2_features.py",
+    "/app/backend/tests/test_auth_chat_map.py",
+    "/app/backend/tests/test_workhop_api.py",
+    "/app/backend/tests/test_jobs_buckets.py",
+    "/app/backend/tests/test_jobs_and_status.py",
+    "/app/backend/tests/test_apply_quota.py",
+    "/app/backend/tests/test_plans.py",
+    "/app/test_reports/pytest/iteration_9.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py has grown to 1277 lines with 8 domains (leads, freelancer onboarding, jobs feed, apply quota, plans, auth, chat, map, reviews, post-job, complaints, catalog). Strongly recommend splitting into APIRouter modules (auth_router, chat_router, reviews_router, jobs_router, catalog_router) — file exceeds the 700-line guideline by ~80%.",
+    "Chat lifecycle uses simple state-machine {applied→hired→completed} — no rollback/cancel path exists; consider adding cancel/no-show status before catalog scale-up.",
+    "post-job endpoint (POST /api/employer/jobs) uses _post_credits() based on plan_purchases collection; this correctly grants 1 credit for single-post and 5 for starter-bundle. Note that jobs feed at /api/jobs merges custom_jobs first, so newly-posted appear at top — verified programmatically (job cjob-916ea90b was at rank 3 after 3 fresh posts in this run).",
+    "Complaints endpoint stores to db.complaints and returns support_email — but does NOT actually send an email; the frontend uses a mailto link only. Confirmed MOCKED per task note; add SES/SMTP integration before prod.",
+    "MongoDB _id excluded correctly across all reads (chats, reviews, complaints, custom_jobs, plan_purchases). Good."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_v2_features.py (NEW — 16 tests for v2 features: catalog, complaints, post-job, chat lifecycle, reviews, /pros)"
+  ],
+  "success_rate": {"backend": "100% (82/82 pytest, 16 new v2 tests all green)", "frontend": "100% (8/8 v2 flows verified E2E)"},
+  "seed_data_creation": "1) Verified freelancer TEST_v2 ChatUser (id ab99f0ac-2f2b-476a-a712-1af5ada00dd3) via /api/freelancer/pay + aadhaar/verify (432112345678). 2) Application to cjob-916ea90b created conversation f3c2c622-da47-4fb1-9bea-1a04294ba484 walked through hired→completed with two reviews (5⭐ from employer, 4⭐ from freelancer). 3) TEST_v2 complaint stored in db.complaints. 4) Multiple TEST_v2 custom jobs posted through /api/employer/jobs. All namespaced TEST_v2 for easy cleanup.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "v2 features fully working: catalog (9 cats · 148 subs via /api/catalog), Fiverr-style /categories → tap chip prefills q param in /freelancer/jobs, POST /api/complaints stores complaints (support_email manarastudio22@gmail.com; NO real email sent — MOCKED, uses mailto link only), POST /api/employer/jobs returns 402 without credits and publishes cjob-* IDs at top of /api/jobs feed after single-post plan purchase, chat lifecycle uses POST /api/chats/{id}/status {applied→hired→completed} and reviews are 1-per-role via POST /api/reviews (returns 409 on dup, 400 on invalid rating, 400 on wrong transition, 404 on missing conv). Star testIDs in review modal are star-1..star-5 (not review-star-*). Razorpay iframe (razorpay-checkout-frame) shows Total Amount correctly (₹99 pro, ₹199 employer unlock, ₹299 single-post, ₹149 apply boost, ₹999 starter bundle); payment method selector renders AFTER mobile-number entry inside the iframe. Auth bypass token 'test_token_workhop_e2e' still seeded in Mongo; if a logout runs, reseed per /app/memory/test_credentials.md. React 19 warnings from @gorhom/bottom-sheet are ignorable.",
+  "rca_of_issue": "N/A — no bugs found. v2 batch is production-ready pending real email/SMS for complaints and refunds (mocked)."
+}

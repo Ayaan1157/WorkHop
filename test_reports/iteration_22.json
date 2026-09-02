@@ -1,0 +1,32 @@
+{
+  "summary": "Coupon feature (WELCOME50 + FLAT100) tested end-to-end. Backend: 18/18 pytest cases passing — /api/coupons/validate handles success, ineligible product (400), invalid code (404), empty code (400), case-insensitive lookup, and preview math (rupee floor). /api/payments/create-order server-computes discounted amount for employer_unlock (₹199→9950 paise with WELCOME50), freelancer_onboarding (₹99→4950 paise), and plans (FLAT100 subtracts ₹100 in paise). ₹1 minimum floor confirmed via validate math (FLAT100 on ₹99 clamps to ₹1 final). Frontend: 4 of 5 payment windows verified via mobile viewport — /employer/plans sheet (plan-coupon-*), /employer unlock bottom sheet (unlock-coupon-*), /pro/[id] profile (pro-coupon-*), and /freelancer Step 1 (onboarding-coupon-*) all render CouponInput correctly. WELCOME50 applied row, remove (X) button, and invalid-code inline error work as designed. FLAT100 on employer_unlock correctly shows 'This coupon doesn't apply to this purchase.' The 5th window (quota-boost paywall in /freelancer/jobs) is code-verified only (testIDPrefix='boost-coupon' at jobs.tsx:729) — reaching it requires a verified freelancer who exhausted 3 free applies, out of scope for this pass. UX ISSUE: the 'Pay ₹X' CTA button/title in all 4 sheets shows the ORIGINAL price even after a coupon is applied (server sends correct discounted amount to Razorpay). This is a display-only inconsistency worth polishing.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PayCTA (all 4 sheets)", "issue": "Pay ₹X button/title label doesn't update when coupon is applied — shows original price while applied-row shows discounted amount. Server-side amount is correct, only UI label mismatch. Files: /app/frontend/app/employer/index.tsx:435,470; /app/frontend/app/employer/plans.tsx:207,245; /app/frontend/app/freelancer/index.tsx (Pay Onboarding Fee ₹99); /app/frontend/app/pro/[id].tsx (UNLOCK THIS LEAD ₹199).", "testID": "unlock-cta / plan-pay-confirm-btn / step1-pay-btn / pro-unlock-btn", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_coupons.py", "/app/test_reports/pytest/iteration_22.xml"],
+  "action_items": [
+    "OPTIONAL UX POLISH: Update the Pay CTA text in all 4 payment sheets to reflect the applied coupon's final_amount (e.g., 'Pay ₹99 with Razorpay' instead of stale ₹199). Suggested pattern: derive displayed amount from applied?.final_amount ?? originalAmount."
+  ],
+  "critical_code_review_comments": [
+    "Server-side amount authority is correctly enforced — client-supplied amount is never trusted in /api/payments/create-order (uses PRODUCT_AMOUNTS_PAISE or PLAN_CATALOG lookup).",
+    "Discount floor logic (max(0, min(disc, amount_paise - 100))) in _discount_paise correctly guards Razorpay's ₹1 minimum.",
+    "Coupon lookup is case-insensitive via .strip().upper() before Mongo _id lookup — good.",
+    "Coupon used_count is only incremented on successful payment verification (server.py:1003-1004), not on order creation — correct semantics."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100% (4/4 reachable windows verified; 5th window code-verified)"},
+  "seed_data_creation": "Re-inserted test session (test_token_workhop_e2e for user_testauto0001) into MongoDB test_database (users + user_sessions) — GET /api/auth/me returns 200 with expected user.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Coupon feature is production-ready. If main agent adds the pay-CTA label update, retest by applying WELCOME50 on /employer/plans → Buy Starter Bundle sheet → confirm the 'Pay ₹999 with Razorpay' button changes to 'Pay ₹499'. Backend test suite lives at /app/backend/tests/test_coupons.py.",
+  "rca_of_issue": "N/A — no functional bugs found. Only cosmetic Pay-CTA text stale after coupon apply."
+}

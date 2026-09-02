@@ -1,0 +1,28 @@
+{
+  "summary": "RETEST of iteration 20's login regression PASSED. Re-adding `import { BACKEND_URL, ... } from '@/src/theme'` in /app/frontend/app/index.tsx fixed the ReferenceError inside requestOtp/verifyOtp. Verified end-to-end on mobile viewport (390x844) against the public EXPO_BACKEND_URL: (1) Employer flow — landing → I'M HIRING → sign-in → email → POST /api/auth/email/request-otp (200, otp-block shown) → wrong OTP renders 'Incorrect code. Try again.' via login-otp-error → change-email link resets to email entry → new email + OTP read from db.email_otps → verify → session_token stored (len=51) → routed to /employer. (2) Freelancer flow — I'M LOOKING FOR A JOB routes directly to /freelancer/jobs signed-out (browse-first intact); unverified banner shows 'Browse freely — sign in to apply' with SIGN IN CTA (banner-verify-cta) → sign-in screen → email OTP login completes → routed back to /freelancer/jobs → banner now reads 'Browse freely — verify to apply · Tap APPLY on any gig to start the one-time ₹99 Verified Pro onboarding (profile + email OTP) and chat with employers.' with VERIFY CTA — the 'profile + email OTP' copy is confirmed reachable for signed-in unverified freelancers. (3) Google button (login-google-btn) still renders on sign-in screen — regression clean. All test users/sessions/email_otps have been purged from db.test_database.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_21.json"
+  ],
+  "action_items": [
+    "Optional (non-blocking): consider replacing the empty `catch {}` in requestOtp/verifyOtp (app/index.tsx:52, :81) with `catch (e) { console.warn('otp error', e); ... }` so any future regression of this class is discoverable at the first repro instead of masked as 'Network error. Try again.'",
+    "Optional cleanup: `Accessing element.ref was removed in React 19` console error is emitted from an internal RN Web/Expo Router prop drilling — cosmetic in dev, no functional impact; watch for library upgrades that clear it."
+  ],
+  "critical_code_review_comments": [
+    "server.py is still 1621 lines — refactor into modules when convenient (auth/otp, complaints, jobs).",
+    "Empty catch blocks in app/index.tsx swallowed the exact ReferenceError that caused iteration 20's regression; add minimal logging."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not retested per request)", "frontend": "100%"},
+  "seed_data_creation": "Created 3 throwaway users via UI (workhop.retest.emp.ok2..., workhop.retest.free...); all removed from db.users + db.user_sessions + db.email_otps (verified 0 rows remain).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login-screen regression is fully resolved. Backend was 10/10 in iter 20 and was not retested this run. If further UI work touches index.tsx, keep the BACKEND_URL import intact and consider logging in the OTP catch blocks. Reusable pytest suite at /app/backend/tests/test_email_otp_auth.py.",
+  "rca_of_issue": "Iteration 20's 'Network error, zero network requests' bug was caused by a missing top-level import of BACKEND_URL in app/index.tsx. The async requestOtp/verifyOtp bodies referenced BACKEND_URL, which threw a ReferenceError before fetch was invoked; the empty catch({}) mapped every failure to a generic 'Network error. Try again.' Fix (already applied by main agent) re-adds `import { BACKEND_URL, COLORS, RADIUS, SPACING } from '@/src/theme'` at line 17. Verified in this iteration: POST /api/auth/email/request-otp fires (captured on wire), otp-block appears, wrong OTP → login-otp-error message, correct OTP → session adopted and route to /employer or /freelancer/jobs."
+}

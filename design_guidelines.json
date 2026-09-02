@@ -1,0 +1,161 @@
+{
+  "app_name": "WorkHop",
+  "personality": "5 Brutalist Mobile",
+  "personality_one_liner": "High-contrast, electric energy meets raw structural discipline for a hyper-efficient gig platform.",
+  "color": {
+    "surface": "#FFFFFF",
+    "onSurface": "#121212",
+    "surfaceSecondary": "#F9F9F6",
+    "onSurfaceSecondary": "#121212",
+    "surfaceTertiary": "#EAEAEA",
+    "onSurfaceTertiary": "#121212",
+    "surfaceInverse": "#121212",
+    "onSurfaceInverse": "#FFFFFF",
+    "brand": "#FF5A00",
+    "brandPrimary": "#FF5A00",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#121212",
+    "onBrandSecondary": "#FFFFFF",
+    "brandTertiary": "#FF5A00",
+    "onBrandTertiary": "#FFFFFF",
+    "success": "#00A86B",
+    "onSuccess": "#FFFFFF",
+    "warning": "#FFB300",
+    "onWarning": "#121212",
+    "error": "#E63946",
+    "onError": "#FFFFFF",
+    "info": "#121212",
+    "onInfo": "#FFFFFF",
+    "border": "#121212",
+    "borderStrong": "#121212",
+    "divider": "#121212"
+  },
+  "typography": {
+    "displayFontFamily": "Space Grotesk",
+    "textFontFamily": "Archivo",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous padding to balance the intense visual contrast and thick borders. Use structural alignments and avoid accidental empty space.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 0,
+    "md": 0,
+    "lg": 4,
+    "pill": 999
+  },
+  "shadow_tier": "0",
+  "navigation": "stack_only",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": "false",
+    "do's": [
+      "Use absolute blurred overlays (expo-blur) EXCLUSIVELY for the text/data obfuscation on the map tollgate cards.",
+      "Ensure blurred layers have a slight white tint to make the 'hidden' effect obvious."
+    ],
+    "dont's": [
+      "Do not use glassmorphism for general UI surfaces like nav bars or bottom sheets. Stick to matte colors and solid borders."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-blur",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "LandingRoleToggle",
+      "purpose": "Direct users to Employer or Freelancer flows with immediate visual impact.",
+      "states": {
+        "loading": "Centered heavy black spinner.",
+        "empty": "N/A",
+        "error": "Bold error text with matte black retry button."
+      },
+      "layout": "Split vertical or two large chunky cards. Heavy Space Grotesk typography. Matte black outlines. Role toggle uses solid color fills on selection (#FF5A00 for Freelancer, #121212 for Employer)."
+    },
+    {
+      "name": "EmployerMapTollgate",
+      "purpose": "Showcase nearby value to drive the ₹199 unlock payment.",
+      "states": {
+        "loading": "Map skeleton with pulsating grey blocks.",
+        "empty": "No leads found near you. Modify search area.",
+        "error": "Failed to load map data. Retry."
+      },
+      "layout": "Full-screen map background. Horizontal scroll of 5 cards at bottom. Cards have solid black borders. Names, phones, and portfolio links are obscured using expo-blur absolute overlays. Center overlay banner: floating white box with sharp black border. Inside banner: 'Unlock the Closest 5 Verified Experts on Your Block' + full-width matte black CTA 'Unlock 5 Local Leads • ₹199'."
+    },
+    {
+      "name": "PaymentBottomSheet",
+      "purpose": "Frictionless mock Razorpay/UPI gateway.",
+      "states": {
+        "loading": "Processing payment with electric orange indicator.",
+        "empty": "N/A",
+        "error": "Payment failed. Try another method."
+      },
+      "layout": "Bottom sheet via @gorhom/bottom-sheet. 0px or 4px top radius, 2pt top border. List of payment methods with sharp black borders. On success, trigger unblur animation on Map view."
+    },
+    {
+      "name": "FreelancerWizard",
+      "purpose": "4-step Verified Pro Wizard with locked progression.",
+      "states": {
+        "loading": "Spinner over wizard shell.",
+        "empty": "N/A",
+        "error": "Submission failed. Please check inputs."
+      },
+      "layout": "Clean vertical stack. Fixed top progress bar in electric orange. Step 1: Mascot image card (Kangaroo with sunglasses), bold typography, #FF5A00 'Pay Onboarding Fee • ₹99' button. Steps 2-4 wrapped in a container with opacity 0.4 and pointerEvents='none' until Step 1 is marked paid. Step 2: 2pt dashed black border for drop-zone, matte black border text input for 12-digit Aadhaar. Step 3: Standard text inputs with black outlines. Step 4: 3-column grid of #F9F9F6 squares with central black '+' icons."
+    },
+    {
+      "name": "ProcessingOverlay",
+      "purpose": "Build anticipation while simulating verification.",
+      "states": {
+        "loading": "Jumping kangaroo loop.",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Absolute full-screen overlay (z-index highest). Matte white background. Centered jumping kangaroo mascot illustration. Heavy Space Grotesk status text: 'Our team is verifying your Aadhaar and links. Your profile will leap live within 2 hours.'"
+    }
+  ],
+  "images": {
+    "kangaroo_mascot_step1": {
+      "url": "https://images.unsplash.com/photo-1754415690201-3936711f4fd2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxrYW5nYXJvbyUyMG1hc2NvdCUyMGlsbHVzdHJhdGlvbiUyMGdyYXBoaWN8ZW58MHx8fHwxNzgxNTc2NDE0fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Kangaroo mascot placeholder"
+    },
+    "kangaroo_jumping_overlay": {
+      "url": "https://images.unsplash.com/photo-1754415690201-3936711f4fd2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxrYW5nYXJvbyUyMG1hc2NvdCUyMGlsbHVzdHJhdGlvbiUyMGdyYXBoaWN8ZW58MHx8fHwxNzgxNTc2NDE0fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Jumping kangaroo processing illustration"
+    },
+    "map_background_placeholder": {
+      "url": "https://images.unsplash.com/photo-1650222360656-8a3061cb004f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwbWFwJTIwY2l0eSUyMHJvYWRzfGVufDB8fHx8MTc4MTU3NjQxNHww&ixlib=rb-4.1.0&q=85",
+      "alt": "Minimalist map background"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Apply a Neo-Brutalism style using the Brutalist Mobile LIGHT principles: #FF5A00 electric orange, #FFFFFF matte white, #F9F9F6 soft off-white, and #121212 matte black.",
+    "Ensure all borders (inputs, cards, banners) are 1.5pt to 2pt thick and use the matte black (#121212) color to create high contrast.",
+    "Use 'Space Grotesk' for display/headers and 'Archivo' for body text. Typography should be structural, heavy, and highly readable.",
+    "For the Employer flow, render 5 leads dynamically over the map background, utilizing `expo-blur` stacked directly over text elements (name, phone, URL) to simulate the 'locked' tollgate effect.",
+    "The unlock banner must have a matte black CTA button with bold white text. Hook it up to a bottom sheet mimicking Razorpay/UPI.",
+    "For the Freelancer wizard, Steps 2, 3, and 4 must remain locked (opacity: 0.4, pointer-events: none) until the step 1 mock payment completes.",
+    "Include dashed drop-zone for the Aadhaar upload and a 3-grid slot for portfolio uploads using the #F9F9F6 tertiary surface.",
+    "Do not use glassmorphism across the app except for the specific text-obfuscation feature in the Employer tollgate."
+  ]
+}

@@ -1,0 +1,187 @@
+// Shared 9-category catalog filters (mirrors GET /api/catalog) used by the
+// freelancer jobs feed, the employer leads screen and the post-a-job form.
+
+export type CatFilter = { key: string; label: string; cats: string[] };
+
+// Visual identity per catalog category (icon + pastel tile background),
+// used by the illustrated tile rows and the category browser.
+export const CATEGORY_VISUALS: Record<string, { icon: string; bg: string }> = {
+  ALL: { icon: "grid", bg: "#EDEDE4" },
+  "Graphics & Design": { icon: "color-palette", bg: "#FFE3D3" },
+  "Programming & Tech": { icon: "code-slash", bg: "#DCEBFF" },
+  "Digital Marketing": { icon: "megaphone", bg: "#FFF3C4" },
+  "Writing & Translation": { icon: "create", bg: "#E5F7E0" },
+  "Video & Animation": { icon: "videocam", bg: "#F3E3FF" },
+  "AI Services": { icon: "sparkles", bg: "#E0F7F4" },
+  "Music & Audio": { icon: "musical-notes", bg: "#FFE0EC" },
+  Business: { icon: "briefcase", bg: "#EDEDE4" },
+  Consulting: { icon: "people", bg: "#DFF0FF" },
+};
+
+// Short display labels for the illustrated tiles.
+export const CATEGORY_SHORT_LABELS: Record<string, string> = {
+  ALL: "All",
+  "Graphics & Design": "Graphics & Design",
+  "Programming & Tech": "Tech & Code",
+  "Digital Marketing": "Marketing",
+  "Writing & Translation": "Writing",
+  "Video & Animation": "Video",
+  "AI Services": "AI Services",
+  "Music & Audio": "Music & Audio",
+  Business: "Business",
+  Consulting: "Consulting",
+};
+
+// The 9 main catalog categories — used as selectable options in post-a-job.
+export const CATALOG_CATEGORY_NAMES = [
+  "Graphics & Design",
+  "Programming & Tech",
+  "Digital Marketing",
+  "Writing & Translation",
+  "Video & Animation",
+  "AI Services",
+  "Music & Audio",
+  "Business",
+  "Consulting",
+];
+
+// Maps catalog categories -> job.category values (seed categories, legacy
+// buckets from old custom jobs, and the catalog names themselves for jobs
+// posted via the new 9-category form).
+export const JOB_CATEGORY_FILTERS: CatFilter[] = [
+  { key: "ALL", label: "ALL", cats: [] },
+  {
+    key: "Graphics & Design",
+    label: "GRAPHICS & DESIGN",
+    cats: [
+      "Graphics & Design", "Graphic Design", "Brand Identity", "Illustration",
+      "UI/UX Design", "Packaging", "Interior Design", "Fashion Design",
+      "Landscape Design", "3D Visualization", "AutoCAD", "Product Photography",
+      "Creative",
+    ],
+  },
+  {
+    key: "Programming & Tech",
+    label: "PROGRAMMING & TECH",
+    cats: [
+      "Programming & Tech", "Frontend Dev", "Mobile Dev", "Shopify Dev",
+      "No-Code Dev", "QA Engineer", "Cybersecurity", "Database", "IT Support",
+      "Tech",
+    ],
+  },
+  {
+    key: "Digital Marketing",
+    label: "DIGITAL MARKETING",
+    cats: [
+      "Digital Marketing", "SEO", "Social Media", "Performance Marketing",
+      "Email Marketing", "Influencer", "PR", "Growth Hacking",
+      "Brand Strategy", "Marketing",
+    ],
+  },
+  {
+    key: "Writing & Translation",
+    label: "WRITING & TRANSLATION",
+    cats: [
+      "Writing & Translation", "Content Writing", "Copywriting",
+      "Technical Writing", "UX Copy", "Localization",
+    ],
+  },
+  {
+    key: "Video & Animation",
+    label: "VIDEO & ANIMATION",
+    cats: ["Video & Animation", "Video Editing", "Videography", "Motion Graphics"],
+  },
+  {
+    key: "AI Services",
+    label: "AI SERVICES",
+    cats: ["AI Services", "Data Labeling", "Data Analyst"],
+  },
+  { key: "Music & Audio", label: "MUSIC & AUDIO", cats: ["Music & Audio"] },
+  {
+    key: "Business",
+    label: "BUSINESS",
+    cats: [
+      "Business", "Chartered Accountant", "Fractional CFO", "Legal",
+      "Business Plan", "HR Recruiter", "EA / VA", "Customer Support",
+      "Sales / CRM", "Scrum / PM", "Supply Chain", "Event Coordinator",
+      "Market Research", "Ops",
+    ],
+  },
+  {
+    key: "Consulting",
+    label: "CONSULTING",
+    cats: ["Consulting", "Corporate Trainer"],
+  },
+];
+
+// Maps catalog categories -> lead.skill values on the employer screen.
+export const LEAD_CATEGORY_FILTERS: CatFilter[] = [
+  { key: "ALL", label: "ALL", cats: [] },
+  {
+    key: "Graphics & Design",
+    label: "GRAPHICS & DESIGN",
+    cats: [
+      "Brand & Logo Designer", "Graphic Designer", "Illustrator / Digital Artist",
+      "UI/UX Designer", "Packaging & Label Designer", "Interior Designer",
+      "Fashion Designer", "Landscape Designer",
+      "Architectural 3D Visualizer / SketchUp Modeler", "AutoCAD Draftsman",
+      "Product Photographer",
+    ],
+  },
+  {
+    key: "Programming & Tech",
+    label: "PROGRAMMING & TECH",
+    cats: [
+      "Frontend Web Developer", "Mobile App Developer (iOS/Android)",
+      "WordPress / Shopify Developer", "No-Code Developer (FlutterFlow)",
+      "QA Test Engineer", "Cybersecurity Consultant", "Database Administrator",
+      "IT Support & Networking Specialist",
+    ],
+  },
+  {
+    key: "Digital Marketing",
+    label: "DIGITAL MARKETING",
+    cats: [
+      "SEO Specialist", "Social Media Manager",
+      "Performance Marketer (Meta + Google)", "Email Marketing Specialist",
+      "Influencer Marketing Manager", "PR Consultant", "Growth Hacker",
+      "Brand Strategist",
+    ],
+  },
+  {
+    key: "Writing & Translation",
+    label: "WRITING & TRANSLATION",
+    cats: [
+      "Content Writer / Blogger", "Copywriter", "Technical Writer",
+      "UI Copywriter / Microcopy Specialist", "Translator / Localization Expert",
+    ],
+  },
+  {
+    key: "Video & Animation",
+    label: "VIDEO & ANIMATION",
+    cats: ["Video Editor", "Videographer / Reel Shooter", "Motion Graphic Artist"],
+  },
+  {
+    key: "AI Services",
+    label: "AI SERVICES",
+    cats: ["Data Annotator / Labeler", "Data Analyst (Tableau / PowerBI)"],
+  },
+  { key: "Music & Audio", label: "MUSIC & AUDIO", cats: [] },
+  {
+    key: "Business",
+    label: "BUSINESS",
+    cats: [
+      "Chartered Accountant (CA)", "Fractional CFO & Pitch Decks",
+      "Legal Consultant / Contract Writer", "Business Plan Writer",
+      "HR Consultant / Talent Recruiter", "Virtual / Executive Assistant",
+      "Customer Support Executive (On-Demand)", "Sales Pipeline Builder",
+      "Scrum Master / Agile Project Manager", "Supply Chain / Logistics Consultant",
+      "On-Site Event Coordinator", "Market Research Analyst",
+    ],
+  },
+  {
+    key: "Consulting",
+    label: "CONSULTING",
+    cats: ["Corporate Trainer / Workshop Facilitator"],
+  },
+];

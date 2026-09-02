@@ -1,0 +1,34 @@
+{
+  "summary": "RETEST of Bug 1 (UPI visibility in Razorpay checkout on /employer web preview). Verified CHECKOUT_DISPLAY_CONFIG is correctly imported/applied in both payments.tsx::openWebCheckout (line 84) AND RazorpayModal.tsx WebView HTML (line 61). Ran full flow: seeded session token → /employer → unlock-cta-btn → pay-confirm-btn → Razorpay iframe opened → mobile 9000000042 filled → Continue. RESULT: 'Pay via UPI' block STILL ABSENT. Only 'Cards, Netbanking & Wallets' block renders (Cards / Netbanking / Wallet options). No GPay, PhonePe, Paytm, UPI ID collect, or QR shown anywhere. ROOT CAUSE: NOT a code bug. Razorpay's own preferences API confirms merchant entitlement: `GET https://api.razorpay.com/v1/preferences?key_id=rzp_test_TAqEg3Dat2LQ2C` returns methods.upi=false and upi_type={collect:0, intent:0}. The test merchant account has UPI DISABLED in Razorpay Dashboard, so Razorpay strips the UPI block server-side regardless of the client's config.display.blocks.upi. This is a Razorpay Dashboard/account entitlement issue, NOT a WorkHop code issue. Card/Netbanking/Wallet render correctly — no regression from the config change.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Razorpay checkout — UPI block visibility on /employer ₹199 unlock",
+        "issue": "UPI block does not render in Razorpay checkout despite correct client-side CHECKOUT_DISPLAY_CONFIG. Razorpay preferences API confirms merchant key_id rzp_test_TAqEg3Dat2LQ2C has methods.upi=false and upi_type={collect:0, intent:0}. Client config cannot enable a method that is disabled at the merchant account level — Razorpay filters out any display block whose method is not entitled. Cards/Netbanking/Wallets render fine (no regression).",
+        "affected_testIDs": ["unlock-cta-btn", "pay-confirm-btn"]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_11.json"],
+  "action_items": [
+    "This is NOT a code fix. Enable UPI on the Razorpay test merchant account (rzp_test_TAqEg3Dat2LQ2C) at Razorpay Dashboard → Settings → Payment Methods → toggle UPI ON. Verify with: curl -s 'https://api.razorpay.com/v1/preferences?key_id=rzp_test_TAqEg3Dat2LQ2C' — methods.upi must be true and upi_type.collect and/or upi_type.intent must be 1.",
+    "If the test key is a shared/demo key that cannot be modified, provision a different Razorpay TEST key_id where UPI is enabled and update RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET in /app/backend/.env, then restart backend.",
+    "The CHECKOUT_DISPLAY_CONFIG in RazorpayModal.tsx and payments.tsx is CORRECT and can be kept as-is — it will surface the UPI block properly the moment UPI is enabled on the merchant account.",
+    "Communicate this finding to the end user: 'GPay/PhonePe/UPI are missing because the Razorpay test merchant currently has UPI disabled on its dashboard, not because of a code bug. Enable UPI in the Razorpay Dashboard → Settings → Payment Methods.'"
+  ],
+  "critical_code_review_comments": [
+    "CHECKOUT_DISPLAY_CONFIG is well-structured: UPI block first with flows=[intent,collect,qr] + apps=[google_pay,phonepe,paytm], sequence=['block.upi','block.other'], show_default_blocks:false. Correctly exported from RazorpayModal.tsx and imported/applied in payments.tsx line 84 (web) — no code changes needed.",
+    "Note on `apps: ['google_pay','phonepe','paytm']` — these are intent-flow apps only launchable on Android devices. On desktop web without these apps, Razorpay would normally fall back to the `collect` and `qr` flows (which are also declared). Both would render if UPI were enabled on the merchant."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only test)", "frontend": "Config correctly delivered 100%; UPI block visibility 0% due to merchant-side entitlement"},
+  "seed_data_creation": "Inserted test user user_testauto0001 and session token test_token_workhop_e2e into test_database.users / test_database.user_sessions for auth bypass.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Bug 1 (UPI visibility) is blocked on a Razorpay Dashboard configuration change, not code. When main agent/user enables UPI on the test merchant (or provides a new key), rerun this same flow to confirm the 'Pay via UPI' block appears at the top with UPI ID collect + QR (desktop) or GPay/PhonePe/Paytm apps (Android). Verification query: `curl -s 'https://api.razorpay.com/v1/preferences?key_id=<KEY>' | jq .methods.upi` must return true. Card flow with 4111 1111 1111 1111 was NOT completed end-to-end this iteration because UPI absence is the sole open item and card block is clearly rendering (no regression risk).",
+  "rca_of_issue": "REPRODUCTION: (1) Set localStorage workhop_session_token=test_token_workhop_e2e (2) GET /employer (3) Tap unlock-cta-btn → tap pay-confirm-btn (4) Razorpay iframe loads (URL: https://api.razorpay.com/v1/checkout/public?...) (5) Fill mobile 9000000042 → Continue → observe Payment Options screen. EXPECTED: 'Pay via UPI' block at top with GPay/PhonePe/Paytm or UPI ID collect + QR. ACTUAL: Only 'Cards, Netbanking & Wallets' block visible. Content search: idx_of('pay via upi')=-1 in iframe HTML. RCA: Called Razorpay's public preferences API — GET https://api.razorpay.com/v1/preferences?key_id=rzp_test_TAqEg3Dat2LQ2C. Response: methods.upi=false, methods.upi_type={collect:0,intent:0}, methods.card=true, methods.netbanking=true, methods.wallet=true. Razorpay Checkout renders only methods where the merchant preferences.methods.<method>=true; the client's display.blocks config cannot override merchant-account entitlement. MITIGATION: Enable UPI in Razorpay Dashboard for the test account (Settings → Payment Methods → UPI toggle), OR swap RAZORPAY_KEY_ID/SECRET to a test merchant with UPI enabled. No code change needed — the frontend CHECKOUT_DISPLAY_CONFIG is correct."
+}

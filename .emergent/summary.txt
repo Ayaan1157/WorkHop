@@ -1,0 +1,121 @@
+<analysis>original_problem_statement: 
+- Complete the apply coupon option in all payment windows feature (freelancer onboarding, quota boost, employer lead unlock, plans, individual pro unlock). 
+- Build a hidden Admin Dashboard protected and restricted only to . The dashboard should display registered users, freelancer profiles, payments, complaints, and coupon management.
+- Provide instructions on how to export the MVP to host outside of Emergent.
+
+**User's preferred language**: English
+(INSTRUCTION to next agent: Respond in English only)
+
+**what currently exists?** 
+WorkHop is a full-stack Expo/FastAPI/MongoDB platform. It features Google/Email OTP auth, Razorpay payments, OpenStreetMap integration for map discovery, freelancer profiles, chat, reviews, and catalog filtering. Recently, a fully functional Coupon system was integrated across all 5 payment flows, and an Admin Dashboard was built to manage users, freelancers, payments, complaints, and coupons.
+
+**Last working item**: 
+    - Last item agent was working: Building and refining the Admin Dashboard (). Agent successfully implemented the frontend dashboard, backend  endpoints, restricted access to , and fixed minor duplicate key warnings during testing.
+    - Status: USER VERIFICATION PENDING
+    - Agent Testing Done: Y
+    - Which testing method agent to use?: NA (testing is already done via  iteration 23 and screenshots)
+    - User Testing Done: N
+
+**All Pending/In progress Issue list**: 
+None. All current requested features (Coupons and Admin Dashboard) have been successfully built, tested, and resolved.
+
+**In progress Task List**: 
+None. 
+
+**Upcoming and Future Tasks**: 
+    - Task 1: Replace Emergent-managed Google Auth and Email OTP (Resend) with User's own credentials. (Priority P1) - *Required ONLY if user proceeds with their request to export and host the MVP outside of Emergent.*
+    - Task 2: Configure Razorpay LIVE keys and enable UPI in Razorpay dashboard. (Priority P1) - *Required for app launch/production mode.*
+    - Task 3: Refactor backend  (~1800+ lines) into modular routers and services. (Priority P2)
+
+**Completed work in this session**
+- Coupon integration across all 5 payment windows (, , , , ). (DONE)
+- Added Backend Coupon Validation and application logic. (DONE)
+- Admin Dashboard Creation () with tabs for Users, Freelancers, Payments, Complaints, and Coupons. (DONE)
+- Added Backend Admin Endpoints () and  auth context, restricting access to . (DONE)
+
+**Earlier issues found/mentioned but not fixed**
+   - Issue 1: UPI (GPay/PhonePe) not displaying in Razorpay
+     - Debug checklist: Not a code issue. 
+     - Why to solve this issue and what will be achieved with this: Needed for Indian payment ecosystem.
+     - Should Test frontend/backend/both after fix: Frontend
+     - Is recurring issue? Y (User must enable UPI in their merchant Razorpay dashboard/KYC context).
+   - Issue 2: Complaint emails not firing to admin
+     - Debug checklist: Check if Resend API key is provided.
+     - Why to solve this issue and what will be achieved with this: Sends actual emails to admin on user complaint. Code is ready but waiting for user to provide their Resend API key.
+     - Should Test frontend/backend/both after fix: Backend
+     - Is recurring issue? N
+
+**Known issue recurrence from previous fork**
+  - Issue recurrence in previous fork: None explicitly identified in code.
+  - Recurrence count: 0
+  - Status: NOT STARTED
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+Full-stack, Expo Router, React Native, FastAPI, Motor (async MongoDB), Razorpay integration, Google/Email Auth (Emergent Managed), Leaflet maps, Context API (Auth).
+
+**key DB schema**
+  - users: 
+  - freelancers: 
+  - payment_orders: 
+  - complaints: 
+  - coupons: 
+
+**changes in tech stack**
+  - None.
+
+**All files of reference** 
+  - : Updated with  endpoints,  flag generation, and coupon logic.
+  - : CREATED for Admin dashboard functionality.
+  - : Updated to export  inside context.
+  - : Updated to conditionally display the Admin dashboard entry button for authorized email.
+  - : Created and used across payment flows.
+  - , , , : Updated to implement .
+
+**Areas that need refactoring**: 
+  -  is extremely large (~1800 lines). Future efforts should break this down into , , and .
+
+**key api endpoints**
+  -  (Returns  if email matches)
+  - 
+  - , , , , 
+  - 
+
+**Critical Info for New Agent** 
+  - The Admin dashboard is hardcoded to grant access ONLY to .
+  - The user has requested information on exporting the MVP to self-host on GitHub. If they pursue this, you **MUST** assist them in replacing Emergent-managed Google Auth and Emergent Email OTP with their own standard Google OAuth and email providers (e.g., Resend).
+  - DO NOT alter   or  protected variables.
+
+**documents and test reports created in this job** 
+  -  (Coupon Feature tests)
+  -  (Admin Dashboard tests)
+
+**Last 10 User Messages and any pending HUMAN messages** 
+ -  (COMPLETED)
+ -  (COMPLETED)
+ -  (COMPLETED - Explained export process)
+ -  (COMPLETED - Explained export via support_agent)
+ -  (COMPLETED - Queried and displayed DB)
+
+**Project Health Check:**
+Healthy. Passing all frontend and backend tests.
+
+**3rd Party Integrations** 
+	 •	Razorpay (Payments) — requires User API Key (currently on test keys)
+	 •	Emergent-managed Google Auth — uses Emergent LLM Key / Platform managed
+	 •	Emergent-managed Email OTP — uses Emergent LLM Key / Platform managed
+     •	OpenStreetMap / Leaflet — No keys required
+
+**Testing status**
+  - Testing agent used after significant changes: YES
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: , 
+  - Known regressions: None
+
+**Credentials to test flow:**
+  - Admin login: 
+
+**What agent forgot to execute**
+Everything requested in the problem statement and user messages was fully executed and thoroughly tested. Nothing was overlooked.</analysis>
