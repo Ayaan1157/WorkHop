@@ -1,0 +1,93 @@
+import { useEffect, useState } from "react";
+import { Navigation, LocateFixed, AlertCircle } from "lucide-react";
+import { Shell, TopBar, Spinner, IconBtn } from "@/components/kit";
+import OSMMap from "@/components/OSMMap";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { apiGet } from "@/lib/api";
+
+export default function LiveMap() {
+  const [pins, setPins] = useState([]);
+  const [center, setCenter] = useState({ lat: 12.9716, lng: 77.5946 });
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const { coords, status, requestLocation } = useUserLocation();
+
+  useEffect(() => {
+    apiGet("/map/pins")
+      .then((d) => {
+        setPins([...(d.candidates || []), ...(d.employers || [])]);
+        if (d.center) setCenter(d.center);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const visible = pins.filter((p) => filter === "all" || p.kind === filter);
+  const counts = {
+    candidate: pins.filter((p) => p.kind === "candidate").length,
+    employer: pins.filter((p) => p.kind === "employer").length,
+  };
+
+  return (
+    <Shell>
+      <TopBar
+        title={coords ? "LIVE MAP · NEAR YOU" : "LIVE MAP · BENGALURU"}
+        sub={`${counts.candidate} pros · ${counts.employer} hiring companies`}
+        backTestID="map-back-btn"
+        right={
+          <IconBtn testID="map-locate-btn" onClick={requestLocation} active={!!coords}>
+            {status === "locating" ? <Spinner className="!h-4 !w-4" /> : <LocateFixed size={20} className={coords ? "text-white" : "text-ink"} />}
+          </IconBtn>
+        }
+      />
+
+      {status === "idle" && !coords && (
+        <button data-testid="map-locate-banner" onClick={requestLocation} className="flex w-full items-center gap-2 bg-ink px-4 py-2.5 text-left">
+          <Navigation size={14} className="text-white" />
+          <span className="flex-1 text-[11px] font-bold text-white">Use my location to find the closest pros & gigs</span>
+          <span className="text-[11px] font-black tracking-wider text-brand">ENABLE</span>
+        </button>
+      )}
+      {(status === "denied" || status === "blocked") && (
+        <div data-testid="map-locate-denied" className="flex items-center gap-2 bg-ink px-4 py-2.5">
+          <AlertCircle size={14} className="text-white" />
+          <span className="flex-1 text-[11px] font-bold text-white">
+            {status === "blocked" ? "Location is blocked. Enable it in your browser settings." : "Location permission needed to center the map on you."}
+          </span>
+          <button data-testid="map-locate-retry" onClick={requestLocation} className="text-[11px] font-black tracking-wider text-brand">RETRY</button>
+        </div>
+      )}
+
+      <div className="flex gap-2 border-b-2 border-ink px-4 py-3" data-testid="map-filter-row">
+        {[
+          { key: "all", label: "ALL" },
+          { key: "candidate", label: "🟠 PROS" },
+          { key: "employer", label: "⬛ EMPLOYERS" },
+        ].map((f) => (
+          <button
+            key={f.key}
+            data-testid={`map-filter-${f.key}`}
+            onClick={() => setFilter(f.key)}
+            className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black tracking-wider ${filter === f.key ? "bg-brand text-white" : "bg-white text-ink"}`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16"><Spinner /></div>
+      ) : (
+        <div className="h-[60vh] border-b-2 border-ink" data-testid="live-map">
+          <OSMMap pins={visible} center={center} zoom={13} userLocation={coords} height="100%" />
+        </div>
+      )}
+
+      <div className="flex items-center gap-4 p-4">
+        <div className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-2 border-ink bg-brand" /><span className="text-[11px] font-bold text-ink">Verified pros</span></div>
+        <div className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-2 border-ink bg-ink" /><span className="text-[11px] font-bold text-ink">Hiring employers</span></div>
+        <span className="ml-auto text-[10px] text-inkmuted">Tap a pin for details</span>
+      </div>
+    </Shell>
+  );
+}

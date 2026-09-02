@@ -81,3 +81,13 @@ Dual-sided hyperlocal gig marketplace with monetization on both sides:
 - Backend: /api/admin/* endpoints gated by _require_admin (401 no token, 403 non-admin). Freelancer approval sets approved_by_admin + status approved/under_review (display only, does not gate lead visibility).
 - Tested: iteration_23 — 36/36 backend pytest + all frontend flows pass. Post-test: added key fallbacks in list renderers.
 - Admin test token: test_token_workhop_admin (see memory/test_credentials.md).
+
+
+## Session Update (June 2026 — WEB APP added, cross-platform)
+- Product now ships THREE surfaces: mobile (Expo, /app/mobile), shared backend (FastAPI, /app/backend, UNCHANGED), and a NEW web app (React CRA, /app/frontend).
+- Web is a faithful, brand-matched port of ALL mobile screens (same neo-brutalist orange #FF5A00 / black system, Archivo font). Shares the exact same /api contract — no backend changes.
+- Routing (react-router-dom): / Landing (role picker + Email OTP + Google), /freelancer (4-step verify onboarding), /freelancer/jobs (job feed — priority polish), /freelancer/chats, /employer, /employer/plans, /employer/post-job, /employer/inbox, /chat/:id, /pro/:id, /map (Leaflet via vanilla leaflet, react-leaflet removed due to React19 peer), /categories, /support, /legal, /admin (restricted to manarastudio22@gmail.com).
+- Auth: AuthContext exchanges Emergent session_id (redirect flow) or Email OTP for a session_token in localStorage ('workhop_session_token'); is_admin from /api/auth/me. freelancer id in 'workhop_freelancer_id', employer id auto in 'workhop_employer_id'.
+- Payments: web Razorpay checkout.js modal (hooks/usePayments.js) across all 5 flows; CouponInput ported (components/CouponInput.jsx).
+- New deps: leaflet@^1.9.4. Shared kit: components/kit.jsx (Shell, TopBar, CategoryTiles, Spinner, EmptyBlock), lib/catalogFilters.js, hooks/useUserLocation.js (browser geolocation).
+- Tested: iteration_24.json — 27/28 web frontend flows PASS, no critical bugs. Admin login as the real admin email not automatable (real OTP, no dev_otp for that address); non-admin admin-gate verified.

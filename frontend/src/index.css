@@ -4,13 +4,32 @@
 
 body {
     margin: 0;
-    font-family:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-        sans-serif;
+    font-family: "Archivo", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background: #ffffff;
+    color: #121212;
 }
+
+/* Neo-brutalist helpers shared across web screens */
+.wh-input {
+    outline: none;
+}
+.wh-input:focus {
+    box-shadow: inset 0 0 0 2px #ff5a00;
+}
+.leaflet-container {
+    width: 100%;
+    height: 100%;
+    background: #eaeaea;
+    z-index: 0;
+}
+::selection {
+    background: #ff5a00;
+    color: #fff;
+}
+.wh-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.wh-scroll::-webkit-scrollbar-thumb { background: #121212; }
 
 code {
     font-family:
