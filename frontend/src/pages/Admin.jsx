@@ -5,7 +5,7 @@ import { Shell, TopBar, Spinner } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPost, apiPatch } from "@/lib/api";
 
-const TABS = ["USERS", "PROS", "PAYMENTS", "ISSUES", "COUPONS"];
+const TABS = ["USERS", "EMPLOYERS", "PROS", "PAYMENTS", "ISSUES", "COUPONS"];
 const PRODUCT_LABELS = {
   all: "All purchases",
   employer_unlock: "Lead unlock ₹199",
@@ -73,6 +73,42 @@ function UsersTab({ rows }) {
       </CardFoot>
     </Card>
   ));
+}
+
+function EmployersTab({ data }) {
+  const accounts = Array.isArray(data?.accounts) ? data.accounts : [];
+  const devices = Array.isArray(data?.devices) ? data.devices : [];
+  if (!accounts.length && !devices.length) return <Empty>No employers yet.</Empty>;
+  return (
+    <>
+      <p className="text-[10px] font-extrabold tracking-[0.15em] text-inkmuted">EMPLOYER ACCOUNTS ({accounts.length})</p>
+      {accounts.length === 0 && <p className="text-xs text-inkmuted">No signed-in employer accounts yet.</p>}
+      {accounts.map((e, i) => (
+        <Card key={e.email || `emp-${i}`} testID={`admin-employer-${i}`}>
+          <CardHead><CardTitle>{e.name || e.email || "Employer"}</CardTitle><Badge text="EMPLOYER" tone="gray" /></CardHead>
+          <CardMeta>{e.email}</CardMeta>
+          <CardFoot><Micro>Joined {fmtDate(e.created_at)}</Micro><span /></CardFoot>
+        </Card>
+      ))}
+
+      <p className="mt-3 text-[10px] font-extrabold tracking-[0.15em] text-inkmuted">HIRING ACTIVITY ({devices.length})</p>
+      {devices.length === 0 && <p className="text-xs text-inkmuted">No lead unlocks, plans or job posts yet.</p>}
+      {devices.map((d, i) => (
+        <Card key={d.employer_id || `dev-${i}`} testID={`admin-employer-device-${i}`}>
+          <CardHead>
+            <CardTitle>₹{Number(d.spent_rupees || 0).toLocaleString("en-IN")} spent</CardTitle>
+            <Badge text={`${d.jobs_posted} JOBS`} tone={d.jobs_posted ? "green" : "gray"} />
+          </CardHead>
+          <div className="flex flex-wrap gap-1.5">
+            <Badge text={`${d.unlocks} UNLOCKS`} tone="orange" />
+            <Badge text={`${d.plans} PLANS`} tone="gray" />
+            <Badge text={`${d.jobs_posted} POSTS`} tone="gray" />
+          </div>
+          <CardFoot><Micro>{d.employer_id}</Micro><Micro>Active {fmtDate(d.last_active)}</Micro></CardFoot>
+        </Card>
+      ))}
+    </>
+  );
 }
 
 function ProsTab({ rows, onChanged, adminFetch }) {
@@ -233,7 +269,7 @@ export default function Admin() {
     setLoading(true);
     setError(null);
     try {
-      const path = { USERS: "/users", PROS: "/freelancers", PAYMENTS: "/payments", ISSUES: "/complaints", COUPONS: "/coupons" }[t];
+      const path = { USERS: "/users", EMPLOYERS: "/employers", PROS: "/freelancers", PAYMENTS: "/payments", ISSUES: "/complaints", COUPONS: "/coupons" }[t];
       const [ov, data] = await Promise.all([adminFetch("/overview"), adminFetch(path)]);
       setOverview(ov);
       setRows(data);
@@ -270,6 +306,7 @@ export default function Admin() {
       {overview && (
         <div className="wh-scroll flex gap-2 overflow-x-auto border-b-2 border-ink p-3">
           <Stat label="USERS" value={overview.users} />
+          <Stat label="EMPLOYERS" value={overview.employers ?? 0} />
           <Stat label="PROS" value={overview.freelancers} />
           <Stat label="PAID ORDERS" value={overview.payments_paid} />
           <Stat label="REVENUE" value={`₹${Number(overview.revenue_rupees).toLocaleString("en-IN")}`} accent />
@@ -288,6 +325,7 @@ export default function Admin() {
       ) : (
         <div className="flex flex-col gap-3 p-4 pb-16">
           {tab === "USERS" && <UsersTab rows={rows} />}
+          {tab === "EMPLOYERS" && <EmployersTab data={rows} />}
           {tab === "PROS" && <ProsTab rows={rows} onChanged={() => load(tab)} adminFetch={adminFetch} />}
           {tab === "PAYMENTS" && <PaymentsTab rows={rows} />}
           {tab === "ISSUES" && <IssuesTab rows={rows} />}

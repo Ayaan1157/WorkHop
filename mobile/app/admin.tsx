@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BACKEND_URL, COLORS, SPACING } from "@/src/theme";
 import { getToken, useAuth } from "@/src/auth";
 
-const TABS = ["USERS", "PROS", "PAYMENTS", "ISSUES", "COUPONS"] as const;
+const TABS = ["USERS", "EMPLOYERS", "PROS", "PAYMENTS", "ISSUES", "COUPONS"] as const;
 type Tab = (typeof TABS)[number];
 
 const PRODUCT_LABELS: Record<string, string> = {
@@ -48,7 +48,7 @@ export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();
   const [tab, setTab] = useState<Tab>("USERS");
   const [overview, setOverview] = useState<any>(null);
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<any>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const path = { USERS: "/users", PROS: "/freelancers", PAYMENTS: "/payments", ISSUES: "/complaints", COUPONS: "/coupons" }[t];
+      const path = { USERS: "/users", EMPLOYERS: "/employers", PROS: "/freelancers", PAYMENTS: "/payments", ISSUES: "/complaints", COUPONS: "/coupons" }[t];
       const [ov, data] = await Promise.all([adminFetch("/overview"), adminFetch(path)]);
       setOverview(ov);
       setRows(data);
@@ -112,6 +112,7 @@ export default function AdminDashboard() {
       {overview && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsStrip} contentContainerStyle={styles.statsContent}>
           <Stat label="USERS" value={overview.users} />
+          <Stat label="EMPLOYERS" value={overview.employers ?? 0} />
           <Stat label="PROS" value={overview.freelancers} />
           <Stat label="PAID ORDERS" value={overview.payments_paid} />
           <Stat label="REVENUE" value={`₹${Number(overview.revenue_rupees).toLocaleString("en-IN")}`} accent />
@@ -143,6 +144,7 @@ export default function AdminDashboard() {
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => load(tab)} />}
         >
           {tab === "USERS" && <UsersTab rows={rows} />}
+          {tab === "EMPLOYERS" && <EmployersTab data={rows} />}
           {tab === "PROS" && <ProsTab rows={rows} onChanged={() => load(tab)} />}
           {tab === "PAYMENTS" && <PaymentsTab rows={rows} />}
           {tab === "ISSUES" && <IssuesTab rows={rows} />}
@@ -188,6 +190,50 @@ function UsersTab({ rows }: { rows: any[] }) {
             {u.role === "freelancer" && (
               <Badge text={u.approved ? "APPROVED ✓" : "NOT APPROVED"} tone={u.approved ? "green" : "gray"} />
             )}
+          </View>
+        </View>
+      ))}
+    </>
+  );
+}
+
+function EmployersTab({ data }: { data: any }) {
+  const accounts: any[] = Array.isArray(data?.accounts) ? data.accounts : [];
+  const devices: any[] = Array.isArray(data?.devices) ? data.devices : [];
+  if (!accounts.length && !devices.length) return <Text style={styles.emptyText}>No employers yet.</Text>;
+  return (
+    <>
+      <Text style={styles.sectionLabel}>EMPLOYER ACCOUNTS ({accounts.length})</Text>
+      {accounts.length === 0 && <Text style={styles.cardMeta}>No signed-in employer accounts yet.</Text>}
+      {accounts.map((e, i) => (
+        <View key={e.email || `emp-${i}`} style={styles.card} testID={`admin-employer-${i}`}>
+          <View style={styles.cardHead}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{e.name || e.email || "Employer"}</Text>
+            <Badge text="EMPLOYER" tone="gray" />
+          </View>
+          <Text style={styles.cardMeta}>{e.email}</Text>
+          <View style={styles.cardFoot}>
+            <Text style={styles.cardMicro}>Joined {fmtDate(e.created_at)}</Text>
+          </View>
+        </View>
+      ))}
+
+      <Text style={[styles.sectionLabel, { marginTop: SPACING.md }]}>HIRING ACTIVITY ({devices.length})</Text>
+      {devices.length === 0 && <Text style={styles.cardMeta}>No lead unlocks, plans or job posts yet.</Text>}
+      {devices.map((d, i) => (
+        <View key={d.employer_id || `dev-${i}`} style={styles.card} testID={`admin-employer-device-${i}`}>
+          <View style={styles.cardHead}>
+            <Text style={styles.cardTitle} numberOfLines={1}>₹{Number(d.spent_rupees || 0).toLocaleString("en-IN")} spent</Text>
+            <Badge text={`${d.jobs_posted} JOBS`} tone={d.jobs_posted ? "green" : "gray"} />
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+            <Badge text={`${d.unlocks} UNLOCKS`} tone="orange" />
+            <Badge text={`${d.plans} PLANS`} tone="gray" />
+            <Badge text={`${d.jobs_posted} POSTS`} tone="gray" />
+          </View>
+          <View style={styles.cardFoot}>
+            <Text style={styles.cardMicro} numberOfLines={1}>{d.employer_id}</Text>
+            <Text style={styles.cardMicro}>Active {fmtDate(d.last_active)}</Text>
           </View>
         </View>
       ))}
@@ -505,6 +551,7 @@ const styles = StyleSheet.create({
   tabTextActive: { color: COLORS.brand },
   listContent: { padding: SPACING.lg, gap: SPACING.md, paddingBottom: 60 },
   emptyText: { textAlign: "center", color: COLORS.onSurfaceMuted, marginTop: 30, fontSize: 13 },
+  sectionLabel: { fontSize: 10, fontWeight: "900", letterSpacing: 1.5, color: COLORS.onSurfaceMuted },
   errorText: { textAlign: "center", color: "#C62828", marginTop: 30, fontSize: 13, fontWeight: "700" },
   card: { borderWidth: 2, borderColor: COLORS.black, backgroundColor: COLORS.white, padding: SPACING.md, gap: 4 },
   cardHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: SPACING.sm },

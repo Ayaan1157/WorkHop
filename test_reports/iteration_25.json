@@ -1,0 +1,43 @@
+{
+  "summary": "Verified the two reported fixes end-to-end. (1) WEB Landing logo: /workhop-logo.png is served (200, 175017 bytes) and rendered as <img> inside [data-testid='landing-logo'] on both the role-picker landing (naturalWidth=640, complete=true) and the sign-in screen reached via the I'M HIRING role card (same image, verified after 3s wait). (2) WEB Admin: EMPLOYERS tab present between USERS and PROS (data-testid='admin-tab-employers'), EMPLOYERS stat visible in the overview strip (value 16), clicking the tab renders 16 employer accounts (data-testid='admin-employer-0..15') and 52 hiring-activity devices (data-testid='admin-employer-device-0..51'). All other tabs (USERS/PROS/PAYMENTS/ISSUES/COUPONS) still load without admin-error. Backend GET /api/admin/employers returns {accounts:[...], devices:[...]} 200 with admin bearer, 401 without token, 403 for non-admin session; GET /api/admin/overview 200 and includes 'employers':15 field. MOBILE Admin: code inspection of /app/mobile/app/admin.tsx confirms parity — TABS array includes EMPLOYERS between USERS and PROS, Stat label 'EMPLOYERS' bound to overview.employers, EmployersTab renders accounts + devices with testIDs admin-employer-{i} and admin-employer-device-{i}, and load() maps EMPLOYERS -> /employers. However, the mobile Expo web preview at https://payment-mgmt-10.expo.preview.emergentagent.com cannot exercise the admin flow via a browser because the preview ingress returns a mismatched Access-Control-Allow-Origin ('...cluster-2.preview.emergentcf.cloud') on OPTIONS preflights, so all cross-origin fetches from the mobile web preview fail. This is a pre-existing preview-env infra issue, not a regression from the current fixes; the mobile source is correct and should work in a native build or once CORS is fixed.",
+  "platforms_tested": ["web", "mobile"],
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "OPTIONS /api/*", "issue": "Preview ingress rewrites Access-Control-Allow-Origin to a hardcoded 'https://payment-mgmt-10.cluster-2.preview.emergentcf.cloud' regardless of the incoming Origin header. Because backend has allow_origins=['*'] + allow_credentials=True (which browsers already reject), and the ingress overrides ACAO with an unrelated origin, any cross-origin browser fetch is blocked. Same-origin calls (web /app/frontend from payment-mgmt-10.preview.emergentagent.com) skip CORS and therefore work. Recommend: set explicit allow_origins list including 'https://payment-mgmt-10.preview.emergentagent.com' and 'https://payment-mgmt-10.expo.preview.emergentagent.com' and drop 'allow_credentials=True' with '*', and/or fix the ingress override."}
+    ]
+  },
+  "frontend_issues": {
+    "web": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+    "mobile": {
+      "ui_bugs": [],
+      "integration_issues": [
+        {"flow": "Mobile web preview admin flow (any authenticated flow, actually)", "issue": "Every cross-origin fetch from expo.preview.emergentagent.com to preview.emergentagent.com/api is blocked because ACAO on OPTIONS is rewritten to an unrelated origin. Admin gate therefore renders 'ADMIN ACCESS ONLY' even after seeding the correct session_token in localStorage. Root cause is preview ingress + backend CORS config, not the admin code. Testing in a native Expo build (which does not enforce browser CORS) would work.", "affected_testIDs": ["admin-tab-employers", "admin-employer-0", "admin-employer-device-0"]}
+      ],
+      "design_issues": [],
+      "react_native_issues": []
+    }
+  },
+  "parity_issues": [
+    {"flow": "Admin EMPLOYERS tab", "platform": "mobile", "issue": "Cannot be exercised via mobile web preview due to preview-env CORS. Web verified fully; mobile source code matches web behavior 1:1 (TABS order, testIDs, rendering, stat).", "expected": "EMPLOYERS tab renders on mobile web preview too", "actual": "Auth /me preflight blocked, admin gate shows ADMIN ACCESS ONLY"}
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "Tighten CORS: replace allow_origins=['*'] + allow_credentials=True with an explicit list of allowed origins (web + expo preview + prod) — /app/backend/server.py:1947-1953.",
+    "Investigate the preview ingress that rewrites Access-Control-Allow-Origin to '...cluster-2.preview.emergentcf.cloud' (infra) — this blocks the mobile web preview from ever authenticating cross-origin.",
+    "Once CORS is fixed, re-run the mobile admin EMPLOYERS check via the Expo web preview to confirm parity."
+  ],
+  "critical_code_review_comments": [
+    "server.py admin_employers() correctly excludes MongoDB _id (uses projection {'_id':0}) and derives employer accounts by set-differencing freelancer emails. Fine.",
+    "The web+mobile admin dashboards duplicate a lot of code (TABS, load(), Stat/Card/Badge). Consider extracting a shared config to keep tabs in sync across surfaces so future 'EMPLOYERS'-style additions stay in parity by default.",
+    "Backend CORS: allow_origins=['*'] combined with allow_credentials=True is a well-known misconfiguration — browsers ignore it. See action_items."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (4/4 admin endpoints: overview, employers-admin, employers-noauth, employers-nonadmin)", "frontend": "web 100% of requested checks (logo on landing + sign-in, EMPLOYERS tab + stat + accounts + devices + regression on 5 existing tabs). Mobile blocked by env CORS — source-code parity verified."},
+  "test_credentials": "Used /app/memory/test_credentials.md — admin bearer 'st_admin_test_workhop_fixed_token' for backend curl + web localStorage seed. Non-admin token obtained by fresh Email OTP flow (dev_otp returned for @testwh.local emails).",
+  "seed_data_creation": "One ephemeral non-admin user 'nonadmin{ts}@testwh.local' created solely to verify 403 on /api/admin/employers. No production data touched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The two reported fixes are verified on web. The mobile web preview cannot exercise authenticated flows because the preview ingress returns Access-Control-Allow-Origin='https://payment-mgmt-10.cluster-2.preview.emergentcf.cloud' on every OPTIONS regardless of Origin, blocking cross-origin fetches from expo.preview.*. Backend CORS is also misconfigured (allow_origins='*' + allow_credentials=True). To test mobile admin, either (a) fix CORS + ingress, (b) test on a native Expo build, or (c) same-origin serve the mobile web preview under payment-mgmt-10.preview.emergentagent.com. The mobile source (/app/mobile/app/admin.tsx) is correct and matches the web behavior line-for-line.",
+  "rca of the issue": "N/A — no defects in the two fixes under test. The mobile-preview blocker is an infrastructure/CORS issue traced to (i) the Emergent preview ingress rewriting ACAO to an unrelated origin, and (ii) backend CORSMiddleware using allow_origins=['*'] with allow_credentials=True (which browsers reject)."
+}

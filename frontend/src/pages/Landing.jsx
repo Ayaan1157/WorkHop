@@ -7,10 +7,13 @@ import { useAuth } from "@/context/AuthContext";
 function Logo() {
   return (
     <div className="flex flex-col items-center" data-testid="landing-logo">
-      <span className="text-5xl font-black tracking-[-0.04em] text-ink">
-        Work<span className="text-brand">Hop</span>
-      </span>
-      <span className="mt-1 text-[11px] uppercase tracking-[0.15em] text-inkmuted">
+      <img
+        src="/workhop-logo.png"
+        alt="WorkHop"
+        className="h-auto w-[240px] max-w-full select-none"
+        draggable={false}
+      />
+      <span className="-mt-1 text-[11px] uppercase tracking-[0.15em] text-inkmuted">
         hyperlocal gigs · verified pros
       </span>
     </div>

@@ -1328,6 +1328,7 @@ async def admin_overview(request: Request):
     return {
         "users": await db.users.count_documents({}),
         "freelancers": await db.freelancers.count_documents({}),
+        "employers": await _employer_account_count(),
         "payments_paid": len(paid_orders),
         "revenue_rupees": sum(o.get("amount", 0) for o in paid_orders) // 100,
         "complaints": await db.complaints.count_documents({}),
@@ -1357,6 +1358,57 @@ async def admin_users(request: Request):
             "freelancer_id": f.get("freelancer_id") if f else None,
         })
     return out
+
+
+async def _freelancer_emails() -> set:
+    docs = await db.freelancers.find(
+        {"email": {"$nin": [None, ""]}}, {"email": 1}
+    ).to_list(3000)
+    return {(f.get("email") or "").lower() for f in docs}
+
+
+async def _employer_account_count() -> int:
+    fr_emails = await _freelancer_emails()
+    users = await db.users.find({}, {"email": 1}).to_list(5000)
+    return sum(1 for u in users if (u.get("email") or "").lower() not in fr_emails)
+
+
+@api_router.get("/admin/employers")
+async def admin_employers(request: Request):
+    """Registered employer accounts + device-based employer activity (unlocks, plans, job posts, spend)."""
+    await _require_admin(request)
+    fr_emails = await _freelancer_emails()
+    users = await db.users.find({}, {"_id": 0}).sort("created_at", -1).to_list(2000)
+    accounts = [
+        {"name": u.get("name"), "email": u.get("email"), "created_at": u.get("created_at")}
+        for u in users
+        if (u.get("email") or "").lower() not in fr_emails
+    ]
+
+    agg: dict = {}
+
+    def _bump(eid, key, amount, ts):
+        if not eid:
+            return
+        d = agg.setdefault(
+            eid,
+            {"employer_id": eid, "unlocks": 0, "plans": 0, "jobs_posted": 0,
+             "spent_rupees": 0, "last_active": None},
+        )
+        d[key] += 1
+        d["spent_rupees"] += int(amount or 0)
+        if ts and (d["last_active"] is None or ts > d["last_active"]):
+            d["last_active"] = ts
+
+    for u in await db.employer_unlocks.find({}, {"_id": 0}).to_list(3000):
+        _bump(u.get("employer_id"), "unlocks", u.get("paid_amount"), u.get("paid_at"))
+    for p in await db.plan_purchases.find({}, {"_id": 0}).to_list(3000):
+        _bump(p.get("employer_id"), "plans", p.get("price"), p.get("purchased_at"))
+    for j in await db.custom_jobs.find({}, {"_id": 0}).to_list(3000):
+        _bump(j.get("employer_id"), "jobs_posted", 0, j.get("created_at"))
+
+    devices = sorted(agg.values(), key=lambda d: d["spent_rupees"], reverse=True)
+    return {"accounts": accounts, "devices": devices}
 
 
 @api_router.get("/admin/freelancers")
