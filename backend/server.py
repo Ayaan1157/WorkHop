@@ -1,8 +1,10 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Request, BackgroundTasks
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import html
 import json
 import logging
 import math
@@ -12,26 +14,43 @@ import time
 import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Set
 import uuid
 import razorpay
 import httpx
 from datetime import datetime, timezone, timedelta
 
+logger = logging.getLogger("workhop.security")
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+db_name = os.environ.get('DB_NAME', 'workhop_database')
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[db_name]
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-razorpay_client = razorpay.Client(
-    auth=(os.environ["RAZORPAY_KEY_ID"], os.environ["RAZORPAY_KEY_SECRET"])
-)
+razorpay_key_id = os.environ.get("RAZORPAY_KEY_ID", "rzp_test_placeholder")
+razorpay_key_secret = os.environ.get("RAZORPAY_KEY_SECRET", "placeholder_secret")
+razorpay_client = razorpay.Client(auth=(razorpay_key_id, razorpay_key_secret))
+
+# Global sliding-window in-memory rate limiter for auth / OTP endpoints
+_RATE_LIMIT_STORE: dict = {}
+
+def _check_rate_limit(key: str, max_requests: int = 5, window_seconds: int = 60) -> None:
+    now = time.time()
+    history = _RATE_LIMIT_STORE.get(key, [])
+    history = [t for t in history if now - t < window_seconds]
+    if len(history) >= max_requests:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many requests. Please wait {max(1, int(window_seconds - (now - history[0])))}s before retrying."
+        )
+    history.append(now)
+    _RATE_LIMIT_STORE[key] = history
 
 
 # ============== Models ==============
@@ -357,7 +376,18 @@ def _format_phone(raw: str) -> str:
     return f"+91 {digits[:5]} {digits[5:]}"
 
 
-def _freelancer_to_lead(doc: dict) -> Lead:
+def _mask_phone(phone: str) -> str:
+    if not phone:
+        return ""
+    digits = re.sub(r"\D", "", phone)
+    if len(digits) == 12 and digits.startswith("91"):
+        digits = digits[2:]
+    if len(digits) == 10:
+        return f"+91 {digits[:2]}XXX XX{digits[-3:]}"
+    return "+91 XXXXX XXXXX"
+
+
+def _freelancer_to_lead(doc: dict, unlocked: bool = False) -> Lead:
     name = doc.get("full_name") or "Verified Pro"
     initials = "".join(w[0] for w in name.split()[:2]).upper() or "VP"
     lat, lng = doc.get("lat"), doc.get("lng")
@@ -373,6 +403,8 @@ def _freelancer_to_lead(doc: dict) -> Lead:
         dist = 2.0
     skill = doc.get("skill") or "Verified Pro"
     ext_rating = doc.get("external_rating")
+    raw_phone = doc.get("phone") or ""
+    phone = raw_phone if unlocked else _mask_phone(raw_phone)
     return Lead(
         id=doc["freelancer_id"],
         initials=initials,
@@ -381,7 +413,7 @@ def _freelancer_to_lead(doc: dict) -> Lead:
         rating=float(ext_rating if ext_rating is not None else (doc.get("rating") or 5.0)),
         jobs_done=int(doc.get("jobs_done") or 0),
         name=name,
-        phone=doc.get("phone") or "",
+        phone=phone,
         portfolio=doc.get("portfolio_url") or "",
         category=doc.get("category") or "",
         area=doc.get("area") or "Bengaluru",
@@ -397,25 +429,32 @@ def _freelancer_to_lead(doc: dict) -> Lead:
     )
 
 
-async def _all_leads() -> List[Lead]:
-    """Real verified pros (with a phone on file) merged ahead of seeded demo leads."""
+async def _all_leads(unlocked: bool = False) -> List[Lead]:
+    """Real verified pros merged ahead of seeded demo leads, masked server-side unless unlocked."""
     docs = await db.freelancers.find(
         {"paid": True, "aadhaar_verified": True, "phone": {"$exists": True, "$nin": ["", None]}}
     ).to_list(200)
-    return [_freelancer_to_lead(d) for d in docs] + [Lead(**lead) for lead in SEED_LEADS]
+    real_leads = [_freelancer_to_lead(d, unlocked=unlocked) for d in docs]
+    seed_leads_out = []
+    for lead in SEED_LEADS:
+        l_copy = dict(lead)
+        if not unlocked and l_copy.get("phone"):
+            l_copy["phone"] = _mask_phone(l_copy["phone"])
+        seed_leads_out.append(Lead(**l_copy))
+    return real_leads + seed_leads_out
 
 
 @api_router.get("/leads/preview", response_model=List[Lead])
 async def get_leads_preview():
-    """Returns nearby freelancer leads (frontend keeps phone numbers blurred until unlock)."""
-    return await _all_leads()
+    """Returns nearby freelancer leads with phone numbers safely masked server-side."""
+    return await _all_leads(unlocked=False)
 
 
 @api_router.post("/employer/unlock", response_model=UnlockResponse)
 async def employer_unlock(req: UnlockRequest):
     """Mock Razorpay/UPI ₹199 unlock. Simulates a brief gateway delay then persists & returns full leads."""
     await asyncio.sleep(1.2)
-    all_leads = await _all_leads()
+    all_leads = await _all_leads(unlocked=True)
     unlock_id = str(uuid.uuid4())
     record = {
         "_id": unlock_id,
@@ -482,10 +521,15 @@ async def freelancer_submit(req: FinalSubmitRequest):
     """Final submission: persists phone, skill, category, location, LinkedIn, portfolio + images."""
     if len(req.portfolio_images) > 3:
         raise HTTPException(status_code=400, detail="Maximum 3 portfolio images allowed.")
+    for img in req.portfolio_images:
+        if len(img) > 2_500_000:
+            raise HTTPException(status_code=400, detail="Each portfolio image must be under 2MB.")
+        if not (img.startswith("data:image/") or img.startswith("http://") or img.startswith("https://")):
+            raise HTTPException(status_code=400, detail="Invalid image format. Must be an image URL or data-URI.")
     submitted_at = _now_iso()
     updates = {
-        "linkedin_url": req.linkedin_url,
-        "portfolio_url": req.portfolio_url,
+        "linkedin_url": (req.linkedin_url or "").strip()[:250],
+        "portfolio_url": (req.portfolio_url or "").strip()[:250],
         "portfolio_images_count": len(req.portfolio_images),
         "status": "under_review",
         "submitted_at": submitted_at,
@@ -519,12 +563,16 @@ async def freelancer_submit(req: FinalSubmitRequest):
         raise HTTPException(status_code=404, detail="Freelancer not found.")
     # Store images separately to keep main doc small
     if req.portfolio_images:
-        await db.freelancer_portfolio.insert_one({
-            "_id": req.freelancer_id,
-            "freelancer_id": req.freelancer_id,
-            "images": req.portfolio_images,
-            "uploaded_at": submitted_at,
-        })
+        await db.freelancer_portfolio.replace_one(
+            {"_id": req.freelancer_id},
+            {
+                "_id": req.freelancer_id,
+                "freelancer_id": req.freelancer_id,
+                "images": req.portfolio_images,
+                "uploaded_at": submitted_at,
+            },
+            upsert=True,
+        )
     return FinalSubmitResponse(freelancer_id=req.freelancer_id, status="under_review", submitted_at=submitted_at)
 
 
@@ -567,7 +615,20 @@ async def update_freelancer_profile(freelancer_id: str, req: ProfileUpdateReques
     if "phone" in updates:
         updates["phone"] = _format_phone(updates["phone"])
     if "full_name" in updates:
-        updates["full_name"] = updates["full_name"].strip()[:80]
+        updates["full_name"] = str(updates["full_name"]).strip()[:80]
+    if "skill" in updates:
+        updates["skill"] = str(updates["skill"]).strip()[:60]
+    if "category" in updates:
+        updates["category"] = str(updates["category"]).strip()[:40]
+    if "intro" in updates:
+        updates["intro"] = str(updates["intro"]).strip()[:400]
+    if "linkedin_url" in updates:
+        updates["linkedin_url"] = str(updates["linkedin_url"]).strip()[:250]
+    if "portfolio_url" in updates:
+        updates["portfolio_url"] = str(updates["portfolio_url"]).strip()[:250]
+    if "external_rating" in updates and updates["external_rating"] is not None:
+        if not (0 <= updates["external_rating"] <= 5):
+            raise HTTPException(status_code=400, detail="External rating must be between 0 and 5.")
     if not updates:
         raise HTTPException(status_code=400, detail="Nothing to update.")
     result = await db.freelancers.update_one({"_id": freelancer_id}, {"$set": updates})
@@ -1007,7 +1068,7 @@ async def verify_payment(req: VerifyPaymentRequest):
     paid_at = _now_iso()
 
     if product == "employer_unlock":
-        all_leads = await _all_leads()
+        all_leads = await _all_leads(unlocked=True)
         await db.employer_unlocks.insert_one({
             "_id": str(uuid.uuid4()),
             "employer_id": odoc.get("employer_id") or f"employer-{uuid.uuid4().hex[:6]}",
@@ -1232,16 +1293,21 @@ async def _consume_otp(email: str, otp: str) -> None:
 
 
 @api_router.post("/auth/email/request-otp")
-async def auth_email_request_otp(req: EmailOtpRequest):
+async def auth_email_request_otp(req: EmailOtpRequest, request: Request):
     email = req.email.strip().lower()
-    if not _EMAIL_RE.match(email):
+    if not _EMAIL_RE.match(email) or len(email) > 120:
         raise HTTPException(status_code=400, detail="Enter a valid email address.")
+    client_ip = request.client.host if request.client else "unknown"
+    _check_rate_limit(f"otp_ip_{client_ip}", max_requests=10, window_seconds=60)
+    _check_rate_limit(f"otp_email_{email}", max_requests=4, window_seconds=120)
     return await _issue_otp(email)
 
 
 @api_router.post("/auth/email/verify-otp")
-async def auth_email_verify_otp(req: EmailOtpVerifyRequest):
+async def auth_email_verify_otp(req: EmailOtpVerifyRequest, request: Request):
     email = req.email.strip().lower()
+    client_ip = request.client.host if request.client else "unknown"
+    _check_rate_limit(f"verify_ip_{client_ip}", max_requests=15, window_seconds=60)
     await _consume_otp(email, req.otp)
     user = await db.users.find_one({"email": email}, {"_id": 0})
     if not user:
@@ -1842,19 +1908,26 @@ async def _send_email(to: str, subject: str, html: str) -> bool:
 
 
 async def send_complaint_email(complaint: dict) -> None:
-    """Best-effort dispatch to the support inbox. Never raises."""
-    html = f"""
+    """Best-effort dispatch to the support inbox. HTML escaped. Never raises."""
+    c_id = html.escape(str(complaint.get('complaint_id', '')))
+    c_name = html.escape(str(complaint.get('name', '')))
+    c_email = html.escape(str(complaint.get('email', '')))
+    c_role = html.escape(str(complaint.get('role', '')))
+    c_subject = html.escape(str(complaint.get('subject', '')))
+    c_message = html.escape(str(complaint.get('message', ''))).replace('\n', '<br/>')
+    c_time = html.escape(str(complaint.get('created_at', '')))
+    html_content = f"""
     <h2>New WorkHop Complaint</h2>
-    <p><strong>Complaint ID:</strong> {complaint['complaint_id']}</p>
-    <p><strong>Name:</strong> {complaint['name']}</p>
-    <p><strong>Email:</strong> {complaint['email']}</p>
-    <p><strong>Role:</strong> {complaint['role']}</p>
-    <p><strong>Subject:</strong> {complaint['subject']}</p>
+    <p><strong>Complaint ID:</strong> {c_id}</p>
+    <p><strong>Name:</strong> {c_name}</p>
+    <p><strong>Email:</strong> {c_email}</p>
+    <p><strong>Role:</strong> {c_role}</p>
+    <p><strong>Subject:</strong> {c_subject}</p>
     <p><strong>Message:</strong></p>
-    <p>{complaint['message']}</p>
-    <p><em>Submitted at {complaint['created_at']}</em></p>
+    <p>{c_message}</p>
+    <p><em>Submitted at {c_time}</em></p>
     """
-    await _send_email(SUPPORT_EMAIL, f"[WorkHop Complaint] {complaint['subject']}", html)
+    await _send_email(SUPPORT_EMAIL, f"[WorkHop Complaint] {c_subject}", html_content)
 
 
 class ComplaintRequest(BaseModel):
@@ -1942,18 +2015,36 @@ async def startup_indexes():
         await db.coupons.update_one({"_id": c["_id"]}, {"$setOnInsert": c}, upsert=True)
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred. Please try again later."}
+    )
+
+
 app.include_router(api_router)
+
+cors_origins_env = os.environ.get("CORS_ORIGINS", "")
+if cors_origins_env.strip():
+    allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+else:
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://localhost:3000",
+        "http://localhost:5173",
+    ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$|^http:\/\/localhost:\d+$",
+    allow_origins=allowed_origins,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 
 @app.on_event("shutdown")

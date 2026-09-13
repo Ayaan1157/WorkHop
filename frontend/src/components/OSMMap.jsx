@@ -45,12 +45,22 @@ export default function OSMMap({ pins = [], center = { lat: 12.9716, lng: 77.594
         iconAnchor: [9, 9],
       });
 
+    const escapeHtml = (str) =>
+      String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
     pins.forEach((p) => {
       const color = p.kind === "employer" ? "#121212" : "#FF5A00";
+      const titleEsc = escapeHtml(p.title);
+      const subEsc = escapeHtml(p.subtitle);
       L.marker([p.lat, p.lng], { icon: pinIcon(color) })
         .addTo(layer)
         .bindPopup(
-          `<strong style="font-family:Archivo,sans-serif">${p.title || ""}</strong><br/><span style="font-family:Archivo,sans-serif;font-size:11px;color:#6B6B6B">${p.subtitle || ""}</span>`,
+          `<strong style="font-family:Archivo,sans-serif">${titleEsc}</strong><br/><span style="font-family:Archivo,sans-serif;font-size:11px;color:#6B6B6B">${subEsc}</span>`,
         );
     });
 
