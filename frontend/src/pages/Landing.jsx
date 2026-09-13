@@ -17,7 +17,7 @@ function Logo() {
         draggable={false}
       />
       <span className="-mt-1 text-[11px] uppercase tracking-[0.15em] text-inkmuted">
-        hyperlocal gigs · verified pros
+        your next local gig, one minute away
       </span>
     </div>
   );
@@ -166,9 +166,9 @@ export default function Landing() {
               </div>
 
               <div className="mt-8 border-2 border-ink bg-sand p-4">
-                <p className="text-xs font-black tracking-wider text-ink">✨ HYPERLOCAL VERIFIED NETWORK</p>
+                <p className="text-xs font-black tracking-wider text-ink">✨ YOUR NEXT LOCAL GIG, ONE MINUTE AWAY</p>
                 <p className="mt-1 text-xs text-inkmuted">
-                  Zero commission on gig wages · Direct phone &amp; chat access · Razorpay secured
+                  Hyperlocal verified network · Zero commission on gig wages · Direct phone &amp; chat access
                 </p>
               </div>
             </div>
@@ -320,14 +320,14 @@ export default function Landing() {
         <div className="max-w-4xl">
           <div className="inline-flex items-center gap-2 border-2 border-ink bg-sand px-3.5 py-1.5 text-xs font-black tracking-wider">
             <span className="h-2.5 w-2.5 rounded-full bg-ok animate-pulse" />
-            <span>HYPERLOCAL WORK PLATFORM · BENGALURU LIVE</span>
+            <span>YOUR NEXT LOCAL GIG, ONE MINUTE AWAY · BENGALURU LIVE</span>
           </div>
           <h1 className="mt-5 text-5xl font-black leading-[1.02] tracking-[-0.03em] text-ink sm:text-7xl lg:text-8xl">
             Pick a side.<br />Get to work.
           </h1>
           <div className="mt-4 h-2 w-28 bg-brand" />
           <p className="mt-6 max-w-2xl text-base leading-7 text-inkmuted sm:text-xl">
-            Connect with top-rated, Aadhaar &amp; portfolio-verified professionals within 5km. Direct chats, zero commission on wages, instant hires.
+            <span className="font-extrabold text-ink">Your next local gig, one minute away.</span> Connect with top-rated, Aadhaar &amp; portfolio-verified professionals within 5km. Direct chats, zero commission on wages, instant hires.
           </p>
         </div>
 
@@ -433,7 +433,7 @@ export default function Landing() {
         <div className="flex items-center gap-2">
           <div className="h-2.5 w-2.5 bg-brand" />
           <span className="text-xs uppercase tracking-wider text-inkmuted">
-            WorkHop · Hyperlocal Gigs · Razorpay Secured
+            WorkHop · Your next local gig, one minute away · Razorpay Secured
           </span>
         </div>
 
