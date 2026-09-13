@@ -29,7 +29,7 @@ export default function OSMMap({ pins = [], center = { lat: 12.9716, lng: 77.594
     if (!mapRef.current) return;
     const c = userLocation || center;
     mapRef.current.setView([c.lat, c.lng], userLocation ? 14 : zoom);
-  }, [center.lat, center.lng, userLocation, zoom]);
+  }, [center, userLocation, zoom]);
 
   // Draw markers
   useEffect(() => {

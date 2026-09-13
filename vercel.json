@@ -1,6 +1,6 @@
 {
-  "buildCommand": "yarn build",
-  "outputDirectory": "build",
+  "buildCommand": "cd frontend && yarn install && yarn build",
+  "outputDirectory": "frontend/build",
   "cleanUrls": true,
   "rewrites": [
     {
