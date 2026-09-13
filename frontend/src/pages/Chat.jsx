@@ -74,8 +74,8 @@ export default function Chat() {
   const otherName = myRole === "freelancer" ? conv?.company_name : conv?.freelancer_name;
 
   return (
-    <div className="mx-auto flex h-screen max-w-2xl flex-col border-x-2 border-ink bg-white">
-      <div className="flex items-center gap-3 border-b-2 border-ink px-4 py-3" data-testid="chat-topbar">
+    <div className="flex h-screen w-full flex-col bg-white">
+      <div className="flex items-center gap-4 border-b-2 border-ink px-4 py-3 sm:px-8 lg:px-12" data-testid="chat-topbar">
         <button data-testid="chat-back-btn" onClick={() => nav(-1)} className="flex h-10 w-10 items-center justify-center border-2 border-ink"><ChevronLeft size={22} /></button>
         <div className="flex h-[38px] w-[38px] items-center justify-center border-2 border-ink bg-brand text-base font-black text-white">{(otherName || "?").slice(0, 1)}</div>
         <div className="min-w-0 flex-1">

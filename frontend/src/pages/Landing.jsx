@@ -116,7 +116,7 @@ export default function Landing() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white">
+      <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-white">
         <Logo />
         <Loader2 className="animate-spin text-brand" />
       </div>
@@ -127,8 +127,8 @@ export default function Landing() {
   if (pendingRole && !user) {
     const employer = pendingRole === "employer";
     return (
-      <div className="min-h-screen bg-[#F4F4F0] p-4 sm:p-8">
-        <div className="mx-auto max-w-4xl border-2 border-ink bg-white p-6 shadow-2xl sm:p-10">
+      <div className="min-h-screen w-full bg-white p-6 sm:p-10 lg:p-16">
+        <div className="mx-auto max-w-5xl border-2 border-ink bg-white p-6 shadow-2xl sm:p-10">
           <div className="flex items-center justify-between border-b-2 border-ink pb-5">
             <button
               data-testid="login-back-btn"
@@ -258,196 +258,195 @@ export default function Landing() {
     );
   }
 
-  // ---- Landing Page (Landscape Layout) ----
+  // ---- Landing Page (Full-Width Edge-to-Edge Layout) ----
   return (
-    <div className="min-h-screen bg-[#F4F4F0] text-ink">
-      <div className="mx-auto max-w-6xl border-x-2 border-ink bg-white shadow-2xl">
-        
-        {/* Top Header / Navigation Bar */}
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-ink px-6 py-4" data-testid="landing-header">
-          <Logo />
+    <div className="min-h-screen w-full bg-white text-ink">
+      
+      {/* Top Header / Full Screen Navbar */}
+      <header className="flex w-full flex-wrap items-center justify-between gap-4 border-b-2 border-ink bg-white px-6 py-4 sm:px-10 lg:px-16 xl:px-20" data-testid="landing-header">
+        <Logo />
 
-          <nav className="flex items-center gap-3 sm:gap-6">
-            <Link to="/employer" className="text-xs font-black tracking-wider text-ink hover:text-brand">
-              EXPERTS
-            </Link>
-            <Link to="/freelancer/jobs" className="text-xs font-black tracking-wider text-ink hover:text-brand">
-              GIGS
-            </Link>
-            <Link to="/map" className="text-xs font-black tracking-wider text-ink hover:text-brand">
-              LIVE MAP
-            </Link>
-            <Link to="/categories" className="text-xs font-black tracking-wider text-ink hover:text-brand">
-              CATEGORIES
-            </Link>
-          </nav>
+        <nav className="flex items-center gap-4 sm:gap-8">
+          <Link to="/employer" className="text-xs font-black tracking-wider text-ink hover:text-brand">
+            EXPERTS
+          </Link>
+          <Link to="/freelancer/jobs" className="text-xs font-black tracking-wider text-ink hover:text-brand">
+            GIGS
+          </Link>
+          <Link to="/map" className="text-xs font-black tracking-wider text-ink hover:text-brand">
+            LIVE MAP
+          </Link>
+          <Link to="/categories" className="text-xs font-black tracking-wider text-ink hover:text-brand">
+            CATEGORIES
+          </Link>
+        </nav>
 
-          {user ? (
-            <div className="flex items-center gap-2" data-testid="user-row">
-              <button
-                data-testid="user-chip"
-                onClick={() => nav("/profile")}
-                className="flex items-center gap-2 border-2 border-ink bg-white px-3 py-1.5 hover:bg-sand"
-              >
-                <UserCircle2 size={16} className="text-brand" />
-                <span className="truncate text-xs font-extrabold text-ink">{user.name || user.email}</span>
-                <ArrowRight size={13} className="text-inkmuted" />
-              </button>
-              <button data-testid="logout-btn" onClick={logout} className="flex items-center gap-1 border-2 border-ink px-3 py-1.5 hover:bg-sand">
-                <LogOut size={14} /> <span className="text-[10px] font-black tracking-wider">LOGOUT</span>
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => chooseRole("employer")}
-                className="border-2 border-ink bg-white px-3.5 py-1.5 text-xs font-black tracking-wider text-ink hover:bg-sand"
-              >
-                SIGN IN
-              </button>
-              <button
-                onClick={() => nav("/employer/post-job")}
-                className="flex items-center gap-1.5 border-2 border-ink bg-brand px-3.5 py-1.5 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212]"
-              >
-                <PlusCircle size={14} />
-                <span>POST JOB</span>
-              </button>
-            </div>
-          )}
-        </header>
-
-        {/* Hero Section */}
-        <section className="border-b-2 border-ink bg-white px-6 py-12 sm:px-10 lg:py-16">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 border-2 border-ink bg-sand px-3 py-1 text-xs font-black tracking-wider">
-              <span className="h-2 w-2 rounded-full bg-ok animate-pulse" />
-              <span>HYPERLOCAL WORK PLATFORM · BENGALURU LIVE</span>
-            </div>
-            <h1 className="mt-4 text-4xl font-black leading-[1.02] tracking-[-0.03em] text-ink sm:text-6xl lg:text-7xl">
-              Pick a side.<br />Get to work.
-            </h1>
-            <div className="mt-4 h-2 w-24 bg-brand" />
-            <p className="mt-5 max-w-xl text-base leading-7 text-inkmuted sm:text-lg">
-              Connect with top-rated, Aadhaar &amp; portfolio-verified professionals within 5km. Direct chats, zero commission on wages, instant hires.
-            </p>
-          </div>
-
-          {/* Dual Action Cards in Landscape Grid */}
-          <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
-            
-            {/* Employer Card */}
+        {user ? (
+          <div className="flex items-center gap-2" data-testid="user-row">
             <button
-              data-testid="role-employer-card"
+              data-testid="user-chip"
+              onClick={() => nav("/profile")}
+              className="flex items-center gap-2 border-2 border-ink bg-white px-4 py-2 hover:bg-sand"
+            >
+              <UserCircle2 size={16} className="text-brand" />
+              <span className="truncate text-xs font-extrabold text-ink">{user.name || user.email}</span>
+              <ArrowRight size={13} className="text-inkmuted" />
+            </button>
+            <button data-testid="logout-btn" onClick={logout} className="flex items-center gap-1 border-2 border-ink px-3 py-2 hover:bg-sand">
+              <LogOut size={14} /> <span className="text-[10px] font-black tracking-wider">LOGOUT</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <button
               onClick={() => chooseRole("employer")}
-              className="group border-2 border-ink bg-ink p-8 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
+              className="border-2 border-ink bg-white px-4 py-2 text-xs font-black tracking-wider text-ink hover:bg-sand"
             >
-              <div className="mb-6 flex items-center justify-between">
-                <span className="bg-brand px-3.5 py-1.5 text-xs font-black tracking-[0.15em] text-white">
-                  I'M HIRING
-                </span>
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-brand">
-                  <ArrowRight size={22} className="text-white" />
-                </div>
-              </div>
-              <p className="whitespace-pre-line text-2xl font-black leading-tight text-white sm:text-3xl">
-                Find 5 verified{"\n"}experts on your block
-              </p>
-              <p className="mt-4 text-sm leading-6 text-[#D6D6D6]">
-                Unlock direct phone numbers and full verified portfolios of top designers, developers, videographers, and creators near you.
-              </p>
-              <div className="mt-6 flex items-center gap-2 border-t border-white/20 pt-4 text-xs font-extrabold text-brand">
-                <span>One-time unlock from ₹199</span>
-                <span>•</span>
-                <span>Instant Call &amp; Chat</span>
-              </div>
+              SIGN IN
             </button>
-
-            {/* Freelancer Card */}
             <button
-              data-testid="role-freelancer-card"
-              onClick={() => chooseRole("freelancer")}
-              className="group border-2 border-ink bg-brand p-8 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
+              onClick={() => nav("/employer/post-job")}
+              className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
             >
-              <div className="mb-6 flex items-center justify-between">
-                <span className="bg-ink px-3.5 py-1.5 text-xs font-black tracking-[0.15em] text-white">
-                  I'M LOOKING FOR A JOB
-                </span>
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-ink group-hover:bg-white">
-                  <ArrowRight size={22} className="text-white group-hover:text-ink" />
-                </div>
-              </div>
-              <p className="whitespace-pre-line text-2xl font-black leading-tight text-ink sm:text-3xl">
-                Go live in your{"\n"}5km radius
-              </p>
-              <p className="mt-4 text-sm leading-6 text-ink/85">
-                One-time ₹99 onboarding. Email + portfolio verified. Get discovered by local companies and apply to high-paying gigs in 2 hours.
-              </p>
-              <div className="mt-6 flex items-center gap-2 border-t border-ink/20 pt-4 text-xs font-extrabold text-ink">
-                <span>100% Verified Badge</span>
-                <span>•</span>
-                <span>Keep 100% of your earnings</span>
-              </div>
+              <PlusCircle size={14} />
+              <span>POST JOB</span>
             </button>
-
           </div>
-        </section>
+        )}
+      </header>
 
-        {/* Feature Highlights Grid */}
-        <section className="border-b-2 border-ink bg-sand p-6 sm:p-10">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="border-2 border-ink bg-white p-5">
-              <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-brand text-white">
-                <MapPin size={20} />
-              </div>
-              <h3 className="mt-3 text-sm font-black text-ink">5KM HYPERLOCAL RADIUS</h3>
-              <p className="mt-1 text-xs leading-5 text-inkmuted">Meet nearby talent in person or work locally with fast turnarounds.</p>
-            </div>
-            
-            <div className="border-2 border-ink bg-white p-5">
-              <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-ink text-white">
-                <ShieldCheck size={20} />
-              </div>
-              <h3 className="mt-3 text-sm font-black text-ink">100% VERIFIED PROFILES</h3>
-              <p className="mt-1 text-xs leading-5 text-inkmuted">Every freelancer is checked for Aadhaar ID, email, and live portfolios.</p>
-            </div>
-
-            <div className="border-2 border-ink bg-white p-5">
-              <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-brand text-white">
-                <Zap size={20} />
-              </div>
-              <h3 className="mt-3 text-sm font-black text-ink">DIRECT CALLS &amp; CHATS</h3>
-              <p className="mt-1 text-xs leading-5 text-inkmuted">No middlemen or delayed messaging. Get direct access to candidate phone numbers.</p>
-            </div>
-
-            <div className="border-2 border-ink bg-white p-5">
-              <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-ink text-white">
-                <Sparkles size={20} />
-              </div>
-              <h3 className="mt-3 text-sm font-black text-ink">ZERO WAGE COMMISSIONS</h3>
-              <p className="mt-1 text-xs leading-5 text-inkmuted">Freelancers keep 100% of their project pay with simple transparent unlock fees.</p>
-            </div>
+      {/* Hero Section (Edge-to-Edge) */}
+      <section className="w-full border-b-2 border-ink bg-white px-6 py-12 sm:px-10 lg:px-16 xl:px-20">
+        <div className="max-w-4xl">
+          <div className="inline-flex items-center gap-2 border-2 border-ink bg-sand px-3.5 py-1.5 text-xs font-black tracking-wider">
+            <span className="h-2.5 w-2.5 rounded-full bg-ok animate-pulse" />
+            <span>HYPERLOCAL WORK PLATFORM · BENGALURU LIVE</span>
           </div>
-        </section>
+          <h1 className="mt-5 text-5xl font-black leading-[1.02] tracking-[-0.03em] text-ink sm:text-7xl lg:text-8xl">
+            Pick a side.<br />Get to work.
+          </h1>
+          <div className="mt-4 h-2 w-28 bg-brand" />
+          <p className="mt-6 max-w-2xl text-base leading-7 text-inkmuted sm:text-xl">
+            Connect with top-rated, Aadhaar &amp; portfolio-verified professionals within 5km. Direct chats, zero commission on wages, instant hires.
+          </p>
+        </div>
 
-        {/* Quick Links & Footer */}
-        <footer className="flex flex-wrap items-center justify-between gap-4 px-6 py-6 sm:px-10" data-testid="landing-footer">
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 bg-brand" />
-            <span className="text-[11px] uppercase tracking-wider text-inkmuted">
-              WorkHop · Hyperlocal Gigs · Razorpay Secured
-            </span>
+        {/* Dual Action Cards Stretching Full Width */}
+        <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2">
+          
+          {/* Employer Card */}
+          <button
+            data-testid="role-employer-card"
+            onClick={() => chooseRole("employer")}
+            className="group border-2 border-ink bg-ink p-8 text-left shadow-[5px_5px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1 sm:p-10"
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <span className="bg-brand px-4 py-1.5 text-xs font-black tracking-[0.15em] text-white">
+                I'M HIRING
+              </span>
+              <div className="flex h-11 w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-brand">
+                <ArrowRight size={24} className="text-white" />
+              </div>
+            </div>
+            <p className="whitespace-pre-line text-3xl font-black leading-tight text-white sm:text-4xl">
+              Find 5 verified{"\n"}experts on your block
+            </p>
+            <p className="mt-4 text-base leading-7 text-[#D6D6D6]">
+              Unlock direct phone numbers and full verified portfolios of top designers, developers, videographers, and creators near you.
+            </p>
+            <div className="mt-8 flex items-center gap-3 border-t border-white/20 pt-5 text-sm font-extrabold text-brand">
+              <span>One-time unlock from ₹199</span>
+              <span>•</span>
+              <span>Instant Call &amp; Chat</span>
+            </div>
+          </button>
+
+          {/* Freelancer Card */}
+          <button
+            data-testid="role-freelancer-card"
+            onClick={() => chooseRole("freelancer")}
+            className="group border-2 border-ink bg-brand p-8 text-left shadow-[5px_5px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1 sm:p-10"
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <span className="bg-ink px-4 py-1.5 text-xs font-black tracking-[0.15em] text-white">
+                I'M LOOKING FOR A JOB
+              </span>
+              <div className="flex h-11 w-11 items-center justify-center border-2 border-ink bg-ink group-hover:bg-white">
+                <ArrowRight size={24} className="text-white group-hover:text-ink" />
+              </div>
+            </div>
+            <p className="whitespace-pre-line text-3xl font-black leading-tight text-ink sm:text-4xl">
+              Go live in your{"\n"}5km radius
+            </p>
+            <p className="mt-4 text-base leading-7 text-ink/90">
+              One-time ₹99 onboarding. Email + portfolio verified. Get discovered by local companies and apply to high-paying gigs in 2 hours.
+            </p>
+            <div className="mt-8 flex items-center gap-3 border-t border-ink/20 pt-5 text-sm font-extrabold text-ink">
+              <span>100% Verified Badge</span>
+              <span>•</span>
+              <span>Keep 100% of your earnings</span>
+            </div>
+          </button>
+
+        </div>
+      </section>
+
+      {/* Feature Highlights Full Width Grid */}
+      <section className="w-full border-b-2 border-ink bg-sand px-6 py-12 sm:px-10 lg:px-16 xl:px-20">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="border-2 border-ink bg-white p-6 shadow-[3px_3px_0px_#121212]">
+            <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-brand text-white">
+              <MapPin size={24} />
+            </div>
+            <h3 className="mt-4 text-base font-black text-ink">5KM HYPERLOCAL RADIUS</h3>
+            <p className="mt-2 text-xs leading-5 text-inkmuted">Meet nearby talent in person or work locally with lightning-fast turnarounds.</p>
+          </div>
+          
+          <div className="border-2 border-ink bg-white p-6 shadow-[3px_3px_0px_#121212]">
+            <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-ink text-white">
+              <ShieldCheck size={24} />
+            </div>
+            <h3 className="mt-4 text-base font-black text-ink">100% VERIFIED PROFILES</h3>
+            <p className="mt-2 text-xs leading-5 text-inkmuted">Every freelancer is verified with government ID, email, and live portfolios.</p>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-extrabold text-ink">
-            <Link to="/map" className="hover:text-brand">Live Map</Link>
-            <Link to="/categories" className="hover:text-brand">Categories</Link>
-            <Link to="/support" className="hover:text-brand">Support</Link>
-            <Link to="/legal" className="hover:text-brand">Legal</Link>
-            <Link to="/admin" className="hover:text-brand">Admin</Link>
+          <div className="border-2 border-ink bg-white p-6 shadow-[3px_3px_0px_#121212]">
+            <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-brand text-white">
+              <Zap size={24} />
+            </div>
+            <h3 className="mt-4 text-base font-black text-ink">DIRECT CALLS &amp; CHATS</h3>
+            <p className="mt-2 text-xs leading-5 text-inkmuted">No middlemen or delayed messaging. Instant direct contact with phone numbers.</p>
           </div>
-        </footer>
 
-      </div>
+          <div className="border-2 border-ink bg-white p-6 shadow-[3px_3px_0px_#121212]">
+            <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-ink text-white">
+              <Sparkles size={24} />
+            </div>
+            <h3 className="mt-4 text-base font-black text-ink">ZERO WAGE COMMISSIONS</h3>
+            <p className="mt-2 text-xs leading-5 text-inkmuted">Keep 100% of your earnings with simple, transparent one-time unlock fees.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Links & Footer (Full Width) */}
+      <footer className="flex w-full flex-wrap items-center justify-between gap-4 px-6 py-8 sm:px-10 lg:px-16 xl:px-20" data-testid="landing-footer">
+        <div className="flex items-center gap-2">
+          <div className="h-2.5 w-2.5 bg-brand" />
+          <span className="text-xs uppercase tracking-wider text-inkmuted">
+            WorkHop · Hyperlocal Gigs · Razorpay Secured
+          </span>
+        </div>
+
+        <div className="flex items-center gap-6 text-xs font-extrabold text-ink">
+          <Link to="/map" className="hover:text-brand">Live Map</Link>
+          <Link to="/categories" className="hover:text-brand">Categories</Link>
+          <Link to="/employer/plans" className="hover:text-brand">Employer Plans</Link>
+          <Link to="/support" className="hover:text-brand">Support</Link>
+          <Link to="/legal" className="hover:text-brand">Legal</Link>
+          <Link to="/admin" className="hover:text-brand">Admin</Link>
+        </div>
+      </footer>
+
     </div>
   );
 }

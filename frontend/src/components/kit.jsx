@@ -37,7 +37,7 @@ export function IconBtn({ onClick, children, testID, className = "", active = fa
   );
 }
 
-// Global Landscape Navigation Header for all desktop screens
+// Global Full-Screen Navigation Header
 export function GlobalNav() {
   const nav = useNavigate();
   const loc = useLocation();
@@ -52,23 +52,23 @@ export function GlobalNav() {
   ];
 
   return (
-    <header className="border-b-2 border-ink bg-white px-4 py-2.5 sm:px-6">
-      <div className="flex items-center justify-between gap-4">
+    <header className="w-full border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
+      <div className="flex w-full items-center justify-between gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3">
           <img
             src="/workhop-logo.png"
             alt="WorkHop"
-            className="h-8 w-auto select-none"
+            className="h-9 w-auto select-none"
             draggable={false}
           />
-          <span className="hidden rounded bg-brand px-1.5 py-0.5 text-[9px] font-black tracking-widest text-white md:inline-block">
+          <span className="hidden rounded bg-brand px-2 py-0.5 text-[10px] font-black tracking-widest text-white md:inline-block">
             HYPERLOCAL
           </span>
         </Link>
 
         {/* Desktop Landscape Nav Links */}
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-2 md:flex">
           {links.map((link) => {
             const active = loc.pathname === link.path;
             return (
@@ -76,7 +76,7 @@ export function GlobalNav() {
                 key={link.path}
                 to={link.path}
                 data-testid={link.testId}
-                className={`border-b-2 px-3 py-1.5 text-xs font-black tracking-wider transition ${
+                className={`border-b-2 px-4 py-1.5 text-xs font-black tracking-wider transition ${
                   active
                     ? "border-brand bg-sand text-ink"
                     : "border-transparent text-inkmuted hover:border-ink hover:text-ink"
@@ -89,25 +89,25 @@ export function GlobalNav() {
         </nav>
 
         {/* Right Action buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             data-testid="nav-post-job-btn"
             onClick={() => nav("/employer/post-job")}
-            className="flex items-center gap-1.5 border-2 border-ink bg-brand px-3 py-1.5 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+            className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
           >
             <PlusCircle size={15} />
             <span className="hidden sm:inline">POST JOB</span>
           </button>
 
           {user ? (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <button
                 data-testid="nav-profile-btn"
                 onClick={() => nav("/profile")}
-                className="flex items-center gap-1.5 border-2 border-ink bg-white px-2.5 py-1.5 text-xs font-extrabold text-ink hover:bg-sand"
+                className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2 text-xs font-extrabold text-ink hover:bg-sand"
               >
                 <UserCircle2 size={16} className="text-brand" />
-                <span className="max-w-[100px] truncate text-[11px] sm:max-w-[140px]">{user.name || user.email?.split("@")[0]}</span>
+                <span className="max-w-[120px] truncate text-xs sm:max-w-[160px]">{user.name || user.email?.split("@")[0]}</span>
               </button>
               <button
                 data-testid="nav-logout-btn"
@@ -121,7 +121,7 @@ export function GlobalNav() {
           ) : (
             <Link
               to="/"
-              className="border-2 border-ink bg-ink px-3 py-1.5 text-xs font-black tracking-wider text-white"
+              className="border-2 border-ink bg-ink px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
             >
               SIGN IN
             </Link>
@@ -136,14 +136,14 @@ export function GlobalNav() {
 export function TopBar({ title, sub, onBack, right, backTestID = "back-btn" }) {
   const nav = useNavigate();
   return (
-    <div className="sticky top-0 z-20 flex items-center gap-3 border-b-2 border-ink bg-white px-4 py-3 sm:px-6">
+    <div className="sticky top-0 z-20 flex w-full items-center gap-4 border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
       {onBack !== false && (
         <IconBtn testID={backTestID} onClick={onBack || (() => nav(-1))}>
           <ChevronLeft size={22} className="text-ink" />
         </IconBtn>
       )}
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-base font-black tracking-[0.12em] text-ink sm:text-lg">{title}</h1>
+        <h1 className="truncate text-base font-black tracking-[0.12em] text-ink sm:text-xl">{title}</h1>
         {sub != null && <p className="truncate text-xs text-inkmuted">{sub}</p>}
       </div>
       {right}
@@ -151,14 +151,12 @@ export function TopBar({ title, sub, onBack, right, backTestID = "back-btn" }) {
   );
 }
 
-// Responsive Landscape Shell (max-w-6xl)
-export function Shell({ children, max = "max-w-6xl", showNav = true }) {
+// Edge-to-Edge Full-Screen Shell
+export function Shell({ children, showNav = true, className = "" }) {
   return (
-    <div className="min-h-screen bg-[#F4F4F0] text-ink">
-      <div className={`mx-auto ${max} min-h-screen border-x-2 border-ink bg-white shadow-xl`}>
-        {showNav && <GlobalNav />}
-        <main>{children}</main>
-      </div>
+    <div className="min-h-screen w-full bg-white text-ink flex flex-col">
+      {showNav && <GlobalNav />}
+      <main className={`w-full flex-1 ${className}`}>{children}</main>
     </div>
   );
 }
@@ -172,7 +170,7 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
       .catch(() => {});
   }, []);
   return (
-    <div className="wh-scroll flex gap-3 overflow-x-auto border-b-2 border-ink bg-white px-4 py-3 sm:px-6">
+    <div className="wh-scroll flex w-full gap-3 overflow-x-auto border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
       {cats.map((key) => {
         const v = CATEGORY_VISUALS[key] || CATEGORY_VISUALS.ALL;
         const on = selected === key;
@@ -181,7 +179,7 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
             key={key}
             data-testid={`${testIDPrefix}-${key.toLowerCase().replace(/[^a-z]+/g, "-")}`}
             onClick={() => onSelect(key)}
-            className={`flex w-[96px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2 transition-transform active:translate-y-0.5 ${on ? "bg-ink" : "bg-white hover:bg-sand"}`}
+            className={`flex w-[100px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2.5 transition-transform active:translate-y-0.5 ${on ? "bg-ink" : "bg-white hover:bg-sand"}`}
           >
             <span
               className="flex h-10 w-10 items-center justify-center border-2 border-ink"
