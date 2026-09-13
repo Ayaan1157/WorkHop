@@ -199,7 +199,7 @@ export default function Jobs() {
       ) : filtered.length === 0 ? (
         <EmptyBlock testID="empty-state" icon={<Search size={28} className="text-ink" />} title={term ? `No matches for "${search.trim()}"` : "No gigs in this category"} sub={term ? "Try a different keyword or clear the search." : "Pick a different category above."} />
       ) : (
-        <div className="flex flex-col gap-3 p-4 pb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 sm:p-6 pb-16">
           {filtered.map((job, idx) => (
             <JobCard key={job.id} job={job} index={idx} verified={isVerified} applied={appliedSet.has(job.id)}
               onApply={() => openApplyFor(job)}

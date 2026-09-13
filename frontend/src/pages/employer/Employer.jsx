@@ -94,7 +94,7 @@ export default function Employer() {
 
       <CategoryTiles selected={catFilter} onSelect={setCatFilter} testIDPrefix="lead-cat-tile" />
 
-      <div className="flex flex-col gap-3 p-4 pb-16">
+      <div className="p-4 sm:p-6 pb-16">
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="animate-spin text-ink" /></div>
         ) : (
@@ -106,26 +106,32 @@ export default function Employer() {
                 <p className="text-xs text-inkmuted">Try a different skill keyword.</p>
               </div>
             )}
-            {filtered.slice(0, 2).map((l, i) => <LeadCard key={l.id} lead={l} unlocked={unlocked} index={i} onClick={() => nav(`/pro/${l.id}`)} />)}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filtered.slice(0, 2).map((l, i) => <LeadCard key={l.id} lead={l} unlocked={unlocked} index={i} onClick={() => nav(`/pro/${l.id}`)} />)}
+            </div>
 
             {!unlocked && filtered.length > 0 && (
-              <div className="relative border-2 border-ink p-4" data-testid="unlock-banner">
+              <div className="relative my-4 border-2 border-ink p-6 bg-sand" data-testid="unlock-banner">
                 <div className="absolute -left-0.5 -top-0.5 h-8 w-8 bg-brand" />
-                <p className="whitespace-pre-line text-xl font-black leading-tight text-ink">Unlock the Closest 5{"\n"}Verified Experts on Your Block.</p>
-                <p className="mt-2 text-xs text-inkmuted">Phone numbers instantly revealed — call &amp; hire directly.</p>
-                <button data-testid="unlock-cta-btn" onClick={() => setSheetOpen(true)} className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-3 text-[15px] font-black text-white"><span>Unlock 5 Local Leads · ₹199</span><LockOpen size={16} /></button>
+                <p className="whitespace-pre-line text-2xl font-black leading-tight text-ink">Unlock the Closest 5{"\n"}Verified Experts on Your Block.</p>
+                <p className="mt-2 text-sm text-inkmuted">Phone numbers instantly revealed — call &amp; hire directly with zero middlemen.</p>
+                <button data-testid="unlock-cta-btn" onClick={() => setSheetOpen(true)} className="mt-4 flex w-full max-w-md items-center justify-center gap-2 border-2 border-ink bg-ink py-3.5 text-[15px] font-black text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"><span>Unlock 5 Local Leads · ₹199</span><LockOpen size={16} /></button>
               </div>
             )}
             {unlocked && (
-              <div data-testid="unlocked-badge" className="flex items-center justify-center gap-2 border-2 border-ok bg-[#E5F8EE] p-3"><CheckCircle2 size={18} className="text-ok" /><span className="text-xs font-extrabold text-ink">Payment verified · All 5 leads unlocked</span></div>
+              <div data-testid="unlocked-badge" className="my-4 flex items-center justify-center gap-2 border-2 border-ok bg-[#E5F8EE] p-4"><CheckCircle2 size={20} className="text-ok" /><span className="text-sm font-extrabold text-ink">Payment verified · All 5 leads unlocked</span></div>
             )}
-            {filtered.slice(2).map((l, i) => <LeadCard key={l.id} lead={l} unlocked={unlocked} index={i + 2} onClick={() => nav(`/pro/${l.id}`)} />)}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {filtered.slice(2).map((l, i) => <LeadCard key={l.id} lead={l} unlocked={unlocked} index={i + 2} onClick={() => nav(`/pro/${l.id}`)} />)}
+            </div>
 
-            <button data-testid="plans-banner" onClick={() => nav("/employer/plans")} className="flex flex-col gap-3 border-2 border-ink bg-ink p-4 text-left transition active:translate-y-0.5">
+            <button data-testid="plans-banner" onClick={() => nav("/employer/plans")} className="mt-6 flex flex-col gap-3 border-2 border-ink bg-ink p-6 text-left transition hover:bg-ink/95">
               <span className="self-start bg-brand px-3 py-1 text-[10px] font-black tracking-[0.15em] text-white">FOR EMPLOYERS</span>
-              <p className="whitespace-pre-line text-xl font-black leading-tight text-white">Post jobs. Boost listings.{"\n"}Brand your company.</p>
-              <p className="text-xs text-[#D6D6D6]">Job posts from ₹299 · Enterprise branding &amp; classified ads.</p>
-              <span className="flex items-center justify-center gap-2 border-2 border-brand bg-brand py-3 text-[13px] font-black tracking-wider text-white">VIEW PLANS &amp; PRICING <ArrowRight size={16} /></span>
+              <p className="whitespace-pre-line text-2xl font-black leading-tight text-white">Post jobs. Boost listings.{"\n"}Brand your company.</p>
+              <p className="text-sm text-[#D6D6D6]">Job posts from ₹299 · Enterprise branding &amp; classified ads.</p>
+              <span className="flex items-center justify-center gap-2 border-2 border-brand bg-brand py-3 text-[13px] font-black tracking-wider text-white max-w-xs">VIEW PLANS &amp; PRICING <ArrowRight size={16} /></span>
             </button>
           </>
         )}

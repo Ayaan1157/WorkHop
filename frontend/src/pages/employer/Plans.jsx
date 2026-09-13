@@ -48,25 +48,32 @@ export default function Plans() {
       {loading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : (
-        <div className="flex flex-col gap-3 p-4 pb-16">
+        <div className="p-4 sm:p-6 pb-16">
           {purchases.length > 0 && (
-            <div className="flex flex-col gap-2" data-testid="active-plans">
+            <div className="mb-6 flex flex-col gap-2" data-testid="active-plans">
               <p className="text-[10px] font-extrabold tracking-[0.15em] text-inkmuted">YOUR ACTIVE PLANS</p>
-              {purchases.map((p) => (
-                <div key={p.purchase_id} data-testid={`active-plan-${p.plan_id}`} className="flex items-center gap-3 border-2 border-ok bg-[#E5F8EE] p-3">
-                  <CheckCircle2 size={18} className="text-ok" />
-                  <div className="flex-1"><p className="text-[13px] font-black text-ink">{p.plan_name}</p><p className="text-[11px] text-inkmuted">{p.expires_at ? `Active until ${new Date(p.expires_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : "Active — no expiry"}</p></div>
-                  <span className="text-[13px] font-black text-ink">₹{p.price.toLocaleString("en-IN")}</span>
-                </div>
-              ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {purchases.map((p) => (
+                  <div key={p.purchase_id} data-testid={`active-plan-${p.plan_id}`} className="flex items-center gap-3 border-2 border-ok bg-[#E5F8EE] p-3">
+                    <CheckCircle2 size={18} className="text-ok" />
+                    <div className="flex-1"><p className="text-[13px] font-black text-ink">{p.plan_name}</p><p className="text-[11px] text-inkmuted">{p.expires_at ? `Active until ${new Date(p.expires_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : "Active — no expiry"}</p></div>
+                    <span className="text-[13px] font-black text-ink">₹{p.price.toLocaleString("en-IN")}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           <Section tag="A" title="Job Postings & Premium Listings" sub="Pay-per-post or bundles" />
-          {postingPlans.map((p) => <PlanCard key={p.plan_id} plan={p} onBuy={() => open(p)} />)}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {postingPlans.map((p) => <PlanCard key={p.plan_id} plan={p} onBuy={() => open(p)} />)}
+          </div>
+
           <Section tag="B" dark title="Employer Branding & Classified Ads" sub="Enterprise visibility on the platform" />
-          {brandingPlans.map((p) => <PlanCard key={p.plan_id} plan={p} onBuy={() => open(p)} enterprise />)}
-          <p className="mt-2 text-center text-[11px] text-inkmuted">🔒 Payments via Razorpay Test Mode</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {brandingPlans.map((p) => <PlanCard key={p.plan_id} plan={p} onBuy={() => open(p)} enterprise />)}
+          </div>
+          <p className="mt-4 text-center text-xs text-inkmuted">🔒 Payments via Razorpay Test Mode</p>
         </div>
       )}
 

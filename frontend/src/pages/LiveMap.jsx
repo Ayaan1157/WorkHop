@@ -78,15 +78,15 @@ export default function LiveMap() {
       {loading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : (
-        <div className="h-[60vh] border-b-2 border-ink" data-testid="live-map">
+        <div className="h-[75vh] min-h-[500px] border-b-2 border-ink" data-testid="live-map">
           <OSMMap pins={visible} center={center} zoom={13} userLocation={coords} height="100%" />
         </div>
       )}
 
-      <div className="flex items-center gap-4 p-4">
-        <div className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-2 border-ink bg-brand" /><span className="text-[11px] font-bold text-ink">Verified pros</span></div>
-        <div className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-2 border-ink bg-ink" /><span className="text-[11px] font-bold text-ink">Hiring employers</span></div>
-        <span className="ml-auto text-[10px] text-inkmuted">Tap a pin for details</span>
+      <div className="flex flex-wrap items-center gap-6 p-4 sm:p-6 bg-sand">
+        <div className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-full border-2 border-ink bg-brand" /><span className="text-xs font-bold text-ink">Verified pros</span></div>
+        <div className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-full border-2 border-ink bg-ink" /><span className="text-xs font-bold text-ink">Hiring employers</span></div>
+        <span className="ml-auto text-xs text-inkmuted">Tap any pin to view details and contact info</span>
       </div>
     </Shell>
   );
