@@ -54,7 +54,7 @@ export default function OSMMap({ pins = [], center = { lat: 12.9716, lng: 77.594
         .replace(/'/g, "&#039;");
 
     pins.forEach((p) => {
-      const color = p.kind === "employer" ? "#121212" : "#FF5A00";
+      const color = p.kind === "employer" ? "#121212" : "#E65A1E";
       const titleEsc = escapeHtml(p.title);
       const subEsc = escapeHtml(p.subtitle);
       L.marker([p.lat, p.lng], { icon: pinIcon(color) })

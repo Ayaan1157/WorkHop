@@ -16,7 +16,7 @@ module.exports = {
         sans: ['Archivo', 'system-ui', 'sans-serif'],
       },
       colors: {
-        brand: '#FF5A00',
+        brand: '#E65A1E',
         ink: '#121212',
         sand: '#F9F9F6',
         stone: '#EAEAEA',

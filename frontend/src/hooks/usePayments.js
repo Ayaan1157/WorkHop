@@ -46,7 +46,7 @@ async function openWebCheckout(order, description) {
       name: "WorkHop",
       description,
       method: { upi: true, card: true, netbanking: true, wallet: true },
-      theme: { color: "#FF5A00" },
+      theme: { color: "#E65A1E" },
       handler: (res) => resolve(res),
       modal: { ondismiss: () => reject(new Error("PAYMENT_CANCELLED")) },
     });

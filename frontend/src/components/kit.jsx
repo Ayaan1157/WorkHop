@@ -183,7 +183,7 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
           >
             <span
               className="flex h-10 w-10 items-center justify-center border-2 border-ink"
-              style={{ background: on ? "#FF5A00" : v.bg }}
+              style={{ background: on ? "#E65A1E" : v.bg }}
             >
               <CatIcon name={v.icon} size={20} className="text-ink" />
             </span>

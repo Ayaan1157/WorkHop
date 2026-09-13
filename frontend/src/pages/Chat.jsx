@@ -146,7 +146,7 @@ export default function Chat() {
             <div className="my-2 flex gap-2">
               {[1, 2, 3, 4, 5].map((s) => (
                 <button key={s} data-testid={`star-${s}`} onClick={() => setRating(s)}>
-                  <Star size={34} className="text-brand" fill={s <= rating ? "#FF5A00" : "none"} />
+                  <Star size={34} className="text-brand" fill={s <= rating ? "#E65A1E" : "none"} />
                 </button>
               ))}
             </div>
