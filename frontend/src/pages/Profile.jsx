@@ -15,8 +15,8 @@ export default function Profile() {
   const nav = useNavigate();
   const { user, logout } = useAuth();
   const [freelancerId, setFid] = useState(null);
-  const [phone, setPhone] = useState("");
-  const [skill, setSkill] = useState("");
+  const [phone, setPhone] = useState(() => user?.phone || localStorage.getItem("workhop_pro_phone") || "");
+  const [skill, setSkill] = useState(() => user?.skill || localStorage.getItem("workhop_pro_skill") || "");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
   const [walletOpen, setWalletOpen] = useState(false);
@@ -27,29 +27,36 @@ export default function Profile() {
     setFid(fid);
     try {
       const p = await apiGet(`/freelancer/${fid}/profile`);
-      setPhone((p.phone || "").replace(/\D/g, "").replace(/^91/, ""));
-      setSkill(p.skill || "");
+      if (p.phone) setPhone((p.phone || "").replace(/\D/g, "").replace(/^91/, ""));
+      if (p.skill) setSkill(p.skill || "");
     } catch {
       /* ignore */
     }
   }, []);
 
   useEffect(() => {
+    if (user?.phone) setPhone(user.phone.replace(/\D/g, "").replace(/^91/, ""));
+    if (user?.skill) setSkill(user.skill);
     loadPro();
-  }, [loadPro]);
+  }, [user, loadPro]);
 
   const savePro = async () => {
-    if (!freelancerId) return;
     const digits = phone.replace(/\D/g, "");
     if (digits.length !== 10) return setSaveMsg({ ok: false, text: "Phone must be exactly 10 digits." });
     setSaving(true);
     setSaveMsg(null);
     try {
-      const data = await apiPut(`/freelancer/${freelancerId}/profile`, {
-        phone: digits,
-        skill: skill.trim() || null,
-      });
-      setSaveMsg({ ok: true, text: `Saved · employers see ${data.phone} after unlock` });
+      localStorage.setItem("workhop_pro_phone", digits);
+      if (skill) localStorage.setItem("workhop_pro_skill", skill);
+      if (freelancerId) {
+        const data = await apiPut(`/freelancer/${freelancerId}/profile`, {
+          phone: digits,
+          skill: skill.trim() || null,
+        });
+        setSaveMsg({ ok: true, text: `Saved · employers see ${data.phone} after unlock` });
+      } else {
+        setSaveMsg({ ok: true, text: `Saved · phone set to +91 ${digits}` });
+      }
     } catch (e) {
       setSaveMsg({ ok: false, text: e?.message || "Could not save." });
     } finally {
@@ -116,26 +123,38 @@ export default function Profile() {
     },
   ];
 
+  const userRole = user?.role || localStorage.getItem("workhop_auth_role") || "freelancer";
+  const userArea = user?.area || localStorage.getItem("workhop_user_area") || "Koramangala";
+  const userPhone = phone || user?.phone || localStorage.getItem("workhop_pro_phone");
+
   return (
     <Shell>
       <TopBar title="MY PROFILE" backTestID="profile-back-btn" />
       <div className="flex flex-col gap-4 p-4 pb-16">
         {/* PROFILE HERO */}
-        <div className="flex flex-col items-center gap-2 border-2 border-ink p-6 bg-white" data-testid="profile-hero">
+        <div className="flex flex-col items-center gap-2 border-2 border-ink p-6 bg-white shadow-[3px_3px_0px_#121212]" data-testid="profile-hero">
           {user?.picture ? (
             <img src={user.picture} alt="" className="h-[72px] w-[72px] border-2 border-ink object-cover" />
           ) : (
-            <div className="flex h-[72px] w-[72px] items-center justify-center border-2 border-ink bg-brand text-[28px] font-black text-white">
+            <div className={`flex h-[72px] w-[72px] items-center justify-center border-2 border-ink text-[28px] font-black text-white ${userRole === "employer" ? "bg-ink" : "bg-brand"}`}>
               {(user?.name || user?.email || "?").slice(0, 1).toUpperCase()}
             </div>
           )}
           <p className="text-xl font-black text-ink">{user?.name || "Guest"}</p>
           <p className="text-xs text-inkmuted font-semibold">{user?.email || "Not signed in"}</p>
-          <div className="mt-1 flex items-center gap-1.5 bg-ink px-3 py-1.5">
-            <ShieldCheck size={11} className="text-white" />
-            <span className="text-[9px] font-black tracking-wider text-white">
-              WORKHOP MEMBER · BENGALURU
+          
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+            <span className={`px-2.5 py-1 text-[9px] font-black tracking-wider text-white ${userRole === "employer" ? "bg-ink" : "bg-brand"}`}>
+              {userRole === "employer" ? "💼 EMPLOYER (HIRING)" : "🛠️ VERIFIED PRO (JOB SEEKER)"}
             </span>
+            <span className="bg-sand border border-ink px-2 py-0.5 text-[9px] font-black text-ink">
+              📍 {userArea}
+            </span>
+            {userPhone && (
+              <span className="bg-sand border border-ink px-2 py-0.5 text-[9px] font-bold text-ink">
+                📱 +91 {userPhone}
+              </span>
+            )}
           </div>
         </div>
 

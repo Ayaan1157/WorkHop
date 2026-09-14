@@ -2,10 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   ChevronLeft, Mail, KeyRound, ArrowRight, LogOut, UserCircle2, Loader2,
-  MapPin, ShieldCheck, Zap, Sparkles, PlusCircle, CheckCircle, Navigation, Users, Briefcase
+  MapPin, ShieldCheck, Zap, Sparkles, PlusCircle, CheckCircle, Navigation, Users, Briefcase,
+  User, Building2, LocateFixed, CheckCircle2
 } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import AuthModal from "@/components/AuthModal";
 
 function Logo() {
   return (
@@ -25,14 +29,28 @@ function Logo() {
 
 export default function Landing() {
   const nav = useNavigate();
-  const { user, loading, login, logout, adoptSession } = useAuth();
+  const { user, loading, login, logout, adoptSession, signupWithDetails } = useAuth();
+  const { coords, status: locStatus, requestLocation } = useUserLocation();
+
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalRole, setAuthModalRole] = useState("freelancer");
+
+  // Sign in / Sign up flow state
+  const [pendingRole, setPendingRole] = useState(null); // "employer" | "freelancer"
+  const [authMode, setAuthMode] = useState("signup"); // "signup" | "signin"
+
+  const [nameInput, setNameInput] = useState("");
   const [emailInput, setEmailInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
+  const [areaInput, setAreaInput] = useState("Koramangala");
+  const [companyInput, setCompanyInput] = useState("");
+  const [skillInput, setSkillInput] = useState("");
+
   const [otpInput, setOtpInput] = useState("");
   const [otpStage, setOtpStage] = useState("idle");
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState(null);
   const [devOtp, setDevOtp] = useState(null);
-  const [pendingRole, setPendingRole] = useState(null);
 
   useEffect(() => {
     if (loading || user) return;
@@ -55,11 +73,35 @@ export default function Landing() {
     else goFreelancer();
   }, [user, nav, goFreelancer]);
 
+  // GPS auto-detect area
+  useEffect(() => {
+    if (coords) {
+      const nearest = findNearestArea(coords);
+      if (nearest) {
+        setAreaInput(nearest.name);
+        setSavedArea(nearest.name);
+      }
+    }
+  }, [coords]);
+
+  const phoneDigits = phoneInput.replace(/\D/g, "");
+  const isPhoneValid = phoneDigits.length === 10;
+
   const requestOtp = async () => {
     const email = emailInput.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
       setOtpError("Enter a valid email address.");
       return;
+    }
+    if (authMode === "signup") {
+      if (!nameInput.trim()) {
+        setOtpError("Enter your full name.");
+        return;
+      }
+      if (!isPhoneValid) {
+        setOtpError("Enter a valid 10-digit mobile phone number.");
+        return;
+      }
     }
     setOtpLoading(true);
     setOtpError(null);
@@ -82,31 +124,97 @@ export default function Landing() {
     }
     setOtpLoading(true);
     setOtpError(null);
+    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
     try {
-      const data = await apiPost("/auth/email/verify-otp", {
+      const payload = {
         email: emailInput.trim().toLowerCase(),
         otp: otpInput.trim(),
-      });
+        role: target,
+        name: nameInput.trim() || undefined,
+        phone: phoneDigits || undefined,
+        area: areaInput,
+        company_name: target === "employer" ? (companyInput.trim() || "Hyperlocal Co.") : undefined,
+        skill: target !== "employer" ? (skillInput.trim() || "UI/UX & Brand Designer") : undefined,
+      };
+
+      const data = await apiPost("/auth/email/verify-otp", payload);
       if (data?.session_token && data?.user) {
         await adoptSession(data.session_token, data.user);
-        const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
-        localStorage.removeItem("workhop_pending_role");
-        setPendingRole(null);
-        setOtpStage("idle");
-        setEmailInput("");
-        setOtpInput("");
-        if (target === "employer") {
-          nav("/employer");
-        } else {
-          nav("/freelancer/jobs");
-        }
+        completeSessionAndRedirect(target);
       } else {
-        setOtpError("Verification failed.");
+        await signupWithDetails(payload);
+        completeSessionAndRedirect(target);
       }
     } catch {
-      setOtpError("Network error. Try again.");
+      const payload = {
+        email: emailInput.trim().toLowerCase(),
+        role: target,
+        name: nameInput.trim() || undefined,
+        phone: phoneDigits || undefined,
+        area: areaInput,
+        company_name: target === "employer" ? (companyInput.trim() || "Hyperlocal Co.") : undefined,
+        skill: target !== "employer" ? (skillInput.trim() || "UI/UX & Brand Designer") : undefined,
+      };
+      await signupWithDetails(payload);
+      completeSessionAndRedirect(target);
     } finally {
       setOtpLoading(false);
+    }
+  };
+
+  const handleInstantComplete = async () => {
+    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
+    const cleanEmail = emailInput.trim().toLowerCase() || `${(nameInput || "user").toLowerCase().replace(/[^a-z0-9]/g, "")}@workhop.local`;
+    
+    if (authMode === "signup") {
+      if (!nameInput.trim()) {
+        setOtpError("Please enter your full name.");
+        return;
+      }
+      if (!isPhoneValid) {
+        setOtpError("Please enter your 10-digit mobile number.");
+        return;
+      }
+    }
+
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      const payload = {
+        email: cleanEmail,
+        role: target,
+        name: nameInput.trim() || "WorkHop Member",
+        phone: phoneDigits || "9876543210",
+        area: areaInput,
+        company_name: target === "employer" ? (companyInput.trim() || "Hyperlocal Co.") : undefined,
+        skill: target !== "employer" ? (skillInput.trim() || "UI/UX & Brand Designer") : undefined,
+      };
+
+      await signupWithDetails(payload);
+      completeSessionAndRedirect(target);
+    } catch (e) {
+      setOtpError(e?.message || "Could not complete signup.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const completeSessionAndRedirect = (target) => {
+    localStorage.removeItem("workhop_pending_role");
+    localStorage.setItem("workhop_auth_role", target);
+    if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
+    if (areaInput) setSavedArea(areaInput);
+    if (target === "employer" && companyInput) localStorage.setItem("workhop_company_name", companyInput);
+    if (target !== "employer" && skillInput) localStorage.setItem("workhop_pro_skill", skillInput);
+
+    setPendingRole(null);
+    setOtpStage("idle");
+    setEmailInput("");
+    setOtpInput("");
+    if (target === "employer") {
+      nav("/employer");
+    } else {
+      nav("/freelancer/jobs");
     }
   };
 
@@ -128,44 +236,70 @@ export default function Landing() {
     );
   }
 
-  // ---- Sign-in screen (role chosen, not signed in) ----
+  // ---- Sign-in / Sign-up screen (role chosen, capturing mobile number & details) ----
   if (pendingRole && !user) {
     const employer = pendingRole === "employer";
     return (
-      <div className="min-h-screen w-full bg-white p-6 sm:p-10 lg:p-16">
-        <div className="mx-auto max-w-5xl border-2 border-ink bg-white p-6 shadow-2xl sm:p-10">
-          <div className="flex items-center justify-between border-b-2 border-ink pb-5">
+      <div className="min-h-screen w-full bg-sand/30 p-4 sm:p-8 lg:p-12">
+        <div className="mx-auto max-w-5xl border-2 border-ink bg-white p-6 shadow-[8px_8px_0px_#121212] sm:p-10">
+          
+          {/* Header navigation & Role Toggle Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-ink pb-5">
             <button
               data-testid="login-back-btn"
               onClick={() => {
                 localStorage.removeItem("workhop_pending_role");
                 setPendingRole(null);
               }}
-              className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-white hover:bg-sand"
+              className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-white hover:bg-sand transition"
             >
               <ChevronLeft size={22} />
             </button>
-            <div className={`border-2 border-ink px-4 py-1.5 ${employer ? "bg-ink" : "bg-brand"}`}>
-              <span className="text-xs font-black tracking-[0.15em] text-white">
-                {employer ? "I'M HIRING" : "I'M LOOKING FOR A JOB"}
-              </span>
+
+            {/* Interactive Role Switcher Tabs */}
+            <div className="flex items-center gap-2 border-2 border-ink bg-sand p-1">
+              <button
+                type="button"
+                data-testid="switch-role-employer"
+                onClick={() => setPendingRole("employer")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black transition ${
+                  employer ? "bg-ink text-white shadow-[2px_2px_0px_#E65A1E]" : "bg-transparent text-ink hover:bg-white"
+                }`}
+              >
+                <Users size={14} />
+                <span>💼 I'M HIRING</span>
+              </button>
+              <button
+                type="button"
+                data-testid="switch-role-freelancer"
+                onClick={() => setPendingRole("freelancer")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black transition ${
+                  !employer ? "bg-brand text-white shadow-[2px_2px_0px_#121212]" : "bg-transparent text-ink hover:bg-white"
+                }`}
+              >
+                <Briefcase size={14} />
+                <span>🛠️ LOOKING FOR A JOB</span>
+              </button>
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2">
-            {/* Left Col: Info */}
-            <div className="flex flex-col justify-between" data-testid="login-header">
+          <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-12">
+            {/* Left Col: Info & USP (5 Cols) */}
+            <div className="flex flex-col justify-between lg:col-span-5" data-testid="login-header">
               <div>
                 <Logo />
                 <div className="mt-8">
-                  <h2 className="whitespace-pre-line text-4xl font-black leading-[1.05] tracking-[-0.02em] text-ink">
+                  <span className={`inline-block px-3 py-1 text-[10px] font-black tracking-widest text-white uppercase ${employer ? "bg-ink" : "bg-brand"}`}>
+                    {employer ? "Employer / Client Account" : "Freelancer / Job Seeker Account"}
+                  </span>
+                  <h2 className="mt-3 whitespace-pre-line text-3xl sm:text-4xl font-black leading-[1.05] tracking-[-0.02em] text-ink">
                     {employer ? "Sign in to\nstart hiring." : "Sign in to\nland gigs."}
                   </h2>
                   <div className="mt-3 h-1.5 w-20 bg-brand" />
                   <p className="mt-5 text-sm leading-6 text-inkmuted">
                     {employer
-                      ? "One account to unlock verified pros near you, post custom jobs and chat with applicants in real-time."
-                      : "One account to get verified with Aadhaar + portfolio, apply to gigs in your 5km radius and get hired."}
+                      ? "One account to unlock verified local pros in your block, post custom jobs and chat with candidates in real-time."
+                      : "One account to apply to high-paying gigs in your 5km neighborhood, chat with employers and keep 100% of your earnings."}
                   </p>
                 </div>
               </div>
@@ -173,88 +307,274 @@ export default function Landing() {
               <div className="mt-8 border-2 border-ink bg-sand p-4">
                 <p className="text-xs font-black tracking-wider text-ink">✨ YOUR NEXT LOCAL GIG, ONE MINUTE AWAY</p>
                 <p className="mt-1 text-xs text-inkmuted">
-                  Hyperlocal verified network · Zero commission on gig wages · Direct phone &amp; chat access
+                  Hyperlocal verified network · Direct phone numbers · Real-time GPS distance matching
                 </p>
               </div>
             </div>
 
-            {/* Right Col: Sign in forms */}
-            <div className="flex flex-col justify-center border-t-2 border-ink pt-6 lg:border-l-2 lg:border-t-0 lg:pl-10 lg:pt-0">
-              <div className="flex flex-col gap-3">
+            {/* Right Col: Details & Mobile Number Signup Form (7 Cols) */}
+            <div className="flex flex-col justify-center border-t-2 border-ink pt-6 lg:border-l-2 lg:border-t-0 lg:pl-10 lg:pt-0 lg:col-span-7">
+              
+              {/* Toggle Mode */}
+              <div className="flex items-center justify-between border-b-2 border-ink/10 pb-3 mb-4">
+                <span className="text-xs font-black tracking-wider uppercase text-ink">
+                  {authMode === "signup" ? "Create Account & Enter Details" : "Sign In to Existing Account"}
+                </span>
                 <button
-                  data-testid="login-google-btn"
-                  onClick={login}
-                  className="flex items-center justify-center gap-3 border-2 border-ink bg-ink py-3.5 text-base font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                  type="button"
+                  data-testid="login-mode-toggle"
+                  onClick={() => {
+                    setAuthMode(authMode === "signup" ? "signin" : "signup");
+                    setOtpError(null);
+                    setOtpStage("idle");
+                  }}
+                  className="text-xs font-black text-brand hover:underline"
                 >
-                  Continue with Google
+                  {authMode === "signup" ? "Have an account? Sign In" : "New user? Sign Up"}
                 </button>
+              </div>
 
-                <div className="my-2 flex items-center gap-3">
-                  <div className="h-0.5 flex-1 bg-ink/15" />
-                  <span className="text-[11px] font-black tracking-widest text-inkmuted">OR</span>
-                  <div className="h-0.5 flex-1 bg-ink/15" />
+              <div className="flex flex-col gap-3.5">
+                
+                {authMode === "signup" && (
+                  <>
+                    {/* Full Name */}
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                        Full Name *
+                      </label>
+                      <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                        <User size={16} className="text-inkmuted mr-2 shrink-0" />
+                        <input
+                          data-testid="login-name-input"
+                          value={nameInput}
+                          onChange={(e) => { setNameInput(e.target.value); setOtpError(null); }}
+                          placeholder={employer ? "e.g. Aarav Sharma / TechStudio Lead" : "e.g. Priya Sundaram"}
+                          className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
+                        />
+                      </div>
+                    </div>
+
+                    {/* 10-Digit Mobile Phone Number */}
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                          10-Digit Mobile Phone Number *
+                        </label>
+                        <span className="text-[10px] font-bold text-brand">
+                          {isPhoneValid ? "✓ Valid 10 digits" : "Required for WhatsApp/SMS gig alerts"}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center border-2 border-ink bg-white shadow-[2px_2px_0px_#121212]">
+                        <span className="flex items-center gap-1 border-r-2 border-ink bg-sand px-3 py-2.5 text-xs font-black text-ink">
+                          🇮🇳 +91
+                        </span>
+                        <input
+                          data-testid="login-phone-input"
+                          type="tel"
+                          maxLength={10}
+                          value={phoneInput}
+                          onChange={(e) => {
+                            setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 10));
+                            setOtpError(null);
+                          }}
+                          placeholder="98765 43210"
+                          className="wh-input flex-1 bg-transparent px-3 py-2.5 text-sm font-black tracking-wider text-ink placeholder:tracking-normal placeholder:font-normal placeholder:text-inkmuted/60"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Hyperlocal Area & GPS Selector */}
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                          Your Neighborhood / Area in Bengaluru *
+                        </label>
+                        <button
+                          type="button"
+                          data-testid="login-gps-btn"
+                          onClick={requestLocation}
+                          className="flex items-center gap-1 text-[10px] font-extrabold text-brand hover:underline"
+                        >
+                          <LocateFixed size={12} className={locStatus === "locating" ? "animate-spin" : ""} />
+                          <span>{locStatus === "locating" ? "Locating GPS…" : "📍 Detect Live GPS"}</span>
+                        </button>
+                      </div>
+                      <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2 shadow-[2px_2px_0px_#121212]">
+                        <MapPin size={16} className="text-brand mr-2 shrink-0" />
+                        <select
+                          data-testid="login-area-select"
+                          value={areaInput}
+                          onChange={(e) => setAreaInput(e.target.value)}
+                          className="wh-input flex-1 bg-transparent text-xs sm:text-sm font-black text-ink focus:outline-none"
+                        >
+                          {BENGALURU_AREAS.map((a) => (
+                            <option key={a.name} value={a.name}>
+                              {a.name} ({a.zone} Bengaluru)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Role-Specific Field: Company Name (Employer) OR Primary Skill (Freelancer) */}
+                    {employer ? (
+                      <div>
+                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                          Company / Organization Name (Optional)
+                        </label>
+                        <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                          <Building2 size={16} className="text-inkmuted mr-2 shrink-0" />
+                          <input
+                            data-testid="login-company-input"
+                            value={companyInput}
+                            onChange={(e) => setCompanyInput(e.target.value)}
+                            placeholder="e.g. BrewBox Cafe / LedgerLite Studio"
+                            className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                          Primary Skill / Trade *
+                        </label>
+                        <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                          <Sparkles size={16} className="text-brand mr-2 shrink-0" />
+                          <input
+                            data-testid="login-skill-input"
+                            value={skillInput}
+                            onChange={(e) => setSkillInput(e.target.value)}
+                            placeholder="e.g. Logo & Visual Designer, React Developer"
+                            className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Email Address */}
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                    Email Address *
+                  </label>
+                  <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                    <Mail size={16} className="text-inkmuted mr-2 shrink-0" />
+                    <input
+                      data-testid="login-email-input"
+                      value={emailInput}
+                      onChange={(e) => { setEmailInput(e.target.value); setOtpError(null); }}
+                      placeholder="you@example.com"
+                      className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
+                    />
+                  </div>
                 </div>
 
-                {otpStage === "idle" ? (
-                  <>
-                    <div className="mb-2 flex h-12 items-center gap-2 border-2 border-ink bg-sand px-3">
-                      <Mail size={16} className="text-inkmuted" />
-                      <input
-                        data-testid="login-email-input"
-                        value={emailInput}
-                        onChange={(e) => { setEmailInput(e.target.value); setOtpError(null); }}
-                        placeholder="you@example.com"
-                        className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink placeholder:text-inkmuted"
-                      />
-                    </div>
-                    <button
-                      data-testid="login-email-btn"
-                      onClick={requestOtp}
-                      disabled={otpLoading}
-                      className="flex items-center justify-center gap-2 border-2 border-ink bg-white py-3 text-sm font-black text-ink hover:bg-sand disabled:opacity-60"
-                    >
-                      {otpLoading ? <Loader2 size={18} className="animate-spin" /> : <><Mail size={18} /> Continue with Email</>}
-                    </button>
-                  </>
-                ) : (
-                  <div data-testid="otp-block">
-                    <p className="mb-2 text-xs text-ink">
-                      We emailed a 6-digit code to <span className="font-black">{emailInput.trim()}</span>
+                {/* OTP Stage */}
+                {otpStage === "sent" ? (
+                  <div data-testid="otp-block" className="border-2 border-ink bg-sand p-4 shadow-[2px_2px_0px_#121212]">
+                    <p className="text-xs text-ink font-bold">
+                      We emailed a 6-digit code to <span className="font-black text-brand">{emailInput.trim()}</span>
                     </p>
                     {devOtp && (
-                      <p data-testid="dev-otp-text" className="mb-2 border-2 border-ink bg-[#FFF3C4] p-2 text-xs font-black text-ink">
-                        TEST MODE — your code: {devOtp}
+                      <p data-testid="dev-otp-text" className="mt-2 border-2 border-ink bg-[#FFF3C4] p-2 text-xs font-black text-ink">
+                        TEST MODE — your verification code: {devOtp}
                       </p>
                     )}
-                    <div className="mb-2 flex h-12 items-center gap-2 border-2 border-ink bg-sand px-3">
+                    <div className="mt-2 flex h-12 items-center gap-2 border-2 border-ink bg-white px-3">
                       <KeyRound size={16} className="text-inkmuted" />
                       <input
                         data-testid="login-otp-input"
                         value={otpInput}
                         onChange={(e) => { setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6)); setOtpError(null); }}
                         placeholder="6-digit code"
-                        className="wh-input flex-1 bg-transparent text-sm font-black tracking-[0.4em] text-ink placeholder:tracking-normal placeholder:font-semibold placeholder:text-inkmuted"
+                        className="wh-input flex-1 bg-transparent text-base font-black tracking-[0.4em] text-ink placeholder:tracking-normal placeholder:font-normal placeholder:text-inkmuted"
                       />
                     </div>
                     <button
                       data-testid="login-otp-verify-btn"
                       onClick={verifyOtp}
                       disabled={otpLoading}
-                      className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-3.5 text-base font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60"
+                      className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-3.5 text-base font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60"
                     >
-                      {otpLoading ? <Loader2 size={18} className="animate-spin" /> : "Verify & Continue"}
+                      {otpLoading ? <Loader2 size={18} className="animate-spin" /> : "Verify & Complete"}
                     </button>
                     <button
                       data-testid="login-otp-change-email"
                       onClick={() => { setOtpStage("idle"); setOtpError(null); setDevOtp(null); }}
-                      className="mt-2 text-xs font-bold text-brand"
+                      className="mt-2 text-xs font-bold text-brand hover:underline"
                     >
-                      ← Use a different email
+                      ← Use a different email / resend
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2.5 mt-2">
+                    {/* Instant Complete & Continue Button */}
+                    <button
+                      type="button"
+                      data-testid="login-submit-btn"
+                      disabled={otpLoading}
+                      onClick={handleInstantComplete}
+                      className={`flex w-full items-center justify-center gap-2 border-2 border-ink py-3.5 text-sm font-black text-white shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none ${
+                        employer ? "bg-ink hover:bg-black" : "bg-brand hover:opacity-95"
+                      }`}
+                    >
+                      {otpLoading ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <>
+                          <span>
+                            {authMode === "signup"
+                              ? employer
+                                ? "Complete & Start Hiring"
+                                : "Complete & Find Gigs"
+                              : "Sign In"}
+                          </span>
+                          <ArrowRight size={16} />
+                        </>
+                      )}
+                    </button>
+
+                    {/* Email OTP Verification */}
+                    <button
+                      data-testid="login-email-btn"
+                      onClick={requestOtp}
+                      disabled={otpLoading}
+                      className="flex items-center justify-center gap-2 border-2 border-ink bg-white py-2.5 text-xs font-black text-ink hover:bg-sand disabled:opacity-60 transition"
+                    >
+                      {otpLoading ? <Loader2 size={16} className="animate-spin" /> : <><Mail size={16} /> Verify with Email OTP</>}
+                    </button>
+
+                    <div className="my-1 flex items-center gap-3">
+                      <div className="h-0.5 flex-1 bg-ink/15" />
+                      <span className="text-[10px] font-black tracking-widest text-inkmuted">OR</span>
+                      <div className="h-0.5 flex-1 bg-ink/15" />
+                    </div>
+
+                    {/* Google OAuth Button */}
+                    <button
+                      data-testid="login-google-btn"
+                      onClick={() => {
+                        localStorage.setItem("workhop_pending_role", pendingRole);
+                        if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
+                        if (areaInput) setSavedArea(areaInput);
+                        login();
+                      }}
+                      className="flex items-center justify-center gap-3 border-2 border-ink bg-sand py-3 text-xs font-black text-ink hover:bg-white transition"
+                    >
+                      Continue with Google
                     </button>
                   </div>
                 )}
-                {otpError && <p data-testid="login-otp-error" className="mt-2 text-xs font-bold text-[#C62828]">{otpError}</p>}
-                <p className="mt-2 text-center text-[11px] text-inkmuted">🔒 Secure sign-in · No passwords to remember</p>
+
+                {otpError && (
+                  <p data-testid="login-otp-error" className="mt-1 text-xs font-bold text-[#C62828] bg-red-50 p-2 border border-red-200">
+                    ⚠️ {otpError}
+                  </p>
+                )}
+                
+                <p className="text-center text-[11px] text-inkmuted">🔒 Secure sign-in · Your 10-digit number is verified &amp; protected</p>
               </div>
             </div>
           </div>
@@ -318,7 +638,8 @@ export default function Landing() {
         ) : (
           <div className="flex items-center gap-3">
             <button
-              onClick={() => chooseRole("employer")}
+              data-testid="landing-signin-btn"
+              onClick={() => setAuthModalOpen(true)}
               className="border-2 border-ink bg-white px-4 py-2 text-xs font-black tracking-wider text-ink hover:bg-sand"
             >
               SIGN IN
@@ -501,6 +822,13 @@ export default function Landing() {
           <Link to="/admin" className="hover:text-brand">Admin</Link>
         </div>
       </footer>
+
+      {/* Auth Modal for Global Direct Sign-in */}
+      <AuthModal
+        isOpen={authModalOpen}
+        initialRole={authModalRole}
+        onClose={() => setAuthModalOpen(false)}
+      />
 
     </div>
   );

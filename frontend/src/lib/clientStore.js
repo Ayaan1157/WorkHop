@@ -226,21 +226,37 @@ export function saveStoredUser(u) {
   }
 }
 
-export function createMockSession(email = "user@workhop.local") {
-  const name = email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+export function createMockSession(email = "user@workhop.local", details = {}) {
+  const fallbackName = email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const role = details.role || localStorage.getItem("workhop_auth_role") || "freelancer";
+  const phone = details.phone || localStorage.getItem("workhop_pro_phone") || "9876543210";
+  const area = details.area || localStorage.getItem("workhop_user_area") || "Koramangala";
+  const skill = details.skill || localStorage.getItem("workhop_pro_skill") || (role === "employer" ? "Business Owner" : "UI/UX & Brand Designer");
+  const company_name = details.company_name || localStorage.getItem("workhop_company_name") || "Hyperlocal Co.";
+
   const user = {
     id: `usr_${Math.random().toString(36).slice(2, 10)}`,
     email,
-    name: name || "Verified User",
-    picture: null,
-    role: "user",
-    phone: "9876543210",
-    skill: "UI/UX & Brand Designer",
+    name: details.name || fallbackName || "Verified User",
+    picture: details.picture || null,
+    role: role === "employer" ? "employer" : "freelancer",
+    phone: phone,
+    area: area,
+    skill: skill,
+    company_name: company_name,
     email_verified: true,
     id_verified: true,
     portfolio_uploaded: true,
     created_at: new Date().toISOString(),
   };
+
+  // Sync specific helper keys
+  localStorage.setItem("workhop_auth_role", user.role);
+  if (user.phone) localStorage.setItem("workhop_pro_phone", user.phone);
+  if (user.area) localStorage.setItem("workhop_user_area", user.area);
+  if (user.skill) localStorage.setItem("workhop_pro_skill", user.skill);
+  if (user.company_name) localStorage.setItem("workhop_company_name", user.company_name);
+
   saveStoredUser(user);
   return {
     session_token: `token_${Math.random().toString(36).slice(2, 14)}`,

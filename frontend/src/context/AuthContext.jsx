@@ -95,8 +95,29 @@ export function AuthProvider({ children }) {
     setUser(u);
   }, []);
 
+  const signupWithDetails = useCallback(async (details) => {
+    const session = createMockSession(details.email || "user@workhop.local", details);
+    setToken(session.session_token);
+    saveStoredUser(session.user);
+    setUser(session.user);
+    return session;
+  }, []);
+
+  const updateUserProfile = useCallback((updates) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...updates };
+      saveStoredUser(next);
+      if (next.phone) localStorage.setItem("workhop_pro_phone", next.phone);
+      if (next.area) localStorage.setItem("workhop_user_area", next.area);
+      if (next.role) localStorage.setItem("workhop_auth_role", next.role);
+      if (next.skill) localStorage.setItem("workhop_pro_skill", next.skill);
+      if (next.company_name) localStorage.setItem("workhop_company_name", next.company_name);
+      return next;
+    });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, adoptSession }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, adoptSession, signupWithDetails, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );

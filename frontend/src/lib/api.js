@@ -169,12 +169,18 @@ function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath === "/auth/email/verify-otp") {
     const email = body?.email || "user@example.com";
-    const session = createMockSession(email);
+    const session = createMockSession(email, body || {});
+    setToken(session.session_token);
+    return session;
+  }
+  if (cleanPath === "/auth/signup") {
+    const email = body?.email || "user@example.com";
+    const session = createMockSession(email, body || {});
     setToken(session.session_token);
     return session;
   }
   if (cleanPath === "/auth/session") {
-    const session = createMockSession("google.user@example.com");
+    const session = createMockSession("google.user@example.com", body || {});
     setToken(session.session_token);
     return session;
   }

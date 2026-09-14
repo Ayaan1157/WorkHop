@@ -9,12 +9,14 @@ import { apiGet } from "@/lib/api";
 import { CATEGORY_VISUALS, CATEGORY_SHORT_LABELS } from "@/lib/catalogFilters";
 import { useAuth } from "@/context/AuthContext";
 import NotificationBell from "@/components/NotificationBell";
+import AuthModal from "@/components/AuthModal";
 export { default as Breadcrumbs } from "@/components/Breadcrumbs";
 export { default as ProfileProgressBar } from "@/components/ProfileProgressBar";
 export { default as MilestoneTracker } from "@/components/MilestoneTracker";
 export { default as RatingBreakdown } from "@/components/RatingBreakdown";
 export { default as EscrowWalletModal } from "@/components/EscrowWalletModal";
 export { default as BoostPreviewModal } from "@/components/BoostPreviewModal";
+export { default as AuthModal } from "@/components/AuthModal";
 export * from "@/components/Skeletons";
 
 const ICONS = {
@@ -50,6 +52,7 @@ export function GlobalNav() {
   const nav = useNavigate();
   const loc = useLocation();
   const { user, logout } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
 
   const links = [
     { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros" },
@@ -60,97 +63,101 @@ export function GlobalNav() {
   ];
 
   return (
-    <header className="w-full border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
-      <div className="flex w-full items-center justify-between gap-4">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-3">
-          <img
-            src="/workhop-logo.png"
-            alt="WorkHop"
-            className="h-9 w-auto select-none"
-            draggable={false}
-          />
-          <span className="hidden rounded bg-brand px-2 py-0.5 text-[10px] font-black tracking-widest text-white md:inline-block">
-            HYPERLOCAL
-          </span>
-        </Link>
-
-        {/* Desktop Landscape Nav Links */}
-        <nav className="hidden items-center gap-2 md:flex">
-          {links.map((link) => {
-            const active = loc.pathname === link.path;
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                data-testid={link.testId}
-                className={`border-b-2 px-4 py-1.5 text-xs font-black tracking-wider transition ${
-                  active
-                    ? "border-brand bg-sand text-ink"
-                    : "border-transparent text-inkmuted hover:border-ink hover:text-ink"
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Right Action buttons */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          {/* Persistent Header Credits Pill */}
-          <Link
-            to="/employer/plans"
-            data-testid="header-credits-pill"
-            className="hidden sm:flex items-center gap-1.5 border-2 border-ink bg-sand px-3 py-1.5 text-xs font-black text-ink hover:bg-white transition"
-            title="Available Job Post / Apply Credits"
-          >
-            <Coins size={14} className="text-brand" />
-            <span>5 CREDITS</span>
+    <>
+      <header className="w-full border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
+        <div className="flex w-full items-center justify-between gap-4">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3">
+            <img
+              src="/workhop-logo.png"
+              alt="WorkHop"
+              className="h-9 w-auto select-none"
+              draggable={false}
+            />
+            <span className="hidden rounded bg-brand px-2 py-0.5 text-[10px] font-black tracking-widest text-white md:inline-block">
+              HYPERLOCAL
+            </span>
           </Link>
 
-          {/* In-App Notification Bell */}
-          <NotificationBell />
+          {/* Desktop Landscape Nav Links */}
+          <nav className="hidden items-center gap-2 md:flex">
+            {links.map((link) => {
+              const active = loc.pathname === link.path;
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  data-testid={link.testId}
+                  className={`border-b-2 px-4 py-1.5 text-xs font-black tracking-wider transition ${
+                    active
+                      ? "border-brand bg-sand text-ink"
+                      : "border-transparent text-inkmuted hover:border-ink hover:text-ink"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
 
-          <button
-            data-testid="nav-post-job-btn"
-            onClick={() => nav("/employer/post-job")}
-            className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
-          >
-            <PlusCircle size={15} />
-            <span className="hidden sm:inline">POST JOB</span>
-          </button>
-
-          {user ? (
-            <div className="flex items-center gap-2">
-              <button
-                data-testid="nav-profile-btn"
-                onClick={() => nav("/profile")}
-                className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2 text-xs font-extrabold text-ink hover:bg-sand"
-              >
-                <UserCircle2 size={16} className="text-brand" />
-                <span className="max-w-[100px] truncate text-xs sm:max-w-[140px]">{user.name || user.email?.split("@")[0]}</span>
-              </button>
-              <button
-                data-testid="nav-logout-btn"
-                onClick={logout}
-                title="Logout"
-                className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-white hover:bg-sand"
-              >
-                <LogOut size={14} />
-              </button>
-            </div>
-          ) : (
+          {/* Right Action buttons */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Persistent Header Credits Pill */}
             <Link
-              to="/"
-              className="border-2 border-ink bg-ink px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+              to="/employer/plans"
+              data-testid="header-credits-pill"
+              className="hidden sm:flex items-center gap-1.5 border-2 border-ink bg-sand px-3 py-1.5 text-xs font-black text-ink hover:bg-white transition"
+              title="Available Job Post / Apply Credits"
             >
-              SIGN IN
+              <Coins size={14} className="text-brand" />
+              <span>5 CREDITS</span>
             </Link>
-          )}
+
+            {/* In-App Notification Bell */}
+            <NotificationBell />
+
+            <button
+              data-testid="nav-post-job-btn"
+              onClick={() => nav("/employer/post-job")}
+              className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+            >
+              <PlusCircle size={15} />
+              <span className="hidden sm:inline">POST JOB</span>
+            </button>
+
+            {user ? (
+              <div className="flex items-center gap-2">
+                <button
+                  data-testid="nav-profile-btn"
+                  onClick={() => nav("/profile")}
+                  className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2 text-xs font-extrabold text-ink hover:bg-sand"
+                >
+                  <UserCircle2 size={16} className="text-brand" />
+                  <span className="max-w-[100px] truncate text-xs sm:max-w-[140px]">{user.name || user.email?.split("@")[0]}</span>
+                </button>
+                <button
+                  data-testid="nav-logout-btn"
+                  onClick={logout}
+                  title="Logout"
+                  className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-white hover:bg-sand"
+                >
+                  <LogOut size={14} />
+                </button>
+              </div>
+            ) : (
+              <button
+                data-testid="nav-signin-btn"
+                onClick={() => setAuthOpen(true)}
+                className="border-2 border-ink bg-ink px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+              >
+                SIGN IN
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+    </>
   );
 }
 
