@@ -40,7 +40,7 @@ export default function Plans() {
 
   const postingPlans = plans.filter((p) => p.section === "postings");
   const brandingPlans = plans.filter((p) => p.section === "branding");
-  const finalLabel = coupon?.final_amount != null ? `₹${coupon.final_amount.toLocaleString("en-IN")}` : selected?.price_label;
+  const finalLabel = coupon?.final_amount != null ? `₹${Number(coupon.final_amount).toLocaleString("en-IN")}` : selected?.price_label;
 
   return (
     <Shell>
@@ -57,7 +57,7 @@ export default function Plans() {
                   <div key={p.purchase_id} data-testid={`active-plan-${p.plan_id}`} className="flex items-center gap-3 border-2 border-ok bg-[#E5F8EE] p-3">
                     <CheckCircle2 size={18} className="text-ok" />
                     <div className="flex-1"><p className="text-[13px] font-black text-ink">{p.plan_name}</p><p className="text-[11px] text-inkmuted">{p.expires_at ? `Active until ${new Date(p.expires_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : "Active — no expiry"}</p></div>
-                    <span className="text-[13px] font-black text-ink">₹{p.price.toLocaleString("en-IN")}</span>
+                    <span className="text-[13px] font-black text-ink">₹{Number(p.price || 0).toLocaleString("en-IN")}</span>
                   </div>
                 ))}
               </div>

@@ -1,21 +1,43 @@
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useState, useMemo } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   Search, X, Grid3x3, Map as MapIcon, MessagesSquare, ShieldCheck, ShieldHalf,
-  Zap, Rocket, SlidersHorizontal, MapPin, IndianRupee, Send, Lock, CheckCircle2, Loader2, Check,
+  Zap, Rocket, SlidersHorizontal, MapPin, IndianRupee, Send, Lock, CheckCircle2,
+  Loader2, Check, Heart, ArrowUpDown, Star, Sparkles, Filter
 } from "lucide-react";
-import { Shell, TopBar, IconBtn, CategoryTiles, EmptyBlock } from "@/components/kit";
+import {
+  Shell, TopBar, IconBtn, CategoryTiles, EmptyBlock, Breadcrumbs,
+  ProfileProgressBar, BoostPreviewModal, JobCardSkeleton
+} from "@/components/kit";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { JOB_CATEGORY_FILTERS } from "@/lib/catalogFilters";
 import { apiGet, apiPost, getFreelancerId } from "@/lib/api";
+import { getSavedJobIds, toggleSaveJob } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 
 const BUDGETS = [
-  { label: "UNDER ₹1K", value: "0-1000" }, { label: "₹1K – 5K", value: "1000-5000" },
-  { label: "₹5K – 20K", value: "5000-20000" }, { label: "₹20K+", value: "20000-" },
+  { label: "ALL BUDGETS", value: null },
+  { label: "UNDER ₹1K", value: "0-1000" },
+  { label: "₹1K – 5K", value: "1000-5000" },
+  { label: "₹5K – 20K", value: "5000-20000" },
+  { label: "₹20K+", value: "20000-" },
 ];
-const DISTS = [{ label: "≤ 2 KM", value: "2" }, { label: "≤ 5 KM", value: "5" }, { label: "≤ 10 KM", value: "10" }];
+
+const DISTS = [
+  { label: "ANY DISTANCE", value: null },
+  { label: "≤ 2 KM", value: "2" },
+  { label: "≤ 5 KM", value: "5" },
+  { label: "≤ 10 KM", value: "10" },
+];
+
+const SORT_OPTIONS = [
+  { label: "Newest First", value: "newest" },
+  { label: "Price: High to Low", value: "price_desc" },
+  { label: "Price: Low to High", value: "price_asc" },
+  { label: "Distance: Nearest", value: "dist_asc" },
+  { label: "Rating: Top Rated", value: "rating_desc" },
+];
 
 export default function Jobs() {
   const nav = useNavigate();
@@ -28,7 +50,10 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState("ALL");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState({ budget: null, dist: null });
+  const [filters, setFilters] = useState({ budget: null, dist: null, minRating: null, verifiedOnly: false });
+  const [sortBy, setSortBy] = useState("newest");
+  const [viewTab, setViewTab] = useState("all"); // 'all' | 'saved'
+  const [savedJobIds, setSavedJobIds] = useState(getSavedJobIds());
   const [search, setSearch] = useState(sp.get("q") || "");
   const [convByJob, setConvByJob] = useState({});
 
@@ -41,6 +66,7 @@ export default function Jobs() {
   const [lastConvId, setLastConvId] = useState(null);
 
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const [boostPreviewOpen, setBoostPreviewOpen] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [boostCoupon, setBoostCoupon] = useState(null);
   const { startPayment } = useRazorpay();
@@ -65,25 +91,62 @@ export default function Jobs() {
           setConvByJob(m);
         }).catch(() => {});
       }
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
   useEffect(() => { load(); }, [load]);
+
+  const handleToggleSave = (id, e) => {
+    e.stopPropagation();
+    const updated = toggleSaveJob(id);
+    setSavedJobIds(updated);
+  };
 
   const isVerified = !!status?.is_verified;
   const term = search.trim().toLowerCase();
   const activeFilter = JOB_CATEGORY_FILTERS.find((f) => f.key === catFilter);
   const inCat = (j) => catFilter === "ALL" || !activeFilter || activeFilter.cats.includes(j.category);
+
   const passes = (j) => {
-    if (filters.budget) { const [a, b] = filters.budget.split("-"); const min = Number(a || 0); const max = b ? Number(b) : Infinity; if (j.pay < min || j.pay > max) return false; }
+    if (viewTab === "saved" && !savedJobIds.includes(j.id)) return false;
+    if (filters.budget) {
+      const [a, b] = filters.budget.split("-");
+      const min = Number(a || 0);
+      const max = b ? Number(b) : Infinity;
+      if (j.pay < min || j.pay > max) return false;
+    }
     if (filters.dist && j.distance_km > Number(filters.dist)) return false;
+    if (filters.minRating && Number(j.employer_rating || 5) < filters.minRating) return false;
+    if (filters.verifiedOnly && !j.verified_employer) return false;
     return true;
   };
-  const matches = (j, t) => j.title.toLowerCase().includes(t) || j.category.toLowerCase().includes(t) || j.description.toLowerCase().includes(t) || j.company_name.toLowerCase().includes(t) || (j.keywords || []).some((k) => k.toLowerCase().includes(t));
-  let filtered = jobs.filter((j) => inCat(j) && passes(j) && (!term || matches(j, term)));
-  if (term && filtered.length === 0) {
-    const words = term.split(/\s+/).filter((w) => w.length > 2);
-    if (words.length) filtered = jobs.filter((j) => inCat(j) && passes(j) && words.some((w) => matches(j, w)));
-  }
+
+  const matches = (j, t) =>
+    j.title.toLowerCase().includes(t) ||
+    (j.category || "").toLowerCase().includes(t) ||
+    (j.description || "").toLowerCase().includes(t) ||
+    (j.company_name || "").toLowerCase().includes(t) ||
+    (j.keywords || []).some((k) => k.toLowerCase().includes(t));
+
+  const filtered = useMemo(() => {
+    let result = jobs.filter((j) => inCat(j) && passes(j) && (!term || matches(j, term)));
+    if (term && result.length === 0) {
+      const words = term.split(/\s+/).filter((w) => w.length > 2);
+      if (words.length) result = jobs.filter((j) => inCat(j) && passes(j) && words.some((w) => matches(j, w)));
+    }
+
+    // Instant Multi-Facet Sorting
+    return [...result].sort((a, b) => {
+      if (sortBy === "price_desc") return (b.pay || 0) - (a.pay || 0);
+      if (sortBy === "price_asc") return (a.pay || 0) - (b.pay || 0);
+      if (sortBy === "dist_asc") return (a.distance_km || 0) - (b.distance_km || 0);
+      if (sortBy === "rating_desc") return (Number(b.employer_rating) || 5) - (Number(a.employer_rating) || 5);
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobs, catFilter, filters, term, sortBy, viewTab, savedJobIds]);
 
   const appliedSet = new Set(quota?.applied_job_ids || []);
   const quotaUsed = quota?.quota_used ?? 0;
@@ -135,136 +198,335 @@ export default function Jobs() {
   return (
     <Shell>
       <TopBar
-        title="JOBS NEAR YOU"
-        sub={loading ? "Loading…" : `${jobs.length} active gigs · 2km radius`}
+        title="JOBS &amp; LOCAL GIGS"
+        sub={loading ? "Loading…" : `${filtered.length} active gigs · 5km hyperlocal radius`}
         onBack={() => nav("/")}
         backTestID="jobs-back-btn"
         right={
           <div className="flex items-center gap-2">
-            <IconBtn testID="jobs-categories-btn" onClick={() => nav("/categories")}><Grid3x3 size={17} /></IconBtn>
-            <IconBtn testID="jobs-map-btn" onClick={() => nav("/map")}><MapIcon size={18} /></IconBtn>
-            <IconBtn testID="jobs-chats-btn" onClick={() => nav("/freelancer/chats")}><MessagesSquare size={18} className="text-brand" /></IconBtn>
-            <span data-testid="verify-status-badge" className={`flex items-center gap-1 border-2 border-ink px-2 py-1.5 text-[10px] font-black tracking-wide text-white ${isVerified ? "bg-ok" : "bg-ink"}`}>
-              {isVerified ? <ShieldCheck size={14} /> : <ShieldHalf size={14} />}{isVerified ? "VERIFIED" : "UNVERIFIED"}
+            <IconBtn testID="jobs-categories-btn" onClick={() => nav("/categories")} title="Categories"><Grid3x3 size={17} /></IconBtn>
+            <IconBtn testID="jobs-map-btn" onClick={() => nav("/map")} title="Live Map"><MapIcon size={18} /></IconBtn>
+            <IconBtn testID="jobs-chats-btn" onClick={() => nav("/freelancer/chats")} title="My Chats"><MessagesSquare size={18} className="text-brand" /></IconBtn>
+            <span data-testid="verify-status-badge" className={`flex items-center gap-1 border-2 border-ink px-2.5 py-1.5 text-[10px] font-black tracking-wide text-white ${isVerified ? "bg-ok" : "bg-ink"}`}>
+              {isVerified ? <ShieldCheck size={14} /> : <ShieldHalf size={14} />}{isVerified ? "VERIFIED PRO" : "UNVERIFIED"}
             </span>
           </div>
         }
       />
 
+      {/* Upwork-style Profile Progress Bar & Guidance */}
+      <div className="border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
+        <Breadcrumbs items={[{ label: "Find Gigs", to: "/freelancer/jobs" }, { label: catFilter === "ALL" ? "All Categories" : catFilter }]} />
+        <div className="mt-3">
+          <ProfileProgressBar user={user} role="freelancer" />
+        </div>
+      </div>
+
+      {/* Quota Bar */}
       {isVerified && quota && (
-        <div className="flex items-center gap-3 border-b-2 border-ink bg-brand px-4 py-2" data-testid="quota-bar">
-          <div className="flex flex-1 items-center gap-1.5">
-            {hasBoost ? <Rocket size={14} /> : <Zap size={14} />}
-            <span className="text-[11px] font-black tracking-wider text-ink">{hasBoost ? `${Math.max(quotaLimit - quotaUsed, 0)} of ${quotaLimit} APPLIES LEFT · BOOST ON` : `${Math.max(quotaLimit - quotaUsed, 0)} of ${quotaLimit} FREE APPLIES LEFT`}</span>
+        <div className="flex items-center justify-between gap-3 border-b-2 border-ink bg-brand px-4 py-2 sm:px-8 lg:px-12 xl:px-16" data-testid="quota-bar">
+          <div className="flex items-center gap-2">
+            {hasBoost ? <Rocket size={15} className="text-white" /> : <Zap size={15} className="text-white" />}
+            <span className="text-xs font-black tracking-wider text-white">
+              {hasBoost ? `${Math.max(quotaLimit - quotaUsed, 0)} of ${quotaLimit} APPLIES LEFT · 24H BOOST ACTIVE` : `${Math.max(quotaLimit - quotaUsed, 0)} of ${quotaLimit} FREE APPLIES REMAINING TODAY`}
+            </span>
           </div>
-          {!hasBoost && <button data-testid="quota-upgrade-btn" onClick={() => setPaywallOpen(true)} className="bg-ink px-3 py-1.5 text-[10px] font-black tracking-wider text-white">+5 APPLIES ₹149</button>}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setBoostPreviewOpen(true)} className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-white underline">
+              <Sparkles size={12} /> Preview Boost
+            </button>
+            {!hasBoost && (
+              <button data-testid="quota-upgrade-btn" onClick={() => setPaywallOpen(true)} className="border-2 border-ink bg-ink px-3 py-1 text-[10px] font-black text-white hover:bg-black transition">
+                +5 APPLIES ₹149
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      <div className="flex items-center gap-2 border-b-2 border-ink px-4 py-3">
-        <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-sand px-3">
-          <Search size={16} className="text-inkmuted" />
-          <input data-testid="jobs-search-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search services… e.g. Logo Design" className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink placeholder:text-inkmuted" />
-          {search && <button data-testid="search-clear-btn" onClick={() => setSearch("")} className="flex h-[22px] w-[22px] items-center justify-center bg-ink"><X size={14} className="text-white" /></button>}
-        </div>
-        <button data-testid="jobs-filter-btn" onClick={() => setFiltersOpen((v) => !v)} className={`relative flex h-11 w-11 items-center justify-center border-2 border-ink ${activeFilterCount > 0 ? "bg-ink" : "bg-white"}`}>
-          <SlidersHorizontal size={18} className={activeFilterCount > 0 ? "text-white" : "text-ink"} />
-          {activeFilterCount > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center border-[1.5px] border-ink bg-brand text-[9px] font-black text-white">{activeFilterCount}</span>}
+      {/* View Switcher Tabs: All Gigs vs Saved Bookmarks */}
+      <div className="flex border-b-2 border-ink bg-white px-4 sm:px-8 lg:px-12 xl:px-16">
+        <button
+          onClick={() => setViewTab("all")}
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
+            viewTab === "all" ? "border-brand bg-sand text-ink" : "border-transparent text-inkmuted hover:text-ink"
+          }`}
+        >
+          <span>ALL GIGS ({jobs.length})</span>
+        </button>
+        <button
+          onClick={() => setViewTab("saved")}
+          className={`flex items-center gap-1.5 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
+            viewTab === "saved" ? "border-brand bg-sand text-ink" : "border-transparent text-inkmuted hover:text-ink"
+          }`}
+        >
+          <Heart size={14} className={savedJobIds.length > 0 ? "text-brand" : "text-inkmuted"} fill={savedJobIds.length > 0 ? "#E65A1E" : "none"} />
+          <span>SAVED ({savedJobIds.length})</span>
         </button>
       </div>
 
+      {/* Search & Sort & Filter Bar */}
+      <div className="flex flex-wrap items-center gap-3 border-b-2 border-ink px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
+        <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-sand px-3 min-w-[240px]">
+          <Search size={16} className="text-inkmuted" />
+          <input
+            data-testid="jobs-search-input"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search gigs — UI design, reels, react, flutter…"
+            className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink placeholder:text-inkmuted"
+          />
+          {search && (
+            <button data-testid="search-clear-btn" onClick={() => setSearch("")} className="flex h-5 w-5 items-center justify-center bg-ink">
+              <X size={13} className="text-white" />
+            </button>
+          )}
+        </div>
+
+        {/* Sorting Dropdown */}
+        <div className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2">
+          <ArrowUpDown size={14} className="text-inkmuted" />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-transparent text-xs font-black text-ink outline-none cursor-pointer"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Filter Toggle Button */}
+        <button
+          data-testid="jobs-filter-btn"
+          onClick={() => setFiltersOpen((v) => !v)}
+          className={`flex h-11 items-center gap-2 border-2 border-ink px-3.5 transition ${
+            activeFilterCount > 0 ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+          }`}
+        >
+          <SlidersHorizontal size={16} />
+          <span className="text-xs font-black tracking-wider">FILTERS</span>
+          {activeFilterCount > 0 && (
+            <span className="flex h-4 w-4 items-center justify-center bg-brand text-[9px] font-black text-white">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Multi-Facet Filter Drawer */}
       {filtersOpen && (
-        <div className="flex flex-col gap-3 border-b-2 border-ink bg-sand p-4" data-testid="jobs-filters-panel">
-          <FilterGroup label="BUDGET (GIG PAY)" options={BUDGETS} value={filters.budget} onPick={(v) => setFilters((p) => ({ ...p, budget: p.budget === v ? null : v }))} />
-          <FilterGroup label="LOCATION (DISTANCE)" options={DISTS} value={filters.dist} onPick={(v) => setFilters((p) => ({ ...p, dist: p.dist === v ? null : v }))} />
-          <button onClick={() => setFilters({ budget: null, dist: null })} className="self-start text-[11px] font-black tracking-wider text-brand">RESET FILTERS</button>
+        <div className="flex flex-col gap-4 border-b-2 border-ink bg-sand p-4 sm:px-8 lg:px-12 xl:px-16" data-testid="jobs-filters-panel">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <FilterGroup label="BUDGET (GIG PAY)" options={BUDGETS} value={filters.budget} onPick={(v) => setFilters((p) => ({ ...p, budget: v }))} />
+            <FilterGroup label="LOCATION RADIUS" options={DISTS} value={filters.dist} onPick={(v) => setFilters((p) => ({ ...p, dist: v }))} />
+            <div>
+              <p className="mb-1.5 text-[10px] font-black tracking-wider text-inkmuted uppercase">EMPLOYER RATING</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "ALL", value: null },
+                  { label: "4.5★+", value: 4.5 },
+                  { label: "4.8★+", value: 4.8 },
+                ].map((r) => (
+                  <button
+                    key={r.label}
+                    onClick={() => setFilters((p) => ({ ...p, minRating: r.value }))}
+                    className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black ${
+                      filters.minRating === r.value ? "bg-ink text-white" : "bg-white text-ink"
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between border-t border-ink/20 pt-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.verifiedOnly}
+                onChange={(e) => setFilters((p) => ({ ...p, verifiedOnly: e.target.checked }))}
+                className="h-4 w-4 border-2 border-ink"
+              />
+              <span className="text-xs font-bold text-ink">Verified Employers Only</span>
+            </label>
+            <button
+              onClick={() => setFilters({ budget: null, dist: null, minRating: null, verifiedOnly: false })}
+              className="text-xs font-black text-brand underline"
+            >
+              RESET ALL FILTERS
+            </button>
+          </div>
         </div>
       )}
 
+      {/* Category Tiles */}
       <CategoryTiles selected={catFilter} onSelect={setCatFilter} testIDPrefix="jobs-cat-tile" />
 
+      {/* Unverified Banner */}
       {!isVerified && (
-        <div className="flex items-center gap-3 border-b-2 border-ink bg-ink p-3" data-testid="unverified-banner">
-          <span className="flex h-9 w-9 items-center justify-center border-2 border-white bg-brand"><Lock size={18} className="text-white" /></span>
+        <div className="flex items-center gap-3 border-b-2 border-ink bg-ink p-4 sm:px-8 lg:px-12 xl:px-16" data-testid="unverified-banner">
+          <span className="flex h-10 w-10 items-center justify-center border-2 border-white bg-brand text-white">
+            <Lock size={18} />
+          </span>
           <div className="flex-1">
-            <p className="text-[13px] font-black text-white">{user ? "Browse freely — verify to apply" : "Browse freely — sign in to apply"}</p>
-            <p className="mt-0.5 text-[11px] leading-4 text-[#D6D6D6]">Tap APPLY on any gig to start the one-time ₹99 Verified Pro onboarding.</p>
+            <p className="text-[13px] font-black text-white">{user ? "Browse freely — verify once to apply to all gigs" : "Browse freely — sign in to apply"}</p>
+            <p className="mt-0.5 text-[11px] leading-4 text-[#D6D6D6]">Aadhaar + email verification unlocks direct chat and instant hiring.</p>
           </div>
-          <button data-testid="banner-verify-cta" onClick={gotoVerify} className="border-2 border-white bg-brand px-3 py-2 text-[11px] font-black tracking-wider text-white">{!user ? "SIGN IN" : freelancerId ? "RESUME" : "VERIFY"}</button>
+          <button
+            data-testid="banner-verify-cta"
+            onClick={gotoVerify}
+            className="border-2 border-white bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#FFFFFF] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+          >
+            {!user ? "SIGN IN" : freelancerId ? "RESUME" : "VERIFY ₹99"}
+          </button>
         </div>
       )}
 
-      {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-ink" /></div>
-      ) : filtered.length === 0 ? (
-        <EmptyBlock testID="empty-state" icon={<Search size={28} className="text-ink" />} title={term ? `No matches for "${search.trim()}"` : "No gigs in this category"} sub={term ? "Try a different keyword or clear the search." : "Pick a different category above."} />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 sm:p-6 pb-16">
-          {filtered.map((job, idx) => (
-            <JobCard key={job.id} job={job} index={idx} verified={isVerified} applied={appliedSet.has(job.id)}
-              onApply={() => openApplyFor(job)}
-              onMessage={() => { const cid = convByJob[job.id]; cid ? nav(`/chat/${cid}?role=freelancer`) : nav("/freelancer/chats"); }}
-              onVerifyPress={gotoVerify} />
-          ))}
-        </div>
-      )}
+      {/* Gig Cards Grid */}
+      <div className="px-4 py-6 sm:px-8 lg:px-12 xl:px-16 pb-24">
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <JobCardSkeleton />
+            <JobCardSkeleton />
+            <JobCardSkeleton />
+            <JobCardSkeleton />
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyBlock
+            testID="empty-state"
+            icon={<Search size={28} className="text-ink" />}
+            title={viewTab === "saved" ? "No saved gigs yet" : term ? `No matches for "${search.trim()}"` : "No gigs match your active filters"}
+            sub={viewTab === "saved" ? "Click the heart icon on any gig card to bookmark it for later." : "Try resetting your filters or searching for another keyword."}
+            action={
+              viewTab === "saved" ? (
+                <button onClick={() => setViewTab("all")} className="border-2 border-ink bg-ink px-4 py-2 text-xs font-black text-white">
+                  BROWSE ALL GIGS
+                </button>
+              ) : null
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filtered.map((job, idx) => (
+              <FiverrGigCard
+                key={job.id}
+                job={job}
+                index={idx}
+                verified={isVerified}
+                applied={appliedSet.has(job.id)}
+                isSaved={savedJobIds.includes(job.id)}
+                onToggleSave={(e) => handleToggleSave(job.id, e)}
+                onApply={() => openApplyFor(job)}
+                onMessage={() => {
+                  const cid = convByJob[job.id];
+                  cid ? nav(`/chat/${cid}?role=freelancer`) : nav("/freelancer/chats");
+                }}
+                onVerifyPress={gotoVerify}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* Apply modal */}
+      {/* Apply Modal */}
       {applyOpen && (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/55" onClick={() => setApplyOpen(false)}>
-          <div className="w-full max-w-2xl border-t-2 border-ink bg-white p-6" onClick={(e) => e.stopPropagation()}>
-            <p className="text-[10px] font-extrabold tracking-[0.15em] text-inkmuted">APPLY TO GIG</p>
-            <p className="text-2xl font-black leading-tight text-ink">{activeJob?.title}</p>
-            <div className="mt-2 flex gap-2">
-              <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[11px] font-extrabold">{activeJob?.pay_label}</span>
-              <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[11px] font-extrabold">{activeJob?.distance_km} km</span>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setApplyOpen(false)}>
+          <div className="w-full max-w-xl border-2 border-ink bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b-2 border-ink pb-3">
+              <span className="text-[10px] font-black uppercase tracking-wider text-brand">SUBMIT GIG APPLICATION</span>
+              <button onClick={() => setApplyOpen(false)} className="text-ink hover:text-brand"><X size={18} /></button>
             </div>
-            <p className="mt-3 text-[11px] font-black tracking-wider text-inkmuted">NOTE TO EMPLOYER (OPTIONAL)</p>
-            <textarea data-testid="apply-note-input" value={applyNote} onChange={(e) => setApplyNote(e.target.value)} placeholder="I can be there in 30 min. Rate is fine." maxLength={300} className="wh-input mt-1 min-h-[80px] w-full border-2 border-ink bg-sand p-3 text-[13px] text-ink" />
-            {applyError && <p data-testid="apply-error" className="mt-1 text-xs font-bold text-danger">{applyError}</p>}
+            <h3 className="mt-3 text-xl font-black text-ink">{activeJob?.title}</h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className="border border-ink bg-sand px-2 py-1 text-xs font-black text-ink">₹{activeJob?.pay_label} FIXED</span>
+              <span className="border border-ink bg-sand px-2 py-1 text-xs font-bold text-ink">{activeJob?.area || "Bengaluru"} · {activeJob?.distance_km} km</span>
+            </div>
+            <p className="mt-4 text-[10px] font-black uppercase tracking-wider text-inkmuted">PITCH / COVER NOTE (OPTIONAL)</p>
+            <textarea
+              data-testid="apply-note-input"
+              value={applyNote}
+              onChange={(e) => setApplyNote(e.target.value)}
+              placeholder="Hi! I have 4+ years experience in this stack and can deliver within 2 days…"
+              maxLength={300}
+              className="wh-input mt-1.5 min-h-[90px] w-full border-2 border-ink bg-sand p-3 text-sm text-ink font-semibold"
+            />
+            {applyError && <p data-testid="apply-error" className="mt-2 text-xs font-bold text-danger">{applyError}</p>}
+            
             {appliedJustNow ? (
-              <div>
-                <div data-testid="apply-success-flash" className="mt-3 flex items-center justify-center gap-2 border-2 border-ink bg-ok py-4"><CheckCircle2 size={18} className="text-white" /><span className="text-sm font-black tracking-wide text-white">APPLIED · Chat thread opened</span></div>
-                {lastConvId && <button data-testid="apply-open-chat-btn" onClick={() => { setApplyOpen(false); nav(`/chat/${lastConvId}?role=freelancer`); }} className="mt-2 flex w-full items-center justify-center gap-2 border-2 border-ink py-3 text-xs font-black tracking-wider text-ink"><MessagesSquare size={14} /> MESSAGE EMPLOYER NOW</button>}
+              <div className="mt-4">
+                <div data-testid="apply-success-flash" className="flex items-center justify-center gap-2 border-2 border-ink bg-ok p-4 text-white">
+                  <CheckCircle2 size={18} />
+                  <span className="text-sm font-black tracking-wide">APPLICATION SENT · DIRECT CHAT OPENED</span>
+                </div>
+                {lastConvId && (
+                  <button
+                    data-testid="apply-open-chat-btn"
+                    onClick={() => { setApplyOpen(false); nav(`/chat/${lastConvId}?role=freelancer`); }}
+                    className="mt-2 flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-3.5 text-xs font-black text-white hover:bg-black transition"
+                  >
+                    <MessagesSquare size={14} /> OPEN CHAT WITH EMPLOYER
+                  </button>
+                )}
               </div>
             ) : (
-              <button data-testid="apply-confirm-btn" disabled={applying} onClick={submitApply} className="mt-3 flex w-full items-center justify-center border-2 border-ink bg-ink py-4 text-[15px] font-black text-white disabled:opacity-60">{applying ? <Loader2 size={18} className="animate-spin" /> : "Send application"}</button>
+              <button
+                data-testid="apply-confirm-btn"
+                disabled={applying}
+                onClick={submitApply}
+                className="mt-4 flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-sm font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60"
+              >
+                {applying ? <Loader2 size={18} className="animate-spin" /> : <><Send size={16} /> SEND APPLICATION (1 APPLY)</>}
+              </button>
             )}
-            <p className="mt-2 text-center text-[11px] text-inkmuted">Employer sees your verified badge, rating & note. A private chat opens the moment you apply.</p>
+            <p className="mt-2 text-center text-[11px] text-inkmuted">Employer sees your verified credentials immediately. 0% platform fee on earnings.</p>
           </div>
         </div>
       )}
 
-      {/* Paywall modal */}
+      {/* Paywall Modal */}
       {paywallOpen && (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/55" onClick={() => setPaywallOpen(false)}>
-          <div className="w-full max-w-2xl border-t-2 border-ink bg-white p-6" onClick={(e) => e.stopPropagation()}>
-            {hasBoost ? (
-              <>
-                <span className="inline-flex items-center gap-1 bg-brand px-2 py-1 text-[10px] font-black tracking-wider text-white"><Rocket size={12} /> DAILY LIMIT</span>
-                <p className="mt-2 whitespace-pre-line text-2xl font-black leading-tight text-ink">You've hit today's{"\n"}max of {quotaLimit} applies.</p>
-                <p className="mt-1 text-[13px] text-inkmuted">Your boost is active but the daily cap is reached. Applies reset within 24 hours.</p>
-                <button data-testid="paywall-close-btn" onClick={() => setPaywallOpen(false)} className="mt-3 w-full border-2 border-ink bg-ink py-4 text-[15px] font-black text-white">Got it</button>
-              </>
-            ) : (
-              <>
-                <span className="inline-flex items-center gap-1 bg-danger px-2 py-1 text-[10px] font-black tracking-wider text-white"><Zap size={12} /> QUOTA HIT</span>
-                <p className="mt-2 whitespace-pre-line text-2xl font-black leading-tight text-ink">You've used your{"\n"}3 free applies today.</p>
-                <p className="mt-1 text-[13px] text-inkmuted">Add 5 more applies for the next 24 hours and stop missing gigs in your block.</p>
-                <div className="mt-3 flex flex-col gap-3 border-2 border-ink bg-sand p-4">
-                  <div><p className="text-[10px] font-extrabold tracking-wide text-inkmuted">+5 APPLIES BOOST</p><p className="text-4xl font-black tracking-tight text-ink">₹149</p><p className="text-[11px] text-inkmuted">One-time. No subscription.</p></div>
-                  <div className="flex flex-col gap-1">
-                    {["5 extra job applies today", "Valid for 24 hours", "Max 8 applies per day total"].map((t) => <div key={t} className="flex items-center gap-2"><Check size={14} className="text-brand" /><span className="text-[13px] font-bold text-ink">{t}</span></div>)}
-                  </div>
-                </div>
-                <div className="my-3"><CouponInput product="quota_boost" amount={149} onApplied={setBoostCoupon} testIDPrefix="boost-coupon" /></div>
-                <button data-testid="paywall-pay-btn" disabled={unlocking} onClick={submitUnlock} className="flex w-full items-center justify-center border-2 border-ink bg-ink py-4 text-[15px] font-black text-white disabled:opacity-60">{unlocking ? <Loader2 size={18} className="animate-spin" /> : `Pay ₹${boostCoupon?.final_amount ?? 149} securely`}</button>
-                <p className="mt-2 text-center text-[11px] text-inkmuted">🔒 Razorpay Test Mode · Test card 4111 1111 1111 1111</p>
-              </>
-            )}
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setPaywallOpen(false)}>
+          <div className="w-full max-w-lg border-2 border-ink bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b-2 border-ink pb-3">
+              <span className="flex items-center gap-1.5 text-xs font-black text-brand uppercase">
+                <Rocket size={15} /> DAILY APPLY LIMIT REACHED
+              </span>
+              <button onClick={() => setPaywallOpen(false)}><X size={18} /></button>
+            </div>
+            <p className="mt-3 text-2xl font-black text-ink leading-tight">Add 5 Extra Applies</p>
+            <p className="mt-1 text-xs text-inkmuted">Keep landing gigs in your neighborhood with instant boost activation.</p>
+            <div className="my-4 border-2 border-ink bg-sand p-4">
+              <div className="flex items-baseline justify-between">
+                <span className="text-3xl font-black text-ink">₹149</span>
+                <span className="text-xs font-bold text-inkmuted">Valid 24 hours</span>
+              </div>
+              <div className="mt-3 flex flex-col gap-1.5 text-xs font-extrabold text-ink">
+                <p className="flex items-center gap-1.5 text-ok"><Check size={14} /> +5 extra applications today (max 8)</p>
+                <p className="flex items-center gap-1.5 text-ok"><Check size={14} /> Highlighted applicant badge</p>
+              </div>
+            </div>
+            <CouponInput product="quota_boost" amount={149} onApplied={setBoostCoupon} testIDPrefix="boost-coupon" />
+            <button
+              data-testid="paywall-pay-btn"
+              disabled={unlocking}
+              onClick={submitUnlock}
+              className="mt-3 flex w-full items-center justify-center border-2 border-ink bg-ink py-3.5 text-sm font-black text-white hover:bg-black transition disabled:opacity-60"
+            >
+              {unlocking ? <Loader2 size={18} className="animate-spin" /> : `PAY ₹${boostCoupon?.final_amount ?? 149} & UNLOCK`}
+            </button>
           </div>
         </div>
       )}
+
+      {/* Boost Preview Modal */}
+      <BoostPreviewModal
+        isOpen={boostPreviewOpen}
+        onClose={() => setBoostPreviewOpen(false)}
+        onConfirmBoost={() => { setBoostPreviewOpen(false); setPaywallOpen(true); }}
+      />
     </Shell>
   );
 }
@@ -272,43 +534,123 @@ export default function Jobs() {
 function FilterGroup({ label, options, value, onPick }) {
   return (
     <div>
-      <p className="mb-1.5 text-[10px] font-black tracking-wider text-inkmuted">{label}</p>
+      <p className="mb-1.5 text-[10px] font-black tracking-wider text-inkmuted uppercase">{label}</p>
       <div className="flex flex-wrap gap-2">
         {options.map((o) => (
-          <button key={o.value} onClick={() => onPick(o.value)} className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black ${value === o.value ? "bg-ink text-white" : "bg-white text-ink"}`}>{o.label}</button>
+          <button
+            key={o.label}
+            onClick={() => onPick(o.value)}
+            className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black transition ${
+              value === o.value ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+            }`}
+          >
+            {o.label}
+          </button>
         ))}
       </div>
     </div>
   );
 }
 
-function JobCard({ job, index, verified, applied, onApply, onMessage, onVerifyPress }) {
+// Fiverr / Upwork modeled Gig Card
+function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress }) {
   return (
-    <div data-testid={`job-card-${index}`} className="flex flex-col gap-2 border-2 border-ink bg-white p-3">
-      <div className="flex items-center justify-between">
-        <span className="bg-brand px-2 py-1 text-[10px] font-black tracking-wider text-white">{(job.category || "Gig").toUpperCase()}</span>
-        <span className="text-[11px] text-inkmuted">
-          {(job.posted_minutes_ago ?? 25) < 60 ? `${job.posted_minutes_ago ?? 25} min ago` : `${Math.round((job.posted_minutes_ago ?? 120) / 60)}h ago`}
-        </span>
-      </div>
-      <p className="text-base font-black leading-tight text-ink">{job.title}</p>
-      <p className="line-clamp-2 text-xs leading-4 text-inkmuted">{job.description}</p>
-      <div className="flex gap-2">
-        <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[11px] font-extrabold"><IndianRupee size={12} /> {job.pay_label || (job.pay ? Number(job.pay).toLocaleString("en-IN") : "Fixed")}</span>
-        <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[11px] font-extrabold"><MapPin size={12} /> {job.distance_km ?? 0.5} km</span>
-      </div>
-      <div className="my-1 h-px bg-ink/15" />
-      <div className="flex items-center gap-3">
-        <div className="flex-1">
-          <p className="text-[9px] font-black tracking-wider text-inkmuted">COMPANY</p>
-          <p className="text-[13px] font-black text-ink">{job.company_name}</p>
-          <div className="mt-1 flex items-center gap-1" data-testid={`job-area-${index}`}><MapPin size={12} className="text-inkmuted" /><span className="text-xs font-bold text-inkmuted">{job.area} · Bengaluru</span></div>
+    <div
+      data-testid={`job-card-${index}`}
+      className="group flex flex-col justify-between border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0px_#121212]"
+    >
+      <div>
+        {/* Top Badges Row */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="border border-ink bg-brand px-2 py-0.5 text-[10px] font-black text-white uppercase">
+              {job.category || "Gig"}
+            </span>
+            <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-0.5 text-[10px] font-bold text-ink">
+              <MapPin size={10} className="text-brand" /> {job.distance_km ?? 0.5} km away
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-inkmuted">
+              {(job.posted_minutes_ago ?? 25) < 60 ? `${job.posted_minutes_ago ?? 25}m ago` : `${Math.round((job.posted_minutes_ago ?? 120) / 60)}h ago`}
+            </span>
+            {/* Bookmark heart button */}
+            <button
+              data-testid={`job-save-btn-${index}`}
+              onClick={onToggleSave}
+              className="flex h-7 w-7 items-center justify-center border border-ink bg-white hover:bg-sand transition"
+              title={isSaved ? "Remove from saved" : "Save gig"}
+            >
+              <Heart
+                size={14}
+                className={isSaved ? "text-brand" : "text-inkmuted"}
+                fill={isSaved ? "#E65A1E" : "none"}
+              />
+            </button>
+          </div>
         </div>
-        {applied ? (
-          <button data-testid={`job-message-btn-${index}`} onClick={onMessage} className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2 text-[11px] font-black tracking-wider text-ink"><MessagesSquare size={13} /> MESSAGE</button>
-        ) : (
-          <button data-testid={verified ? `job-apply-btn-${index}` : `job-verify-cta-${index}`} onClick={verified ? onApply : onVerifyPress} className="flex items-center gap-1 border-2 border-ink bg-brand px-3 py-2 text-[11px] font-black tracking-wider text-white"><Send size={13} /> APPLY</button>
-        )}
+
+        {/* Title */}
+        <h3 className="mt-3 text-base font-black leading-tight text-ink group-hover:text-brand transition">
+          {job.title}
+        </h3>
+
+        {/* Description Snippet */}
+        <p className="mt-2 line-clamp-2 text-xs leading-5 text-inkmuted">
+          {job.description}
+        </p>
+
+        {/* Employer Info & Rating */}
+        <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2.5">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-black text-ink">{job.company_name}</span>
+              {job.verified_employer && (
+                <ShieldCheck size={13} className="text-ok" title="Verified Local Employer" />
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-inkmuted">
+              <span className="flex items-center gap-0.5 text-ink font-bold">
+                <Star size={11} fill="#E65A1E" className="text-brand" /> {job.employer_rating || "4.9"}
+              </span>
+              <span>•</span>
+              <span>{job.area || "Bengaluru"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Pay & Action Row */}
+      <div className="mt-4 flex items-center justify-between border-t-2 border-ink pt-3">
+        <div>
+          <span className="text-[9px] font-black tracking-wider text-inkmuted uppercase">FIXED PAY</span>
+          <p className="text-base font-black text-ink">
+            ₹{job.pay_label || (job.pay ? Number(job.pay).toLocaleString("en-IN") : "Fixed")}
+          </p>
+        </div>
+
+        <div>
+          {applied ? (
+            <button
+              data-testid={`job-message-btn-${index}`}
+              onClick={onMessage}
+              className="flex items-center gap-1.5 border-2 border-ink bg-white px-4 py-2 text-xs font-black tracking-wider text-ink hover:bg-sand transition"
+            >
+              <MessagesSquare size={14} />
+              <span>MESSAGE</span>
+            </button>
+          ) : (
+            <button
+              data-testid={verified ? `job-apply-btn-${index}` : `job-verify-cta-${index}`}
+              onClick={verified ? onApply : onVerifyPress}
+              className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+            >
+              <Send size={13} />
+              <span>APPLY NOW</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

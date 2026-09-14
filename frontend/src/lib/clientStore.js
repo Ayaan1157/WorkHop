@@ -5,6 +5,10 @@ const CUSTOM_JOBS_KEY = "workhop_custom_jobs";
 const USER_KEY = "workhop_user_data";
 const APPLICATIONS_KEY = "workhop_applications";
 const CHATS_KEY = "workhop_chats";
+const SAVED_JOBS_KEY = "workhop_saved_jobs";
+const SAVED_PROS_KEY = "workhop_saved_pros";
+const NOTIFICATIONS_KEY = "workhop_notifications";
+const WALLET_KEY = "workhop_wallet";
 
 // Helper for masking phone numbers server-side/client-side safely
 export function maskPhone(phone) {
@@ -34,12 +38,34 @@ export function getStoredLeads() {
     category: lead.category || lead.bucket || "Graphics & Design",
     lat: lead.lat || (12.9716 + (idx % 5 - 2) * 0.02),
     lng: lead.lng || (77.5946 + (idx % 7 - 3) * 0.02),
+    rate_hr: 750 + (idx % 5) * 250,
+    delivery_days: 2 + (idx % 3),
+    reviews_count: 14 + (idx * 3) % 40,
+    intro: `${lead.skill} based in Bengaluru with ${lead.jobs_done ?? 45}+ completed local projects. Specializing in high-turnaround verified deliveries with zero middlemen.`,
+    languages: ["English", "Kannada", "Hindi"],
+    verifications: {
+      id: true,
+      email: true,
+      portfolio: true,
+      phone: isUnlocked,
+    },
+    samples: [
+      { title: "Brand Redesign 2026", type: "Visual Identity", tag: "Figma" },
+      { title: "Mobile App MVP", type: "Product Design", tag: "React/Next" },
+      { title: "Festive Campaign Launch", type: "Marketing Creative", tag: "Photoshop" },
+    ],
   }));
 }
 
 export function getLeadById(id) {
   const leads = getStoredLeads();
-  return leads.find((l) => l.id === id) || leads[0];
+  const pro = leads.find((l) => l.id === id) || leads[0];
+  const reviews = [
+    { reviewer_name: "Anita J. · LedgerLite", rating: 5, date: "3 days ago", text: "Delivered our 5-screen flow ahead of schedule. Flawless communication and clean design." },
+    { reviewer_name: "Karan S. · BrewBlock", rating: 5, date: "1 week ago", text: "Super responsive and understands local Bengaluru market aesthetic perfectly." },
+    { reviewer_name: "Siddharth R. · UrbanKrafts", rating: 4.8, date: "2 weeks ago", text: "Great quality assets, fast turnaround on revisions." },
+  ];
+  return { pro, reviews };
 }
 
 // 2. Gigs / Jobs
@@ -59,6 +85,9 @@ export function getStoredJobs() {
     distance_km: j.distance_km ?? (Math.round((0.4 + (idx % 8) * 0.3) * 10) / 10),
     posted_minutes_ago: j.posted_minutes_ago ?? (15 + (idx * 35) % 1440),
     applicants_count: j.applicants_count ?? (2 + (idx % 9)),
+    employer_rating: (4.8 + (idx % 3) * 0.1).toFixed(1),
+    employer_reviews: 8 + (idx % 12),
+    verified_employer: true,
     created_at: j.created_at || new Date(Date.now() - (idx * 3600000 * 4)).toISOString(),
     lat: j.lat || (12.9716 + (idx % 6 - 3) * 0.015),
     lng: j.lng || (77.5946 + (idx % 5 - 2) * 0.015),
@@ -73,6 +102,7 @@ export function postCustomJob(jobData) {
     id: `job-custom-${Date.now()}`,
     title: jobData.title,
     pay: Number(jobData.pay) || 0,
+    pay_label: `${(Number(jobData.pay) || 0).toLocaleString("en-IN")}`,
     company_name: jobData.company_name,
     employer_name: jobData.employer_name || `${jobData.company_name} Lead`,
     description: jobData.description,
@@ -80,7 +110,11 @@ export function postCustomJob(jobData) {
     category: jobData.bucket || "Graphics & Design",
     area: jobData.area || "Bengaluru",
     distance_km: 0.2,
+    posted_minutes_ago: 1,
     applicants_count: 0,
+    employer_rating: "5.0",
+    employer_reviews: 1,
+    verified_employer: true,
     created_at: new Date().toISOString(),
     lat: 12.9716,
     lng: 77.5946,
@@ -90,17 +124,40 @@ export function postCustomJob(jobData) {
   return newJob;
 }
 
-// 3. Catalog
+// 3. Bookmarking / Saved Items
+export function getSavedJobIds() {
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_JOBS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function toggleSaveJob(id) {
+  const saved = getSavedJobIds();
+  const next = saved.includes(id) ? saved.filter((x) => x !== id) : [...saved, id];
+  localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(next));
+  return next;
+}
+
+export function getSavedProIds() {
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_PROS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function toggleSavePro(id) {
+  const saved = getSavedProIds();
+  const next = saved.includes(id) ? saved.filter((x) => x !== id) : [...saved, id];
+  localStorage.setItem(SAVED_PROS_KEY, JSON.stringify(next));
+  return next;
+}
+
+// 4. Catalog
 export function getStoredCatalog() {
   const jobs = getStoredJobs();
-  const categoryMap = {};
-  
-  jobs.forEach((j) => {
-    const cat = j.category || "Graphics & Design";
-    if (!categoryMap[cat]) categoryMap[cat] = new Set();
-    if (j.title) categoryMap[cat].add(j.title.split(" ").slice(0, 3).join(" "));
-  });
-
   const categories = [
     { category: "Graphics & Design", subcategories: ["Logo Design", "Brand Identity", "Packaging", "Flyers & Brochures", "UI/UX Design"] },
     { category: "Programming & Tech", subcategories: ["Web Development", "React / Next.js", "Flutter & Mobile Apps", "Shopify Setup", "Bug Fixing"] },
@@ -120,7 +177,7 @@ export function getStoredCatalog() {
   }));
 }
 
-// 4. Live Map Pins
+// 5. Live Map Pins
 export function getStoredMapPins() {
   const leads = getStoredLeads().slice(0, 30);
   const jobs = getStoredJobs().slice(0, 30);
@@ -150,7 +207,7 @@ export function getStoredMapPins() {
   };
 }
 
-// 5. Auth & Sessions
+// 6. Auth & Sessions
 export function getStoredUser() {
   const raw = localStorage.getItem(USER_KEY);
   if (!raw) return null;
@@ -177,6 +234,11 @@ export function createMockSession(email = "user@workhop.local") {
     name: name || "Verified User",
     picture: null,
     role: "user",
+    phone: "9876543210",
+    skill: "UI/UX & Brand Designer",
+    email_verified: true,
+    id_verified: true,
+    portfolio_uploaded: true,
     created_at: new Date().toISOString(),
   };
   saveStoredUser(user);
@@ -186,7 +248,90 @@ export function createMockSession(email = "user@workhop.local") {
   };
 }
 
-// 6. Job Applications & Chat
+// 7. Profile Completion Calculation (Upwork Pattern)
+export function getProfileCompletion(user) {
+  const checks = [
+    { key: "email", label: "Email Address Verified", completed: true, weight: 25 },
+    { key: "phone", label: "Contact Phone Added", completed: !!(user?.phone || localStorage.getItem("workhop_pro_phone")), weight: 25 },
+    { key: "portfolio", label: "Work Samples / Portfolio Linked", completed: true, weight: 25 },
+    { key: "skill", label: "Primary Skill & Bio Defined", completed: !!(user?.skill || localStorage.getItem("workhop_pro_skill")), weight: 25 },
+  ];
+  const percentage = checks.reduce((acc, curr) => (curr.completed ? acc + curr.weight : acc), 0);
+  return { percentage, checks };
+}
+
+// 8. Notifications (In-App Bell & Dropdown)
+export function getStoredNotifications() {
+  const raw = localStorage.getItem(NOTIFICATIONS_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch { /* ignore */ }
+  }
+  const defaults = [
+    {
+      id: "notif-1",
+      type: "message",
+      title: "New message from BrewBox Cafe",
+      description: "Can you review our updated packaging brief?",
+      time: "10m ago",
+      read: false,
+      to: "/freelancer/chats",
+    },
+    {
+      id: "notif-2",
+      type: "gig",
+      title: "New Gig Matched: UI/UX Redesign",
+      description: "LedgerLite posted a ₹18,000 gig 0.4km away from you.",
+      time: "1h ago",
+      read: false,
+      to: "/freelancer/jobs",
+    },
+    {
+      id: "notif-3",
+      type: "payment",
+      title: "Escrow Milestone Funded · ₹7,500",
+      description: "Payment safely held in WorkHop Escrow for Festive Campaign.",
+      time: "3h ago",
+      read: true,
+      to: "/profile",
+    },
+  ];
+  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(defaults));
+  return defaults;
+}
+
+export function markNotificationRead(id) {
+  const notifs = getStoredNotifications().map((n) => (n.id === id ? { ...n, read: true } : n));
+  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifs));
+  return notifs;
+}
+
+export function markAllNotificationsRead() {
+  const notifs = getStoredNotifications().map((n) => ({ ...n, read: true }));
+  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifs));
+  return notifs;
+}
+
+// 9. Escrow Wallet & Transaction History
+export function getStoredWallet() {
+  const raw = localStorage.getItem(WALLET_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch { /* ignore */ }
+  }
+  const defaultWallet = {
+    available_balance: 14500,
+    in_escrow: 7500,
+    lifetime_earnings: 48000,
+    transactions: [
+      { id: "tx-1", title: "Milestone Released (Fintech MVP)", type: "credit", amount: 18000, status: "completed", date: "Yesterday, 4:30 PM" },
+      { id: "tx-2", title: "Escrow Holding (BrewBlock Flyers)", type: "holding", amount: 7500, status: "in_escrow", date: "12 Sep 2026" },
+      { id: "tx-3", title: "Bank Withdrawal to HDFC **4812", type: "debit", amount: 15000, status: "completed", date: "08 Sep 2026" },
+    ],
+  };
+  localStorage.setItem(WALLET_KEY, JSON.stringify(defaultWallet));
+  return defaultWallet;
+}
+
+// 10. Job Applications & Chat
 export function applyToJob(jobId, freelancerId, note = "") {
   const jobs = getStoredJobs();
   const job = jobs.find((j) => j.id === jobId) || jobs[0];
@@ -214,6 +359,7 @@ export function applyToJob(jobId, freelancerId, note = "") {
       freelancer_name: "You",
       employer_name: job.employer_name,
       status: "applied",
+      milestone_step: 2, // Applied
       updated_at: new Date().toISOString(),
       last_message: note || "Applied to gig",
     };
@@ -232,7 +378,8 @@ export function getStoredChats() {
       company_name: "BrewBox Cafe",
       freelancer_name: "You",
       employer_name: "Anita Joshi",
-      status: "in_review",
+      status: "hired",
+      milestone_step: 3, // Hired
       updated_at: new Date().toISOString(),
       last_message: "Hi! Can you share your recent coffee brand designs?",
     },
@@ -242,7 +389,8 @@ export function getStoredChats() {
       company_name: "UrbanKrafts",
       freelancer_name: "You",
       employer_name: "Siddharth Rao",
-      status: "hired",
+      status: "completed",
+      milestone_step: 6, // Completed
       updated_at: new Date(Date.now() - 3600000 * 2).toISOString(),
       last_message: "Great work on the prototype. Let's schedule the kickoff call.",
     },

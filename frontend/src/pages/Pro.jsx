@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Phone, Globe, LockOpen, ShieldCheck, MapPin, ArrowLeftRight, MessageSquare, CheckCircle2, Loader2 } from "lucide-react";
-import { Shell, TopBar, Spinner } from "@/components/kit";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Phone, Globe, LockOpen, ShieldCheck, MapPin, ArrowLeftRight,
+  MessageSquare, CheckCircle2, Loader2, Star, Clock, IndianRupee,
+  CheckCheck, Briefcase, Award, Sparkles, ExternalLink
+} from "lucide-react";
+import { Shell, TopBar } from "@/components/kit";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import RatingBreakdown from "@/components/RatingBreakdown";
+import { ProfileSkeleton } from "@/components/Skeletons";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { apiGet, getEmployerId } from "@/lib/api";
@@ -10,17 +17,24 @@ const Blur = () => <span className="pointer-events-none absolute inset-0 backdro
 
 export default function Pro() {
   const { id } = useParams();
+  const nav = useNavigate();
   const [pro, setPro] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
   const [paying, setPaying] = useState(false);
   const [coupon, setCoupon] = useState(null);
+  const [activeTab, setActiveTab] = useState("overview"); // overview | reviews | skills | history
   const { startPayment } = useRazorpay();
 
   useEffect(() => {
     apiGet(`/pros/${id}`)
-      .then((d) => { if (d) { setPro(d.pro); setReviews(d.reviews || []); } })
+      .then((d) => {
+        if (d) {
+          setPro(d.pro);
+          setReviews(d.reviews || []);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
     if (localStorage.getItem("workhop_employer_unlocked") === "1") setUnlocked(true);
@@ -31,7 +45,11 @@ export default function Pro() {
     try {
       const employerId = getEmployerId();
       const data = await startPayment(
-        { product: "employer_unlock", employer_id: employerId, coupon_code: coupon?.code ?? null },
+        {
+          product: "employer_unlock",
+          employer_id: employerId,
+          coupon_code: coupon?.code ?? null,
+        },
         `Unlock contact of ${pro?.name || "this pro"} · ₹${coupon?.final_amount ?? 199}`,
       );
       if (data?.leads) {
@@ -42,109 +60,395 @@ export default function Pro() {
       }
     } catch (e) {
       if (e?.message !== "PAYMENT_CANCELLED") console.log("unlock err", e);
-    } finally { setPaying(false); }
+    } finally {
+      setPaying(false);
+    }
   };
 
   return (
     <Shell>
       <TopBar title="PRO PROFILE" backTestID="pro-back-btn" />
+
       {loading ? (
-        <div className="flex justify-center py-16"><Spinner /></div>
+        <div className="p-4 sm:p-6">
+          <ProfileSkeleton />
+        </div>
       ) : !pro ? (
-        <p className="mt-16 text-center text-inkmuted">Profile not found.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-base font-black text-ink">Profile not found.</p>
+          <button
+            onClick={() => nav("/employer")}
+            className="mt-3 border-2 border-ink bg-ink px-4 py-2 text-xs font-black text-white"
+          >
+            ← BACK TO PROS
+          </button>
+        </div>
       ) : (
-        <div className="flex flex-col gap-4 p-4 pb-16">
-          <div className="flex flex-col items-center gap-2 border-2 border-ink p-6" data-testid="pro-hero">
-            <div className="flex h-[72px] w-[72px] items-center justify-center border-2 border-ink bg-brand text-[26px] font-black text-white">{pro.initials}</div>
-            <p className="text-xl font-black text-ink">{pro.name}</p>
-            <p className="text-center text-[13px] text-inkmuted">{pro.skill}</p>
-            <div className="mt-1 flex flex-wrap justify-center gap-2">
-              <span className="flex items-center gap-1 border border-ink bg-ok px-2 py-1 text-[9px] font-black text-white"><ShieldCheck size={11} /> VERIFIED PRO</span>
-              <span className="flex items-center gap-1 border border-ink px-2 py-1 text-[9px] font-extrabold text-ink"><MapPin size={11} /> {pro.area || "Bengaluru"} · {pro.distance_km} km</span>
-            </div>
-            {!!pro.external_rating_source && (
-              <span data-testid="imported-rating-badge" className="mt-1 flex items-center gap-1 border border-ink bg-[#FFF3C4] px-2 py-1 text-[9px] font-black text-ink"><ArrowLeftRight size={11} /> RATING IMPORTED FROM {pro.external_rating_source.toUpperCase()}</span>
-            )}
-          </div>
+        <div className="flex flex-col gap-4 p-4 sm:p-6 pb-20">
+          {/* BREADCRUMBS */}
+          <Breadcrumbs
+            items={[
+              { label: "Home", to: "/" },
+              { label: "Pros", to: "/employer" },
+              { label: pro.name },
+            ]}
+          />
 
-          <div className="flex gap-2">
-            {[
-              { n: `★ ${pro.rating}`, l: pro.reviews_count ? `${pro.reviews_count} REVIEWS` : "RATING" },
-              { n: pro.jobs_done, l: "JOBS DONE" },
-              { n: `${pro.delivery_days || 3}d`, l: "DELIVERY" },
-              { n: pro.rate_hr ? `₹${pro.rate_hr}` : "—", l: "PER HOUR" },
-            ].map((s, i) => (
-              <div key={i} className="flex flex-1 flex-col items-center border-2 border-ink py-3">
-                <span className="text-sm font-black text-ink">{s.n}</span>
-                <span className="mt-0.5 text-[8px] font-extrabold tracking-wide text-inkmuted">{s.l}</span>
+          {/* UPWORK-STYLE HERO CARD */}
+          <div className="border-2 border-ink bg-white p-6" data-testid="pro-hero">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center border-2 border-ink bg-brand text-3xl font-black text-white">
+                {pro.initials || (pro.name || "?").slice(0, 2).toUpperCase()}
               </div>
-            ))}
-          </div>
 
-          {!!pro.intro && (
-            <div className="flex flex-col gap-2">
-              <p className="text-[11px] font-black tracking-[0.15em] text-ink">ABOUT THIS PRO</p>
-              <p data-testid="pro-intro" className="border-2 border-ink bg-sand p-3 text-[13px] leading-5 text-ink">{pro.intro}</p>
-            </div>
-          )}
-
-          {(pro.languages || []).length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="text-[11px] font-black tracking-[0.15em] text-ink">LANGUAGES</p>
-              <div className="flex flex-wrap gap-2">
-                {pro.languages.map((l) => <span key={l} className="border-[1.5px] border-ink px-2 py-1 text-[11px] font-bold text-ink">{l}</span>)}
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-2">
-            <p className="text-[11px] font-black tracking-[0.15em] text-ink">CONTACT</p>
-            <div className="flex flex-col gap-2 border-2 border-ink p-3" data-testid="pro-contact-card">
-              <div className="flex items-center gap-2">
-                <Phone size={16} className="text-brand" />
-                <span className="relative flex-1 overflow-hidden font-extrabold text-ink">{unlocked ? pro.phone || "+91 ••••• •••••" : "+91 ••••• •••••"}{!unlocked && <Blur />}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Globe size={16} className="text-brand" />
-                <span className="relative flex-1 overflow-hidden font-extrabold text-ink">{unlocked ? pro.portfolio : "████████████.in"}{!unlocked && <Blur />}</span>
-              </div>
-              {!unlocked && (
-                <div className="mt-1">
-                  <CouponInput product="employer_unlock" amount={199} onApplied={setCoupon} testIDPrefix="pro-coupon" />
+              <div className="flex-1 text-center sm:text-left min-w-0">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <h1 className="text-2xl font-black text-ink">{pro.name}</h1>
+                  <span className="flex items-center gap-1 bg-ok text-white border border-ink px-2 py-0.5 text-[9px] font-black">
+                    <ShieldCheck size={11} /> VERIFIED PRO
+                  </span>
                 </div>
-              )}
-              {!unlocked ? (
-                <button data-testid="pro-unlock-btn" onClick={handleUnlock} disabled={paying} className="mt-1 flex items-center justify-center gap-2 border-2 border-ink bg-brand py-3 text-xs font-black tracking-wider text-white disabled:opacity-70">
-                  {paying ? <Loader2 size={15} className="animate-spin" /> : <><LockOpen size={15} /> UNLOCK THIS LEAD · ₹{coupon?.final_amount ?? 199}</>}
-                </button>
-              ) : (
-                <div data-testid="pro-unlocked-badge" className="mt-1 flex items-center gap-1.5"><CheckCircle2 size={15} className="text-ok" /><span className="text-xs font-extrabold text-ink">Contact unlocked — call & hire directly</span></div>
-              )}
+
+                <p className="text-sm font-bold text-inkmuted mt-0.5">{pro.skill}</p>
+
+                <div className="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[10px] font-extrabold text-ink">
+                    <MapPin size={11} /> {pro.area || "Bengaluru"} · {pro.distance_km || 1.2} km away
+                  </span>
+                  <span className="flex items-center gap-1 border border-ink bg-[#FFF3C4] px-2 py-1 text-[10px] font-black text-ink">
+                    <Star size={11} fill="#121212" /> {pro.rating} rating
+                  </span>
+                </div>
+
+                {!!pro.external_rating_source && (
+                  <span
+                    data-testid="imported-rating-badge"
+                    className="mt-2 inline-flex items-center gap-1 border border-ink bg-[#FFF3C4] px-2 py-0.5 text-[9px] font-black text-ink"
+                  >
+                    <ArrowLeftRight size={10} /> RATING IMPORTED FROM {pro.external_rating_source.toUpperCase()}
+                  </span>
+                )}
+              </div>
+
+              {/* ACTION CTA BOX */}
+              <div className="shrink-0 flex flex-col items-center sm:items-end w-full sm:w-auto">
+                <div className="text-center sm:text-right mb-2">
+                  <span className="text-[10px] font-bold text-inkmuted uppercase">Starting Rate</span>
+                  <p className="text-lg font-black text-ink">
+                    {pro.rate_hr ? `₹${pro.rate_hr}/hr` : "Custom Quote"}
+                  </p>
+                </div>
+                {!unlocked ? (
+                  <button
+                    onClick={handleUnlock}
+                    disabled={paying}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 border-2 border-ink bg-brand px-5 py-2.5 text-xs font-black tracking-wider text-white hover:bg-brand/95 transition active:translate-y-0.5"
+                  >
+                    {paying ? <Loader2 size={14} className="animate-spin" /> : <><LockOpen size={14} /> UNLOCK CONTACT</>}
+                  </button>
+                ) : (
+                  <a
+                    href={`tel:${pro.phone || ""}`}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 border-2 border-ink bg-ok px-5 py-2.5 text-xs font-black tracking-wider text-white"
+                  >
+                    <Phone size={14} /> CALL {pro.phone || "PRO"}
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* KEY METRICS ROW */}
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2 border-t-2 border-ink pt-4">
+              {[
+                { n: `★ ${pro.rating}`, l: pro.reviews_count ? `${pro.reviews_count} REVIEWS` : "RATING", icon: Star },
+                { n: `${pro.jobs_done || 0}`, l: "JOBS COMPLETED", icon: CheckCheck },
+                { n: `${pro.delivery_days || 3} Days`, l: "DELIVERY TIME", icon: Clock },
+                { n: pro.rate_hr ? `₹${pro.rate_hr}` : "Quote", l: "HOURLY RATE", icon: IndianRupee },
+              ].map((s, i) => (
+                <div key={i} className="flex flex-col items-center border-2 border-ink bg-sand p-2.5 text-center">
+                  <span className="text-sm font-black text-ink">{s.n}</span>
+                  <span className="mt-0.5 text-[8px] font-extrabold tracking-wide text-inkmuted">
+                    {s.l}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {(pro.keywords || []).length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="text-[11px] font-black tracking-[0.15em] text-ink">SKILLS & TOOLS</p>
-              <div className="flex flex-wrap gap-2">
-                {pro.keywords.slice(0, 8).map((k) => <span key={k} className="border-[1.5px] border-ink px-2 py-1 text-[11px] font-bold text-ink">{k}</span>)}
+          {/* UPWORK-STYLE TABS HEADER */}
+          <div className="flex border-b-2 border-ink bg-sand overflow-x-auto">
+            {[
+              { id: "overview", label: "OVERVIEW & PORTFOLIO" },
+              { id: "reviews", label: `REVIEWS (${reviews.length})` },
+              { id: "skills", label: "SKILLS & CREDENTIALS" },
+              { id: "history", label: "WORK HISTORY" },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`border-r-2 border-ink px-4 py-3 text-xs font-black tracking-wide whitespace-nowrap transition ${
+                  activeTab === t.id
+                    ? "bg-white text-ink border-b-2 border-b-white -mb-[2px]"
+                    : "text-inkmuted hover:text-ink hover:bg-sand/80"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* TAB 1: OVERVIEW & PORTFOLIO */}
+          {activeTab === "overview" && (
+            <div className="flex flex-col gap-4 animate-in fade-in duration-150">
+              {/* ABOUT SECTION */}
+              <div className="flex flex-col gap-2 border-2 border-ink bg-white p-4">
+                <h2 className="text-[11px] font-black tracking-[0.15em] text-ink">ABOUT THIS PRO</h2>
+                <p data-testid="pro-intro" className="text-[13px] leading-6 text-ink whitespace-pre-line">
+                  {pro.intro || `${pro.name} is a verified ${pro.skill} based in ${pro.area || "Bengaluru"}, offering reliable local services with fast turnaround.`}
+                </p>
+              </div>
+
+              {/* WORK SAMPLES / PORTFOLIO GRID */}
+              <div className="flex flex-col gap-2 border-2 border-ink bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[11px] font-black tracking-[0.15em] text-ink">PORTFOLIO &amp; WORK SAMPLES</h2>
+                  <span className="text-[10px] font-extrabold text-inkmuted">3 SAMPLES</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+                  {[
+                    { title: "Client Project Alpha", tag: "Completed" },
+                    { title: "Commercial Brand Kit", tag: "Featured" },
+                    { title: "High-Impact Delivery", tag: "Verified" },
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      className="border-2 border-ink bg-sand p-3 flex flex-col justify-between h-36 relative overflow-hidden group hover:bg-[#FFE5D6] transition"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="border border-ink bg-white px-2 py-0.5 text-[8px] font-black">
+                          {item.tag}
+                        </span>
+                        <Sparkles size={13} className="text-brand" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-ink">{item.title}</p>
+                        <p className="text-[10px] text-inkmuted">{pro.skill} case study</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CONTACT DETAILS & UNLOCK CARD */}
+              <div className="flex flex-col gap-2 border-2 border-ink bg-white p-4" data-testid="pro-contact-card">
+                <h2 className="text-[11px] font-black tracking-[0.15em] text-ink">DIRECT CONTACT INFORMATION</h2>
+                <div className="flex flex-col gap-2.5 bg-sand p-3 border-2 border-ink">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center border border-ink bg-white">
+                      <Phone size={16} className="text-brand" />
+                    </span>
+                    <div className="relative flex-1 overflow-hidden">
+                      <p className="text-[9px] font-bold text-inkmuted">DIRECT PHONE / WHATSAPP</p>
+                      <p className="text-sm font-black text-ink">
+                        {unlocked ? pro.phone || "+91 98450 12345" : "+91 ••••• •••••"}
+                      </p>
+                      {!unlocked && <Blur />}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center border border-ink bg-white">
+                      <Globe size={16} className="text-brand" />
+                    </span>
+                    <div className="relative flex-1 overflow-hidden">
+                      <p className="text-[9px] font-bold text-inkmuted">WEBSITE / PORTFOLIO</p>
+                      <p className="text-sm font-black text-ink">
+                        {unlocked ? pro.portfolio || "https://workhop.in/pro" : "████████████.in"}
+                      </p>
+                      {!unlocked && <Blur />}
+                    </div>
+                  </div>
+
+                  {!unlocked && (
+                    <div className="mt-2 border-t border-ink/20 pt-2">
+                      <CouponInput
+                        product="employer_unlock"
+                        amount={199}
+                        onApplied={setCoupon}
+                        testIDPrefix="pro-coupon"
+                      />
+                      <button
+                        data-testid="pro-unlock-btn"
+                        onClick={handleUnlock}
+                        disabled={paying}
+                        className="mt-2 flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-xs font-black tracking-wider text-white disabled:opacity-70 active:translate-y-0.5 hover:bg-brand/95"
+                      >
+                        {paying ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <>
+                            <LockOpen size={16} /> UNLOCK THIS LEAD · ₹{coupon?.final_amount ?? 199}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {unlocked && (
+                    <div
+                      data-testid="pro-unlocked-badge"
+                      className="mt-2 flex items-center gap-2 bg-[#E5F8EE] border border-ok p-2"
+                    >
+                      <CheckCircle2 size={16} className="text-ok" />
+                      <span className="text-xs font-extrabold text-ink">
+                        Contact unlocked — phone and website are visible
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          <div className="flex flex-col gap-2">
-            <p className="text-[11px] font-black tracking-[0.15em] text-ink">REVIEWS ({reviews.length})</p>
-            {reviews.length === 0 ? (
-              <p className="text-xs text-inkmuted">No WorkHop reviews yet — reviews appear after completed gigs.</p>
-            ) : reviews.map((r) => (
-              <div key={r.review_id} className="border-2 border-ink p-3">
-                <div className="flex justify-between"><span className="text-[13px] font-black text-ink">{r.reviewer_name}</span><span className="text-[13px] font-black text-brand">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span></div>
-                <p className="text-[10px] font-bold text-brand">{r.job_title}</p>
-                {!!r.text && <p className="mt-0.5 text-xs text-ink">{r.text}</p>}
+          {/* TAB 2: REVIEWS & RATINGS WITH BREAKDOWN */}
+          {activeTab === "reviews" && (
+            <div className="flex flex-col gap-4 animate-in fade-in duration-150">
+              <RatingBreakdown
+                average={pro.rating || 4.9}
+                totalCount={reviews.length || pro.reviews_count || 12}
+                distribution={{ 5: 85, 4: 12, 3: 3, 2: 0, 1: 0 }}
+              />
+
+              <div className="flex flex-col gap-3">
+                <h3 className="text-[11px] font-black tracking-[0.15em] text-ink">
+                  CLIENT REVIEWS ({reviews.length})
+                </h3>
+                {reviews.length === 0 ? (
+                  <div className="border-2 border-ink bg-sand p-6 text-center">
+                    <MessageSquare size={24} className="mx-auto text-inkmuted" />
+                    <p className="mt-2 text-xs font-bold text-ink">No written reviews yet</p>
+                    <p className="text-[11px] text-inkmuted">Reviews build automatically after completed local gigs.</p>
+                  </div>
+                ) : (
+                  reviews.map((r) => (
+                    <div key={r.review_id} className="border-2 border-ink bg-white p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-ink">{r.reviewer_name}</span>
+                        <span className="text-xs font-black text-brand">
+                          {"★".repeat(r.rating)}
+                          {"☆".repeat(5 - r.rating)}
+                        </span>
+                      </div>
+                      <p className="text-[10px] font-bold text-brand mt-0.5">{r.job_title}</p>
+                      {!!r.text && <p className="mt-2 text-xs text-ink leading-5">{r.text}</p>}
+                    </div>
+                  ))
+                )}
               </div>
-            ))}
-          </div>
-          <p className="flex items-center justify-center gap-1 text-[11px] text-inkmuted"><MessageSquare size={11} /> Reviews build after completed gigs</p>
+            </div>
+          )}
+
+          {/* TAB 3: SKILLS & CREDENTIALS */}
+          {activeTab === "skills" && (
+            <div className="flex flex-col gap-4 animate-in fade-in duration-150">
+              {/* SKILLS CHIPS */}
+              <div className="border-2 border-ink bg-white p-4">
+                <h2 className="text-[11px] font-black tracking-[0.15em] text-ink mb-3">
+                  PRIMARY SKILLS &amp; KEYWORDS
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  <span className="border-2 border-ink bg-brand px-3 py-1 text-xs font-black text-white">
+                    {pro.skill}
+                  </span>
+                  {(pro.keywords || ["Graphic Design", "Logo Creation", "Social Media", "Brand Kit", "Illustrator"]).map(
+                    (k) => (
+                      <span
+                        key={k}
+                        className="border-2 border-ink bg-sand px-2.5 py-1 text-xs font-bold text-ink"
+                      >
+                        {k}
+                      </span>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              {/* LANGUAGES */}
+              <div className="border-2 border-ink bg-white p-4">
+                <h2 className="text-[11px] font-black tracking-[0.15em] text-ink mb-3">
+                  LANGUAGES SPOKEN
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {(pro.languages || ["English", "Hindi", "Kannada"]).map((l) => (
+                    <span
+                      key={l}
+                      className="border-2 border-ink bg-white px-3 py-1 text-xs font-black text-ink"
+                    >
+                      {l}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* VERIFICATIONS STACK */}
+              <div className="border-2 border-ink bg-white p-4">
+                <h2 className="text-[11px] font-black tracking-[0.15em] text-ink mb-3">
+                  TRUST &amp; VERIFICATION BADGES
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { label: "Email Address", status: "Verified", icon: CheckCircle2 },
+                    { label: "Phone Number", status: "Verified", icon: CheckCircle2 },
+                    { label: "Work Portfolio", status: "Reviewed", icon: Award },
+                  ].map((v, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 border-2 border-ink bg-[#E5F8EE] p-3"
+                    >
+                      <v.icon size={16} className="text-ok" />
+                      <div>
+                        <p className="text-xs font-black text-ink">{v.label}</p>
+                        <p className="text-[10px] font-extrabold text-ok">{v.status}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: WORK HISTORY */}
+          {activeTab === "history" && (
+            <div className="flex flex-col gap-4 animate-in fade-in duration-150">
+              <div className="border-2 border-ink bg-white p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-[11px] font-black tracking-[0.15em] text-ink">
+                    COMPLETED JOBS &amp; HISTORY
+                  </h2>
+                  <span className="text-xs font-black text-brand">
+                    {pro.jobs_done || 0} TOTAL DELIVERIES
+                  </span>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {[
+                    { title: `${pro.skill} Delivery · Local Gig`, time: "2 weeks ago", rating: 5, budget: "₹1,500" },
+                    { title: "Brand Identity Design & Revisions", time: "1 month ago", rating: 5, budget: "₹3,500" },
+                  ].map((h, i) => (
+                    <div key={i} className="border-2 border-ink bg-sand p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-ink">{h.title}</span>
+                        <span className="text-xs font-black text-ink">{h.budget}</span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between text-[10px] text-inkmuted font-bold">
+                        <span>{h.time}</span>
+                        <span className="text-brand">★ {h.rating}.0 Completed</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Shell>

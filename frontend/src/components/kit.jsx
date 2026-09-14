@@ -3,11 +3,19 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   ChevronLeft, Loader2, Grid3x3, Palette, Code2, Megaphone,
   PenLine, Video, Sparkles, Music, Briefcase, Users,
-  MapPin, PlusCircle, UserCircle2, LogOut, Search, Compass, Tag, HelpCircle
+  MapPin, PlusCircle, UserCircle2, LogOut, Search, Compass, Tag, HelpCircle, Coins
 } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { CATEGORY_VISUALS, CATEGORY_SHORT_LABELS } from "@/lib/catalogFilters";
 import { useAuth } from "@/context/AuthContext";
+import NotificationBell from "@/components/NotificationBell";
+export { default as Breadcrumbs } from "@/components/Breadcrumbs";
+export { default as ProfileProgressBar } from "@/components/ProfileProgressBar";
+export { default as MilestoneTracker } from "@/components/MilestoneTracker";
+export { default as RatingBreakdown } from "@/components/RatingBreakdown";
+export { default as EscrowWalletModal } from "@/components/EscrowWalletModal";
+export { default as BoostPreviewModal } from "@/components/BoostPreviewModal";
+export * from "@/components/Skeletons";
 
 const ICONS = {
   grid: Grid3x3, palette: Palette, code: Code2, megaphone: Megaphone,
@@ -89,7 +97,21 @@ export function GlobalNav() {
         </nav>
 
         {/* Right Action buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Persistent Header Credits Pill */}
+          <Link
+            to="/employer/plans"
+            data-testid="header-credits-pill"
+            className="hidden sm:flex items-center gap-1.5 border-2 border-ink bg-sand px-3 py-1.5 text-xs font-black text-ink hover:bg-white transition"
+            title="Available Job Post / Apply Credits"
+          >
+            <Coins size={14} className="text-brand" />
+            <span>5 CREDITS</span>
+          </Link>
+
+          {/* In-App Notification Bell */}
+          <NotificationBell />
+
           <button
             data-testid="nav-post-job-btn"
             onClick={() => nav("/employer/post-job")}
@@ -107,7 +129,7 @@ export function GlobalNav() {
                 className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2 text-xs font-extrabold text-ink hover:bg-sand"
               >
                 <UserCircle2 size={16} className="text-brand" />
-                <span className="max-w-[120px] truncate text-xs sm:max-w-[160px]">{user.name || user.email?.split("@")[0]}</span>
+                <span className="max-w-[100px] truncate text-xs sm:max-w-[140px]">{user.name || user.email?.split("@")[0]}</span>
               </button>
               <button
                 data-testid="nav-logout-btn"
@@ -138,35 +160,41 @@ export function TopBar({ title, sub, onBack, right, backTestID = "back-btn" }) {
   return (
     <div className="sticky top-0 z-20 flex w-full items-center gap-4 border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
       {onBack !== false && (
-        <IconBtn testID={backTestID} onClick={onBack || (() => nav(-1))}>
-          <ChevronLeft size={22} className="text-ink" />
-        </IconBtn>
+        <button
+          data-testid={backTestID}
+          onClick={typeof onBack === "function" ? onBack : () => nav(-1)}
+          className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-white transition hover:bg-sand active:translate-y-0.5"
+        >
+          <ChevronLeft size={22} />
+        </button>
       )}
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-base font-black tracking-[0.12em] text-ink sm:text-xl">{title}</h1>
-        {sub != null && <p className="truncate text-xs text-inkmuted">{sub}</p>}
+        <h1 className="truncate text-base font-black tracking-tight text-ink sm:text-lg">{title}</h1>
+        {sub && <p className="truncate text-[11px] font-semibold text-inkmuted">{sub}</p>}
       </div>
       {right}
     </div>
   );
 }
 
-// Edge-to-Edge Full-Screen Shell
-export function Shell({ children, showNav = true, className = "" }) {
+// Shell component (Full width responsive container)
+export function Shell({ children, className = "" }) {
   return (
-    <div className="min-h-screen w-full bg-white text-ink flex flex-col">
-      {showNav && <GlobalNav />}
-      <main className={`w-full flex-1 ${className}`}>{children}</main>
+    <div className={`min-h-screen w-full bg-white text-ink ${className}`}>
+      <GlobalNav />
+      <main className="w-full">{children}</main>
     </div>
   );
 }
 
-// Horizontal illustrated category tiles (fetches /api/catalog for names)
+// Horizontal scrollable 9-category filters
 export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" }) {
   const [cats, setCats] = useState(["ALL"]);
   useEffect(() => {
     apiGet("/catalog")
-      .then((d) => setCats(["ALL", ...(d || []).map((c) => c.category)]))
+      .then((d) => {
+        if (Array.isArray(d)) setCats(["ALL", ...d.map((c) => c.category)]);
+      })
       .catch(() => {});
   }, []);
   return (
@@ -200,11 +228,11 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
 // Empty / not-found block
 export function EmptyBlock({ icon, title, sub, action, testID }) {
   return (
-    <div data-testid={testID} className="flex flex-col items-center gap-3 py-16 text-center">
-      <div className="flex h-16 w-16 items-center justify-center border-2 border-ink bg-sand">{icon}</div>
+    <div data-testid={testID} className="flex flex-col items-center gap-3 py-16 text-center border-2 border-dashed border-ink/20 bg-sand/50 p-8 my-6">
+      <div className="flex h-16 w-16 items-center justify-center border-2 border-ink bg-white shadow-[2px_2px_0px_#121212]">{icon}</div>
       <h3 className="text-base font-black text-ink">{title}</h3>
       {sub && <p className="max-w-xs text-xs text-inkmuted">{sub}</p>}
-      {action}
+      {action && <div className="mt-2">{action}</div>}
     </div>
   );
 }
