@@ -1,7 +1,6 @@
 {
-  "buildCommand": "cd frontend && yarn install && yarn build",
+  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "frontend/build",
-  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/(.*)",

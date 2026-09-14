@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd frontend && yarn build",
-    "start": "cd frontend && yarn start"
+    "install": "cd frontend && npm install --legacy-peer-deps",
+    "build": "cd frontend && npm install --legacy-peer-deps && npm run build",
+    "start": "cd frontend && npm start"
   }
 }
