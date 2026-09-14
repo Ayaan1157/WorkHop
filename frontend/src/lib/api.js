@@ -65,16 +65,102 @@ function mockRouter(path, method = "GET", body = null) {
     return getStoredMapPins();
   }
 
-  // 4. Plans & Pricing
+  // 4. Plans & Pricing (Job Credits + Branding)
   if (cleanPath === "/plans") {
     return [
-      { id: "single-post", name: "Single Job Post", price: 299, credits: 1, description: "1 live gig post in 5km radius for 14 days" },
-      { id: "starter-bundle", name: "Starter Bundle", price: 999, credits: 5, description: "5 live gig posts with verified pro matching" },
-      { id: "growth-pass", name: "Growth Pass", price: 2499, credits: 15, description: "15 posts + featured employer badge" },
+      {
+        plan_id: "single-post",
+        section: "postings",
+        name: "Single Post",
+        price: 299,
+        price_label: "₹299",
+        unit: "1 job credit",
+        credits: 1,
+        duration_days: null,
+        badge: null,
+        features: ["1 job listing on the live feed", "5km radius candidate matching", "Applicant inbox with direct WhatsApp/Call"],
+      },
+      {
+        plan_id: "starter-bundle",
+        section: "postings",
+        name: "Starter Bundle",
+        price: 999,
+        price_label: "₹999",
+        unit: "5 job credits",
+        credits: 5,
+        duration_days: null,
+        badge: "SAVE 33%",
+        features: ["5 job post credits (₹200/post)", "Use anytime — no expiry", "Verified candidate SMS alerts", "Applicant inbox included"],
+      },
+      {
+        plan_id: "growth-bundle",
+        section: "postings",
+        name: "Growth Pack",
+        price: 1999,
+        price_label: "₹1,999",
+        unit: "12 job credits",
+        credits: 12,
+        duration_days: null,
+        badge: "BEST VALUE · SAVE 45%",
+        features: ["12 job post credits (₹166/post)", "Use anytime — no expiry", "Priority applicant matching", "Direct contact unlock on 3 leads"],
+      },
+      {
+        plan_id: "premium-boost",
+        section: "postings",
+        name: "Premium Listing Boost",
+        price: 299,
+        price_label: "₹299",
+        unit: "per post add-on",
+        credits: 0,
+        duration_days: null,
+        badge: "ADD-ON",
+        features: ["Featured at top of jobs feed", "Golden border with highlighted badge", "3× more freelancer views & applications"],
+      },
+      {
+        plan_id: "brand-spotlight",
+        section: "branding",
+        name: "Brand Spotlight",
+        price: 4999,
+        price_label: "₹4,999",
+        unit: "7 days",
+        duration_days: 7,
+        badge: null,
+        features: ["Logo banner on the jobs feed", "Runs for 7 days", "Impression & click report on request"],
+      },
+      {
+        plan_id: "classified-ad",
+        section: "branding",
+        name: "Classified Ad Slot",
+        price: 9999,
+        price_label: "₹9,999",
+        unit: "30 days",
+        duration_days: 30,
+        badge: null,
+        features: ["Dedicated classified ad slot", "Runs for 30 days", "Custom creative & call to action supported"],
+      },
+      {
+        plan_id: "enterprise-suite",
+        section: "branding",
+        name: "Enterprise Branding Suite",
+        price: 24999,
+        price_label: "₹24,999",
+        unit: "30 days",
+        duration_days: 30,
+        badge: "ENTERPRISE",
+        features: ["Feed banner + featured company page", "Runs for 30 days", "Priority placement across whole platform", "Dedicated account support"],
+      },
     ];
   }
   if (cleanPath.includes("/plans")) {
-    return [{ plan_id: "single-post", status: "active", created_at: new Date().toISOString() }];
+    return [
+      {
+        plan_id: "starter-bundle",
+        plan_name: "Starter Bundle (5 Job Credits)",
+        price: 999,
+        expires_at: null,
+        status: "active",
+      },
+    ];
   }
 
   // 5. Auth
