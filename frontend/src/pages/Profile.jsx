@@ -47,6 +47,8 @@ export default function Profile() {
   };
 
   const menu = [
+    { icon: Briefcase, label: "Employer Site (Nearby Pros)", sub: "Explore 50+ verified pros & unlock leads", to: "/employer", testID: "profile-employer" },
+    { icon: Tag, label: "Employee Site (Find Gigs)", sub: "Browse 50+ active gigs in 5km radius", to: "/freelancer/jobs", testID: "profile-jobs" },
     { icon: MessagesSquare, label: "My Messages", sub: "Chats with employers & pros", to: "/freelancer/chats", testID: "profile-chats" },
     { icon: MapIcon, label: "Live Map", sub: "Pros & employers near you", to: "/map", testID: "profile-map" },
     { icon: LayoutGrid, label: "Browse Categories", sub: "All gigs & sub-gigs", to: "/categories", testID: "profile-categories" },

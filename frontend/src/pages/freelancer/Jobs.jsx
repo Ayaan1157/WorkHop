@@ -286,14 +286,16 @@ function JobCard({ job, index, verified, applied, onApply, onMessage, onVerifyPr
   return (
     <div data-testid={`job-card-${index}`} className="flex flex-col gap-2 border-2 border-ink bg-white p-3">
       <div className="flex items-center justify-between">
-        <span className="bg-brand px-2 py-1 text-[10px] font-black tracking-wider text-white">{job.category.toUpperCase()}</span>
-        <span className="text-[11px] text-inkmuted">{job.posted_minutes_ago < 60 ? `${job.posted_minutes_ago} min ago` : `${Math.round(job.posted_minutes_ago / 60)}h ago`}</span>
+        <span className="bg-brand px-2 py-1 text-[10px] font-black tracking-wider text-white">{(job.category || "Gig").toUpperCase()}</span>
+        <span className="text-[11px] text-inkmuted">
+          {(job.posted_minutes_ago ?? 25) < 60 ? `${job.posted_minutes_ago ?? 25} min ago` : `${Math.round((job.posted_minutes_ago ?? 120) / 60)}h ago`}
+        </span>
       </div>
       <p className="text-base font-black leading-tight text-ink">{job.title}</p>
       <p className="line-clamp-2 text-xs leading-4 text-inkmuted">{job.description}</p>
       <div className="flex gap-2">
-        <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[11px] font-extrabold"><IndianRupee size={12} /> {job.pay_label}</span>
-        <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[11px] font-extrabold"><MapPin size={12} /> {job.distance_km} km</span>
+        <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[11px] font-extrabold"><IndianRupee size={12} /> {job.pay_label || (job.pay ? Number(job.pay).toLocaleString("en-IN") : "Fixed")}</span>
+        <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[11px] font-extrabold"><MapPin size={12} /> {job.distance_km ?? 0.5} km</span>
       </div>
       <div className="my-1 h-px bg-ink/15" />
       <div className="flex items-center gap-3">

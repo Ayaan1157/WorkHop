@@ -4,7 +4,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import { CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
 import { useRazorpay } from "@/hooks/usePayments";
-import { API, getEmployerId } from "@/lib/api";
+import { API, apiGet, apiPost, getEmployerId } from "@/lib/api";
 
 export default function PostJob() {
   const nav = useNavigate();
@@ -22,8 +22,8 @@ export default function PostJob() {
 
   const loadCredits = useCallback(async () => {
     try {
-      const r = await fetch(`${API}/employer/${getEmployerId()}/post-credits`);
-      if (r.ok) setCredits(await r.json());
+      const data = await apiGet(`/employer/${getEmployerId()}/post-credits`);
+      if (data) setCredits(data);
     } catch { /* ignore */ }
   }, []);
   useEffect(() => { loadCredits(); }, [loadCredits]);
@@ -34,19 +34,30 @@ export default function PostJob() {
     setSubmitting(true);
     try {
       const eid = getEmployerId();
-      const res = await fetch(`${API}/employer/jobs`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employer_id: eid, company_name: company, title, bucket, pay: parseInt(pay, 10) || 0, description, area: area || "Bengaluru" }),
+      const data = await apiPost("/employer/jobs", {
+        employer_id: eid,
+        company_name: company,
+        title,
+        bucket,
+        pay: parseInt(pay, 10) || 0,
+        description,
+        area: area || "Bengaluru",
       });
-      const data = await res.json();
-      if (res.ok) { setPosted(true); loadCredits(); return; }
-      if (res.status === 402 && retryAfterPay) {
+      if (data) {
+        setPosted(true);
+        loadCredits();
+        return;
+      }
+      if (retryAfterPay) {
         const pr = await startPayment({ product: "plan", plan_id: "single-post", employer_id: eid }, "Single Post · ₹299");
         if (pr?.purchase) { await submit(false); return; }
       }
-      setError(data?.detail || "Could not post the job.");
-    } catch (e) { if (e?.message !== "PAYMENT_CANCELLED") setError("Could not post the job."); }
-    finally { setSubmitting(false); }
+      setError("Could not post the job.");
+    } catch (e) {
+      if (e?.message !== "PAYMENT_CANCELLED") setError(e?.message || "Could not post the job.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const inputCls = "wh-input h-12 border-2 border-ink bg-white px-3 text-sm font-semibold text-ink";

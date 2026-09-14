@@ -4,7 +4,7 @@ import {
   ChevronLeft, Mail, KeyRound, ArrowRight, LogOut, UserCircle2, Loader2,
   MapPin, ShieldCheck, Zap, Sparkles, PlusCircle, CheckCircle, Navigation, Users, Briefcase
 } from "lucide-react";
-import { API } from "@/lib/api";
+import { apiPost } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
 function Logo() {
@@ -64,14 +64,8 @@ export default function Landing() {
     setOtpLoading(true);
     setOtpError(null);
     try {
-      const r = await fetch(`${API}/auth/email/request-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await r.json();
-      if (!r.ok) return setOtpError(data?.detail || "Could not send code.");
-      setDevOtp(data.dev_otp || null);
+      const data = await apiPost("/auth/email/request-otp", { email });
+      setDevOtp(data?.dev_otp || "123456");
       setOtpStage("sent");
       setOtpInput("");
     } catch {
@@ -89,17 +83,26 @@ export default function Landing() {
     setOtpLoading(true);
     setOtpError(null);
     try {
-      const r = await fetch(`${API}/auth/email/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailInput.trim().toLowerCase(), otp: otpInput.trim() }),
+      const data = await apiPost("/auth/email/verify-otp", {
+        email: emailInput.trim().toLowerCase(),
+        otp: otpInput.trim(),
       });
-      const data = await r.json();
-      if (!r.ok) return setOtpError(data?.detail || "Verification failed.");
-      await adoptSession(data.session_token, data.user);
-      setOtpStage("idle");
-      setEmailInput("");
-      setOtpInput("");
+      if (data?.session_token && data?.user) {
+        await adoptSession(data.session_token, data.user);
+        const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
+        localStorage.removeItem("workhop_pending_role");
+        setPendingRole(null);
+        setOtpStage("idle");
+        setEmailInput("");
+        setOtpInput("");
+        if (target === "employer") {
+          nav("/employer");
+        } else {
+          nav("/freelancer/jobs");
+        }
+      } else {
+        setOtpError("Verification failed.");
+      }
     } catch {
       setOtpError("Network error. Try again.");
     } finally {
@@ -108,8 +111,10 @@ export default function Landing() {
   };
 
   const chooseRole = (role) => {
-    if (role === "freelancer") return goFreelancer();
-    if (user) return nav("/employer");
+    if (user) {
+      if (role === "employer") return nav("/employer");
+      return nav("/freelancer/jobs");
+    }
     localStorage.setItem("workhop_pending_role", role);
     setPendingRole(role);
   };
@@ -284,15 +289,29 @@ export default function Landing() {
         {user ? (
           <div className="flex items-center gap-2" data-testid="user-row">
             <button
+              data-testid="header-employer-btn"
+              onClick={() => nav("/employer")}
+              className="hidden sm:flex items-center gap-1 border-2 border-ink bg-ink px-3 py-2 text-[10px] font-black tracking-wider text-white hover:bg-black"
+            >
+              <Users size={12} /> <span>EMPLOYER</span>
+            </button>
+            <button
+              data-testid="header-freelancer-btn"
+              onClick={() => nav("/freelancer/jobs")}
+              className="hidden sm:flex items-center gap-1 border-2 border-ink bg-brand px-3 py-2 text-[10px] font-black tracking-wider text-white hover:opacity-90"
+            >
+              <Briefcase size={12} /> <span>EMPLOYEE</span>
+            </button>
+            <button
               data-testid="user-chip"
               onClick={() => nav("/profile")}
-              className="flex items-center gap-2 border-2 border-ink bg-white px-4 py-2 hover:bg-sand"
+              className="flex items-center gap-2 border-2 border-ink bg-white px-3 py-2 hover:bg-sand"
             >
               <UserCircle2 size={16} className="text-brand" />
-              <span className="truncate text-xs font-extrabold text-ink">{user.name || user.email}</span>
+              <span className="truncate text-xs font-extrabold text-ink max-w-[110px]">{user.name || user.email?.split("@")[0]}</span>
               <ArrowRight size={13} className="text-inkmuted" />
             </button>
-            <button data-testid="logout-btn" onClick={logout} className="flex items-center gap-1 border-2 border-ink px-3 py-2 hover:bg-sand">
+            <button data-testid="logout-btn" onClick={logout} className="flex items-center gap-1 border-2 border-ink px-2.5 py-2 hover:bg-sand">
               <LogOut size={14} /> <span className="text-[10px] font-black tracking-wider">LOGOUT</span>
             </button>
           </div>
@@ -317,6 +336,40 @@ export default function Landing() {
 
       {/* Hero Section (Edge-to-Edge) */}
       <section className="w-full border-b-2 border-ink bg-white px-6 py-12 sm:px-10 lg:px-16 xl:px-20">
+        
+        {/* Logged in direct workspace switcher */}
+        {user && (
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-2 border-ink bg-sand p-4 sm:p-5" data-testid="logged-in-workspace-banner">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-brand text-sm font-black text-white">
+                {(user.name || user.email || "U")[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="text-xs font-black text-ink">WELCOME, <span className="text-brand">{user.name || user.email}</span></p>
+                <p className="text-[11px] text-inkmuted">Select your workspace to view experts or apply to gigs</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                data-testid="quick-employer-btn"
+                onClick={() => nav("/employer")}
+                className="flex items-center gap-1.5 border-2 border-ink bg-ink px-4 py-2.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+              >
+                <Users size={14} />
+                <span>🏢 EMPLOYER SITE</span>
+              </button>
+              <button
+                data-testid="quick-freelancer-btn"
+                onClick={() => nav("/freelancer/jobs")}
+                className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+              >
+                <Briefcase size={14} />
+                <span>💼 EMPLOYEE SITE</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-4xl">
           <div className="inline-flex items-center gap-2 border-2 border-ink bg-sand px-3.5 py-1.5 text-xs font-black tracking-wider">
             <span className="h-2.5 w-2.5 rounded-full bg-ok animate-pulse" />
@@ -342,7 +395,7 @@ export default function Landing() {
           >
             <div className="mb-6 flex items-center justify-between">
               <span className="bg-brand px-4 py-1.5 text-xs font-black tracking-[0.15em] text-white">
-                I'M HIRING
+                I'M HIRING (EMPLOYER)
               </span>
               <div className="flex h-11 w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-brand">
                 <ArrowRight size={24} className="text-white" />
@@ -369,7 +422,7 @@ export default function Landing() {
           >
             <div className="mb-6 flex items-center justify-between">
               <span className="bg-ink px-4 py-1.5 text-xs font-black tracking-[0.15em] text-white">
-                I'M LOOKING FOR A JOB
+                I'M LOOKING FOR A JOB (EMPLOYEE)
               </span>
               <div className="flex h-11 w-11 items-center justify-center border-2 border-ink bg-ink group-hover:bg-white">
                 <ArrowRight size={24} className="text-white group-hover:text-ink" />
@@ -438,9 +491,11 @@ export default function Landing() {
         </div>
 
         <div className="flex items-center gap-6 text-xs font-extrabold text-ink">
+          <Link to="/employer" className="hover:text-brand">Employer Site</Link>
+          <Link to="/freelancer/jobs" className="hover:text-brand">Employee Site</Link>
           <Link to="/map" className="hover:text-brand">Live Map</Link>
           <Link to="/categories" className="hover:text-brand">Categories</Link>
-          <Link to="/employer/plans" className="hover:text-brand">Employer Plans</Link>
+          <Link to="/employer/plans" className="hover:text-brand">Plans</Link>
           <Link to="/support" className="hover:text-brand">Support</Link>
           <Link to="/legal" className="hover:text-brand">Legal</Link>
           <Link to="/admin" className="hover:text-brand">Admin</Link>
