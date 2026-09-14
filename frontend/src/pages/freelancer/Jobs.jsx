@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   Search, X, Grid3x3, Map as MapIcon, MessagesSquare, ShieldCheck, ShieldHalf,
   Zap, Rocket, SlidersHorizontal, MapPin, IndianRupee, Send, Lock, CheckCircle2,
-  Loader2, Check, Heart, ArrowUpDown, Star, Sparkles, Filter
+  Loader2, Check, Heart, ArrowUpDown, Star, Sparkles, Filter, LocateFixed
 } from "lucide-react";
 import {
   Shell, TopBar, IconBtn, CategoryTiles, EmptyBlock, Breadcrumbs,
@@ -11,6 +11,15 @@ import {
 } from "@/components/kit";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import {
+  BENGALURU_AREAS,
+  findNearestArea,
+  calculateDistance,
+  getDistanceSuitability,
+  getSavedArea,
+  setSavedArea,
+} from "@/lib/locationAreas";
 import { JOB_CATEGORY_FILTERS } from "@/lib/catalogFilters";
 import { apiGet, apiPost, getFreelancerId } from "@/lib/api";
 import { getSavedJobIds, toggleSaveJob } from "@/lib/clientStore";
@@ -70,6 +79,19 @@ export default function Jobs() {
   const [unlocking, setUnlocking] = useState(false);
   const [boostCoupon, setBoostCoupon] = useState(null);
   const { startPayment } = useRazorpay();
+  const { coords: liveCoords, status: locStatus, requestLocation } = useUserLocation();
+  const [applicantArea, setApplicantArea] = useState(getSavedArea());
+
+  // Auto-detect closest locality when GPS granted
+  useEffect(() => {
+    if (liveCoords?.lat && liveCoords?.lng) {
+      const nearest = findNearestArea(liveCoords);
+      if (nearest) {
+        setApplicantArea(nearest.name);
+        setSavedArea(nearest.name);
+      }
+    }
+  }, [liveCoords]);
 
   const load = useCallback(async () => {
     try {
@@ -161,17 +183,25 @@ export default function Jobs() {
   };
 
   const openApplyFor = (job) => {
-    if (!isVerified) return gotoVerify();
+    if (!user) { localStorage.setItem("workhop_auth_intent", "freelancer"); nav("/"); return; }
     if (appliedSet.has(job.id)) return;
     if (quotaExhausted) { setActiveJob(job); setPaywallOpen(true); return; }
+    const fid = freelancerId || getFreelancerId();
+    if (!freelancerId) setFid(fid);
     setActiveJob(job); setApplyNote(""); setApplyError(null); setAppliedJustNow(null); setApplyOpen(true);
   };
 
   const submitApply = async () => {
     if (!activeJob || !freelancerId) return;
     setApplying(true); setApplyError(null);
+    const calculatedDist = calculateDistance(applicantArea, activeJob.area || "Bengaluru");
     try {
-      const data = await apiPost(`/jobs/${activeJob.id}/apply`, { freelancer_id: freelancerId, note: applyNote });
+      const data = await apiPost(`/jobs/${activeJob.id}/apply`, {
+        freelancer_id: freelancerId,
+        note: applyNote,
+        applicant_area: applicantArea,
+        distance_km: calculatedDist,
+      });
       setAppliedJustNow(activeJob.id);
       if (data.conversation_id) { setConvByJob((m) => ({ ...m, [activeJob.id]: data.conversation_id })); setLastConvId(data.conversation_id); }
       setQuota((q) => q ? { ...q, quota_used: data.quota_used, quota_limit: data.quota_limit, has_boost: data.has_boost, applied_job_ids: [...q.applied_job_ids, activeJob.id] } : q);
@@ -442,16 +472,88 @@ export default function Jobs() {
             <h3 className="mt-3 text-xl font-black text-ink">{activeJob?.title}</h3>
             <div className="mt-2 flex flex-wrap gap-2">
               <span className="border border-ink bg-sand px-2 py-1 text-xs font-black text-ink">₹{activeJob?.pay_label} FIXED</span>
-              <span className="border border-ink bg-sand px-2 py-1 text-xs font-bold text-ink">{activeJob?.area || "Bengaluru"} · {activeJob?.distance_km} km</span>
+              <span className="border border-ink bg-sand px-2 py-1 text-xs font-bold text-ink flex items-center gap-1">
+                <MapPin size={11} className="text-brand" /> Job Area: {activeJob?.area || "Bengaluru"}
+              </span>
             </div>
-            <p className="mt-4 text-[10px] font-black uppercase tracking-wider text-inkmuted">PITCH / COVER NOTE (OPTIONAL)</p>
+
+            {/* APPLICANT AREA & LIVE REAL-TIME DISTANCE MATCH */}
+            <div className="my-3 border-2 border-ink bg-sand p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-ink">
+                  YOUR NEIGHBORHOOD / AREA (FOR SUITABILITY)
+                </span>
+                <button
+                  type="button"
+                  onClick={requestLocation}
+                  className="flex items-center gap-1 border border-ink bg-brand px-2 py-0.5 text-[9px] font-black text-white hover:bg-brand/90 transition active:translate-y-0.5"
+                >
+                  {locStatus === "locating" ? <Loader2 size={10} className="animate-spin" /> : <LocateFixed size={10} />}
+                  <span>{locStatus === "locating" ? "DETECTING…" : "USE LIVE GPS"}</span>
+                </button>
+              </div>
+
+              <input
+                value={applicantArea}
+                onChange={(e) => {
+                  setApplicantArea(e.target.value);
+                  setSavedArea(e.target.value);
+                }}
+                placeholder="e.g. Indiranagar, Koramangala, HSR Layout"
+                className="wh-input mt-1.5 h-10 w-full border-2 border-ink bg-white px-3 text-xs font-bold text-ink outline-none"
+              />
+
+              <div className="mt-2 flex flex-wrap gap-1">
+                {BENGALURU_AREAS.slice(0, 8).map((a) => (
+                  <button
+                    key={a.name}
+                    type="button"
+                    onClick={() => {
+                      setApplicantArea(a.name);
+                      setSavedArea(a.name);
+                    }}
+                    className={`border border-ink px-2 py-0.5 text-[9px] font-black transition ${
+                      applicantArea === a.name ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+                    }`}
+                  >
+                    {a.name}
+                  </button>
+                ))}
+              </div>
+
+              {/* Real-time distance and suitability calculation */}
+              {activeJob && (
+                <div className="mt-2.5 flex items-center justify-between border-t border-ink/20 pt-2 text-xs font-black">
+                  <span className="flex items-center gap-1 text-ink">
+                    <MapPin size={12} className="text-brand" />
+                    <span>
+                      {applicantArea} → {activeJob.area || "Job"}: <strong>{calculateDistance(applicantArea, activeJob.area || "Bengaluru")} km away</strong>
+                    </span>
+                  </span>
+                  {(() => {
+                    const d = calculateDistance(applicantArea, activeJob.area || "Bengaluru");
+                    const suit = getDistanceSuitability(d);
+                    return (
+                      <span
+                        className="border border-ink px-2 py-0.5 text-[9px] font-black text-white"
+                        style={{ backgroundColor: suit.color }}
+                      >
+                        {suit.badge}
+                      </span>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+
+            <p className="mt-2 text-[10px] font-black uppercase tracking-wider text-inkmuted">PITCH / COVER NOTE (OPTIONAL)</p>
             <textarea
               data-testid="apply-note-input"
               value={applyNote}
               onChange={(e) => setApplyNote(e.target.value)}
-              placeholder="Hi! I have 4+ years experience in this stack and can deliver within 2 days…"
+              placeholder="Hi! I am based in this area and have the required experience. Can start immediately…"
               maxLength={300}
-              className="wh-input mt-1.5 min-h-[90px] w-full border-2 border-ink bg-sand p-3 text-sm text-ink font-semibold"
+              className="wh-input mt-1 min-h-[75px] w-full border-2 border-ink bg-white p-2.5 text-xs text-ink font-semibold outline-none"
             />
             {applyError && <p data-testid="apply-error" className="mt-2 text-xs font-bold text-danger">{applyError}</p>}
             
@@ -642,8 +744,8 @@ function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, o
             </button>
           ) : (
             <button
-              data-testid={verified ? `job-apply-btn-${index}` : `job-verify-cta-${index}`}
-              onClick={verified ? onApply : onVerifyPress}
+              data-testid={`job-apply-btn-${index}`}
+              onClick={onApply}
               className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
             >
               <Send size={13} />

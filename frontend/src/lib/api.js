@@ -54,7 +54,7 @@ function mockRouter(path, method = "GET", body = null) {
   if (cleanPath.includes("/apply") && method === "POST") {
     const parts = cleanPath.split("/");
     const jobId = parts[2];
-    return applyToJob(jobId, body?.freelancer_id, body?.note);
+    return applyToJob(jobId, body?.freelancer_id, body?.note, body?.applicant_area, body?.distance_km);
   }
 
   // 3. Catalog & Map

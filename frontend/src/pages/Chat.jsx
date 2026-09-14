@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ChevronLeft, Send, ShieldCheck, Star, Loader2, CheckCheck,
-  Search, Paperclip, X, Image as ImageIcon, FileText, Sparkles
+  Search, Paperclip, X, Image as ImageIcon, FileText, Sparkles, MapPin
 } from "lucide-react";
 import MilestoneTracker from "@/components/MilestoneTracker";
+import { getDistanceSuitability } from "@/lib/locationAreas";
 import { API, apiGet, apiPost } from "@/lib/api";
 
 export default function Chat() {
@@ -228,6 +229,28 @@ export default function Chat() {
         >
           {status === "applied" ? "APPLIED" : status === "hired" ? "HIRED" : "COMPLETED"}
         </span>
+
+        {/* Hyperlocal distance badge */}
+        <div className="flex items-center gap-1.5 border border-ink bg-white px-2.5 py-1 text-[10px] font-black text-ink">
+          <MapPin size={11} className="text-brand" />
+          <span>
+            {myRole === "employer"
+              ? `Applicant from ${conv?.applicant_area || "Indiranagar"} (${conv?.distance_km ?? 1.4} km from job)`
+              : `Job in ${conv?.job_area || "Koramangala"} (${conv?.distance_km ?? 1.4} km away)`}
+          </span>
+          {(() => {
+            const d = conv?.distance_km ?? 1.4;
+            const suit = getDistanceSuitability(d);
+            return (
+              <span
+                className="ml-1 px-1.5 py-0.2 text-[8px] font-black text-white"
+                style={{ backgroundColor: suit.color }}
+              >
+                {suit.badge}
+              </span>
+            );
+          })()}
+        </div>
 
         <div className="flex-1" />
 

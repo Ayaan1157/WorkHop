@@ -332,7 +332,7 @@ export function getStoredWallet() {
 }
 
 // 10. Job Applications & Chat
-export function applyToJob(jobId, freelancerId, note = "") {
+export function applyToJob(jobId, freelancerId, note = "", applicantArea = "Indiranagar", distKm = null) {
   const jobs = getStoredJobs();
   const job = jobs.find((j) => j.id === jobId) || jobs[0];
   const apps = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || "[]");
@@ -342,6 +342,8 @@ export function applyToJob(jobId, freelancerId, note = "") {
     job_id: jobId,
     freelancer_id: freelancerId || "freelancer-demo",
     note,
+    applicant_area: applicantArea || "Indiranagar",
+    distance_km: distKm != null ? distKm : (job.distance_km || 1.2),
     created_at: new Date().toISOString(),
   };
   localStorage.setItem(APPLICATIONS_KEY, JSON.stringify([app, ...apps]));
@@ -358,10 +360,13 @@ export function applyToJob(jobId, freelancerId, note = "") {
       company_name: job.company_name,
       freelancer_name: "You",
       employer_name: job.employer_name,
+      applicant_area: applicantArea || "Indiranagar",
+      job_area: job.area || "Bengaluru",
+      distance_km: distKm != null ? distKm : (job.distance_km || 1.2),
       status: "applied",
       milestone_step: 2, // Applied
       updated_at: new Date().toISOString(),
-      last_message: note || "Applied to gig",
+      last_message: note || `Applied from ${applicantArea || "Indiranagar"} (${distKm != null ? distKm : 1.2} km away)`,
     };
     localStorage.setItem(CHATS_KEY, JSON.stringify([conv, ...chats]));
   }
