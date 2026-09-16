@@ -227,6 +227,17 @@ export function saveStoredUser(u) {
   }
 }
 
+export const ADMIN_EMAILS = [
+  "zenithdeveleoperss@gmail.com",
+  "zenithdeveloperss@gmail.com",
+  "manarastudio22@gmail.com",
+];
+
+export function isUserAdmin(email) {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.trim().toLowerCase());
+}
+
 export function createMockSession(email = "user@workhop.local", details = {}) {
   const fallbackName = email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const role = details.role || localStorage.getItem("workhop_auth_role") || "freelancer";
@@ -234,11 +245,12 @@ export function createMockSession(email = "user@workhop.local", details = {}) {
   const area = details.area || localStorage.getItem("workhop_user_area") || "Koramangala";
   const skill = details.skill || localStorage.getItem("workhop_pro_skill") || (role === "employer" ? "Business Owner" : "UI/UX & Brand Designer");
   const company_name = details.company_name || localStorage.getItem("workhop_company_name") || "Hyperlocal Co.";
+  const isAdmin = isUserAdmin(email) || !!details.is_admin;
 
   const user = {
     id: `usr_${Math.random().toString(36).slice(2, 10)}`,
     email,
-    name: details.name || fallbackName || "Verified User",
+    name: details.name || fallbackName || (isAdmin ? "Zenith Developers (Admin)" : "Verified User"),
     picture: details.picture || null,
     role: role === "employer" ? "employer" : "freelancer",
     phone: phone,
@@ -248,6 +260,7 @@ export function createMockSession(email = "user@workhop.local", details = {}) {
     email_verified: true,
     id_verified: true,
     portfolio_uploaded: true,
+    is_admin: isAdmin,
     created_at: new Date().toISOString(),
   };
 

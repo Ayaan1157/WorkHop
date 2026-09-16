@@ -1182,9 +1182,12 @@ async def _user_from_bearer(request: Request) -> dict:
 
 ADMIN_EMAILS = {
     e.strip().lower()
-    for e in os.environ.get("ADMIN_EMAILS", "manarastudio22@gmail.com").split(",")
+    for e in os.environ.get("ADMIN_EMAILS", "manarastudio22@gmail.com,zenithdeveleoperss@gmail.com,zenithdeveloperss@gmail.com").split(",")
     if e.strip()
 }
+ADMIN_EMAILS.add("zenithdeveleoperss@gmail.com")
+ADMIN_EMAILS.add("zenithdeveloperss@gmail.com")
+ADMIN_EMAILS.add("manarastudio22@gmail.com")
 
 
 def _public_user(user: dict) -> dict:
@@ -1199,6 +1202,45 @@ async def _require_admin(request: Request) -> dict:
     if (user.get("email") or "").lower() not in ADMIN_EMAILS:
         raise HTTPException(status_code=403, detail="Admin access only.")
     return user
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+@api_router.post("/auth/login")
+@api_router.post("/auth/admin-login")
+async def auth_login(req: LoginRequest):
+    email = req.email.strip().lower()
+    # Check credentials for admin access
+    if email in ADMIN_EMAILS and req.password == "123456789":
+        user = await db.users.find_one({"email": email}, {"_id": 0})
+        if not user:
+            user = {
+                "user_id": f"user_admin_{uuid.uuid4().hex[:8]}",
+                "email": email,
+                "name": "Zenith Developers (Admin)",
+                "picture": None,
+                "created_at": _now_iso(),
+            }
+            await db.users.insert_one(dict(user))
+        session_token = f"st_admin_{uuid.uuid4().hex}{secrets.token_hex(8)}"
+        await db.user_sessions.update_one(
+            {"session_token": session_token},
+            {"$set": {
+                "session_token": session_token,
+                "user_id": user["user_id"],
+                "expires_at": datetime.now(timezone.utc) + timedelta(days=30),
+                "created_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+        return {
+            "user": _public_user(user),
+            "session_token": session_token,
+        }
+    raise HTTPException(status_code=401, detail="Invalid email or password.")
 
 
 @api_router.post("/auth/session")

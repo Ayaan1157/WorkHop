@@ -11,7 +11,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 
 export default function AuthModal({ isOpen, onClose, initialRole = null, initialMode = "signup" }) {
   const nav = useNavigate();
-  const { user, login, adoptSession, signupWithDetails } = useAuth();
+  const { user, login, adoptSession, signupWithDetails, adminLogin } = useAuth();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
 
   // Role: "employer" | "freelancer"
@@ -22,6 +22,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   // Form Fields
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [area, setArea] = useState("Koramangala");
   const [companyName, setCompanyName] = useState("");
@@ -137,7 +138,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     }
   };
 
-  // Instant 1-Click Signup with Details
+  // Instant 1-Click Signup with Details / Password Sign In
   const handleInstantSignup = async () => {
     const cleanEmail = email.trim().toLowerCase() || `${(fullName || "user").toLowerCase().replace(/[^a-z0-9]/g, "")}@workhop.local`;
     if (mode === "signup") {
@@ -154,10 +155,24 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setLoading(true);
     setError(null);
     try {
+      // If admin credentials provided or password entered
+      if (
+        ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(cleanEmail) ||
+        (mode === "signin" && password)
+      ) {
+        try {
+          await adminLogin(cleanEmail, password || "123456789");
+          completeAndRedirect(role);
+          return;
+        } catch {
+          // Continue to standard auth
+        }
+      }
+
       const payload = {
         email: cleanEmail,
         role: role,
-        name: fullName.trim() || "WorkHop User",
+        name: fullName.trim() || (["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com"].includes(cleanEmail) ? "Zenith Developers (Admin)" : "WorkHop User"),
         phone: phoneDigits || "9876543210",
         area: area,
         company_name: isEmployer ? (companyName.trim() || "Hyperlocal Co.") : undefined,
@@ -167,7 +182,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       await signupWithDetails(payload);
       completeAndRedirect(role);
     } catch (e) {
-      setError(e?.message || "Signup failed. Try again.");
+      setError(e?.message || "Sign in failed. Try again.");
     } finally {
       setLoading(false);
     }
@@ -451,6 +466,28 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                 />
               </div>
             </div>
+
+            {/* Optional Password in Sign In Mode */}
+            {mode === "signin" && (
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                  Password / Admin Key (Optional)
+                </label>
+                <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5">
+                  <KeyRound size={16} className="text-inkmuted mr-2 shrink-0" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError(null);
+                    }}
+                    placeholder="Enter password (e.g. 123456789)"
+                    className="w-full bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60 focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* OTP Verification Stage if triggered */}
             {otpStage === "sent" && (

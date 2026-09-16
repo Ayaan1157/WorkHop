@@ -252,12 +252,31 @@ function CouponsTab({ rows, onChanged, adminFetch }) {
 
 export default function Admin() {
   const nav = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, adminLogin } = useAuth();
   const [tab, setTab] = useState("USERS");
   const [overview, setOverview] = useState(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Admin login form states
+  const [loginEmail, setLoginEmail] = useState("Zenithdeveleoperss@gmail.com");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginBusy, setLoginBusy] = useState(false);
+  const [loginError, setLoginError] = useState(null);
+
+  const handleAdminSignIn = async (e) => {
+    e?.preventDefault();
+    setLoginBusy(true);
+    setLoginError(null);
+    try {
+      await adminLogin(loginEmail, loginPassword);
+    } catch (err) {
+      setLoginError(err?.message || "Invalid admin email or password.");
+    } finally {
+      setLoginBusy(false);
+    }
+  };
 
   const adminFetch = useCallback((path, method = "GET", body) => {
     if (method === "GET") return apiGet(`/admin${path}`, true);
@@ -285,11 +304,58 @@ export default function Admin() {
   if (!user?.is_admin) {
     return (
       <Shell>
-        <div data-testid="admin-denied" className="flex min-h-screen flex-col items-center justify-center gap-3 p-8 text-center">
-          <Lock size={40} className="text-ink" />
-          <p className="text-base font-black tracking-wider text-ink">ADMIN ACCESS ONLY</p>
-          <p className="text-xs text-inkmuted">Sign in with the WorkHop admin account to open this dashboard.</p>
-          <button data-testid="admin-denied-back" onClick={() => nav(-1)} className="mt-1 bg-ink px-6 py-3 text-xs font-black tracking-wider text-white">GO BACK</button>
+        <div data-testid="admin-denied" className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
+          <div className="flex h-16 w-16 items-center justify-center border-2 border-ink bg-sand shadow-[4px_4px_0px_#121212]">
+            <Lock size={32} className="text-ink" />
+          </div>
+          <div>
+            <p className="text-lg font-black tracking-wider text-ink">ADMIN ACCESS ONLY</p>
+            <p className="mt-1 text-xs text-inkmuted">Sign in with authorized admin credentials to access the management portal.</p>
+          </div>
+
+          <form onSubmit={handleAdminSignIn} className="mt-2 flex w-full max-w-sm flex-col gap-3 border-2 border-ink bg-white p-5 text-left shadow-[4px_4px_0px_#121212]">
+            <div>
+              <label className="text-[10px] font-black tracking-wider text-inkmuted uppercase">Admin Email</label>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="Zenithdeveleoperss@gmail.com"
+                className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink outline-none focus:border-brand"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black tracking-wider text-inkmuted uppercase">Password</label>
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="•••••••••"
+                className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink outline-none focus:border-brand"
+                required
+              />
+            </div>
+
+            {loginError && (
+              <p className="text-[11px] font-bold text-[#C62828] bg-red-50 p-2 border border-red-200">
+                {loginError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loginBusy}
+              className="mt-1 flex items-center justify-center gap-2 border-2 border-ink bg-brand py-2.5 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-y-0.5"
+            >
+              {loginBusy ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
+              <span>{loginBusy ? "VERIFYING..." : "UNLOCK ADMIN PANEL"}</span>
+            </button>
+          </form>
+
+          <button data-testid="admin-denied-back" onClick={() => nav("/")} className="mt-2 text-xs font-black tracking-wider text-ink underline hover:text-brand">
+            RETURN TO HOME
+          </button>
         </div>
       </Shell>
     );

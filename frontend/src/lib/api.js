@@ -175,6 +175,28 @@ function mockRouter(path, method = "GET", body = null) {
     setToken(session.session_token);
     return session;
   }
+  if (cleanPath === "/auth/login" || cleanPath === "/auth/admin-login") {
+    const email = (body?.email || "").trim().toLowerCase();
+    const password = body?.password || "";
+    if (
+      ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(email) &&
+      password === "123456789"
+    ) {
+      const session = createMockSession(email, {
+        name: "Zenith Developers (Admin)",
+        role: "employer",
+        is_admin: true,
+      });
+      session.user.is_admin = true;
+      saveStoredUser(session.user);
+      setToken(session.session_token);
+      return session;
+    }
+    // Also allow normal login
+    const session = createMockSession(email || "user@example.com", body || {});
+    setToken(session.session_token);
+    return session;
+  }
   if (cleanPath === "/auth/signup") {
     const email = body?.email || "user@example.com";
     const session = createMockSession(email, body || {});
@@ -198,6 +220,60 @@ function mockRouter(path, method = "GET", body = null) {
   if (cleanPath === "/auth/logout") {
     clearToken();
     return { ok: true };
+  }
+
+  // Admin Dashboard endpoints
+  if (cleanPath === "/admin/overview") {
+    return {
+      users: 142,
+      employers: 38,
+      freelancers: 104,
+      payments_paid: 29,
+      revenue_rupees: 184500,
+      complaints: 2,
+    };
+  }
+  if (cleanPath === "/admin/users") {
+    return [
+      { user_id: "u-admin", email: "Zenithdeveleoperss@gmail.com", name: "Zenith Developers (Admin)", role: "employer", created_at: new Date().toISOString() },
+      { user_id: "u-1", email: "karthik.sharma@gmail.com", name: "Karthik Sharma", role: "freelancer", created_at: new Date().toISOString() },
+      { user_id: "u-2", email: "priya.nair@craftly.in", name: "Priya Nair", role: "employer", created_at: new Date().toISOString() },
+    ];
+  }
+  if (cleanPath === "/admin/employers") {
+    return [
+      { email: "priya.nair@craftly.in", name: "Priya Nair", company_name: "Craftly Studios", jobs_posted: 6, spent_rupees: 45000 },
+      { email: "vikram@urbanbites.com", name: "Vikram Mehta", company_name: "Urban Bites Cafe", jobs_posted: 4, spent_rupees: 28000 },
+    ];
+  }
+  if (cleanPath === "/admin/freelancers") {
+    return getStoredLeads().map((l) => ({
+      freelancer_id: l.id,
+      name: l.name,
+      skill: l.skill,
+      email: `${l.name.toLowerCase().replace(/\s+/g, ".")}@gmail.com`,
+      phone: l.phone,
+      rating: l.rating,
+      approved: true,
+      status: "approved",
+    }));
+  }
+  if (cleanPath === "/admin/payments") {
+    return [
+      { order_id: "ord_101", amount_rupees: 999, status: "paid", created_at: "2 hours ago", user_email: "priya.nair@craftly.in", plan_name: "Starter Bundle" },
+      { order_id: "ord_102", amount_rupees: 1999, status: "paid", created_at: "5 hours ago", user_email: "vikram@urbanbites.com", plan_name: "Growth Pack" },
+    ];
+  }
+  if (cleanPath === "/admin/complaints") {
+    return [
+      { complaint_id: "cmp_1", user_email: "anita.j@ledgerlite.com", message: "Need clarification on milestone escrow release time.", status: "resolved", created_at: "Yesterday" },
+    ];
+  }
+  if (cleanPath === "/admin/coupons") {
+    return [
+      { code: "WELCOME50", discount_percent: 50, active: true, uses: 45, max_uses: 100 },
+      { code: "FLAT100", discount_rupees: 100, active: true, uses: 12, max_uses: 50 },
+    ];
   }
 
   // 6. Freelancer Profile / Status / Quota
