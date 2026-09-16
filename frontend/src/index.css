@@ -69,29 +69,8 @@ body {
     border-color: #2a2a2a !important;
 }
 
-/* ═══════ Dark Mode: High Contrast Text for Light-Colored Backgrounds & Inputs ═══════ */
-/* Any input, textarea, or select on white/light backgrounds ALWAYS has black text and legible placeholder */
-input, textarea, select {
-    color: #121212;
-}
-
-.dark input:not([class*="bg-black"]):not([class*="bg-zinc-900"]):not([class*="bg-[#121212]"]),
-.dark textarea:not([class*="bg-black"]):not([class*="bg-zinc-900"]):not([class*="bg-[#121212]"]),
-.dark select:not([class*="bg-black"]):not([class*="bg-zinc-900"]):not([class*="bg-[#121212]"]) {
-    color: #121212 !important;
-    background-color: #ffffff;
-}
-
-.dark input:not([class*="bg-black"]):not([class*="bg-zinc-900"]):not([class*="bg-[#121212]"])::placeholder,
-.dark textarea:not([class*="bg-black"]):not([class*="bg-zinc-900"]):not([class*="bg-[#121212]"])::placeholder {
-    color: #6B6B6B !important;
-    opacity: 1 !important;
-}
-
-/* When an element has a white or light-colored background in dark mode, force black text */
-.dark [class*="bg-[#FAFAF8]"],
-.dark [class*="bg-[#F7F7F5]"],
-.dark [class*="bg-[#FFF3E9]"],
+/* ═══════ Dark Mode: High Contrast Text for Light-Colored Backgrounds ═══════ */
+/* When an element has a light-colored background (yellow, light green, pastel, light sand), force black text */
 .dark [class*="bg-[#FFF3C4]"],
 .dark [class*="bg-[#FFEAA0]"],
 .dark [class*="bg-[#E5F8EE]"],
@@ -108,27 +87,10 @@ input, textarea, select {
 .dark [class*="bg-[#FCE4EC]"],
 .dark [class*="bg-[#FFF8E1]"],
 .dark [class*="bg-[#EFEBE9]"],
-.dark [class*="bg-[#f0f0f0]"],
-.dark [class*="bg-white"],
-.dark .bg-white,
-.dark [class*="bg-sand"],
-.dark [class*="bg-stone"],
-.dark [class*="bg-red-50"],
-.dark [class*="bg-green-50"],
-.dark [class*="bg-yellow-50"],
-.dark [class*="bg-amber-50"],
-.dark [class*="bg-orange-50"],
-.dark [class*="bg-blue-50"],
-.dark [class*="bg-gray-50"],
-.dark [class*="bg-gray-100"],
-.dark [class*="bg-slate-50"],
-.dark [class*="bg-slate-100"] {
+.dark [class*="bg-[#f0f0f0]"] {
     color: #121212 !important;
 }
 
-.dark [class*="bg-[#FAFAF8]"] *,
-.dark [class*="bg-[#F7F7F5]"] *,
-.dark [class*="bg-[#FFF3E9]"] *,
 .dark [class*="bg-[#FFF3C4]"] *,
 .dark [class*="bg-[#FFEAA0]"] *,
 .dark [class*="bg-[#E5F8EE]"] *,
@@ -145,63 +107,26 @@ input, textarea, select {
 .dark [class*="bg-[#FCE4EC]"] *,
 .dark [class*="bg-[#FFF8E1]"] *,
 .dark [class*="bg-[#EFEBE9]"] *,
-.dark [class*="bg-[#f0f0f0]"] *,
-.dark [class*="bg-white"] *,
-.dark .bg-white *,
-.dark [class*="bg-sand"] *,
-.dark [class*="bg-stone"] *,
-.dark [class*="bg-red-50"] *,
-.dark [class*="bg-green-50"] *,
-.dark [class*="bg-yellow-50"] *,
-.dark [class*="bg-amber-50"] *,
-.dark [class*="bg-orange-50"] *,
-.dark [class*="bg-blue-50"] *,
-.dark [class*="bg-gray-50"] *,
-.dark [class*="bg-gray-100"] *,
-.dark [class*="bg-slate-50"] *,
-.dark [class*="bg-slate-100"] * {
+.dark [class*="bg-[#f0f0f0]"] * {
     color: #121212 !important;
 }
 
-/* Ensure buttons with dark/brand backgrounds inside light boxes retain their white text */
-.dark [class*="bg-white"] .bg-brand,
-.dark [class*="bg-white"] .bg-brand *,
-.dark [class*="bg-white"] .bg-ink,
-.dark [class*="bg-white"] .bg-ink *,
-.dark [class*="bg-white"] .bg-black,
-.dark [class*="bg-white"] .bg-black *,
-.dark [class*="bg-[#FFF3E9]"] .bg-brand,
-.dark [class*="bg-[#FFF3E9]"] .bg-brand *,
-.dark [class*="bg-[#FFF3E9]"] .bg-ink,
-.dark [class*="bg-[#FFF3E9]"] .bg-ink *,
-.dark [class*="bg-[#FAFAF8]"] .bg-brand,
-.dark [class*="bg-[#FAFAF8]"] .bg-brand *,
-.dark [class*="bg-[#FAFAF8]"] .bg-ink,
-.dark [class*="bg-[#FAFAF8]"] .bg-ink * {
-    color: #FFFFFF !important;
-}
-
-/* Keep accent colors vivid inside light boxes */
-.dark [class*="bg-white"] .text-brand,
-.dark [class*="bg-white"] .text-brand *,
-.dark [class*="bg-[#FFF3E9]"] .text-brand,
-.dark [class*="bg-[#FFF3E9]"] .text-brand *,
-.dark [class*="bg-[#FAFAF8]"] .text-brand,
-.dark [class*="bg-[#FAFAF8]"] .text-brand * {
+/* Ensure brand/ok/danger accents stay vivid inside light boxes */
+.dark [class*="bg-[#FFF3C4]"] .text-brand,
+.dark [class*="bg-[#FFF3C4]"] .text-brand *,
+.dark [class*="bg-[#FFEAA0]"] .text-brand,
+.dark [class*="bg-[#FFEAA0]"] .text-brand * {
     color: #E65A1E !important;
 }
 
-.dark [class*="bg-white"] .text-ok,
-.dark [class*="bg-white"] .text-ok *,
-.dark [class*="bg-[#FFF3E9]"] .text-ok,
-.dark [class*="bg-[#FFF3E9]"] .text-ok * {
+.dark [class*="bg-[#E5F8EE]"] .text-ok,
+.dark [class*="bg-[#E5F8EE]"] .text-ok * {
     color: #00A86B !important;
 }
 
-.dark [class*="bg-white"] .text-inkmuted,
-.dark [class*="bg-[#FFF3E9]"] .text-inkmuted,
-.dark [class*="bg-[#FAFAF8]"] .text-inkmuted {
-    color: #6B6B6B !important;
+.dark [class*="bg-[#FFEBEE]"] .text-\[\#C62828\],
+.dark [class*="bg-[#FFEBEE]"] .text-\[\#C62828\] * {
+    color: #C62828 !important;
 }
 
 /* In dark mode, active ink buttons (bg-ink) have light background, so text must be black */
@@ -216,6 +141,12 @@ input, textarea, select {
 .dark .bg-ink .text-brand,
 .dark .bg-ink.text-brand {
     color: #E65A1E !important;
+}
+
+/* Inputs */
+.dark .wh-input {
+    background-color: #1a1a1a !important;
+    color: var(--color-ink) !important;
 }
 
 /* Shadows → glows in dark mode */

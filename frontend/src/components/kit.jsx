@@ -56,7 +56,6 @@ export function GlobalNav() {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [authOpen, setAuthOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState("signin");
 
   const links = [
     { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros" },
@@ -162,10 +161,7 @@ export function GlobalNav() {
             ) : (
               <button
                 data-testid="nav-signin-btn"
-                onClick={() => {
-                  setAuthModalMode("signin");
-                  setAuthOpen(true);
-                }}
+                onClick={() => setAuthOpen(true)}
                 className="border-2 border-ink bg-ink px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
               >
                 SIGN IN
@@ -174,7 +170,7 @@ export function GlobalNav() {
           </div>
         </div>
       </header>
-      <AuthModal isOpen={authOpen} initialMode={authModalMode} onClose={() => setAuthOpen(false)} />
+      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   );
 }
