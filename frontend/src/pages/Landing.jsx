@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   ChevronLeft, Mail, KeyRound, ArrowRight, LogOut, UserCircle2, Loader2,
   MapPin, ShieldCheck, Zap, Sparkles, PlusCircle, CheckCircle, Navigation, Users, Briefcase,
-  User, Building2, LocateFixed, CheckCircle2
+  User, Building2, LocateFixed, CheckCircle2, Eye, EyeOff
 } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -29,11 +29,12 @@ function Logo() {
 
 export default function Landing() {
   const nav = useNavigate();
-  const { user, loading, login, logout, adoptSession, signupWithDetails } = useAuth();
+  const { user, loading, login, logout, adoptSession, signupWithDetails, passwordLoginAuth } = useAuth();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalRole, setAuthModalRole] = useState("freelancer");
+  const [authModalMode, setAuthModalMode] = useState("signup");
 
   // Sign in / Sign up flow state
   const [pendingRole, setPendingRole] = useState(null); // "employer" | "freelancer"
@@ -41,10 +42,13 @@ export default function Landing() {
 
   const [nameInput, setNameInput] = useState("");
   const [emailInput, setEmailInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
   const [areaInput, setAreaInput] = useState("Koramangala");
   const [companyInput, setCompanyInput] = useState("");
   const [skillInput, setSkillInput] = useState("");
+  const [googleConnected, setGoogleConnected] = useState(false);
 
   const [otpInput, setOtpInput] = useState("");
   const [otpStage, setOtpStage] = useState("idle");
@@ -92,16 +96,6 @@ export default function Landing() {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
       setOtpError("Enter a valid email address.");
       return;
-    }
-    if (authMode === "signup") {
-      if (!nameInput.trim()) {
-        setOtpError("Enter your full name.");
-        return;
-      }
-      if (!isPhoneValid) {
-        setOtpError("Enter a valid 10-digit mobile phone number.");
-        return;
-      }
     }
     setOtpLoading(true);
     setOtpError(null);
@@ -162,19 +156,60 @@ export default function Landing() {
     }
   };
 
-  const handleInstantComplete = async () => {
+  // Sign In Handler with Mandatory Password
+  const handleSignIn = async () => {
     const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
-    const cleanEmail = emailInput.trim().toLowerCase() || `${(nameInput || "user").toLowerCase().replace(/[^a-z0-9]/g, "")}@workhop.local`;
-    
-    if (authMode === "signup") {
-      if (!nameInput.trim()) {
-        setOtpError("Please enter your full name.");
-        return;
-      }
-      if (!isPhoneValid) {
-        setOtpError("Please enter your 10-digit mobile number.");
-        return;
-      }
+    const cleanEmail = emailInput.trim().toLowerCase();
+
+    if (!cleanEmail) {
+      setOtpError("Please enter your email address.");
+      return;
+    }
+    if (!passwordInput) {
+      setOtpError("Please enter your password to sign in.");
+      return;
+    }
+
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      await passwordLoginAuth(cleanEmail, passwordInput, target);
+      completeSessionAndRedirect(target);
+    } catch (e) {
+      setOtpError(e?.message || "Incorrect email or password. Please try again.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Sign Up Handler with Mandatory Details
+  const handleSignUp = async () => {
+    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
+    const cleanEmail = emailInput.trim().toLowerCase();
+
+    if (!nameInput.trim()) {
+      setOtpError("Please enter your full name.");
+      return;
+    }
+    if (!isPhoneValid) {
+      setOtpError("Please enter a valid 10-digit mobile phone number.");
+      return;
+    }
+    if (!areaInput) {
+      setOtpError("Please select your neighborhood area.");
+      return;
+    }
+    if (target !== "employer" && !skillInput.trim()) {
+      setOtpError("Please enter your primary skill / trade.");
+      return;
+    }
+    if (!cleanEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
+      setOtpError("Please enter a valid email address.");
+      return;
+    }
+    if (!passwordInput || passwordInput.length < 6) {
+      setOtpError("Please create a password with at least 6 characters.");
+      return;
     }
 
     setOtpLoading(true);
@@ -182,9 +217,10 @@ export default function Landing() {
     try {
       const payload = {
         email: cleanEmail,
+        password: passwordInput,
         role: target,
-        name: nameInput.trim() || "WorkHop Member",
-        phone: phoneDigits || "9876543210",
+        name: nameInput.trim(),
+        phone: phoneDigits,
         area: areaInput,
         company_name: target === "employer" ? (companyInput.trim() || "Hyperlocal Co.") : undefined,
         skill: target !== "employer" ? (skillInput.trim() || "UI/UX & Brand Designer") : undefined,
@@ -193,10 +229,44 @@ export default function Landing() {
       await signupWithDetails(payload);
       completeSessionAndRedirect(target);
     } catch (e) {
-      setOtpError(e?.message || "Could not complete signup.");
+      setOtpError(e?.message || "Could not complete registration.");
     } finally {
       setOtpLoading(false);
     }
+  };
+
+  // Google Continue Handler
+  const handleGoogleAuth = async () => {
+    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
+    const googleEmail = emailInput.trim() || "google.user@gmail.com";
+    const googleName = nameInput.trim() || "Google Member";
+    setEmailInput(googleEmail);
+    if (!nameInput) setNameInput(googleName);
+    setGoogleConnected(true);
+
+    if (authMode === "signin") {
+      setOtpLoading(true);
+      try {
+        localStorage.setItem("workhop_pending_role", target);
+        if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
+        if (areaInput) setSavedArea(areaInput);
+        await login(googleEmail, googleName);
+        completeSessionAndRedirect(target);
+      } catch (e) {
+        setOtpError(e?.message || "Google sign-in failed.");
+      } finally {
+        setOtpLoading(false);
+      }
+      return;
+    }
+
+    // If signup mode, ensure phone and area are provided
+    if (!isPhoneValid || !areaInput) {
+      setOtpError("Google account linked! Please enter your 10-digit mobile number and neighborhood below to complete registration.");
+      return;
+    }
+
+    handleSignUp();
   };
 
   const completeSessionAndRedirect = (target) => {
@@ -210,6 +280,7 @@ export default function Landing() {
     setPendingRole(null);
     setOtpStage("idle");
     setEmailInput("");
+    setPasswordInput("");
     setOtpInput("");
     if (target === "employer") {
       nav("/employer");
@@ -267,7 +338,7 @@ export default function Landing() {
                 }`}
               >
                 <Users size={14} />
-                <span>💼 I'M HIRING</span>
+                <span>🏢 I'M HIRING</span>
               </button>
               <button
                 type="button"
@@ -293,7 +364,7 @@ export default function Landing() {
                     {employer ? "Employer / Client Account" : "Freelancer / Job Seeker Account"}
                   </span>
                   <h2 className="mt-3 whitespace-pre-line text-3xl sm:text-4xl font-black leading-[1.05] tracking-[-0.02em] text-ink">
-                    {employer ? "Sign in to\nstart hiring." : "Sign in to\nland gigs."}
+                    {authMode === "signup" ? (employer ? "Create account to\nstart hiring." : "Create account to\nland gigs.") : "Welcome back.\nSign in."}
                   </h2>
                   <div className="mt-3 h-1.5 w-20 bg-brand" />
                   <p className="mt-5 text-sm leading-6 text-inkmuted">
@@ -315,22 +386,39 @@ export default function Landing() {
             {/* Right Col: Details & Mobile Number Signup Form (7 Cols) */}
             <div className="flex flex-col justify-center border-t-2 border-ink pt-6 lg:border-l-2 lg:border-t-0 lg:pl-10 lg:pt-0 lg:col-span-7">
               
-              {/* Toggle Mode */}
-              <div className="flex items-center justify-between border-b-2 border-ink/10 pb-3 mb-4">
-                <span className="text-xs font-black tracking-wider uppercase text-ink">
-                  {authMode === "signup" ? "Create Account & Enter Details" : "Sign In to Existing Account"}
-                </span>
+              {/* Prominent Sign In vs Sign Up Tabs */}
+              <div className="flex border-2 border-ink bg-sand p-1 mb-5">
                 <button
                   type="button"
-                  data-testid="login-mode-toggle"
+                  data-testid="landing-tab-signup"
                   onClick={() => {
-                    setAuthMode(authMode === "signup" ? "signin" : "signup");
+                    setAuthMode("signup");
                     setOtpError(null);
                     setOtpStage("idle");
                   }}
-                  className="text-xs font-black text-brand hover:underline"
+                  className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
+                    authMode === "signup"
+                      ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
+                      : "bg-transparent text-ink hover:bg-white"
+                  }`}
                 >
-                  {authMode === "signup" ? "Have an account? Sign In" : "New user? Sign Up"}
+                  ✨ SIGN UP (NEW USER)
+                </button>
+                <button
+                  type="button"
+                  data-testid="landing-tab-signin"
+                  onClick={() => {
+                    setAuthMode("signin");
+                    setOtpError(null);
+                    setOtpStage("idle");
+                  }}
+                  className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
+                    authMode === "signin"
+                      ? "bg-ink text-white shadow-[2px_2px_0px_#121212]"
+                      : "bg-transparent text-ink hover:bg-white"
+                  }`}
+                >
+                  🔐 SIGN IN (EXISTING USER)
                 </button>
               </div>
 
@@ -463,11 +551,37 @@ export default function Landing() {
                     <Mail size={16} className="text-inkmuted mr-2 shrink-0" />
                     <input
                       data-testid="login-email-input"
+                      type="email"
                       value={emailInput}
                       onChange={(e) => { setEmailInput(e.target.value); setOtpError(null); }}
                       placeholder="you@example.com"
                       className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
                     />
+                  </div>
+                </div>
+
+                {/* Password Field */}
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                    {authMode === "signup" ? "Create Password (Min 6 chars) *" : "Password *"}
+                  </label>
+                  <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                    <KeyRound size={16} className="text-inkmuted mr-2 shrink-0" />
+                    <input
+                      data-testid="login-password-input"
+                      type={showPassword ? "text" : "password"}
+                      value={passwordInput}
+                      onChange={(e) => { setPasswordInput(e.target.value); setOtpError(null); }}
+                      placeholder={authMode === "signup" ? "Create a secure password" : "Enter your password"}
+                      className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-inkmuted hover:text-ink focus:outline-none ml-2"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                   </div>
                 </div>
 
@@ -510,12 +624,13 @@ export default function Landing() {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2.5 mt-2">
-                    {/* Instant Complete & Continue Button */}
+                    
+                    {/* Primary Submit Button */}
                     <button
                       type="button"
                       data-testid="login-submit-btn"
                       disabled={otpLoading}
-                      onClick={handleInstantComplete}
+                      onClick={authMode === "signup" ? handleSignUp : handleSignIn}
                       className={`flex w-full items-center justify-center gap-2 border-2 border-ink py-3.5 text-sm font-black text-white shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none ${
                         employer ? "bg-ink hover:bg-black" : "bg-brand hover:opacity-95"
                       }`}
@@ -529,7 +644,7 @@ export default function Landing() {
                               ? employer
                                 ? "Complete & Start Hiring"
                                 : "Complete & Find Gigs"
-                              : "Sign In"}
+                              : "SIGN IN WITH PASSWORD"}
                           </span>
                           <ArrowRight size={16} />
                         </>
@@ -543,7 +658,7 @@ export default function Landing() {
                       disabled={otpLoading}
                       className="flex items-center justify-center gap-2 border-2 border-ink bg-white py-2.5 text-xs font-black text-ink hover:bg-sand disabled:opacity-60 transition"
                     >
-                      {otpLoading ? <Loader2 size={16} className="animate-spin" /> : <><Mail size={16} /> Verify with Email OTP</>}
+                      {otpLoading ? <Loader2 size={16} className="animate-spin" /> : <><Mail size={16} /> {authMode === "signin" ? "Sign In with Email OTP instead" : "Verify with Email OTP"}</>}
                     </button>
 
                     <div className="my-1 flex items-center gap-3">
@@ -552,29 +667,30 @@ export default function Landing() {
                       <div className="h-0.5 flex-1 bg-ink/15" />
                     </div>
 
-                    {/* Google OAuth Button */}
+                    {/* Google Continue */}
                     <button
+                      type="button"
                       data-testid="login-google-btn"
-                      onClick={() => {
-                        localStorage.setItem("workhop_pending_role", pendingRole);
-                        if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
-                        if (areaInput) setSavedArea(areaInput);
-                        login();
-                      }}
-                      className="flex items-center justify-center gap-3 border-2 border-ink bg-sand py-3 text-xs font-black text-ink hover:bg-white transition"
+                      onClick={handleGoogleAuth}
+                      className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-sand py-3 text-xs font-black tracking-wider text-ink shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
                     >
-                      Continue with Google
+                      <svg className="h-4 w-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                      </svg>
+                      <span>{authMode === "signup" ? "Continue with Google (Details Required)" : "Continue with Google"}</span>
                     </button>
                   </div>
                 )}
 
                 {otpError && (
-                  <p data-testid="login-otp-error" className="mt-1 text-xs font-bold text-[#C62828] bg-red-50 p-2 border border-red-200">
+                  <p data-testid="login-error-msg" className="text-xs font-black text-[#C62828] bg-red-50 p-2.5 border border-red-200">
                     ⚠️ {otpError}
                   </p>
                 )}
-                
-                <p className="text-center text-[11px] text-inkmuted">🔒 Secure sign-in · Your 10-digit number is verified &amp; protected</p>
+
               </div>
             </div>
           </div>
@@ -583,40 +699,22 @@ export default function Landing() {
     );
   }
 
-  // ---- Landing Page (Full-Width Edge-to-Edge Layout) ----
+  // ---- Main Public Landing View (Default) ----
   return (
-    <div className="min-h-screen w-full bg-white text-ink">
+    <div className="min-h-screen w-full bg-sand/30 font-sans text-ink">
       
-      {/* Top Header / Full Screen Navbar */}
-      <header className="flex w-full flex-wrap items-center justify-between gap-4 border-b-2 border-ink bg-white px-6 py-4 sm:px-10 lg:px-16 xl:px-20" data-testid="landing-header">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b-2 border-ink bg-white px-4 py-3 sm:px-8">
         <Logo />
-
-        <nav className="flex items-center gap-4 sm:gap-8">
-          <Link to="/employer" className="text-xs font-black tracking-wider text-ink hover:text-brand">
-            EXPERTS
-          </Link>
-          <Link to="/freelancer/jobs" className="text-xs font-black tracking-wider text-ink hover:text-brand">
-            GIGS
-          </Link>
-          <Link to="/map" className="text-xs font-black tracking-wider text-ink hover:text-brand">
-            LIVE MAP
-          </Link>
-          <Link to="/categories" className="text-xs font-black tracking-wider text-ink hover:text-brand">
-            CATEGORIES
-          </Link>
-        </nav>
-
         {user ? (
-          <div className="flex items-center gap-2" data-testid="user-row">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
-              data-testid="header-employer-btn"
               onClick={() => nav("/employer")}
               className="hidden sm:flex items-center gap-1 border-2 border-ink bg-ink px-3 py-2 text-[10px] font-black tracking-wider text-white hover:bg-black"
             >
               <Users size={12} /> <span>EMPLOYER</span>
             </button>
             <button
-              data-testid="header-freelancer-btn"
               onClick={() => nav("/freelancer/jobs")}
               className="hidden sm:flex items-center gap-1 border-2 border-ink bg-brand px-3 py-2 text-[10px] font-black tracking-wider text-white hover:opacity-90"
             >
@@ -636,17 +734,30 @@ export default function Landing() {
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               data-testid="landing-signin-btn"
-              onClick={() => setAuthModalOpen(true)}
-              className="border-2 border-ink bg-white px-4 py-2 text-xs font-black tracking-wider text-ink hover:bg-sand"
+              onClick={() => {
+                setAuthModalMode("signin");
+                setAuthModalOpen(true);
+              }}
+              className="border-2 border-ink bg-white px-3.5 py-2 text-xs font-black tracking-wider text-ink hover:bg-sand"
             >
               SIGN IN
             </button>
             <button
+              data-testid="landing-signup-btn"
+              onClick={() => {
+                setAuthModalMode("signup");
+                setAuthModalOpen(true);
+              }}
+              className="border-2 border-ink bg-ink px-3.5 py-2 text-xs font-black tracking-wider text-white hover:bg-black"
+            >
+              SIGN UP
+            </button>
+            <button
               onClick={() => nav("/employer/post-job")}
-              className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+              className="hidden sm:flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
             >
               <PlusCircle size={14} />
               <span>POST JOB</span>
@@ -658,15 +769,15 @@ export default function Landing() {
       {/* Hero Section (Edge-to-Edge) */}
       <section className="w-full border-b-2 border-ink bg-white px-6 py-12 sm:px-10 lg:px-16 xl:px-20">
         
-        {/* Logged in direct workspace switcher */}
+        {/* Quick Direct Workspace Shortcut Bar if already authenticated */}
         {user && (
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-2 border-ink bg-sand p-4 sm:p-5" data-testid="logged-in-workspace-banner">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-2 border-ink bg-[#FFF3E9] p-4 shadow-[4px_4px_0px_#121212]">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-brand text-sm font-black text-white">
-                {(user.name || user.email || "U")[0].toUpperCase()}
-              </div>
+              <span className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-brand text-white">
+                <Sparkles size={20} />
+              </span>
               <div>
-                <p className="text-xs font-black text-ink">WELCOME, <span className="text-brand">{user.name || user.email}</span></p>
+                <p className="text-sm font-black text-ink">Welcome back, {user.name || "Member"}!</p>
                 <p className="text-[11px] text-inkmuted">Select your workspace to view experts or apply to gigs</p>
               </div>
             </div>
@@ -739,73 +850,98 @@ export default function Landing() {
           <button
             data-testid="role-freelancer-card"
             onClick={() => chooseRole("freelancer")}
-            className="group border-2 border-ink bg-ink p-8 text-left shadow-[5px_5px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1 sm:p-10"
+            className="group border-2 border-ink bg-brand p-8 text-left shadow-[5px_5px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1 sm:p-10"
           >
             <div className="mb-6 flex items-center justify-between">
-              <span className="bg-brand px-4 py-1.5 text-xs font-black tracking-[0.15em] text-white">
-                I'M LOOKING FOR A JOB (EMPLOYEE)
+              <span className="bg-ink px-4 py-1.5 text-xs font-black tracking-[0.15em] text-white">
+                I'M LOOKING FOR GIGS (EMPLOYEE)
               </span>
-              <div className="flex h-11 w-11 items-center justify-center border-2 border-ink bg-ink group-hover:bg-white">
-                <ArrowRight size={24} className="text-white group-hover:text-ink" />
+              <div className="flex h-11 w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-ink">
+                <ArrowRight size={24} className="text-white" />
               </div>
             </div>
             <p className="whitespace-pre-line text-3xl font-black leading-tight text-white sm:text-4xl">
-              Find gigs in your{"\n"}neighborhood today
+              Apply to 200+ gigs{"\n"}within 5km of you
             </p>
             <p className="mt-4 text-base leading-7 text-white/90">
-              Apply to verified jobs within 5km of your area. Direct chat with employers, milestone escrow payments, and zero delays.
+              Direct chat with Bengaluru employers looking for immediate hires. Zero middlemen, keep 100% earnings.
             </p>
             <div className="mt-8 flex items-center gap-3 border-t border-white/20 pt-5 text-sm font-extrabold text-white">
-              <span>3 Free Applies Daily</span>
+              <span>Hyperlocal matching</span>
               <span>•</span>
-              <span>Keep 100% Earnings</span>
+              <span>Same-day payment releases</span>
             </div>
           </button>
 
         </div>
       </section>
 
-      {/* Feature Value Props (3-Column Grid) */}
-      <section className="w-full border-b-2 border-ink bg-sand/40 px-6 py-12 sm:px-10 lg:px-16 xl:px-20">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="border-2 border-ink bg-white p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-ink text-white">
-              <ShieldCheck size={24} />
-            </div>
-            <h3 className="mt-4 text-base font-black text-ink">100% VERIFIED PROFILES</h3>
-            <p className="mt-2 text-xs leading-5 text-inkmuted">Every freelancer is verified with email and live portfolios.</p>
+      {/* Trust & Live Metrics Strip */}
+      <section className="border-b-2 border-ink bg-[#FFF3E9] py-8 px-6 sm:px-10 lg:px-16">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+          <div>
+            <p className="text-3xl sm:text-4xl font-black text-ink">5 KM</p>
+            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-inkmuted">Hyperlocal Radius</p>
           </div>
-
-          <div className="border-2 border-ink bg-white p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-brand text-white">
-              <Zap size={24} />
-            </div>
-            <h3 className="mt-4 text-base font-black text-ink">DIRECT CALLS &amp; CHATS</h3>
-            <p className="mt-2 text-xs leading-5 text-inkmuted">No middlemen or delayed messaging. Instant direct contact with phone numbers.</p>
+          <div>
+            <p className="text-3xl sm:text-4xl font-black text-ink">200+</p>
+            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-inkmuted">Active Bengaluru Gigs</p>
           </div>
-
-          <div className="border-2 border-ink bg-white p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-ink text-white">
-              <Sparkles size={24} />
-            </div>
-            <h3 className="mt-4 text-base font-black text-ink">TRANSPARENT PRICING</h3>
-            <p className="mt-2 text-xs leading-5 text-inkmuted">Simple, transparent one-time unlock fees with direct payments and zero hidden cuts.</p>
+          <div>
+            <p className="text-3xl sm:text-4xl font-black text-brand">100%</p>
+            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-inkmuted">Keep Your Earnings</p>
+          </div>
+          <div>
+            <p className="text-3xl sm:text-4xl font-black text-ink">1 MIN</p>
+            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-inkmuted">Fast Onboarding</p>
           </div>
         </div>
       </section>
 
-      {/* Quick Links & Footer (Full Width) */}
-      <footer className="flex w-full flex-wrap items-center justify-between gap-4 px-6 py-8 sm:px-10 lg:px-16 xl:px-20" data-testid="landing-footer">
-        <div className="flex items-center gap-2">
-          <div className="h-2.5 w-2.5 bg-brand" />
-          <span className="text-xs uppercase tracking-wider text-inkmuted">
-            WorkHop · Your next local gig, one minute away · Razorpay Secured
-          </span>
+      {/* Feature Value Props */}
+      <section className="border-b-2 border-ink bg-white py-16 px-6 sm:px-10 lg:px-16">
+        <div className="max-w-3xl">
+          <span className="text-xs font-black uppercase tracking-widest text-brand">WHY WORKHOP</span>
+          <h2 className="mt-2 text-3xl sm:text-4xl font-black text-ink">Built specifically for high-speed local collaborations</h2>
         </div>
 
-        <div className="flex items-center gap-6 text-xs font-extrabold text-ink">
-          <Link to="/employer" className="hover:text-brand">Employer Site</Link>
-          <Link to="/freelancer/jobs" className="hover:text-brand">Employee Site</Link>
+        <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="border-2 border-ink bg-sand/50 p-6 shadow-[3px_3px_0px_#121212]">
+            <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-brand text-white font-black">
+              1
+            </div>
+            <h3 className="mt-4 text-lg font-black text-ink">VERIFIED TALENT</h3>
+            <p className="mt-2 text-xs leading-5 text-inkmuted">
+              Every freelancer is verified with email and live portfolios.
+            </p>
+          </div>
+
+          <div className="border-2 border-ink bg-sand/50 p-6 shadow-[3px_3px_0px_#121212]">
+            <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-ink text-white font-black">
+              2
+            </div>
+            <h3 className="mt-4 text-lg font-black text-ink">DIRECT CONTACT</h3>
+            <p className="mt-2 text-xs leading-5 text-inkmuted">
+              Unlock direct mobile numbers and start chatting on WhatsApp/Phone immediately without waiting.
+            </p>
+          </div>
+
+          <div className="border-2 border-ink bg-sand/50 p-6 shadow-[3px_3px_0px_#121212]">
+            <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-ok text-white font-black">
+              3
+            </div>
+            <h3 className="mt-4 text-lg font-black text-ink">TRANSPARENT PRICING</h3>
+            <p className="mt-2 text-xs leading-5 text-inkmuted">
+              Simple flat unlocking credits. No hidden deductions or surprise cuts taken from freelancer payouts.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer Navigation */}
+      <footer className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t-2 border-ink bg-white px-6 py-8 text-xs font-bold text-inkmuted">
+        <p>© 2026 WorkHop Technologies · Hyperlocal Workspace</p>
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
           <Link to="/map" className="hover:text-brand">Live Map</Link>
           <Link to="/categories" className="hover:text-brand">Categories</Link>
           <Link to="/employer/plans" className="hover:text-brand">Plans</Link>
@@ -815,10 +951,11 @@ export default function Landing() {
         </div>
       </footer>
 
-      {/* Auth Modal for Global Direct Sign-in */}
+      {/* Auth Modal for Global Direct Sign-in / Sign-up */}
       <AuthModal
         isOpen={authModalOpen}
         initialRole={authModalRole}
+        initialMode={authModalMode}
         onClose={() => setAuthModalOpen(false)}
       />
 

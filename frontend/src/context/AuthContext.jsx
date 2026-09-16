@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { apiGet, apiPost, getToken, setToken, clearToken } from "@/lib/api";
-import { getStoredUser, saveStoredUser, createMockSession } from "@/lib/clientStore";
+import { getStoredUser, saveStoredUser, createMockSession, passwordLogin, saveRegisteredUser } from "@/lib/clientStore";
 
 const AuthContext = createContext({
   user: null,
@@ -8,6 +8,7 @@ const AuthContext = createContext({
   login: () => {},
   logout: async () => {},
   adoptSession: async () => {},
+  passwordLoginAuth: async () => {},
 });
 
 function parseSessionId(url) {
@@ -139,7 +140,29 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const passwordLoginAuth = useCallback(async (email, password, role = "freelancer") => {
+    try {
+      const data = await apiPost("/auth/login", { email, password });
+      if (data?.session_token && data?.user) {
+        setToken(data.session_token);
+        saveStoredUser(data.user);
+        setUser(data.user);
+        return data;
+      }
+    } catch (e) {
+      // Fallback
+      const session = passwordLogin(email, password, role);
+      setToken(session.session_token);
+      saveStoredUser(session.user);
+      setUser(session.user);
+      return session;
+    }
+  }, []);
+
   const signupWithDetails = useCallback(async (details) => {
+    if (details.password) {
+      saveRegisteredUser(details.email, details.password, details);
+    }
     const session = createMockSession(details.email || "user@workhop.local", details);
     setToken(session.session_token);
     saveStoredUser(session.user);
@@ -161,7 +184,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, adminLogin, logout, adoptSession, signupWithDetails, updateUserProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, adminLogin, passwordLoginAuth, logout, adoptSession, signupWithDetails, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );

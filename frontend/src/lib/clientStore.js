@@ -233,9 +233,77 @@ export const ADMIN_EMAILS = [
   "manarastudio22@gmail.com",
 ];
 
+const REGISTERED_USERS_KEY = "workhop_registered_users";
+
+export function getRegisteredUsers() {
+  const raw = localStorage.getItem(REGISTERED_USERS_KEY);
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch { return {}; }
+}
+
+export function saveRegisteredUser(email, password, profile = {}) {
+  if (!email) return;
+  const users = getRegisteredUsers();
+  users[email.trim().toLowerCase()] = {
+    ...profile,
+    email: email.trim().toLowerCase(),
+    password: password || "123456",
+    updated_at: new Date().toISOString(),
+  };
+  localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+}
+
 export function isUserAdmin(email) {
   if (!email) return false;
   return ADMIN_EMAILS.includes(email.trim().toLowerCase());
+}
+
+export function passwordLogin(email, password, fallbackRole = "freelancer") {
+  const cleanEmail = (email || "").trim().toLowerCase();
+  if (!cleanEmail) {
+    const err = new Error("Please enter your email address.");
+    err.status = 400;
+    throw err;
+  }
+  if (!password) {
+    const err = new Error("Please enter your password to sign in.");
+    err.status = 400;
+    throw err;
+  }
+
+  // Admin check
+  if (isUserAdmin(cleanEmail)) {
+    if (password === "123456789") {
+      const session = createMockSession(cleanEmail, {
+        name: "Zenith Developers (Admin)",
+        role: "employer",
+        is_admin: true,
+      });
+      return session;
+    } else {
+      const err = new Error("Invalid admin password. Please try again.");
+      err.status = 401;
+      throw err;
+    }
+  }
+
+  // Registered user check
+  const regUsers = getRegisteredUsers();
+  const existing = regUsers[cleanEmail];
+  if (existing && existing.password && existing.password !== password) {
+    const err = new Error("Incorrect password. Please check your credentials.");
+    err.status = 401;
+    throw err;
+  }
+
+  // Save/Update registered user
+  saveRegisteredUser(cleanEmail, password, existing || { role: fallbackRole });
+
+  const session = createMockSession(cleanEmail, {
+    ...(existing || {}),
+    role: existing?.role || fallbackRole,
+  });
+  return session;
 }
 
 export function createMockSession(email = "user@workhop.local", details = {}) {

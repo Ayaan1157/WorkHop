@@ -1213,34 +1213,71 @@ class LoginRequest(BaseModel):
 @api_router.post("/auth/admin-login")
 async def auth_login(req: LoginRequest):
     email = req.email.strip().lower()
+    if not req.password:
+        raise HTTPException(status_code=400, detail="Password is required to sign in.")
+
     # Check credentials for admin access
-    if email in ADMIN_EMAILS and req.password == "123456789":
-        user = await db.users.find_one({"email": email}, {"_id": 0})
-        if not user:
-            user = {
-                "user_id": f"user_admin_{uuid.uuid4().hex[:8]}",
-                "email": email,
-                "name": "Zenith Developers (Admin)",
-                "picture": None,
-                "created_at": _now_iso(),
-            }
-            await db.users.insert_one(dict(user))
-        session_token = f"st_admin_{uuid.uuid4().hex}{secrets.token_hex(8)}"
-        await db.user_sessions.update_one(
-            {"session_token": session_token},
-            {"$set": {
+    if email in ADMIN_EMAILS:
+        if req.password == "123456789":
+            user = await db.users.find_one({"email": email}, {"_id": 0})
+            if not user:
+                user = {
+                    "user_id": f"user_admin_{uuid.uuid4().hex[:8]}",
+                    "email": email,
+                    "name": "Zenith Developers (Admin)",
+                    "picture": None,
+                    "created_at": _now_iso(),
+                }
+                await db.users.insert_one(dict(user))
+            session_token = f"st_admin_{uuid.uuid4().hex}{secrets.token_hex(8)}"
+            await db.user_sessions.update_one(
+                {"session_token": session_token},
+                {"$set": {
+                    "session_token": session_token,
+                    "user_id": user["user_id"],
+                    "expires_at": datetime.now(timezone.utc) + timedelta(days=30),
+                    "created_at": datetime.now(timezone.utc),
+                }},
+                upsert=True,
+            )
+            return {
+                "user": _public_user(user),
                 "session_token": session_token,
-                "user_id": user["user_id"],
-                "expires_at": datetime.now(timezone.utc) + timedelta(days=30),
-                "created_at": datetime.now(timezone.utc),
-            }},
-            upsert=True,
-        )
-        return {
-            "user": _public_user(user),
-            "session_token": session_token,
+            }
+        else:
+            raise HTTPException(status_code=401, detail="Invalid admin password.")
+
+    # General user login
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if user:
+        if user.get("password") and user.get("password") != req.password:
+            raise HTTPException(status_code=401, detail="Incorrect password. Please check your credentials.")
+    else:
+        user = {
+            "user_id": f"user_{uuid.uuid4().hex[:12]}",
+            "email": email,
+            "name": email.split("@")[0].replace(".", " ").title(),
+            "password": req.password,
+            "picture": None,
+            "created_at": _now_iso(),
         }
-    raise HTTPException(status_code=401, detail="Invalid email or password.")
+        await db.users.insert_one(dict(user))
+
+    session_token = f"st_{uuid.uuid4().hex}{secrets.token_hex(8)}"
+    await db.user_sessions.update_one(
+        {"session_token": session_token},
+        {"$set": {
+            "session_token": session_token,
+            "user_id": user["user_id"],
+            "expires_at": datetime.now(timezone.utc) + timedelta(days=30),
+            "created_at": datetime.now(timezone.utc),
+        }},
+        upsert=True,
+    )
+    return {
+        "user": _public_user(user),
+        "session_token": session_token,
+    }
 
 
 @api_router.post("/auth/session")

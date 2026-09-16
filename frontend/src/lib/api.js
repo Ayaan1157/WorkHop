@@ -8,6 +8,8 @@ import {
   getStoredUser,
   saveStoredUser,
   createMockSession,
+  passwordLogin,
+  saveRegisteredUser,
   applyToJob,
   getStoredChats,
   getFreelancerProfile,
@@ -178,29 +180,19 @@ function mockRouter(path, method = "GET", body = null) {
   if (cleanPath === "/auth/login" || cleanPath === "/auth/admin-login") {
     const email = (body?.email || "").trim().toLowerCase();
     const password = body?.password || "";
-    if (
-      ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(email) &&
-      password === "123456789"
-    ) {
-      const session = createMockSession(email, {
-        name: "Zenith Developers (Admin)",
-        role: "employer",
-        is_admin: true,
-      });
-      session.user.is_admin = true;
-      saveStoredUser(session.user);
-      setToken(session.session_token);
-      return session;
-    }
-    // Also allow normal login
-    const session = createMockSession(email || "user@example.com", body || {});
+    const session = passwordLogin(email, password, body?.role || "freelancer");
     setToken(session.session_token);
+    saveStoredUser(session.user);
     return session;
   }
   if (cleanPath === "/auth/signup") {
     const email = body?.email || "user@example.com";
+    if (body?.password) {
+      saveRegisteredUser(email, body.password, body);
+    }
     const session = createMockSession(email, body || {});
     setToken(session.session_token);
+    saveStoredUser(session.user);
     return session;
   }
   if (cleanPath === "/auth/session") {

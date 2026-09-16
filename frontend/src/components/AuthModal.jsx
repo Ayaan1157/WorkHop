@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   X, Briefcase, Users, Phone, MapPin, Mail, User, Building2,
-  Sparkles, ShieldCheck, CheckCircle2, ArrowRight, Loader2, LocateFixed, KeyRound
+  Sparkles, ShieldCheck, CheckCircle2, ArrowRight, Loader2, LocateFixed, KeyRound, Eye, EyeOff
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { apiPost } from "@/lib/api";
@@ -11,7 +11,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 
 export default function AuthModal({ isOpen, onClose, initialRole = null, initialMode = "signup" }) {
   const nav = useNavigate();
-  const { user, login, adoptSession, signupWithDetails, adminLogin } = useAuth();
+  const { user, login, adoptSession, signupWithDetails, adminLogin, passwordLoginAuth } = useAuth();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
 
   // Role: "employer" | "freelancer"
@@ -23,10 +23,14 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
   const [area, setArea] = useState("Koramangala");
   const [companyName, setCompanyName] = useState("");
   const [skill, setSkill] = useState("");
+
+  // Google Pre-fill banner
+  const [googleConnected, setGoogleConnected] = useState(false);
 
   // OTP Stage
   const [otpStage, setOtpStage] = useState("idle"); // "idle" | "sent"
@@ -57,22 +61,48 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   const isPhoneValid = phoneDigits.length === 10;
   const isEmployer = role === "employer";
 
+  // Handle Google button
+  const handleGoogleAuth = async () => {
+    setError(null);
+    const googleEmail = email.trim() || "google.user@gmail.com";
+    const googleName = fullName.trim() || "Google Member";
+    setEmail(googleEmail);
+    if (!fullName) setFullName(googleName);
+    setGoogleConnected(true);
+
+    // If already in sign in mode and phone is not strictly required, or if user is signing in
+    if (mode === "signin") {
+      setLoading(true);
+      try {
+        localStorage.setItem("workhop_pending_role", role);
+        if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
+        if (area) setSavedArea(area);
+        await login(googleEmail, googleName);
+        completeAndRedirect(role);
+      } catch (e) {
+        setError(e?.message || "Google sign-in failed.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // If in signup mode, prompt to enter phone & area if missing
+    if (!isPhoneValid || !area) {
+      setError("Google account linked! Please enter your 10-digit mobile number and neighborhood below to finish registration.");
+      return;
+    }
+
+    // If details already provided, complete registration
+    handleSignupSubmit();
+  };
+
   // Request Email OTP
   const handleRequestOtp = async () => {
     const cleanEmail = email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
       setError("Please enter a valid email address.");
       return;
-    }
-    if (mode === "signup") {
-      if (!fullName.trim()) {
-        setError("Please enter your full name.");
-        return;
-      }
-      if (!isPhoneValid) {
-        setError("Please enter a valid 10-digit mobile number.");
-        return;
-      }
     }
 
     setLoading(true);
@@ -116,12 +146,10 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         await adoptSession(data.session_token, data.user);
         completeAndRedirect(role);
       } else {
-        // Fallback local signup
         await signupWithDetails(payload);
         completeAndRedirect(role);
       }
     } catch {
-      // Offline fallback
       const payload = {
         email: cleanEmail,
         role: role,
@@ -138,42 +166,67 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     }
   };
 
-  // Instant 1-Click Signup with Details / Password Sign In
-  const handleInstantSignup = async () => {
-    const cleanEmail = email.trim().toLowerCase() || `${(fullName || "user").toLowerCase().replace(/[^a-z0-9]/g, "")}@workhop.local`;
-    if (mode === "signup") {
-      if (!fullName.trim()) {
-        setError("Please enter your full name.");
-        return;
-      }
-      if (!isPhoneValid) {
-        setError("Please enter a valid 10-digit mobile phone number.");
-        return;
-      }
+  // Sign In with Password Handler
+  const handleSignInSubmit = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      setError("Please enter your email address.");
+      return;
+    }
+    if (!password) {
+      setError("Please enter your password to sign in.");
+      return;
     }
 
     setLoading(true);
     setError(null);
     try {
-      // If admin credentials provided or password entered
-      if (
-        ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(cleanEmail) ||
-        (mode === "signin" && password)
-      ) {
-        try {
-          await adminLogin(cleanEmail, password || "123456789");
-          completeAndRedirect(role);
-          return;
-        } catch {
-          // Continue to standard auth
-        }
-      }
+      await passwordLoginAuth(cleanEmail, password, role);
+      completeAndRedirect(role);
+    } catch (e) {
+      setError(e?.message || "Incorrect email or password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Sign Up with Details & Password Handler
+  const handleSignupSubmit = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!fullName.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
+    if (!isPhoneValid) {
+      setError("Please enter a valid 10-digit mobile phone number.");
+      return;
+    }
+    if (!area) {
+      setError("Please select your neighborhood area.");
+      return;
+    }
+    if (!isEmployer && !skill.trim()) {
+      setError("Please enter your primary profession / skill.");
+      return;
+    }
+    if (!cleanEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (!password || password.length < 6) {
+      setError("Please create a password (at least 6 characters).");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
       const payload = {
         email: cleanEmail,
+        password: password,
         role: role,
-        name: fullName.trim() || (["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com"].includes(cleanEmail) ? "Zenith Developers (Admin)" : "WorkHop User"),
-        phone: phoneDigits || "9876543210",
+        name: fullName.trim(),
+        phone: phoneDigits,
         area: area,
         company_name: isEmployer ? (companyName.trim() || "Hyperlocal Co.") : undefined,
         skill: !isEmployer ? (skill.trim() || "UI/UX & Brand Designer") : undefined,
@@ -182,7 +235,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       await signupWithDetails(payload);
       completeAndRedirect(role);
     } catch (e) {
-      setError(e?.message || "Sign in failed. Try again.");
+      setError(e?.message || "Sign up failed. Please check your information.");
     } finally {
       setLoading(false);
     }
@@ -215,12 +268,12 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         data-testid="auth-modal-container"
         className="relative my-auto w-full max-w-2xl border-2 border-ink bg-white p-5 sm:p-8 shadow-[8px_8px_0px_#121212] transition-all"
       >
-        {/* Header with Close */}
+        {/* Header with Close & Mode Switcher */}
         <div className="flex items-start justify-between border-b-2 border-ink pb-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 bg-ink px-2.5 py-1 text-[10px] font-black tracking-widest text-white uppercase">
-                {mode === "signup" ? "Create WorkHop Account" : "Sign In to WorkHop"}
+                {mode === "signup" ? "CREATE ACCOUNT" : "SIGN IN"}
               </span>
               <span className="hidden sm:inline-block text-[11px] font-bold text-brand">
                 Hyperlocal · Bengaluru Live
@@ -231,8 +284,8 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
             </h2>
             <p className="text-xs text-inkmuted font-semibold">
               {mode === "signup"
-                ? "Pick your role, enter your phone & details to get started instantly"
-                : "Sign in with your email or Google account to continue"}
+                ? "Enter your details and mobile number to start connecting locally"
+                : "Sign in with your email and password to continue"}
             </p>
           </div>
           <button
@@ -241,6 +294,42 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
             className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-white hover:bg-sand transition"
           >
             <X size={18} />
+          </button>
+        </div>
+
+        {/* Prominent Mode Switcher Tabs */}
+        <div className="mt-4 flex border-2 border-ink bg-sand p-1">
+          <button
+            type="button"
+            data-testid="auth-tab-signup"
+            onClick={() => {
+              setMode("signup");
+              setError(null);
+              setOtpStage("idle");
+            }}
+            className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
+              mode === "signup"
+                ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
+                : "bg-transparent text-ink hover:bg-white"
+            }`}
+          >
+            ✨ SIGN UP (NEW USER)
+          </button>
+          <button
+            type="button"
+            data-testid="auth-tab-signin"
+            onClick={() => {
+              setMode("signin");
+              setError(null);
+              setOtpStage("idle");
+            }}
+            className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
+              mode === "signin"
+                ? "bg-ink text-white shadow-[2px_2px_0px_#121212]"
+                : "bg-transparent text-ink hover:bg-white"
+            }`}
+          >
+            🔐 SIGN IN (EXISTING USER)
           </button>
         </div>
 
@@ -264,7 +353,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
               <div className="flex items-center justify-between">
                 <span
                   className={`flex h-8 w-8 items-center justify-center border-2 ${
-                    isEmployer ? "border-white bg-brand text-white" : "border-ink bg-white text-ink"
+                    isEmployer ? "border-brand bg-brand text-white" : "border-ink bg-white text-ink"
                   }`}
                 >
                   <Users size={16} />
@@ -272,9 +361,9 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                 {isEmployer && <CheckCircle2 size={18} className="text-brand" />}
               </div>
               <div className="mt-3">
-                <p className="text-sm font-black">💼 I want to hire talent</p>
-                <p className={`text-[11px] leading-4 mt-0.5 ${isEmployer ? "text-sand" : "text-inkmuted"}`}>
-                  Post jobs, discover verified experts near you &amp; chat in real-time.
+                <p className="text-sm font-black">🏢 I'm hiring talent</p>
+                <p className={`text-[11px] leading-4 mt-0.5 ${isEmployer ? "text-[#D6D6D6]" : "text-inkmuted"}`}>
+                  Find verified local freelancers within 5km and contact directly.
                 </p>
               </div>
             </button>
@@ -310,27 +399,22 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
           </div>
         </div>
 
-        {/* STEP 2: Details & Phone Signup Form */}
+        {/* STEP 2: Details & Credentials Form */}
         <div className="mt-5 border-t-2 border-ink pt-5">
           <div className="flex items-center justify-between mb-3">
             <label className="text-[11px] font-black uppercase tracking-wider text-inkmuted">
-              2. {mode === "signup" ? "ENTER YOUR DETAILS & MOBILE NUMBER" : "SIGN IN CREDENTIALS"}
+              2. {mode === "signup" ? "ENTER YOUR DETAILS & MOBILE NUMBER" : "ENTER EMAIL & PASSWORD"}
             </label>
-            <button
-              type="button"
-              data-testid="auth-mode-toggle"
-              onClick={() => {
-                setMode(mode === "signup" ? "signin" : "signup");
-                setError(null);
-                setOtpStage("idle");
-              }}
-              className="text-xs font-black text-brand hover:underline"
-            >
-              {mode === "signup" ? "Already have an account? Sign In" : "Need an account? Sign Up"}
-            </button>
+            {googleConnected && (
+              <span className="text-[11px] font-bold text-ok flex items-center gap-1">
+                ✓ Google Account Linked
+              </span>
+            )}
           </div>
 
           <div className="flex flex-col gap-3">
+            
+            {/* SIGN UP ONLY FIELDS: Name, Mobile Phone, Area, Role Field */}
             {mode === "signup" && (
               <>
                 {/* Full Name */}
@@ -413,7 +497,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                 {isEmployer ? (
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-                      Company / Organization Name (Optional)
+                      Company / Business Name (Optional)
                     </label>
                     <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5">
                       <Building2 size={16} className="text-inkmuted mr-2 shrink-0" />
@@ -467,27 +551,33 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
               </div>
             </div>
 
-            {/* Optional Password in Sign In Mode */}
-            {mode === "signin" && (
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-                  Password / Admin Key (Optional)
-                </label>
-                <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5">
-                  <KeyRound size={16} className="text-inkmuted mr-2 shrink-0" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError(null);
-                    }}
-                    placeholder="Enter password (e.g. 123456789)"
-                    className="w-full bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60 focus:outline-none"
-                  />
-                </div>
+            {/* Password Field (Required for Sign In, and Create Password for Sign Up) */}
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                {mode === "signup" ? "Create Password (Min 6 chars) *" : "Password *"}
+              </label>
+              <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5">
+                <KeyRound size={16} className="text-inkmuted mr-2 shrink-0" />
+                <input
+                  data-testid="auth-password-input"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder={mode === "signup" ? "Create a strong password" : "Enter your password"}
+                  className="w-full bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-inkmuted hover:text-ink focus:outline-none ml-2"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
-            )}
+            </div>
 
             {/* OTP Verification Stage if triggered */}
             {otpStage === "sent" && (
@@ -539,7 +629,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
             )}
 
             {error && (
-              <p data-testid="auth-error-msg" className="text-xs font-black text-[#C62828] bg-red-50 p-2 border border-red-200">
+              <p data-testid="auth-error-msg" className="text-xs font-black text-[#C62828] bg-red-50 p-2.5 border border-red-200">
                 ⚠️ {error}
               </p>
             )}
@@ -547,12 +637,13 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
             {/* Action Buttons */}
             {otpStage === "idle" && (
               <div className="mt-2 flex flex-col gap-2">
-                {/* 1-Click Instant Complete & Continue */}
+                
+                {/* Main Action Button */}
                 <button
                   type="button"
                   data-testid="auth-submit-btn"
                   disabled={loading}
-                  onClick={handleInstantSignup}
+                  onClick={mode === "signup" ? handleSignupSubmit : handleSignInSubmit}
                   className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-sm font-black text-white shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-y-1"
                 >
                   {loading ? (
@@ -564,7 +655,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                           ? isEmployer
                             ? "Complete & Start Hiring"
                             : "Complete & Find Gigs"
-                          : "Sign In"}
+                          : "SIGN IN WITH PASSWORD"}
                       </span>
                       <ArrowRight size={16} />
                     </>
@@ -580,7 +671,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                   className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-white py-2.5 text-xs font-black text-ink hover:bg-sand transition"
                 >
                   <Mail size={14} />
-                  <span>Verify with Email OTP</span>
+                  <span>{mode === "signin" ? "Sign In with Email OTP instead" : "Verify with Email OTP"}</span>
                 </button>
 
                 <div className="flex items-center gap-3 my-1">
@@ -589,20 +680,24 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                   <div className="h-0.5 flex-1 bg-ink/10" />
                 </div>
 
-                {/* Google Sign In */}
+                {/* Google Sign In / Sign Up */}
                 <button
                   type="button"
                   data-testid="auth-google-btn"
-                  onClick={async () => {
-                    localStorage.setItem("workhop_pending_role", role);
-                    if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
-                    if (area) setSavedArea(area);
-                    await login();
-                    completeAndRedirect(role);
-                  }}
+                  onClick={handleGoogleAuth}
                   className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-3 text-xs font-black text-white hover:bg-black transition"
                 >
-                  <span>Continue with Google</span>
+                  <svg className="h-4 w-4" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                  </svg>
+                  <span>
+                    {mode === "signup"
+                      ? "Continue with Google (Details Required)"
+                      : "Continue with Google"}
+                  </span>
                 </button>
               </div>
             )}
