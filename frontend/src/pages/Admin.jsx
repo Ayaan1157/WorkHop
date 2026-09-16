@@ -894,6 +894,21 @@ export default function Admin() {
   const [captchaToken, setCaptchaToken] = useState(null);
   const [captchaReset, setCaptchaReset] = useState(0);
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
+    setOverview(null);
+    setRows([]);
+    setLoginPassword("");
+    setCaptchaToken(null);
+    setCaptchaReset((prev) => prev + 1);
+    setLoginError(null);
+    setLoading(false);
+  };
+
   const handleAdminSignIn = async (e) => {
     e?.preventDefault();
 
@@ -971,36 +986,36 @@ export default function Admin() {
   // Locked Screen if Not Admin
   if (!user?.is_admin) {
     return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#F7F7F5] p-4 text-ink">
-        <div data-testid="admin-denied" className="w-full max-w-md border-2 border-ink bg-white p-6 sm:p-8 shadow-[8px_8px_0px_#121212] text-center">
+      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#F7F7F5] dark:bg-[#121212] p-4 text-ink dark:text-white">
+        <div data-testid="admin-denied" className="w-full max-w-md border-2 border-ink dark:border-[#333] bg-white dark:bg-[#1a1a1a] p-6 sm:p-8 shadow-[8px_8px_0px_#121212] dark:shadow-[8px_8px_0px_#000] text-center">
           
           <div className="mx-auto flex h-16 w-16 items-center justify-center border-2 border-ink bg-brand text-white shadow-[3px_3px_0px_#121212]">
             <Shield size={32} />
           </div>
 
           <div className="mt-4">
-            <span className="inline-block bg-ink px-2.5 py-0.5 text-[10px] font-black tracking-widest text-white uppercase">
+            <span className="inline-block bg-ink dark:bg-[#2a2a2a] px-2.5 py-0.5 text-[10px] font-black tracking-widest text-white uppercase">
               RESTRICTED PORTAL
             </span>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">
+            <h2 className="mt-2 text-2xl font-black tracking-tight text-ink dark:text-white">
               Admin Access Only
             </h2>
-            <p className="mt-1 text-xs text-inkmuted font-semibold">
+            <p className="mt-1 text-xs text-inkmuted dark:text-gray-400 font-semibold">
               Enter authorized administrator credentials to unlock the Executive Command Center.
             </p>
           </div>
 
-          <form onSubmit={handleAdminSignIn} className="mt-6 flex flex-col gap-3.5 text-left border-t-2 border-ink pt-5">
+          <form onSubmit={handleAdminSignIn} className="mt-6 flex flex-col gap-3.5 text-left border-t-2 border-ink dark:border-[#333] pt-5">
             <div>
-              <label className="text-[10px] font-black tracking-wider text-inkmuted uppercase">Admin Email</label>
-              <div className="mt-1 flex items-center border-2 border-ink bg-[#FAFAF8] px-3 py-2">
-                <Mail size={16} className="text-inkmuted mr-2 shrink-0" />
+              <label className="text-[10px] font-black tracking-wider text-inkmuted dark:text-gray-400 uppercase">Admin Email</label>
+              <div className="mt-1 flex items-center border-2 border-ink dark:border-[#444] bg-[#FAFAF8] dark:bg-[#222] px-3 py-2">
+                <Mail size={16} className="text-inkmuted dark:text-gray-400 mr-2 shrink-0" />
                 <input
                   type="email"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="Zenithdeveleoperss@gmail.com"
-                  className="w-full bg-transparent text-xs font-bold text-ink outline-none"
+                  className="w-full bg-transparent text-xs font-bold text-ink dark:text-white outline-none"
                   required
                 />
               </div>
@@ -1008,7 +1023,7 @@ export default function Admin() {
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-black tracking-wider text-inkmuted uppercase">Password</label>
+                <label className="text-[10px] font-black tracking-wider text-inkmuted dark:text-gray-400 uppercase">Password</label>
                 <button
                   type="button"
                   onClick={() => setLoginPassword("123456789")}
@@ -1017,14 +1032,14 @@ export default function Admin() {
                   Fill Default Password
                 </button>
               </div>
-              <div className="mt-1 flex items-center border-2 border-ink bg-[#FAFAF8] px-3 py-2">
-                <KeyRound size={16} className="text-inkmuted mr-2 shrink-0" />
+              <div className="mt-1 flex items-center border-2 border-ink dark:border-[#444] bg-[#FAFAF8] dark:bg-[#222] px-3 py-2">
+                <KeyRound size={16} className="text-inkmuted dark:text-gray-400 mr-2 shrink-0" />
                 <input
                   type="password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="Enter admin password"
-                  className="w-full bg-transparent text-xs font-bold text-ink outline-none"
+                  className="w-full bg-transparent text-xs font-bold text-ink dark:text-white outline-none"
                   required
                 />
               </div>
@@ -1057,11 +1072,11 @@ export default function Admin() {
             </button>
           </form>
 
-          <div className="mt-6 border-t border-ink/10 pt-3">
+          <div className="mt-6 border-t border-ink/10 dark:border-white/10 pt-3">
             <button
               data-testid="admin-denied-back"
               onClick={() => nav("/")}
-              className="text-xs font-black tracking-wider text-ink hover:text-brand hover:underline"
+              className="text-xs font-black tracking-wider text-ink dark:text-white hover:text-brand hover:underline"
             >
               ← Return to Live Website
             </button>
@@ -1091,7 +1106,7 @@ export default function Admin() {
                 <Badge text="LIVE MASTER" tone="green" />
               </div>
               <p className="text-[11px] text-inkmuted font-semibold">
-                Authorized: <span className="font-bold text-ink">{user.email}</span> · Full Control
+                Authorized: <span className="font-bold text-ink">{user?.email || "Zenith Admin"}</span> · Full Control
               </p>
             </div>
           </div>
@@ -1112,7 +1127,7 @@ export default function Admin() {
               <RefreshCw size={13} />
             </button>
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="border-2 border-ink bg-ink px-3 py-1.5 text-xs font-black tracking-wider text-white hover:bg-black transition"
             >
               LOGOUT

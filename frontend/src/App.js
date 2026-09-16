@@ -20,12 +20,15 @@ import Jobs from "@/pages/freelancer/Jobs";
 import FreelancerChats from "@/pages/freelancer/Chats";
 import FreelancerProfile from "@/pages/freelancer/FreelancerProfile";
 
+import ErrorBoundary from "@/components/ErrorBoundary";
+
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/profile" element={<FreelancerProfile />} />
             <Route path="/settings" element={<Profile />} />
@@ -46,6 +49,7 @@ function App() {
             <Route path="/freelancer/profile" element={<FreelancerProfile />} />
           </Routes>
         </BrowserRouter>
+        </ErrorBoundary>
       </AuthProvider>
     </ThemeProvider>
   );
