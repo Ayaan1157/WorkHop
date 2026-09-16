@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Pencil, Plus, Trash2, ChevronLeft, Github, ExternalLink,
@@ -6,7 +6,7 @@ import {
   MapPin, Star, ChevronDown, ChevronUp, X, User, DollarSign,
   Code2, Loader2, Menu, MessagesSquare, Map as MapIcon,
   LayoutGrid, Tag, LifeBuoy, FileText, Shield, ChevronRight,
-  LogOut, Wallet, ShieldCheck
+  LogOut, Wallet, ShieldCheck, Camera, Upload
 } from "lucide-react";
 import { Shell } from "@/components/kit";
 import EditModal from "@/components/EditModal";
@@ -62,6 +62,8 @@ export default function FreelancerProfile() {
   const [proSkill, setProSkill] = useState(() => user?.skill || localStorage.getItem("workhop_pro_skill") || "");
   const [proSaving, setProSaving] = useState(false);
   const [proSaveMsg, setProSaveMsg] = useState(null);
+
+  const photoInputRef = useRef(null);
 
   const saveProDetails = async () => {
     const digits = proPhone.replace(/\D/g, "");
@@ -192,8 +194,13 @@ export default function FreelancerProfile() {
     closeEdit();
   };
 
-  const saveName = (name) => {
-    if (updateUserProfile) updateUserProfile({ name });
+  const saveName = (name, picture) => {
+    if (updateUserProfile) {
+      updateUserProfile({
+        name: (name || "").trim() || (user?.name || "WorkHop User"),
+        picture: picture !== undefined ? (picture || null) : (user?.picture || null),
+      });
+    }
     closeEdit();
   };
 
@@ -330,20 +337,35 @@ export default function FreelancerProfile() {
                 <div className="flex flex-col items-center text-center">
                   {/* Avatar */}
                   <div className="relative group mb-4">
-                    {user?.picture ? (
-                      <img
-                        src={user.picture}
-                        alt=""
-                        className="h-24 w-24 rounded-full object-cover border-2 border-[#222]"
-                      />
-                    ) : (
-                      <div className="h-24 w-24 rounded-full bg-[#E65A1E] flex items-center justify-center text-3xl font-bold text-white border-2 border-[#222]">
-                        {displayName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
                     <button
-                      onClick={() => openEdit("name", { name: user?.name || "" })}
+                      type="button"
+                      onClick={() => openEdit("name", { name: user?.name || "", picture: user?.picture || "" })}
+                      className="relative block rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-[#E65A1E]/50"
+                      title="Click to edit profile photo & name"
+                      data-testid="avatar-edit-button"
+                    >
+                      {user?.picture ? (
+                        <img
+                          src={user.picture}
+                          alt={displayName}
+                          className="h-24 w-24 rounded-full object-cover border-2 border-[#222] group-hover:opacity-85 transition"
+                        />
+                      ) : (
+                        <div className="h-24 w-24 rounded-full bg-[#E65A1E] flex items-center justify-center text-3xl font-bold text-white border-2 border-[#222] group-hover:brightness-105 transition">
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition rounded-full text-white cursor-pointer">
+                        <Camera size={22} className="drop-shadow" />
+                        <span className="text-[10px] font-semibold mt-0.5">Edit</span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEdit("name", { name: user?.name || "", picture: user?.picture || "" })}
                       className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-[#E65A1E] flex items-center justify-center text-white shadow-lg hover:bg-[#D44F17] transition"
+                      title="Edit name and photo"
+                      data-testid="avatar-pencil-button"
                     >
                       <Pencil size={12} />
                     </button>
@@ -845,23 +867,94 @@ export default function FreelancerProfile() {
         </div>
       </EditModal>
 
-      {/* Name */}
+      {/* Name & Profile Photo */}
       <EditModal
         isOpen={editingSection === "name"}
         onClose={closeEdit}
-        title="Edit your name"
-        onSave={() => saveName(editData?.name)}
+        title="Edit Profile Info"
+        onSave={() => saveName(editData?.name, editData?.picture)}
       >
-        <div>
-          <p className={labelCls}>Full Name</p>
-          <input
-            value={editData?.name || ""}
-            onChange={(e) =>
-              setEditData((d) => ({ ...d, name: e.target.value }))
-            }
-            placeholder="Your full name"
-            className={inputCls}
-          />
+        <div className="flex flex-col gap-5">
+          {/* Avatar upload / preview */}
+          <div>
+            <p className={labelCls}>Profile Photo</p>
+            <div className="flex items-center gap-4 mt-2 p-3 bg-[#0d0d0d] border border-[#222] rounded-xl">
+              <div className="relative shrink-0">
+                {editData?.picture ? (
+                  <img
+                    src={editData.picture}
+                    alt="Preview"
+                    className="h-16 w-16 rounded-full object-cover border-2 border-[#E65A1E]"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-full bg-[#E65A1E] flex items-center justify-center text-2xl font-bold text-white border-2 border-[#333]">
+                    {(editData?.name || displayName || "U").charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                <input
+                  type="file"
+                  ref={photoInputRef}
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                      alert("Image size should be under 5MB");
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      setEditData((d) => ({ ...d, picture: ev.target.result }));
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    className="px-3 py-1.5 rounded-lg bg-[#1f1f1f] hover:bg-[#282828] border border-[#333] text-xs font-semibold text-white flex items-center gap-1.5 transition"
+                  >
+                    <Upload size={13} className="text-[#E65A1E]" />
+                    {editData?.picture ? "Change Photo" : "Upload Photo"}
+                  </button>
+
+                  {editData?.picture && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (photoInputRef.current) photoInputRef.current.value = "";
+                        setEditData((d) => ({ ...d, picture: "" }));
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold text-red-400 border border-red-500/20 flex items-center gap-1.5 transition"
+                    >
+                      <Trash2 size={13} />
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-[#777]">
+                  Supports JPG, PNG, WebP up to 5MB.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p className={labelCls}>Full Name</p>
+            <input
+              value={editData?.name || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, name: e.target.value }))
+              }
+              placeholder="Your full name"
+              className={inputCls}
+            />
+          </div>
         </div>
       </EditModal>
 
