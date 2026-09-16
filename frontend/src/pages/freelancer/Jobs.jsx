@@ -339,7 +339,7 @@ export default function Jobs() {
             data-testid="jobs-filter-btn"
             onClick={() => setFiltersOpen((v) => !v)}
             className={`flex h-11 items-center gap-2 border-2 border-ink px-4 transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
-              activeFilterCount > 0 ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+              activeFilterCount > 0 ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-sand"
             }`}
           >
             <SlidersHorizontal size={16} />
@@ -372,7 +372,7 @@ export default function Jobs() {
                       key={r.label}
                       onClick={() => setFilters((p) => ({ ...p, minRating: r.value }))}
                       className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black ${
-                        filters.minRating === r.value ? "bg-ink text-white" : "bg-white text-ink"
+                        filters.minRating === r.value ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink"
                       }`}
                     >
                       {r.label}
@@ -655,7 +655,7 @@ function FilterGroup({ label, options, value, onPick }) {
             key={o.label}
             onClick={() => onPick(o.value)}
             className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black transition ${
-              value === o.value ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+              value === o.value ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-sand"
             }`}
           >
             {o.label}

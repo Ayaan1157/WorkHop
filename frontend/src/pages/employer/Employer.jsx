@@ -124,7 +124,7 @@ export default function Employer() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setBoostModalOpen(true)}
-              className="hidden sm:flex items-center gap-1 border-2 border-ink bg-[#FFF3C4] px-2.5 py-1 text-[10px] font-black text-ink hover:bg-[#FFEAA0]"
+              className="hidden sm:flex items-center gap-1 border-2 border-ink bg-[#FFF3C4] px-2.5 py-1 text-[10px] font-black text-black hover:bg-[#FFEAA0]"
               title="Preview listing boost"
             >
               <Sparkles size={13} className="text-brand" /> BOOST
@@ -221,7 +221,7 @@ export default function Employer() {
               <button
                 onClick={() => setOnlySaved(false)}
                 className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black transition ${
-                  !onlySaved ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+                  !onlySaved ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-sand"
                 }`}
               >
                 ALL PROS ({distFiltered.length})
@@ -284,7 +284,7 @@ export default function Employer() {
                       key={d.label}
                       onClick={() => setMaxDistance(d.val)}
                       className={`border border-ink px-2.5 py-1 text-[10px] font-black ${
-                        maxDistance === d.val ? "bg-ink text-white" : "bg-white text-ink hover:bg-stone"
+                        maxDistance === d.val ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-stone"
                       }`}
                     >
                       {d.label}
@@ -305,7 +305,7 @@ export default function Employer() {
                       key={r.label}
                       onClick={() => setMinRating(r.val)}
                       className={`border border-ink px-2.5 py-1 text-[10px] font-black ${
-                        minRating === r.val ? "bg-ink text-white" : "bg-white text-ink hover:bg-stone"
+                        minRating === r.val ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-stone"
                       }`}
                     >
                       {r.label}

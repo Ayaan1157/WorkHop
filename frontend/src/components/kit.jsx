@@ -237,9 +237,9 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
                 className="flex h-10 w-10 items-center justify-center border-2 border-ink"
                 style={{ background: on ? "#E65A1E" : v.bg }}
               >
-                <CatIcon name={v.icon} size={20} className="text-ink" />
+                <CatIcon name={v.icon} size={20} className={on ? "text-white" : "text-[#121212]"} />
               </span>
-              <span className={`text-center text-[10px] font-black leading-tight ${on ? "text-white" : "text-ink"}`}>
+              <span className={`text-center text-[10px] font-black leading-tight ${on ? "text-white dark:text-black" : "text-ink"}`}>
                 {(CATEGORY_SHORT_LABELS[key] || key).toUpperCase()}
               </span>
             </button>

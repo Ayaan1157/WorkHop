@@ -69,6 +69,80 @@ body {
     border-color: #2a2a2a !important;
 }
 
+/* ═══════ Dark Mode: High Contrast Text for Light-Colored Backgrounds ═══════ */
+/* When an element has a light-colored background (yellow, light green, pastel, light sand), force black text */
+.dark [class*="bg-[#FFF3C4]"],
+.dark [class*="bg-[#FFEAA0]"],
+.dark [class*="bg-[#E5F8EE]"],
+.dark [class*="bg-[#FFF9E6]"],
+.dark [class*="bg-[#FEF3C7]"],
+.dark [class*="bg-[#FFEBEE]"],
+.dark [class*="bg-[#FFF8E7]"],
+.dark [class*="bg-[#FFF3D6]"],
+.dark [class*="bg-[#FFE8D6]"],
+.dark [class*="bg-[#D8F3DC]"],
+.dark [class*="bg-[#E8F5E9]"],
+.dark [class*="bg-[#F3E5F5]"],
+.dark [class*="bg-[#E0F7FA]"],
+.dark [class*="bg-[#FCE4EC]"],
+.dark [class*="bg-[#FFF8E1]"],
+.dark [class*="bg-[#EFEBE9]"],
+.dark [class*="bg-[#f0f0f0]"] {
+    color: #121212 !important;
+}
+
+.dark [class*="bg-[#FFF3C4]"] *,
+.dark [class*="bg-[#FFEAA0]"] *,
+.dark [class*="bg-[#E5F8EE]"] *,
+.dark [class*="bg-[#FFF9E6]"] *,
+.dark [class*="bg-[#FEF3C7]"] *,
+.dark [class*="bg-[#FFEBEE]"] *,
+.dark [class*="bg-[#FFF8E7]"] *,
+.dark [class*="bg-[#FFF3D6]"] *,
+.dark [class*="bg-[#FFE8D6]"] *,
+.dark [class*="bg-[#D8F3DC]"] *,
+.dark [class*="bg-[#E8F5E9]"] *,
+.dark [class*="bg-[#F3E5F5]"] *,
+.dark [class*="bg-[#E0F7FA]"] *,
+.dark [class*="bg-[#FCE4EC]"] *,
+.dark [class*="bg-[#FFF8E1]"] *,
+.dark [class*="bg-[#EFEBE9]"] *,
+.dark [class*="bg-[#f0f0f0]"] * {
+    color: #121212 !important;
+}
+
+/* Ensure brand/ok/danger accents stay vivid inside light boxes */
+.dark [class*="bg-[#FFF3C4]"] .text-brand,
+.dark [class*="bg-[#FFF3C4]"] .text-brand *,
+.dark [class*="bg-[#FFEAA0]"] .text-brand,
+.dark [class*="bg-[#FFEAA0]"] .text-brand * {
+    color: #E65A1E !important;
+}
+
+.dark [class*="bg-[#E5F8EE]"] .text-ok,
+.dark [class*="bg-[#E5F8EE]"] .text-ok * {
+    color: #00A86B !important;
+}
+
+.dark [class*="bg-[#FFEBEE]"] .text-\[\#C62828\],
+.dark [class*="bg-[#FFEBEE]"] .text-\[\#C62828\] * {
+    color: #C62828 !important;
+}
+
+/* In dark mode, active ink buttons (bg-ink) have light background, so text must be black */
+.dark .bg-ink,
+.dark .bg-ink.text-white,
+.dark .bg-ink .text-white,
+.dark button.bg-ink,
+.dark a.bg-ink {
+    color: #121212 !important;
+}
+
+.dark .bg-ink .text-brand,
+.dark .bg-ink.text-brand {
+    color: #E65A1E !important;
+}
+
 /* Inputs */
 .dark .wh-input {
     background-color: #1a1a1a !important;
