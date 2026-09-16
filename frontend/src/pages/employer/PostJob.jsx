@@ -10,6 +10,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { BENGALURU_AREAS, findNearestArea, getAreaCoordinates } from "@/lib/locationAreas";
 import { API, apiGet, apiPost, getEmployerId } from "@/lib/api";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
+import MarketPriceAdvisor from "@/components/MarketPriceAdvisor";
 import { sanitizeInput, checkSpamKeywords } from "@/lib/security";
 
 export default function PostJob() {
@@ -221,13 +222,32 @@ export default function PostJob() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className={label}>PAY (₹ FIXED / MILESTONE)</label>
-            <input
-              data-testid="postjob-pay"
-              value={pay}
-              onChange={(e) => setPay(e.target.value.replace(/[^0-9]/g, ""))}
-              placeholder="e.g. 5000"
-              className={inputCls}
+            <div className="flex items-center justify-between">
+              <label className={label}>BUDGET / PAY (₹ FIXED OR MILESTONE)</label>
+              <span className="text-[10px] font-bold text-inkmuted dark:text-stone-400">
+                Non-binding custom budget
+              </span>
+            </div>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 text-sm font-black text-inkmuted">₹</span>
+              <input
+                data-testid="postjob-pay"
+                value={pay}
+                onChange={(e) => setPay(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder="e.g. 12000"
+                className={`${inputCls} pl-8 w-full`}
+              />
+            </div>
+
+            {/* Smart Market Price Suggestion Card */}
+            <MarketPriceAdvisor
+              category={bucket}
+              title={title}
+              description={description}
+              area={area}
+              currentPay={pay}
+              onApplyRate={(suggestedRate) => setPay(suggestedRate)}
+              className="mt-1"
             />
           </div>
 
