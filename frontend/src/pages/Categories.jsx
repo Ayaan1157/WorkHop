@@ -24,7 +24,7 @@ export default function Categories() {
       {loading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : (
-        <div className="mx-auto w-full max-w-5xl p-4 sm:p-6 pb-16">
+        <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-8 pb-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {catalog.map((c) => {
               const expanded = open === c.category;

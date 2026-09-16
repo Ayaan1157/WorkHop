@@ -246,7 +246,7 @@ export default function Jobs() {
 
       {/* Upwork-style Profile Progress Bar & Guidance */}
       <div className="border-b-2 border-ink bg-white">
-        <div className="mx-auto w-full max-w-6xl px-4 py-3 sm:px-6">
+        <div className="mx-auto w-full max-w-[1600px] px-4 py-3 sm:px-8">
           <Breadcrumbs items={[{ label: "Find Gigs", to: "/freelancer/jobs" }, { label: catFilter === "ALL" ? "All Categories" : catFilter }]} />
           <div className="mt-3">
             <ProfileProgressBar user={user} role="freelancer" />
@@ -257,7 +257,7 @@ export default function Jobs() {
       {/* Quota Bar */}
       {isVerified && quota && (
         <div className="border-b-2 border-ink bg-brand" data-testid="quota-bar">
-          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-2 sm:px-6">
+          <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-4 py-2 sm:px-8">
             <div className="flex items-center gap-2">
               {hasBoost ? <Rocket size={15} className="text-white" /> : <Zap size={15} className="text-white" />}
               <span className="text-xs font-black tracking-wider text-white">
@@ -280,7 +280,7 @@ export default function Jobs() {
 
       {/* View Switcher Tabs: All Gigs vs Saved Bookmarks */}
       <div className="border-b-2 border-ink bg-white">
-        <div className="mx-auto flex w-full max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1600px] px-4 sm:px-8">
           <button
             onClick={() => setViewTab("all")}
             className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
@@ -303,7 +303,7 @@ export default function Jobs() {
 
       {/* Search & Sort & Filter Bar */}
       <div className="border-b-2 border-ink bg-white">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center gap-3 px-4 py-3 sm:px-8">
           <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-sand px-3 min-w-[240px] shadow-[1.5px_1.5px_0px_#121212]">
             <Search size={16} className="text-inkmuted" />
             <input
@@ -356,7 +356,7 @@ export default function Jobs() {
       {/* Multi-Facet Filter Drawer */}
       {filtersOpen && (
         <div className="border-b-2 border-ink bg-sand" data-testid="jobs-filters-panel">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 sm:px-6">
+          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 p-4 sm:px-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <FilterGroup label="BUDGET (GIG PAY)" options={BUDGETS} value={filters.budget} onPick={(v) => setFilters((p) => ({ ...p, budget: v }))} />
               <FilterGroup label="LOCATION RADIUS" options={DISTS} value={filters.dist} onPick={(v) => setFilters((p) => ({ ...p, dist: v }))} />
@@ -408,7 +408,7 @@ export default function Jobs() {
       {/* Unverified Banner */}
       {!isVerified && (
         <div className="border-b-2 border-ink bg-ink" data-testid="unverified-banner">
-          <div className="mx-auto flex w-full max-w-6xl items-center gap-3 p-4 sm:px-6">
+          <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 p-4 sm:px-8">
             <span className="flex h-10 w-10 items-center justify-center border-2 border-white bg-brand text-white">
               <Lock size={18} />
             </span>
@@ -428,9 +428,9 @@ export default function Jobs() {
       )}
 
       {/* Gig Cards Grid */}
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 pb-24">
+      <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-8 pb-24">
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <JobCardSkeleton />
             <JobCardSkeleton />
             <JobCardSkeleton />
@@ -451,7 +451,7 @@ export default function Jobs() {
             }
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map((job, idx) => (
               <FiverrGigCard
                 key={job.id}

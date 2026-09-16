@@ -309,7 +309,7 @@ export default function FreelancerProfile() {
       <div className="min-h-screen bg-[#F9F9F6] dark:bg-[#0a0a0a] text-ink dark:text-white selection:bg-[#E65A1E]">
         {/* TOP NAV BAR WITH SETTINGS MENU ON THE RIGHT */}
         <div className="border-b border-[#e5e5e5] dark:border-[#1a1a1a] bg-white/90 dark:bg-[#111]/90 backdrop-blur sticky top-0 z-30">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-8">
             <button
               onClick={() => nav("/freelancer/jobs")}
               data-testid="profile-back-btn"
@@ -330,7 +330,7 @@ export default function FreelancerProfile() {
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
             {/* ═══════════ LEFT SIDEBAR ═══════════ */}
             <aside className="lg:w-[320px] shrink-0 flex flex-col gap-5 lg:sticky lg:top-8 lg:self-start">

@@ -305,7 +305,7 @@ export default function Admin() {
       />
       {overview && (
         <div className="border-b-2 border-ink">
-          <div className="wh-scroll mx-auto flex max-w-6xl gap-2 overflow-x-auto p-3">
+          <div className="wh-scroll mx-auto flex max-w-[1600px] gap-2 overflow-x-auto p-3 sm:px-8">
             <Stat label="USERS" value={overview.users} />
             <Stat label="EMPLOYERS" value={overview.employers ?? 0} />
             <Stat label="PROS" value={overview.freelancers} />
@@ -316,7 +316,7 @@ export default function Admin() {
         </div>
       )}
       <div className="border-b-2 border-ink bg-white">
-        <div className="mx-auto flex max-w-6xl">
+        <div className="mx-auto flex max-w-[1600px] sm:px-8">
           {TABS.map((t) => (
             <button key={t} data-testid={`admin-tab-${t.toLowerCase()}`} onClick={() => setTab(t)} className={`flex-1 py-3 text-[10px] font-black tracking-wide ${tab === t ? "bg-ink text-brand" : "bg-white text-ink"}`}>{t}</button>
           ))}
@@ -327,7 +327,7 @@ export default function Admin() {
       ) : error ? (
         <p data-testid="admin-error" className="mt-8 text-center text-[13px] font-bold text-[#C62828]">{error}</p>
       ) : (
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 p-4 sm:p-6 pb-16">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 p-4 sm:p-8 pb-16">
           {tab === "USERS" && <UsersTab rows={rows} />}
           {tab === "EMPLOYERS" && <EmployersTab data={rows} />}
           {tab === "PROS" && <ProsTab rows={rows} onChanged={() => load(tab)} adminFetch={adminFetch} />}

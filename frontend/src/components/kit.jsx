@@ -68,7 +68,7 @@ export function GlobalNav() {
   return (
     <>
       <header className="w-full border-b-2 border-ink bg-white">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-4 px-4 py-3 sm:px-8">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
             <img
@@ -176,11 +176,11 @@ export function GlobalNav() {
 }
 
 // Sticky page header bar with optional back button + right slot
-export function TopBar({ title, sub, onBack, right, backTestID = "back-btn" }) {
+export function TopBar({ title, sub, right, onBack, backTestID = "topbar-back-btn" }) {
   const nav = useNavigate();
   return (
     <div className="sticky top-0 z-20 w-full border-b-2 border-ink bg-white">
-      <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-[1600px] items-center gap-4 px-4 py-3 sm:px-8">
         {onBack !== false && (
           <button
             data-testid={backTestID}
@@ -222,7 +222,7 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
   }, []);
   return (
     <div className="w-full border-b-2 border-ink bg-white">
-      <div className="wh-scroll mx-auto flex w-full max-w-6xl gap-3 overflow-x-auto px-4 py-3 sm:px-6">
+      <div className="wh-scroll mx-auto flex w-full max-w-[1600px] gap-3 overflow-x-auto px-4 py-3 sm:px-8">
         {cats.map((key) => {
           const v = CATEGORY_VISUALS[key] || CATEGORY_VISUALS.ALL;
           const on = selected === key;

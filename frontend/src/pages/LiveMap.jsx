@@ -43,7 +43,7 @@ export default function LiveMap() {
 
       {status === "idle" && !coords && (
         <div className="bg-ink">
-          <button data-testid="map-locate-banner" onClick={requestLocation} className="mx-auto flex max-w-6xl w-full items-center gap-2 px-4 py-2.5 text-left">
+          <button data-testid="map-locate-banner" onClick={requestLocation} className="mx-auto flex max-w-[1600px] w-full items-center gap-2 px-4 py-2.5 sm:px-8 text-left">
             <Navigation size={14} className="text-white" />
             <span className="flex-1 text-[11px] font-bold text-white">Use my location to find the closest pros & gigs</span>
             <span className="text-[11px] font-black tracking-wider text-brand">ENABLE</span>
@@ -52,7 +52,7 @@ export default function LiveMap() {
       )}
       {(status === "denied" || status === "blocked") && (
         <div className="bg-ink">
-          <div data-testid="map-locate-denied" className="mx-auto flex max-w-6xl w-full items-center gap-2 px-4 py-2.5">
+          <div data-testid="map-locate-denied" className="mx-auto flex max-w-[1600px] w-full items-center gap-2 px-4 py-2.5 sm:px-8">
             <AlertCircle size={14} className="text-white" />
             <span className="flex-1 text-[11px] font-bold text-white">
               {status === "blocked" ? "Location is blocked. Enable it in your browser settings." : "Location permission needed to center the map on you."}
@@ -63,7 +63,7 @@ export default function LiveMap() {
       )}
 
       <div className="border-b-2 border-ink bg-white">
-        <div className="mx-auto flex max-w-6xl gap-2 px-4 py-3" data-testid="map-filter-row">
+        <div className="mx-auto flex max-w-[1600px] gap-2 px-4 py-3 sm:px-8" data-testid="map-filter-row">
           {[
             { key: "all", label: "ALL" },
             { key: "candidate", label: "🟠 PROS" },
@@ -90,7 +90,7 @@ export default function LiveMap() {
       )}
 
       <div className="bg-sand border-b-2 border-ink">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-6 p-4 sm:p-6">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-6 p-4 sm:p-6 sm:px-8">
           <div className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-full border-2 border-ink bg-brand" /><span className="text-xs font-bold text-ink">Verified pros</span></div>
           <div className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-full border-2 border-ink bg-ink" /><span className="text-xs font-bold text-ink">Hiring employers</span></div>
           <span className="ml-auto text-xs text-inkmuted">Tap any pin to view details and contact info</span>

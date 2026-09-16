@@ -103,7 +103,7 @@ export default function Plans() {
           <Spinner />
         </div>
       ) : (
-        <div className="mx-auto w-full max-w-5xl p-4 sm:p-6 pb-20">
+        <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-8 pb-20">
           {/* CREDITS OVERVIEW BANNER */}
           <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-2 border-ink bg-[#FFF3C4] p-4 sm:p-6 shadow-[3px_3px_0px_#121212]">
             <div className="flex items-start gap-3.5">

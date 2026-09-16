@@ -169,20 +169,18 @@ export default function Employer() {
       </div>
 
       {/* POST JOB CTA BAR */}
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 pt-4">
-        <div className="flex justify-center">
-          <button
-            data-testid="post-job-btn"
-            onClick={() => nav("/employer/post-job")}
-            className="flex w-full max-w-xl items-center justify-center gap-2 border-2 border-ink bg-brand py-3 px-6 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-y-0.5 hover:bg-brand/95"
-          >
-            <PlusCircle size={16} /> POST A JOB · FROM ₹299
-          </button>
-        </div>
+      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 pt-3">
+        <button
+          data-testid="post-job-btn"
+          onClick={() => nav("/employer/post-job")}
+          className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 px-6 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-y-0.5 hover:bg-brand/95"
+        >
+          <PlusCircle size={16} /> POST A JOB · FROM ₹299
+        </button>
       </div>
 
       {/* SEARCH & FILTERS BAR */}
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-3">
+      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 py-3">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-white px-3 shadow-[1.5px_1.5px_0px_#121212]">
@@ -323,7 +321,7 @@ export default function Employer() {
       <CategoryTiles selected={catFilter} onSelect={setCatFilter} testIDPrefix="lead-cat-tile" />
 
       {/* PRO LISTINGS */}
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-2 pb-16 flex flex-col gap-4">
+      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 py-2 pb-16 flex flex-col gap-4">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 size={24} className="animate-spin text-brand" />
@@ -355,7 +353,7 @@ export default function Employer() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {sorted.slice(0, 2).map((l, i) => (
                 <LeadCard
                   key={l.id}
@@ -401,7 +399,7 @@ export default function Employer() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
               {sorted.slice(2).map((l, i) => (
                 <LeadCard
                   key={l.id}
