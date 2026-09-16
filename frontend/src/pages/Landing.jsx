@@ -12,6 +12,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import AuthModal from "@/components/AuthModal";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
+import GoogleAccountPicker from "@/components/GoogleAccountPicker";
 import { Logo } from "@/components/kit";
 
 export default function Landing() {
@@ -36,6 +37,8 @@ export default function Landing() {
   const [companyInput, setCompanyInput] = useState("");
   const [skillInput, setSkillInput] = useState("");
   const [googleConnected, setGoogleConnected] = useState(false);
+  const [googlePickerOpen, setGooglePickerOpen] = useState(false);
+  const [googleAccount, setGoogleAccount] = useState(null);
 
   const [otpInput, setOtpInput] = useState("");
   const [otpStage, setOtpStage] = useState("idle"); // "idle" | "sent"
@@ -302,15 +305,25 @@ export default function Landing() {
     }
   };
 
-  // Google Continue Handler
-  const handleGoogleAuth = async () => {
-    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
-    const googleEmail = emailInput.trim() || "google.user@gmail.com";
-    const googleName = nameInput.trim() || "Google Member";
-    setEmailInput(googleEmail);
-    if (!nameInput) setNameInput(googleName);
-    setGoogleConnected(true);
+  // Google Continue Handler - Opens Account Picker
+  const handleGoogleAuth = () => {
+    setOtpError(null);
+    setGooglePickerOpen(true);
+  };
 
+  // Called when user selects a Google account from the picker
+  const handleSelectGoogleAccount = async (account) => {
+    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
+    const googleEmail = account.email;
+    const googleName = account.name;
+    
+    setEmailInput(googleEmail);
+    setNameInput(googleName);
+    setGoogleConnected(true);
+    setGoogleAccount(account);
+    setOtpError(null);
+
+    // If in signin mode, log in immediately with chosen Google account
     if (authMode === "signin") {
       setOtpLoading(true);
       try {
@@ -325,13 +338,10 @@ export default function Landing() {
       return;
     }
 
-    // If signup mode, ensure phone and area are provided
+    // If in signup mode, prompt for required mobile number and neighborhood
     if (!isPhoneValid || !areaInput) {
-      setOtpError("Google account linked! Please enter your 10-digit mobile number and neighborhood below to complete registration.");
-      return;
+      setOtpError(`✓ Google account linked (${googleEmail})! Please enter your 10-digit mobile number and neighborhood below to finish registration.`);
     }
-
-    handleSignUp();
   };
 
   const completeSessionAndRedirect = (target, userData = null) => {
@@ -496,6 +506,33 @@ export default function Landing() {
               </div>
 
               <div className="flex flex-col gap-3.5">
+                
+                {/* Google Connected Badge with Switch Account Option */}
+                {googleConnected && (
+                  <div className="flex items-center justify-between border-2 border-ink bg-[#FFF3E9] p-2.5 shadow-[2px_2px_0px_#E65A1E]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-xs font-black text-white">
+                        {googleAccount?.initials || "G"}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-ink">
+                          ✓ Google Linked: <strong className="text-brand">{emailInput}</strong>
+                        </span>
+                        <span className="text-[10px] font-semibold text-inkmuted">
+                          Signed in as {nameInput || "Google User"}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      data-testid="landing-switch-google-acc"
+                      onClick={() => setGooglePickerOpen(true)}
+                      className="border border-ink bg-white px-2 py-1 text-[10px] font-black text-ink hover:bg-sand transition"
+                    >
+                      Switch Account
+                    </button>
+                  </div>
+                )}
                 
                 {authMode === "signup" && (
                   <>
@@ -848,6 +885,14 @@ export default function Landing() {
             </div>
           </div>
         </div>
+
+        {/* Google Account Selector Dialog */}
+        <GoogleAccountPicker
+          isOpen={googlePickerOpen}
+          onClose={() => setGooglePickerOpen(false)}
+          onSelectAccount={handleSelectGoogleAccount}
+          currentEmail={emailInput}
+        />
       </div>
     );
   }

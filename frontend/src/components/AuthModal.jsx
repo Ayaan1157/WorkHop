@@ -9,6 +9,7 @@ import { apiPost } from "@/lib/api";
 import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
+import GoogleAccountPicker from "@/components/GoogleAccountPicker";
 import { sanitizeInput, checkRateLimit, resetRateLimit } from "@/lib/security";
 
 export default function AuthModal({ isOpen, onClose, initialRole = null, initialMode = "signup" }) {
@@ -35,8 +36,10 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   const [captchaToken, setCaptchaToken] = useState(null);
   const [captchaReset, setCaptchaReset] = useState(0);
 
-  // Google Pre-fill banner
+  // Google Account Picker State
   const [googleConnected, setGoogleConnected] = useState(false);
+  const [googlePickerOpen, setGooglePickerOpen] = useState(false);
+  const [googleAccount, setGoogleAccount] = useState(null);
 
   // OTP Stage & Type ("mobile" | "email")
   const [otpStage, setOtpStage] = useState("idle"); // "idle" | "sent"
@@ -78,14 +81,21 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   const isPhoneValid = phoneDigits.length === 10;
   const isEmployer = role === "employer";
 
-  // Handle Google button
-  const handleGoogleAuth = async () => {
+  // Handle Google button - Open Account Chooser
+  const handleGoogleAuth = () => {
     setError(null);
-    const googleEmail = email.trim() || "google.user@gmail.com";
-    const googleName = fullName.trim() || "Google Member";
+    setGooglePickerOpen(true);
+  };
+
+  // Called when account is chosen from Google picker
+  const handleSelectGoogleAccount = async (account) => {
+    const googleEmail = account.email;
+    const googleName = account.name;
     setEmail(googleEmail);
-    if (!fullName) setFullName(googleName);
+    setFullName(googleName);
     setGoogleConnected(true);
+    setGoogleAccount(account);
+    setError(null);
 
     // If already in sign in mode, log in directly and look up saved profile
     if (mode === "signin") {
@@ -104,12 +114,8 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
 
     // If in signup mode, prompt to enter phone & area if missing
     if (!isPhoneValid || !area) {
-      setError("Google account linked! Please enter your 10-digit mobile number and neighborhood below to finish registration.");
-      return;
+      setError(`✓ Google account linked (${googleEmail})! Please enter your 10-digit mobile number and neighborhood below to finish registration.`);
     }
-
-    // If details already provided, complete registration
-    handleSignupSubmit();
   };
 
   // Request Email OTP (Sign In via OTP)
@@ -493,9 +499,19 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
               {mode === "signup" ? "2. ENTER YOUR DETAILS & MOBILE NUMBER" : "ENTER EMAIL & PASSWORD"}
             </label>
             {googleConnected && (
-              <span className="text-[11px] font-bold text-ok flex items-center gap-1">
-                ✓ Google Account Linked
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-ok flex items-center gap-1">
+                  ✓ Google: <strong>{email}</strong>
+                </span>
+                <button
+                  type="button"
+                  data-testid="auth-switch-google-acc"
+                  onClick={() => setGooglePickerOpen(true)}
+                  className="text-[10px] font-black underline text-brand hover:opacity-80"
+                >
+                  (Switch)
+                </button>
+              </div>
             )}
           </div>
 
@@ -879,6 +895,14 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
           </div>
           <span>Bengaluru Hyperlocal</span>
         </div>
+
+        {/* Interactive Google Account Selector Modal */}
+        <GoogleAccountPicker
+          isOpen={googlePickerOpen}
+          onClose={() => setGooglePickerOpen(false)}
+          onSelectAccount={handleSelectGoogleAccount}
+          currentEmail={email}
+        />
       </div>
     </div>
   );
