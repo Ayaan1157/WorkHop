@@ -1092,23 +1092,23 @@ export default function Landing() {
           <button
             data-testid="role-employer-card"
             onClick={() => chooseRole("employer")}
-            className="group border-2 border-ink bg-ink p-5 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
+            className="group border-2 border-ink bg-white dark:bg-[#1a1a1a] p-5 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
           >
             <div className="mb-4 sm:mb-6 flex items-center justify-between">
               <span className="bg-brand px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.12em] text-white">
                 I'M HIRING (EMPLOYER)
               </span>
-              <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-brand transition">
-                <ArrowRight size={20} className="text-white" />
+              <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-ink bg-sand dark:bg-[#2a2a2a] group-hover:bg-brand group-hover:text-white transition">
+                <ArrowRight size={20} className="text-ink dark:text-white group-hover:text-white" />
               </div>
             </div>
-            <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-white">
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-black dark:text-white">
               Find 5 verified experts on your block
             </p>
-            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-[#D6D6D6]">
+            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-black dark:text-stone-300 font-semibold">
               Unlock direct phone numbers and full verified portfolios of top designers, developers, videographers, and creators near you.
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/20 pt-4 text-xs font-extrabold text-brand">
+            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-ink/20 dark:border-white/20 pt-4 text-xs font-black text-brand">
               <span>One-time unlock from ₹199</span>
               <span>•</span>
               <span>Instant Call &amp; Chat</span>
@@ -1132,7 +1132,7 @@ export default function Landing() {
             <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-white">
               Apply to 200+ gigs within 5km of you
             </p>
-            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-white/90">
+            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-white/95 font-semibold">
               Direct chat with Bengaluru employers looking for immediate hires. Zero middlemen, keep 100% earnings.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/20 pt-4 text-xs font-extrabold text-white">
@@ -1146,23 +1146,23 @@ export default function Landing() {
       </section>
 
       {/* Trust & Live Metrics Strip */}
-      <section className="border-b-2 border-ink bg-[#FFF3E9] dark:bg-[#1a1410] py-6 sm:py-8 px-4 sm:px-10 lg:px-16">
+      <section className="border-b-2 border-ink bg-[#FFF3E9] py-6 sm:py-8 px-4 sm:px-10 lg:px-16">
         <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
           <div>
-            <p className="text-2xl sm:text-4xl font-black text-ink dark:text-white">5 KM</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-inkmuted dark:text-stone-400">Hyperlocal Radius</p>
+            <p className="text-2xl sm:text-4xl font-black text-black">5 KM</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333]">Hyperlocal Radius</p>
           </div>
           <div>
-            <p className="text-2xl sm:text-4xl font-black text-ink dark:text-white">200+</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-inkmuted dark:text-stone-400">Active Bengaluru Gigs</p>
+            <p className="text-2xl sm:text-4xl font-black text-black">200+</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333]">Active Bengaluru Gigs</p>
           </div>
           <div>
             <p className="text-2xl sm:text-4xl font-black text-brand">100%</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-inkmuted dark:text-stone-400">Keep Your Earnings</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333]">Keep Your Earnings</p>
           </div>
           <div>
-            <p className="text-2xl sm:text-4xl font-black text-ink dark:text-white">1 MIN</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-inkmuted dark:text-stone-400">Fast Onboarding</p>
+            <p className="text-2xl sm:text-4xl font-black text-black">1 MIN</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333]">Fast Onboarding</p>
           </div>
         </div>
       </section>
