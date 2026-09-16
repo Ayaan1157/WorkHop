@@ -204,7 +204,7 @@ export default function Jobs() {
       });
       setAppliedJustNow(activeJob.id);
       if (data.conversation_id) { setConvByJob((m) => ({ ...m, [activeJob.id]: data.conversation_id })); setLastConvId(data.conversation_id); }
-      setQuota((q) => q ? { ...q, quota_used: data.quota_used, quota_limit: data.quota_limit, has_boost: data.has_boost, applied_job_ids: [...q.applied_job_ids, activeJob.id] } : q);
+      setQuota((q) => q ? { ...q, quota_used: data.quota_used, quota_limit: data.quota_limit, has_boost: data.has_boost, applied_job_ids: [...(q.applied_job_ids || []), activeJob.id] } : q);
     } catch (e) {
       if (e?.status === 402) { setApplyOpen(false); setTimeout(() => setPaywallOpen(true), 250); return; }
       setApplyError(e?.message || "Failed to apply.");
