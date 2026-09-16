@@ -63,7 +63,7 @@ export default function EditModal({
           <button
             onClick={onSave}
             disabled={saving}
-            className="px-6 py-2 text-sm font-semibold text-white bg-[#14a800] rounded-full hover:bg-[#128a00] transition disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-2 text-sm font-semibold text-white bg-[#E65A1E] rounded-full hover:bg-[#F06B2E] transition disabled:opacity-50 flex items-center gap-2 shadow-sm"
           >
             {saving ? (
               <>
