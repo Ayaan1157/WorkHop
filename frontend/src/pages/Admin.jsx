@@ -5,9 +5,9 @@ import {
   RefreshCw, TrendingUp, DollarSign, Users, Briefcase, Plus, Trash2,
   ExternalLink, Check, X, Megaphone, Settings, Eye, Sliders, Radio,
   ArrowUpRight, Phone, Mail, Award, Clock, FileText, ChevronRight,
-  ShieldCheck, HelpCircle, Download
+  ShieldCheck, HelpCircle, Download, Zap
 } from "lucide-react";
-import { Shell, TopBar, Spinner } from "@/components/kit";
+import { TopBar, Spinner } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPost, apiPatch, apiPut } from "@/lib/api";
 import { BENGALURU_AREAS } from "@/lib/locationAreas";
@@ -938,66 +938,105 @@ export default function Admin() {
     if (user?.is_admin) load(tab);
   }, [user?.is_admin, tab, load]);
 
-  if (authLoading) return <Shell><div className="flex justify-center py-20"><Spinner /></div></Shell>;
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center gap-3 bg-white text-ink">
+        <Spinner />
+        <p className="text-xs font-black tracking-wider uppercase text-inkmuted">Authenticating Admin Session...</p>
+      </div>
+    );
+  }
 
   // Locked Screen if Not Admin
   if (!user?.is_admin) {
     return (
-      <Shell>
-        <div data-testid="admin-denied" className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center border-2 border-ink bg-sand shadow-[4px_4px_0px_#121212]">
-            <Lock size={32} className="text-ink" />
-          </div>
-          <div>
-            <p className="text-lg font-black tracking-wider text-ink">ADMIN ACCESS ONLY</p>
-            <p className="mt-1 text-xs text-inkmuted">Sign in with authorized admin credentials to access the management portal.</p>
+      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#F7F7F5] p-4 text-ink">
+        <div data-testid="admin-denied" className="w-full max-w-md border-2 border-ink bg-white p-6 sm:p-8 shadow-[8px_8px_0px_#121212] text-center">
+          
+          <div className="mx-auto flex h-16 w-16 items-center justify-center border-2 border-ink bg-brand text-white shadow-[3px_3px_0px_#121212]">
+            <Shield size={32} />
           </div>
 
-          <form onSubmit={handleAdminSignIn} className="mt-2 flex w-full max-w-sm flex-col gap-3 border-2 border-ink bg-white p-5 text-left shadow-[4px_4px_0px_#121212]">
+          <div className="mt-4">
+            <span className="inline-block bg-ink px-2.5 py-0.5 text-[10px] font-black tracking-widest text-white uppercase">
+              RESTRICTED PORTAL
+            </span>
+            <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">
+              Admin Access Only
+            </h2>
+            <p className="mt-1 text-xs text-inkmuted font-semibold">
+              Enter authorized administrator credentials to unlock the Executive Command Center.
+            </p>
+          </div>
+
+          <form onSubmit={handleAdminSignIn} className="mt-6 flex flex-col gap-3.5 text-left border-t-2 border-ink pt-5">
             <div>
               <label className="text-[10px] font-black tracking-wider text-inkmuted uppercase">Admin Email</label>
-              <input
-                type="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="Zenithdeveleoperss@gmail.com"
-                className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink outline-none focus:border-brand"
-                required
-              />
+              <div className="mt-1 flex items-center border-2 border-ink bg-[#FAFAF8] px-3 py-2">
+                <Mail size={16} className="text-inkmuted mr-2 shrink-0" />
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="Zenithdeveleoperss@gmail.com"
+                  className="w-full bg-transparent text-xs font-bold text-ink outline-none"
+                  required
+                />
+              </div>
             </div>
+
             <div>
-              <label className="text-[10px] font-black tracking-wider text-inkmuted uppercase">Password</label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="•••••••••"
-                className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink outline-none focus:border-brand"
-                required
-              />
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black tracking-wider text-inkmuted uppercase">Password</label>
+                <button
+                  type="button"
+                  onClick={() => setLoginPassword("123456789")}
+                  className="text-[10px] font-extrabold text-brand hover:underline"
+                >
+                  Fill Default Password
+                </button>
+              </div>
+              <div className="mt-1 flex items-center border-2 border-ink bg-[#FAFAF8] px-3 py-2">
+                <KeyRound size={16} className="text-inkmuted mr-2 shrink-0" />
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Enter admin password"
+                  className="w-full bg-transparent text-xs font-bold text-ink outline-none"
+                  required
+                />
+              </div>
             </div>
 
             {loginError && (
-              <p className="text-[11px] font-bold text-[#C62828] bg-red-50 p-2 border border-red-200">
-                {loginError}
+              <p className="text-[11px] font-bold text-[#C62828] bg-red-50 p-2.5 border border-red-200">
+                ⚠️ {loginError}
               </p>
             )}
 
             <button
               type="submit"
               disabled={loginBusy}
-              className="mt-1 flex items-center justify-center gap-2 border-2 border-ink bg-brand py-2.5 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-y-0.5"
+              className="mt-2 flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3 text-xs font-black tracking-wider text-white shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-y-0.5"
             >
               {loginBusy ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
-              <span>{loginBusy ? "VERIFYING..." : "UNLOCK ADMIN PANEL"}</span>
+              <span>{loginBusy ? "VERIFYING CREDENTIALS..." : "UNLOCK ADMIN COMMAND CENTER"}</span>
             </button>
           </form>
 
-          <button data-testid="admin-denied-back" onClick={() => nav("/")} className="mt-2 text-xs font-black tracking-wider text-ink underline hover:text-brand">
-            RETURN TO HOME
-          </button>
+          <div className="mt-6 border-t border-ink/10 pt-3">
+            <button
+              data-testid="admin-denied-back"
+              onClick={() => nav("/")}
+              className="text-xs font-black tracking-wider text-ink hover:text-brand hover:underline"
+            >
+              ← Return to Live Website
+            </button>
+          </div>
+
         </div>
-      </Shell>
+      </div>
     );
   }
 
