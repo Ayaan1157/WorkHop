@@ -3,10 +3,11 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   ChevronLeft, Mail, KeyRound, ArrowRight, LogOut, UserCircle2, Loader2,
   MapPin, ShieldCheck, Zap, Sparkles, PlusCircle, CheckCircle, Navigation, Users, Briefcase,
-  User, Building2, LocateFixed, CheckCircle2, Eye, EyeOff
+  User, Building2, LocateFixed, CheckCircle2, Eye, EyeOff, Sun, Moon, Menu, X
 } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import AuthModal from "@/components/AuthModal";
@@ -18,11 +19,13 @@ import { Logo } from "@/components/kit";
 export default function Landing() {
   const nav = useNavigate();
   const { user, loading, login, logout, adoptSession, signupWithDetails, passwordLoginAuth } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalRole, setAuthModalRole] = useState("freelancer");
   const [authModalMode, setAuthModalMode] = useState("signup");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Sign in / Sign up flow state
   const [pendingRole, setPendingRole] = useState(null); // "employer" | "freelancer"
@@ -903,66 +906,131 @@ export default function Landing() {
       <BroadcastBanner />
       
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b-2 border-ink bg-white px-4 py-3 sm:px-8">
-        <Link to="/" className="flex items-center">
-          <Logo size="header" />
-        </Link>
-        {user ? (
+      <header className="sticky top-0 z-40 w-full border-b-2 border-ink bg-white dark:bg-[#121212] transition-colors">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-4 px-4 py-3 sm:px-8">
+          
+          {/* Logo */}
+          <Link to="/" className="flex items-center">
+            <Logo size="header" />
+          </Link>
+
+          {/* Desktop Navigation Tabs */}
+          <nav className="hidden lg:flex items-center gap-6" data-testid="landing-nav-tabs">
+            {[
+              { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros" },
+              { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs" },
+              { label: "LIVE MAP", path: "/map", testId: "nav-map" },
+              { label: "CATEGORIES", path: "/categories", testId: "nav-categories" },
+              { label: "PLANS", path: "/employer/plans", testId: "nav-plans" },
+            ].map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                data-testid={link.testId}
+                className="text-xs font-black tracking-wider text-ink dark:text-white transition hover:text-brand hover:underline underline-offset-4"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Right Actions: Theme Toggle + Auth */}
           <div className="flex items-center gap-2 sm:gap-3">
+            
+            {/* Dark / Light Mode Toggle */}
             <button
-              onClick={() => nav("/employer")}
-              className="hidden sm:flex items-center gap-1 border-2 border-ink bg-ink px-3 py-2 text-[10px] font-black tracking-wider text-white hover:bg-black"
+              data-testid="theme-toggle-btn"
+              onClick={toggleTheme}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5 hover:bg-stone/30"
             >
-              <Users size={12} /> <span>EMPLOYER</span>
+              {isDark ? <Sun size={16} className="text-brand" /> : <Moon size={16} className="text-ink" />}
             </button>
+
+            {user ? (
+              <div className="flex items-center gap-2">
+                <button
+                  data-testid="user-chip"
+                  onClick={() => nav("/profile")}
+                  className="flex items-center gap-2 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 py-2 hover:bg-sand dark:hover:bg-[#222] text-ink dark:text-white"
+                >
+                  <UserCircle2 size={16} className="text-brand" />
+                  <span className="truncate text-xs font-extrabold max-w-[110px]">
+                    {user.name || user.email?.split("@")[0]}
+                  </span>
+                  <ArrowRight size={13} className="text-inkmuted" />
+                </button>
+                <button
+                  data-testid="logout-btn"
+                  onClick={logout}
+                  className="flex items-center gap-1 border-2 border-ink px-2.5 py-2 hover:bg-sand dark:hover:bg-[#222] text-ink dark:text-white"
+                >
+                  <LogOut size={14} />
+                  <span className="text-[10px] font-black tracking-wider hidden sm:inline">LOGOUT</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  data-testid="landing-signin-btn"
+                  onClick={() => {
+                    setAuthModalMode("signin");
+                    setAuthModalOpen(true);
+                  }}
+                  className="border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3.5 py-2 text-xs font-black tracking-wider text-ink dark:text-white hover:bg-sand dark:hover:bg-[#222] transition"
+                >
+                  SIGN IN
+                </button>
+                <button
+                  data-testid="landing-signup-btn"
+                  onClick={() => {
+                    setAuthModalMode("signup");
+                    setAuthModalOpen(true);
+                  }}
+                  className="border-2 border-ink bg-ink dark:bg-white px-3.5 py-2 text-xs font-black tracking-wider text-white dark:text-black hover:bg-black dark:hover:bg-gray-100 transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#000]"
+                >
+                  SIGN UP
+                </button>
+              </div>
+            )}
+
+            {/* Mobile Hamburger Menu Toggle Button */}
             <button
-              onClick={() => nav("/freelancer/jobs")}
-              className="hidden sm:flex items-center gap-1 border-2 border-ink bg-brand px-3 py-2 text-[10px] font-black tracking-wider text-white hover:opacity-90"
+              data-testid="landing-mobile-menu-btn"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex lg:hidden h-9 w-9 items-center justify-center border-2 border-ink bg-white dark:bg-[#222] text-ink dark:text-white shadow-[1.5px_1.5px_0px_#121212]"
+              title="Toggle Menu"
             >
-              <Briefcase size={12} /> <span>EMPLOYEE</span>
-            </button>
-            <button
-              data-testid="user-chip"
-              onClick={() => nav("/profile")}
-              className="flex items-center gap-2 border-2 border-ink bg-white px-3 py-2 hover:bg-sand"
-            >
-              <UserCircle2 size={16} className="text-brand" />
-              <span className="truncate text-xs font-extrabold text-ink max-w-[110px]">{user.name || user.email?.split("@")[0]}</span>
-              <ArrowRight size={13} className="text-inkmuted" />
-            </button>
-            <button data-testid="logout-btn" onClick={logout} className="flex items-center gap-1 border-2 border-ink px-2.5 py-2 hover:bg-sand">
-              <LogOut size={14} /> <span className="text-[10px] font-black tracking-wider">LOGOUT</span>
+              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
-        ) : (
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              data-testid="landing-signin-btn"
-              onClick={() => {
-                setAuthModalMode("signin");
-                setAuthModalOpen(true);
-              }}
-              className="border-2 border-ink bg-white px-3.5 py-2 text-xs font-black tracking-wider text-ink hover:bg-sand"
-            >
-              SIGN IN
-            </button>
-            <button
-              data-testid="landing-signup-btn"
-              onClick={() => {
-                setAuthModalMode("signup");
-                setAuthModalOpen(true);
-              }}
-              className="border-2 border-ink bg-ink px-3.5 py-2 text-xs font-black tracking-wider text-white hover:bg-black"
-            >
-              SIGN UP
-            </button>
-            <button
-              onClick={() => nav("/employer/post-job")}
-              className="hidden sm:flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
-            >
-              <PlusCircle size={14} />
-              <span>POST JOB</span>
-            </button>
+        </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="border-t-2 border-ink bg-white dark:bg-[#181818] p-4 lg:hidden animate-in slide-in-from-top-2">
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-black uppercase text-inkmuted dark:text-stone-400 tracking-wider">
+                Explore WorkHop
+              </span>
+              {[
+                { label: "EXPLORE PROS", path: "/employer" },
+                { label: "FIND GIGS", path: "/freelancer/jobs" },
+                { label: "LIVE MAP", path: "/map" },
+                { label: "CATEGORIES", path: "/categories" },
+                { label: "PLANS", path: "/employer/plans" },
+              ].map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between border-2 border-ink bg-sand dark:bg-[#222] p-2.5 text-xs font-black text-ink dark:text-white hover:bg-white"
+                >
+                  <span>{link.label}</span>
+                  <ArrowRight size={14} className="text-brand" />
+                </Link>
+              ))}
+            </div>
           </div>
         )}
       </header>
