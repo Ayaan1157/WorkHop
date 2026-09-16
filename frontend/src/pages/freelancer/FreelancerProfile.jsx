@@ -1,0 +1,1384 @@
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Pencil, Plus, Trash2, ChevronLeft, Github, ExternalLink,
+  Briefcase, GraduationCap, Award, Globe, Link2, Clock,
+  MapPin, Star, ChevronDown, ChevronUp, X, User, DollarSign,
+  Code2, Loader2
+} from "lucide-react";
+import { Shell } from "@/components/kit";
+import EditModal from "@/components/EditModal";
+import { useAuth } from "@/context/AuthContext";
+import { apiGet, apiPut, getFreelancerId } from "@/lib/api";
+import { getFreelancerProfile, saveFreelancerProfile } from "@/lib/clientStore";
+
+/* ═══════════ helpers ═══════════ */
+const uid = () => `id_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+const PROFICIENCY_LEVELS = [
+  "Native or Bilingual",
+  "Fluent",
+  "Conversational",
+  "Basic",
+];
+
+const SKILL_SUGGESTIONS = [
+  "Web Development", "Artificial Intelligence", "Web Application", "Web Design",
+  "Automation", "API", "Stripe", "OpenAPI", "SaaS Development", "Responsive Design",
+  "Web Application Development", "Website Redesign", "Next.js", "React", "Runway",
+  "Node.js", "Python", "TypeScript", "MongoDB", "PostgreSQL", "AWS", "Docker",
+  "GraphQL", "REST API", "UI/UX Design", "Figma", "Adobe XD", "Tailwind CSS",
+  "Firebase", "Git", "CI/CD", "Linux", "Redis", "Elasticsearch",
+];
+
+/* ═══════════ main component ═══════════ */
+export default function FreelancerProfile() {
+  const nav = useNavigate();
+  const { user, updateUserProfile } = useAuth();
+  const freelancerId = getFreelancerId();
+
+  const [profile, setProfile] = useState(() => getFreelancerProfile());
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Modal states
+  const [editingSection, setEditingSection] = useState(null);
+  const [editData, setEditData] = useState(null);
+
+  // Skill input
+  const [skillInput, setSkillInput] = useState("");
+
+  // Collapsible
+  const [expandedEmployment, setExpandedEmployment] = useState(true);
+  const [expandedCerts, setExpandedCerts] = useState(true);
+
+  const loadProfile = useCallback(async () => {
+    try {
+      const data = await apiGet(`/freelancer/${freelancerId}/full-profile`);
+      if (data && typeof data === "object") {
+        setProfile((prev) => ({ ...prev, ...data }));
+      }
+    } catch {
+      /* use default */
+    } finally {
+      setLoading(false);
+    }
+  }, [freelancerId]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  const persist = useCallback(
+    async (updated) => {
+      setProfile(updated);
+      saveFreelancerProfile(updated);
+      try {
+        await apiPut(`/freelancer/${freelancerId}/full-profile`, updated);
+      } catch {
+        /* saved locally */
+      }
+    },
+    [freelancerId]
+  );
+
+  const openEdit = (section, data = null) => {
+    setEditingSection(section);
+    setEditData(data);
+  };
+
+  const closeEdit = () => {
+    setEditingSection(null);
+    setEditData(null);
+  };
+
+  /* ═══════════ save handlers ═══════════ */
+  const saveTitle = (title, description, rateHr) => {
+    persist({ ...profile, title, description, rate_hr: Number(rateHr) || 0 });
+    closeEdit();
+  };
+
+  const saveName = (name) => {
+    if (updateUserProfile) updateUserProfile({ name });
+    closeEdit();
+  };
+
+  const saveEmployment = (entry) => {
+    const list = [...profile.employment_history];
+    const idx = list.findIndex((e) => e.id === entry.id);
+    if (idx >= 0) list[idx] = entry;
+    else list.unshift(entry);
+    persist({ ...profile, employment_history: list });
+    closeEdit();
+  };
+
+  const deleteEmployment = (id) => {
+    persist({
+      ...profile,
+      employment_history: profile.employment_history.filter((e) => e.id !== id),
+    });
+  };
+
+  const saveCertification = (entry) => {
+    const list = [...profile.certifications];
+    const idx = list.findIndex((e) => e.id === entry.id);
+    if (idx >= 0) list[idx] = entry;
+    else list.unshift(entry);
+    persist({ ...profile, certifications: list });
+    closeEdit();
+  };
+
+  const deleteCertification = (id) => {
+    persist({
+      ...profile,
+      certifications: profile.certifications.filter((e) => e.id !== id),
+    });
+  };
+
+  const saveEducation = (entry) => {
+    const list = [...profile.education];
+    const idx = list.findIndex((e) => e.id === entry.id);
+    if (idx >= 0) list[idx] = entry;
+    else list.unshift(entry);
+    persist({ ...profile, education: list });
+    closeEdit();
+  };
+
+  const deleteEducation = (id) => {
+    persist({
+      ...profile,
+      education: profile.education.filter((e) => e.id !== id),
+    });
+  };
+
+  const addSkill = (skill) => {
+    if (!skill.trim() || profile.skills.includes(skill.trim())) return;
+    persist({ ...profile, skills: [...profile.skills, skill.trim()] });
+  };
+
+  const removeSkill = (skill) => {
+    persist({ ...profile, skills: profile.skills.filter((s) => s !== skill) });
+  };
+
+  const saveLanguages = (languages) => {
+    persist({ ...profile, languages });
+    closeEdit();
+  };
+
+  const saveLinkedAccounts = (github_url, github_username, upwork_url) => {
+    persist({ ...profile, github_url, github_username, upwork_url });
+    closeEdit();
+  };
+
+  const saveAvailability = (hours_per_week, availability) => {
+    persist({ ...profile, hours_per_week, availability });
+    closeEdit();
+  };
+
+  const addPortfolioItem = (item) => {
+    persist({ ...profile, portfolio: [...profile.portfolio, { ...item, id: uid() }] });
+    closeEdit();
+  };
+
+  const deletePortfolioItem = (id) => {
+    persist({ ...profile, portfolio: profile.portfolio.filter((p) => p.id !== id) });
+  };
+
+  /* ═══════════ derived ═══════════ */
+  const displayName = user?.name || "Your Name";
+  const displayTitle = profile.title || "Your Professional Title";
+  const displayRate = profile.rate_hr ? `$${profile.rate_hr}.00/hr` : "Set your rate";
+
+  const inputCls =
+    "w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#14a800] transition";
+  const labelCls = "text-xs font-semibold text-[#999] uppercase tracking-wider mb-1.5";
+
+  if (loading) {
+    return (
+      <Shell>
+        <div className="flex items-center justify-center min-h-[60vh] bg-[#0a0a0a]">
+          <Loader2 size={32} className="animate-spin text-[#14a800]" />
+        </div>
+      </Shell>
+    );
+  }
+
+  return (
+    <Shell>
+      <div className="min-h-screen bg-[#0a0a0a]">
+        {/* BACK NAV */}
+        <div className="border-b border-[#1a1a1a] px-4 py-3 sm:px-8">
+          <button
+            onClick={() => nav("/profile")}
+            className="flex items-center gap-2 text-sm text-[#14a800] hover:text-[#1dc000] transition font-semibold"
+          >
+            <ChevronLeft size={16} />
+            Back to Dashboard
+          </button>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* ═══════════ LEFT SIDEBAR ═══════════ */}
+            <aside className="lg:w-[320px] shrink-0 flex flex-col gap-5 lg:sticky lg:top-8 lg:self-start">
+              {/* Profile Card */}
+              <div className="bg-[#111] border border-[#222] rounded-xl p-6">
+                <div className="flex flex-col items-center text-center">
+                  {/* Avatar */}
+                  <div className="relative group mb-4">
+                    {user?.picture ? (
+                      <img
+                        src={user.picture}
+                        alt=""
+                        className="h-24 w-24 rounded-full object-cover border-2 border-[#222]"
+                      />
+                    ) : (
+                      <div className="h-24 w-24 rounded-full bg-[#14a800] flex items-center justify-center text-3xl font-bold text-white border-2 border-[#222]">
+                        {displayName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => openEdit("name", { name: user?.name || "" })}
+                      className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-[#14a800] flex items-center justify-center text-white shadow-lg hover:bg-[#128a00] transition"
+                    >
+                      <Pencil size={12} />
+                    </button>
+                  </div>
+                  <h2 className="text-lg font-bold text-white">{displayName}</h2>
+                  <p className="text-sm text-[#888] mt-0.5">
+                    {user?.area || "Your Location"} · {user?.email || ""}
+                  </p>
+                </div>
+
+                {/* Quick stats */}
+                <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-[#222]">
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-white">
+                      {profile.employment_history.length}
+                    </p>
+                    <p className="text-[10px] text-[#666] uppercase tracking-wider">Jobs</p>
+                  </div>
+                  <div className="w-px h-8 bg-[#222]" />
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-white">{profile.skills.length}</p>
+                    <p className="text-[10px] text-[#666] uppercase tracking-wider">Skills</p>
+                  </div>
+                  <div className="w-px h-8 bg-[#222]" />
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-white">
+                      {profile.portfolio.length}
+                    </p>
+                    <p className="text-[10px] text-[#666] uppercase tracking-wider">Works</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hours per week */}
+              <SidebarSection
+                icon={<Clock size={16} />}
+                title="Hours per week"
+                onEdit={() =>
+                  openEdit("availability", {
+                    hours_per_week: profile.hours_per_week,
+                    availability: profile.availability,
+                  })
+                }
+              >
+                <p className="text-sm text-[#ccc]">{profile.hours_per_week || "Not set"}</p>
+                <p className="text-xs text-[#666] mt-0.5">
+                  {profile.availability || ""}
+                </p>
+              </SidebarSection>
+
+              {/* Languages */}
+              <SidebarSection
+                icon={<Globe size={16} />}
+                title="Languages"
+                onEdit={() => openEdit("languages", { languages: [...profile.languages] })}
+                onAdd={() =>
+                  openEdit("languages", {
+                    languages: [
+                      ...profile.languages,
+                      { language: "", proficiency: "Conversational" },
+                    ],
+                  })
+                }
+              >
+                {profile.languages.length > 0 ? (
+                  <div className="flex flex-col gap-1">
+                    {profile.languages.map((l, i) => (
+                      <div key={i} className="flex items-baseline justify-between">
+                        <span className="text-sm text-[#ccc]">{l.language}</span>
+                        <span className="text-xs text-[#666]">{l.proficiency}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-[#555] italic">Add your languages</p>
+                )}
+              </SidebarSection>
+
+              {/* Linked Accounts */}
+              <SidebarSection
+                icon={<Link2 size={16} />}
+                title="Linked accounts"
+                onEdit={() =>
+                  openEdit("linked", {
+                    github_url: profile.github_url,
+                    github_username: profile.github_username,
+                    upwork_url: profile.upwork_url,
+                  })
+                }
+              >
+                {profile.github_url ? (
+                  <a
+                    href={profile.github_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-[#ccc] hover:text-[#14a800] transition"
+                  >
+                    <Github size={16} className="text-[#888]" />
+                    <span>{profile.github_username || "GitHub"}</span>
+                    <ExternalLink size={12} className="text-[#555]" />
+                  </a>
+                ) : null}
+                {profile.upwork_url ? (
+                  <a
+                    href={profile.upwork_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-[#ccc] hover:text-[#14a800] transition mt-1"
+                  >
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#14a800] text-white text-[8px] font-bold">
+                      U
+                    </span>
+                    <span>Upwork</span>
+                    <ExternalLink size={12} className="text-[#555]" />
+                  </a>
+                ) : null}
+                {!profile.github_url && !profile.upwork_url && (
+                  <p className="text-xs text-[#555] italic">Link your accounts</p>
+                )}
+              </SidebarSection>
+            </aside>
+
+            {/* ═══════════ MAIN CONTENT ═══════════ */}
+            <main className="flex-1 flex flex-col gap-6 min-w-0">
+              {/* Title + Rate + Description */}
+              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h1 className="text-xl font-bold text-white">{displayTitle}</h1>
+                      <EditBtn
+                        onClick={() =>
+                          openEdit("title", {
+                            title: profile.title,
+                            description: profile.description,
+                            rate_hr: profile.rate_hr,
+                          })
+                        }
+                      />
+                    </div>
+                    <p className="text-[#14a800] font-semibold text-lg mt-1">
+                      {displayRate}
+                    </p>
+                  </div>
+                </div>
+                {profile.description ? (
+                  <div className="mt-4 pt-4 border-t border-[#222]">
+                    <p className="text-sm text-[#bbb] leading-relaxed whitespace-pre-wrap">
+                      {profile.description}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-4 pt-4 border-t border-[#222]">
+                    <p className="text-sm text-[#555] italic">
+                      Write a professional description about yourself, your experience, and what you
+                      can offer to clients...
+                    </p>
+                  </div>
+                )}
+              </section>
+
+              {/* Portfolio */}
+              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+                <SectionHeader
+                  title="Portfolio"
+                  onAdd={() => openEdit("portfolio-add")}
+                />
+                {profile.portfolio.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
+                    {profile.portfolio.map((item) => (
+                      <div
+                        key={item.id}
+                        className="group relative bg-[#1a1a1a] border border-[#222] rounded-lg overflow-hidden aspect-[4/3]"
+                      >
+                        {item.image_data ? (
+                          <img
+                            src={
+                              item.image_data.startsWith("data:")
+                                ? item.image_data
+                                : `data:image/jpeg;base64,${item.image_data}`
+                            }
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[#333]">
+                            <Code2 size={32} />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-3">
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-white truncate">
+                              {item.title}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => deletePortfolioItem(item.id)}
+                            className="h-7 w-7 rounded-full bg-red-500/80 flex items-center justify-center text-white hover:bg-red-600 transition"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState text="Showcase your best work — add portfolio items" />
+                )}
+              </section>
+
+              {/* Employment History */}
+              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+                <SectionHeader
+                  title="Employment history"
+                  onAdd={() =>
+                    openEdit("employment", {
+                      id: uid(),
+                      title: "",
+                      company: "",
+                      start_date: "",
+                      end_date: "",
+                      is_current: false,
+                      description: "",
+                    })
+                  }
+                  expanded={expandedEmployment}
+                  onToggle={() => setExpandedEmployment((v) => !v)}
+                />
+                {expandedEmployment && (
+                  <div className="mt-4 flex flex-col gap-4">
+                    {profile.employment_history.length > 0 ? (
+                      profile.employment_history.map((entry) => (
+                        <HistoryCard
+                          key={entry.id}
+                          entry={entry}
+                          onEdit={() => openEdit("employment", { ...entry })}
+                          onDelete={() => deleteEmployment(entry.id)}
+                        />
+                      ))
+                    ) : (
+                      <EmptyState text="Add your work experience to build credibility" />
+                    )}
+                  </div>
+                )}
+              </section>
+
+              {/* Certifications */}
+              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+                <SectionHeader
+                  title="Certifications"
+                  onAdd={() =>
+                    openEdit("certification", {
+                      id: uid(),
+                      name: "",
+                      issuer: "",
+                      year: new Date().getFullYear(),
+                      url: "",
+                    })
+                  }
+                  expanded={expandedCerts}
+                  onToggle={() => setExpandedCerts((v) => !v)}
+                />
+                {expandedCerts && (
+                  <div className="mt-4 flex flex-col gap-3">
+                    {profile.certifications.length > 0 ? (
+                      profile.certifications.map((cert) => (
+                        <div
+                          key={cert.id}
+                          className="flex items-start justify-between bg-[#1a1a1a] border border-[#222] rounded-lg p-4"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-[#14a800]/10 flex items-center justify-center shrink-0">
+                              <Award size={18} className="text-[#14a800]" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-white">
+                                {cert.name}
+                              </p>
+                              <p className="text-xs text-[#888] mt-0.5">
+                                {cert.issuer}
+                                {cert.year ? ` · ${cert.year}` : ""}
+                              </p>
+                              {cert.url && (
+                                <a
+                                  href={cert.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-[#14a800] hover:underline mt-1 inline-flex items-center gap-1"
+                                >
+                                  View credential <ExternalLink size={10} />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <EditBtn
+                              onClick={() => openEdit("certification", { ...cert })}
+                            />
+                            <DeleteBtn onClick={() => deleteCertification(cert.id)} />
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <EmptyState text="Listing certifications helps prove your knowledge (+10%)" icon={<Award size={28} className="text-[#444]" />} />
+                    )}
+                  </div>
+                )}
+              </section>
+
+              {/* Skills */}
+              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+                <SectionHeader title="Skills" onEdit={() => openEdit("skills")} />
+                <div className="mt-4">
+                  {profile.skills.length > 0 ? (
+                    <>
+                      <p className="text-xs text-[#666] mb-3">Self-reported</p>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.skills.map((skill) => (
+                          <span
+                            key={skill}
+                            className="group relative px-3 py-1.5 text-xs font-medium text-[#ccc] bg-[#1a1a1a] border border-[#333] rounded-full hover:border-[#14a800] transition cursor-default"
+                          >
+                            {skill}
+                            <button
+                              onClick={() => removeSkill(skill)}
+                              className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                            >
+                              <X size={8} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <EmptyState text="Add skills to help clients find you" />
+                  )}
+
+                  {/* Quick add */}
+                  <div className="mt-4 flex gap-2">
+                    <input
+                      value={skillInput}
+                      onChange={(e) => setSkillInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          addSkill(skillInput);
+                          setSkillInput("");
+                        }
+                      }}
+                      placeholder="Type a skill and press Enter"
+                      className={inputCls}
+                    />
+                    <button
+                      onClick={() => {
+                        addSkill(skillInput);
+                        setSkillInput("");
+                      }}
+                      className="px-4 py-2 bg-[#14a800] text-white text-sm font-semibold rounded-lg hover:bg-[#128a00] transition shrink-0"
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  {/* Suggestions */}
+                  {profile.skills.length < 15 && (
+                    <div className="mt-3">
+                      <p className="text-xs text-[#555] mb-2">Suggested:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {SKILL_SUGGESTIONS.filter(
+                          (s) => !profile.skills.includes(s)
+                        )
+                          .slice(0, 8)
+                          .map((s) => (
+                            <button
+                              key={s}
+                              onClick={() => addSkill(s)}
+                              className="px-2.5 py-1 text-[11px] text-[#888] border border-[#2a2a2a] rounded-full hover:border-[#14a800] hover:text-[#14a800] transition"
+                            >
+                              + {s}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Education */}
+              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+                <SectionHeader
+                  title="Education"
+                  onAdd={() =>
+                    openEdit("education", {
+                      id: uid(),
+                      school: "",
+                      degree: "",
+                      field: "",
+                      start_year: "",
+                      end_year: "",
+                      is_current: false,
+                    })
+                  }
+                />
+                <div className="mt-4 flex flex-col gap-3">
+                  {profile.education.length > 0 ? (
+                    profile.education.map((edu) => (
+                      <div
+                        key={edu.id}
+                        className="flex items-start justify-between bg-[#1a1a1a] border border-[#222] rounded-lg p-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                            <GraduationCap size={18} className="text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-white">
+                              {edu.school}
+                            </p>
+                            <p className="text-xs text-[#888] mt-0.5">
+                              {edu.degree}
+                              {edu.field ? `, ${edu.field}` : ""}
+                            </p>
+                            <p className="text-xs text-[#555] mt-0.5">
+                              {edu.start_year}
+                              {" - "}
+                              {edu.is_current
+                                ? "Present"
+                                : edu.end_year || ""}
+                              {edu.is_current ? " (expected)" : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <EditBtn onClick={() => openEdit("education", { ...edu })} />
+                          <DeleteBtn onClick={() => deleteEducation(edu.id)} />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <EmptyState text="Add your educational background" icon={<GraduationCap size={28} className="text-[#444]" />} />
+                  )}
+                </div>
+              </section>
+            </main>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════ MODALS ═══════════ */}
+
+      {/* Title / Description / Rate */}
+      <EditModal
+        isOpen={editingSection === "title"}
+        onClose={closeEdit}
+        title="Edit your title & description"
+        onSave={() =>
+          saveTitle(editData?.title, editData?.description, editData?.rate_hr)
+        }
+        wide
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className={labelCls}>Professional Title</p>
+            <input
+              value={editData?.title || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, title: e.target.value }))
+              }
+              placeholder="e.g. 3yr+ Experienced Developer | Next.js, React"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <p className={labelCls}>Hourly Rate ($)</p>
+            <input
+              type="number"
+              value={editData?.rate_hr || ""}
+              onChange={(e) =>
+                setEditData((d) => ({
+                  ...d,
+                  rate_hr: e.target.value,
+                }))
+              }
+              placeholder="20"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <p className={labelCls}>Description</p>
+            <textarea
+              value={editData?.description || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, description: e.target.value }))
+              }
+              placeholder="Write about your experience, skills, and what makes you unique..."
+              rows={6}
+              className={`${inputCls} resize-none`}
+            />
+          </div>
+        </div>
+      </EditModal>
+
+      {/* Name */}
+      <EditModal
+        isOpen={editingSection === "name"}
+        onClose={closeEdit}
+        title="Edit your name"
+        onSave={() => saveName(editData?.name)}
+      >
+        <div>
+          <p className={labelCls}>Full Name</p>
+          <input
+            value={editData?.name || ""}
+            onChange={(e) =>
+              setEditData((d) => ({ ...d, name: e.target.value }))
+            }
+            placeholder="Your full name"
+            className={inputCls}
+          />
+        </div>
+      </EditModal>
+
+      {/* Employment */}
+      <EditModal
+        isOpen={editingSection === "employment"}
+        onClose={closeEdit}
+        title={
+          editData?.title
+            ? "Edit Employment"
+            : "Add Employment History"
+        }
+        onSave={() => saveEmployment(editData)}
+        wide
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className={labelCls}>Title / Role</p>
+            <input
+              value={editData?.title || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, title: e.target.value }))
+              }
+              placeholder="e.g. Web Developer"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <p className={labelCls}>Company</p>
+            <input
+              value={editData?.company || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, company: e.target.value }))
+              }
+              placeholder="e.g. Wan Architects"
+              className={inputCls}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className={labelCls}>Start Date</p>
+              <input
+                type="month"
+                value={editData?.start_date || ""}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, start_date: e.target.value }))
+                }
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <p className={labelCls}>End Date</p>
+              <input
+                type="month"
+                value={editData?.end_date || ""}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, end_date: e.target.value }))
+                }
+                disabled={editData?.is_current}
+                className={`${inputCls} disabled:opacity-40`}
+              />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-[#ccc] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={editData?.is_current || false}
+              onChange={(e) =>
+                setEditData((d) => ({
+                  ...d,
+                  is_current: e.target.checked,
+                  end_date: e.target.checked ? "" : d.end_date,
+                }))
+              }
+              className="accent-[#14a800]"
+            />
+            I currently work here
+          </label>
+          <div>
+            <p className={labelCls}>Description</p>
+            <textarea
+              value={editData?.description || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, description: e.target.value }))
+              }
+              placeholder="Describe your responsibilities and achievements..."
+              rows={4}
+              className={`${inputCls} resize-none`}
+            />
+          </div>
+        </div>
+      </EditModal>
+
+      {/* Certification */}
+      <EditModal
+        isOpen={editingSection === "certification"}
+        onClose={closeEdit}
+        title="Add Certification"
+        onSave={() => saveCertification(editData)}
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className={labelCls}>Certification Name</p>
+            <input
+              value={editData?.name || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, name: e.target.value }))
+              }
+              placeholder="e.g. AWS Certified Developer"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <p className={labelCls}>Issuing Organization</p>
+            <input
+              value={editData?.issuer || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, issuer: e.target.value }))
+              }
+              placeholder="e.g. Amazon Web Services"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <p className={labelCls}>Year</p>
+            <input
+              type="number"
+              value={editData?.year || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, year: e.target.value }))
+              }
+              placeholder="2026"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <p className={labelCls}>Credential URL (optional)</p>
+            <input
+              value={editData?.url || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, url: e.target.value }))
+              }
+              placeholder="https://..."
+              className={inputCls}
+            />
+          </div>
+        </div>
+      </EditModal>
+
+      {/* Education */}
+      <EditModal
+        isOpen={editingSection === "education"}
+        onClose={closeEdit}
+        title="Add Education"
+        onSave={() => saveEducation(editData)}
+        wide
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className={labelCls}>School / University</p>
+            <input
+              value={editData?.school || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, school: e.target.value }))
+              }
+              placeholder="e.g. RV College of Engineering"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <p className={labelCls}>Degree</p>
+            <input
+              value={editData?.degree || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, degree: e.target.value }))
+              }
+              placeholder="e.g. Bachelor of Engineering (BEng)"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <p className={labelCls}>Field of Study</p>
+            <input
+              value={editData?.field || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, field: e.target.value }))
+              }
+              placeholder="e.g. Business Engineering"
+              className={inputCls}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className={labelCls}>Start Year</p>
+              <input
+                type="number"
+                value={editData?.start_year || ""}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, start_year: e.target.value }))
+                }
+                placeholder="2025"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <p className={labelCls}>End Year</p>
+              <input
+                type="number"
+                value={editData?.end_year || ""}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, end_year: e.target.value }))
+                }
+                placeholder="2029"
+                disabled={editData?.is_current}
+                className={`${inputCls} disabled:opacity-40`}
+              />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-[#ccc] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={editData?.is_current || false}
+              onChange={(e) =>
+                setEditData((d) => ({
+                  ...d,
+                  is_current: e.target.checked,
+                  end_year: e.target.checked ? "" : d.end_year,
+                }))
+              }
+              className="accent-[#14a800]"
+            />
+            Currently studying here
+          </label>
+        </div>
+      </EditModal>
+
+      {/* Languages */}
+      <EditModal
+        isOpen={editingSection === "languages"}
+        onClose={closeEdit}
+        title="Edit Languages"
+        onSave={() => saveLanguages(editData?.languages?.filter((l) => l.language.trim()) || [])}
+      >
+        <div className="flex flex-col gap-3">
+          {(editData?.languages || []).map((lang, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                value={lang.language}
+                onChange={(e) => {
+                  const updated = [...editData.languages];
+                  updated[i] = { ...updated[i], language: e.target.value };
+                  setEditData((d) => ({ ...d, languages: updated }));
+                }}
+                placeholder="Language"
+                className={`${inputCls} flex-1`}
+              />
+              <select
+                value={lang.proficiency}
+                onChange={(e) => {
+                  const updated = [...editData.languages];
+                  updated[i] = { ...updated[i], proficiency: e.target.value };
+                  setEditData((d) => ({ ...d, languages: updated }));
+                }}
+                className={`${inputCls} flex-1`}
+              >
+                {PROFICIENCY_LEVELS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => {
+                  const updated = editData.languages.filter((_, j) => j !== i);
+                  setEditData((d) => ({ ...d, languages: updated }));
+                }}
+                className="h-8 w-8 rounded-full flex items-center justify-center text-red-400 hover:bg-red-500/10 transition shrink-0"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => {
+              setEditData((d) => ({
+                ...d,
+                languages: [
+                  ...(d.languages || []),
+                  { language: "", proficiency: "Conversational" },
+                ],
+              }));
+            }}
+            className="flex items-center gap-2 text-sm text-[#14a800] hover:text-[#1dc000] transition font-semibold"
+          >
+            <Plus size={14} /> Add another language
+          </button>
+        </div>
+      </EditModal>
+
+      {/* Linked Accounts */}
+      <EditModal
+        isOpen={editingSection === "linked"}
+        onClose={closeEdit}
+        title="Linked Accounts"
+        onSave={() =>
+          saveLinkedAccounts(
+            editData?.github_url,
+            editData?.github_username,
+            editData?.upwork_url
+          )
+        }
+      >
+        <div className="flex flex-col gap-5">
+          <div className="p-4 rounded-lg bg-[#1a1a1a] border border-[#222]">
+            <div className="flex items-center gap-2 mb-3">
+              <Github size={18} className="text-white" />
+              <span className="text-sm font-semibold text-white">GitHub</span>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div>
+                <p className={labelCls}>GitHub Profile URL</p>
+                <input
+                  value={editData?.github_url || ""}
+                  onChange={(e) =>
+                    setEditData((d) => ({ ...d, github_url: e.target.value }))
+                  }
+                  placeholder="https://github.com/yourusername"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <p className={labelCls}>GitHub Username</p>
+                <input
+                  value={editData?.github_username || ""}
+                  onChange={(e) =>
+                    setEditData((d) => ({
+                      ...d,
+                      github_username: e.target.value,
+                    }))
+                  }
+                  placeholder="yourusername"
+                  className={inputCls}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg bg-[#1a1a1a] border border-[#222]">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#14a800] text-white text-[10px] font-bold">
+                U
+              </span>
+              <span className="text-sm font-semibold text-white">Upwork</span>
+            </div>
+            <div>
+              <p className={labelCls}>Upwork Profile URL</p>
+              <input
+                value={editData?.upwork_url || ""}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, upwork_url: e.target.value }))
+                }
+                placeholder="https://www.upwork.com/freelancers/~yourid"
+                className={inputCls}
+              />
+            </div>
+          </div>
+        </div>
+      </EditModal>
+
+      {/* Availability */}
+      <EditModal
+        isOpen={editingSection === "availability"}
+        onClose={closeEdit}
+        title="Set Availability"
+        onSave={() =>
+          saveAvailability(editData?.hours_per_week, editData?.availability)
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className={labelCls}>Hours per week</p>
+            <select
+              value={editData?.hours_per_week || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, hours_per_week: e.target.value }))
+              }
+              className={inputCls}
+            >
+              <option value="Less than 10 hrs/week">Less than 10 hrs/week</option>
+              <option value="10-20 hrs/week">10-20 hrs/week</option>
+              <option value="20-30 hrs/week">20-30 hrs/week</option>
+              <option value="More than 30 hrs/week">More than 30 hrs/week</option>
+            </select>
+          </div>
+          <div>
+            <p className={labelCls}>Availability</p>
+            <select
+              value={editData?.availability || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...d, availability: e.target.value }))
+              }
+              className={inputCls}
+            >
+              <option value="Open to contract to hire">Open to contract to hire</option>
+              <option value="Open to short-term projects">Open to short-term projects</option>
+              <option value="Open to long-term projects">Open to long-term projects</option>
+              <option value="Not available">Not available</option>
+            </select>
+          </div>
+        </div>
+      </EditModal>
+
+      {/* Portfolio Add */}
+      <EditModal
+        isOpen={editingSection === "portfolio-add"}
+        onClose={closeEdit}
+        title="Add Portfolio Item"
+        onSave={() => {
+          if (editData?.title) addPortfolioItem(editData);
+        }}
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className={labelCls}>Project Title</p>
+            <input
+              value={editData?.title || ""}
+              onChange={(e) =>
+                setEditData((d) => ({ ...(d || {}), title: e.target.value }))
+              }
+              placeholder="e.g. Brand Redesign"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <p className={labelCls}>Description (optional)</p>
+            <textarea
+              value={editData?.description || ""}
+              onChange={(e) =>
+                setEditData((d) => ({
+                  ...(d || {}),
+                  description: e.target.value,
+                }))
+              }
+              placeholder="Brief description of the project..."
+              rows={3}
+              className={`${inputCls} resize-none`}
+            />
+          </div>
+          <div>
+            <p className={labelCls}>Project Image</p>
+            <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-[#333] rounded-lg cursor-pointer hover:border-[#14a800] transition bg-[#1a1a1a]">
+              {editData?.image_data ? (
+                <img
+                  src={editData.image_data}
+                  alt="Preview"
+                  className="h-full w-full object-contain rounded-lg"
+                />
+              ) : (
+                <div className="text-center">
+                  <Plus size={24} className="text-[#555] mx-auto mb-2" />
+                  <p className="text-xs text-[#555]">Click to upload image</p>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    setEditData((d) => ({
+                      ...(d || {}),
+                      image_data: reader.result,
+                    }));
+                  };
+                  reader.readAsDataURL(file);
+                }}
+              />
+            </label>
+          </div>
+        </div>
+      </EditModal>
+    </Shell>
+  );
+}
+
+/* ═══════════ sub-components ═══════════ */
+
+function SectionHeader({ title, onAdd, onEdit, expanded, onToggle }) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <h2 className="text-base font-bold text-white">{title}</h2>
+        {onToggle && (
+          <button
+            onClick={onToggle}
+            className="h-6 w-6 rounded-full flex items-center justify-center text-[#666] hover:text-white transition"
+          >
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        )}
+      </div>
+      <div className="flex items-center gap-1">
+        {onEdit && <EditBtn onClick={onEdit} />}
+        {onAdd && (
+          <button
+            onClick={onAdd}
+            className="h-8 w-8 rounded-full flex items-center justify-center text-[#14a800] hover:bg-[#14a800]/10 transition"
+          >
+            <Plus size={18} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SidebarSection({ icon, title, children, onEdit, onAdd }) {
+  return (
+    <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[#14a800]">{icon}</span>
+          <h3 className="text-sm font-semibold text-white">{title}</h3>
+        </div>
+        <div className="flex items-center gap-1">
+          {onEdit && <EditBtn onClick={onEdit} size={14} />}
+          {onAdd && (
+            <button
+              onClick={onAdd}
+              className="h-6 w-6 rounded-full flex items-center justify-center text-[#14a800] hover:bg-[#14a800]/10 transition"
+            >
+              <Plus size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function HistoryCard({ entry, onEdit, onDelete }) {
+  const [expanded, setExpanded] = useState(false);
+  const formatDate = (d) => {
+    if (!d) return "";
+    const [y, m] = d.split("-");
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${months[parseInt(m, 10) - 1] || ""} ${y}`;
+  };
+
+  return (
+    <div className="bg-[#1a1a1a] border border-[#222] rounded-lg p-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-[#14a800]/10 flex items-center justify-center shrink-0 mt-0.5">
+            <Briefcase size={18} className="text-[#14a800]" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-white">
+              {entry.title}
+              {entry.company ? ` | ${entry.company}` : ""}
+            </p>
+            <p className="text-xs text-[#14a800] mt-0.5">
+              {formatDate(entry.start_date)}
+              {" - "}
+              {entry.is_current ? "Present" : formatDate(entry.end_date)}
+            </p>
+            {entry.description && (
+              <p className={`text-xs text-[#888] mt-2 leading-relaxed ${!expanded && entry.description.length > 200 ? "line-clamp-2" : ""}`}>
+                {entry.description}
+              </p>
+            )}
+            {entry.description && entry.description.length > 200 && (
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                className="text-xs text-[#14a800] mt-1 hover:underline"
+              >
+                {expanded ? "less" : "more"}
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <EditBtn onClick={onEdit} />
+          <DeleteBtn onClick={onDelete} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditBtn({ onClick, size = 16 }) {
+  return (
+    <button
+      onClick={onClick}
+      className="h-8 w-8 rounded-full flex items-center justify-center text-[#14a800] hover:bg-[#14a800]/10 transition"
+    >
+      <Pencil size={size} />
+    </button>
+  );
+}
+
+function DeleteBtn({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="h-8 w-8 rounded-full flex items-center justify-center text-red-400 hover:bg-red-500/10 transition"
+    >
+      <Trash2 size={14} />
+    </button>
+  );
+}
+
+function EmptyState({ text, icon }) {
+  return (
+    <div className="flex flex-col items-center py-8 text-center">
+      {icon || <Plus size={28} className="text-[#333] mb-2" />}
+      <p className="text-sm text-[#555] mt-2">{text}</p>
+    </div>
+  );
+}

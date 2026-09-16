@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 import Landing from "@/pages/Landing";
 import Profile from "@/pages/Profile";
@@ -17,31 +18,35 @@ import Inbox from "@/pages/employer/Inbox";
 import Onboarding from "@/pages/freelancer/Onboarding";
 import Jobs from "@/pages/freelancer/Jobs";
 import FreelancerChats from "@/pages/freelancer/Chats";
+import FreelancerProfile from "@/pages/freelancer/FreelancerProfile";
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/legal" element={<Legal />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/map" element={<LiveMap />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/chat/:id" element={<Chat />} />
-          <Route path="/pro/:id" element={<Pro />} />
-          <Route path="/employer" element={<Employer />} />
-          <Route path="/employer/plans" element={<Plans />} />
-          <Route path="/employer/post-job" element={<PostJob />} />
-          <Route path="/employer/inbox" element={<Inbox />} />
-          <Route path="/freelancer" element={<Onboarding />} />
-          <Route path="/freelancer/jobs" element={<Jobs />} />
-          <Route path="/freelancer/chats" element={<FreelancerChats />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/legal" element={<Legal />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/map" element={<LiveMap />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/chat/:id" element={<Chat />} />
+            <Route path="/pro/:id" element={<Pro />} />
+            <Route path="/employer" element={<Employer />} />
+            <Route path="/employer/plans" element={<Plans />} />
+            <Route path="/employer/post-job" element={<PostJob />} />
+            <Route path="/employer/inbox" element={<Inbox />} />
+            <Route path="/freelancer" element={<Onboarding />} />
+            <Route path="/freelancer/jobs" element={<Jobs />} />
+            <Route path="/freelancer/chats" element={<FreelancerChats />} />
+            <Route path="/freelancer/profile" element={<FreelancerProfile />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

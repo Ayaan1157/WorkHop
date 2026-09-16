@@ -3,11 +3,13 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   ChevronLeft, Loader2, Grid3x3, Palette, Code2, Megaphone,
   PenLine, Video, Sparkles, Music, Briefcase, Users,
-  MapPin, PlusCircle, UserCircle2, LogOut, Search, Compass, Tag, HelpCircle, Coins
+  MapPin, PlusCircle, UserCircle2, LogOut, Search, Compass, Tag, HelpCircle, Coins,
+  Sun, Moon
 } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { CATEGORY_VISUALS, CATEGORY_SHORT_LABELS } from "@/lib/catalogFilters";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import NotificationBell from "@/components/NotificationBell";
 import AuthModal from "@/components/AuthModal";
 export { default as Breadcrumbs } from "@/components/Breadcrumbs";
@@ -52,6 +54,7 @@ export function GlobalNav() {
   const nav = useNavigate();
   const loc = useLocation();
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [authOpen, setAuthOpen] = useState(false);
 
   const links = [
@@ -115,6 +118,16 @@ export function GlobalNav() {
 
             {/* In-App Notification Bell */}
             <NotificationBell />
+
+            {/* Dark / Light Mode Toggle */}
+            <button
+              data-testid="theme-toggle-btn"
+              onClick={toggleTheme}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-sand hover:bg-stone transition-transform active:translate-y-0.5"
+            >
+              {isDark ? <Sun size={16} className="text-brand" /> : <Moon size={16} className="text-ink" />}
+            </button>
 
             <button
               data-testid="nav-post-job-btn"

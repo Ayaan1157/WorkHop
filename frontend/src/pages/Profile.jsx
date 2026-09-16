@@ -66,6 +66,13 @@ export default function Profile() {
 
   const menu = [
     {
+      icon: UserCheck,
+      label: "Edit Full Profile",
+      sub: "Employment, skills, portfolio, certifications & more",
+      to: "/freelancer/profile",
+      testID: "profile-full-edit",
+    },
+    {
       icon: Briefcase,
       label: "Employer Site (Nearby Pros)",
       sub: "Explore 50+ verified pros & unlock leads",

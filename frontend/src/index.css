@@ -2,13 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════ Neo-Brutalist Color Tokens ═══════ */
+:root {
+    --color-brand: #E65A1E;
+    --color-ink: #121212;
+    --color-sand: #F9F9F6;
+    --color-stone: #EAEAEA;
+    --color-inkmuted: #6B6B6B;
+    --color-ok: #00A86B;
+    --color-danger: #E63946;
+    --color-surface: #ffffff;
+    --color-surface-elevated: #ffffff;
+    --color-border-subtle: #e5e5e5;
+}
+
+.dark {
+    --color-brand: #F06B2E;
+    --color-ink: #E8E8E8;
+    --color-sand: #1a1a1a;
+    --color-stone: #2a2a2a;
+    --color-inkmuted: #999999;
+    --color-ok: #00C97B;
+    --color-danger: #FF4D5A;
+    --color-surface: #0f0f10;
+    --color-surface-elevated: #161618;
+    --color-border-subtle: #2a2a2a;
+}
+
+/* ═══════ Smooth theme transition ═══════ */
+*, *::before, *::after {
+    transition: background-color 0.2s ease, color 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
 body {
     margin: 0;
     font-family: "Archivo", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: #ffffff;
-    color: #121212;
+    background: var(--color-surface);
+    color: var(--color-ink);
+}
+
+/* ═══════ Dark mode global overrides ═══════ */
+.dark body,
+.dark .bg-white {
+    background-color: var(--color-surface) !important;
+}
+
+.dark .min-h-screen.bg-white,
+.dark .bg-white.text-ink {
+    background-color: var(--color-surface) !important;
+}
+
+/* Cards & elevated surfaces in dark mode */
+.dark .border-2.border-ink.bg-white,
+.dark .border-ink.bg-white,
+.dark [class*="bg-white"][class*="border"] {
+    background-color: var(--color-surface-elevated) !important;
+}
+
+.dark .border-2.border-ink {
+    border-color: #333 !important;
+}
+
+.dark .border-b-2.border-ink {
+    border-color: #2a2a2a !important;
+}
+
+/* Inputs */
+.dark .wh-input {
+    background-color: #1a1a1a !important;
+    color: var(--color-ink) !important;
+}
+
+/* Shadows → glows in dark mode */
+.dark [class*="shadow-["] {
+    box-shadow: none !important;
+}
+
+/* Scrollbars */
+.dark .wh-scroll::-webkit-scrollbar-thumb {
+    background: #444;
 }
 
 /* Neo-brutalist helpers shared across web screens */
@@ -16,7 +90,7 @@ body {
     outline: none;
 }
 .wh-input:focus {
-    box-shadow: inset 0 0 0 2px #E65A1E;
+    box-shadow: inset 0 0 0 2px var(--color-brand);
 }
 .leaflet-container {
     width: 100%;
@@ -24,17 +98,21 @@ body {
     background: #eaeaea;
     z-index: 0;
 }
+.dark .leaflet-container {
+    background: #1a1a1a;
+}
 ::selection {
-    background: #E65A1E;
+    background: var(--color-brand);
     color: #fff;
 }
 .wh-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
-.wh-scroll::-webkit-scrollbar-thumb { background: #121212; }
+.wh-scroll::-webkit-scrollbar-thumb { background: var(--color-ink); }
 
 code {
     font-family:
         source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+
 
 @layer base {
     :root {

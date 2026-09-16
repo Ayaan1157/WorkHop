@@ -9,6 +9,7 @@ const SAVED_JOBS_KEY = "workhop_saved_jobs";
 const SAVED_PROS_KEY = "workhop_saved_pros";
 const NOTIFICATIONS_KEY = "workhop_notifications";
 const WALLET_KEY = "workhop_wallet";
+const FREELANCER_PROFILE_KEY = "workhop_freelancer_profile";
 
 // Helper for masking phone numbers server-side/client-side safely
 export function maskPhone(phone) {
@@ -266,15 +267,23 @@ export function createMockSession(email = "user@workhop.local", details = {}) {
 
 // 7. Profile Completion Calculation (Upwork Pattern)
 export function getProfileCompletion(user) {
+  const profile = getFreelancerProfile();
   const checks = [
-    { key: "email", label: "Email Address Verified", completed: true, weight: 25 },
-    { key: "phone", label: "Contact Phone Added", completed: !!(user?.phone || localStorage.getItem("workhop_pro_phone")), weight: 25 },
-    { key: "portfolio", label: "Work Samples / Portfolio Linked", completed: true, weight: 25 },
-    { key: "skill", label: "Primary Skill & Bio Defined", completed: !!(user?.skill || localStorage.getItem("workhop_pro_skill")), weight: 25 },
+    { key: "email", label: "Email Address Verified", completed: true, weight: 12 },
+    { key: "phone", label: "Contact Phone Added", completed: !!(user?.phone || localStorage.getItem("workhop_pro_phone")), weight: 12 },
+    { key: "portfolio", label: "Work Samples / Portfolio Linked", completed: profile.portfolio.length > 0, weight: 12 },
+    { key: "skill", label: "Primary Skill & Bio Defined", completed: !!(user?.skill || localStorage.getItem("workhop_pro_skill")), weight: 10 },
+    { key: "employment", label: "Employment History Added", completed: profile.employment_history.length > 0, weight: 10 },
+    { key: "education", label: "Education Added", completed: profile.education.length > 0, weight: 10 },
+    { key: "skills", label: "Skills Listed (3+ recommended)", completed: profile.skills.length >= 3, weight: 10 },
+    { key: "description", label: "Professional Bio Written", completed: !!(profile.description && profile.description.length > 20), weight: 10 },
+    { key: "languages", label: "Languages Added", completed: profile.languages.length > 0, weight: 7 },
+    { key: "linked", label: "Linked Accounts (GitHub/Upwork)", completed: !!(profile.github_url || profile.upwork_url), weight: 7 },
   ];
   const percentage = checks.reduce((acc, curr) => (curr.completed ? acc + curr.weight : acc), 0);
   return { percentage, checks };
 }
+
 
 // 8. Notifications (In-App Bell & Dropdown)
 export function getStoredNotifications() {
@@ -416,4 +425,58 @@ export function getStoredChats() {
       last_message: "Great work on the prototype. Let's schedule the kickoff call.",
     },
   ];
+}
+
+// 11. Full Freelancer Profile (Upwork-style)
+export function getDefaultFreelancerProfile() {
+  return {
+    // Header
+    title: "",
+    rate_hr: 0,
+    description: "",
+
+    // Employment History
+    employment_history: [],
+
+    // Certifications
+    certifications: [],
+
+    // Skills
+    skills: [],
+
+    // Portfolio
+    portfolio: [],
+
+    // Education
+    education: [],
+
+    // Languages
+    languages: [],
+
+    // Linked Accounts
+    github_url: "",
+    github_username: "",
+    upwork_url: "",
+
+    // Availability
+    hours_per_week: "More than 30 hrs/week",
+    availability: "Open to contract to hire",
+  };
+}
+
+export function getFreelancerProfile() {
+  const raw = localStorage.getItem(FREELANCER_PROFILE_KEY);
+  if (raw) {
+    try {
+      return { ...getDefaultFreelancerProfile(), ...JSON.parse(raw) };
+    } catch {
+      /* ignore */
+    }
+  }
+  return getDefaultFreelancerProfile();
+}
+
+export function saveFreelancerProfile(profile) {
+  localStorage.setItem(FREELANCER_PROFILE_KEY, JSON.stringify(profile));
+  return profile;
 }

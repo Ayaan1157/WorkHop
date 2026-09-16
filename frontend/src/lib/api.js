@@ -10,6 +10,8 @@ import {
   createMockSession,
   applyToJob,
   getStoredChats,
+  getFreelancerProfile,
+  saveFreelancerProfile,
 } from "./clientStore";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
@@ -201,6 +203,12 @@ function mockRouter(path, method = "GET", body = null) {
   // 6. Freelancer Profile / Status / Quota
   if (cleanPath.includes("/quota")) {
     return { applies_used_today: 0, applies_limit_today: 3, has_boost: false };
+  }
+  if (cleanPath.startsWith("/freelancer/") && cleanPath.endsWith("/full-profile") && method === "GET") {
+    return getFreelancerProfile();
+  }
+  if (cleanPath.startsWith("/freelancer/") && cleanPath.endsWith("/full-profile") && method === "PUT") {
+    return saveFreelancerProfile(body);
   }
   if (cleanPath.startsWith("/freelancer/") && cleanPath.endsWith("/profile") && method === "GET") {
     return { phone: "9876543210", skill: "Full Stack Pro", verified: true };
