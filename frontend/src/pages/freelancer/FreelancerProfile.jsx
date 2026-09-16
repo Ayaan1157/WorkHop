@@ -291,13 +291,13 @@ export default function FreelancerProfile() {
   const displayRate = profile.rate_hr ? `$${profile.rate_hr}.00/hr` : "Set your rate";
 
   const inputCls =
-    "w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#E65A1E] transition";
-  const labelCls = "text-xs font-semibold text-[#999] uppercase tracking-wider mb-1.5";
+    "w-full bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#ddd] dark:border-[#333] rounded-lg px-3 py-2.5 text-sm text-ink dark:text-white placeholder:text-[#999] dark:placeholder:text-[#555] focus:outline-none focus:border-[#E65A1E] transition";
+  const labelCls = "text-xs font-semibold text-inkmuted dark:text-[#999] uppercase tracking-wider mb-1.5";
 
   if (loading) {
     return (
       <Shell>
-        <div className="flex items-center justify-center min-h-[60vh] bg-[#0a0a0a]">
+        <div className="flex items-center justify-center min-h-[60vh] bg-[#F9F9F6] dark:bg-[#0a0a0a]">
           <Loader2 size={32} className="animate-spin text-[#E65A1E]" />
         </div>
       </Shell>
@@ -306,9 +306,9 @@ export default function FreelancerProfile() {
 
   return (
     <Shell>
-      <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="min-h-screen bg-[#F9F9F6] dark:bg-[#0a0a0a] text-ink dark:text-white selection:bg-[#E65A1E]">
         {/* TOP NAV BAR WITH SETTINGS MENU ON THE RIGHT */}
-        <div className="border-b border-[#1a1a1a] bg-[#111]/90 backdrop-blur px-4 py-3 sm:px-8 flex items-center justify-between sticky top-0 z-30">
+        <div className="border-b border-[#e5e5e5] dark:border-[#1a1a1a] bg-white/90 dark:bg-[#111]/90 backdrop-blur px-4 py-3 sm:px-8 flex items-center justify-between sticky top-0 z-30">
           <button
             onClick={() => nav("/freelancer/jobs")}
             data-testid="profile-back-btn"
@@ -321,7 +321,7 @@ export default function FreelancerProfile() {
           <button
             onClick={() => setMenuDrawerOpen(true)}
             data-testid="profile-top-menu-btn"
-            className="flex items-center gap-2 rounded-lg border border-[#333] bg-[#1a1a1a] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#252525] hover:border-[#E65A1E] transition shadow-md active:translate-y-0.5"
+            className="flex items-center gap-2 rounded-lg border border-[#ddd] dark:border-[#333] bg-white dark:bg-[#1a1a1a] px-3.5 py-1.5 text-xs font-bold text-ink dark:text-white hover:bg-gray-100 dark:hover:bg-[#252525] hover:border-[#E65A1E] transition shadow-sm active:translate-y-0.5"
           >
             <Menu size={16} className="text-[#E65A1E]" />
             <span>MENU & SETTINGS</span>
@@ -333,7 +333,7 @@ export default function FreelancerProfile() {
             {/* ═══════════ LEFT SIDEBAR ═══════════ */}
             <aside className="lg:w-[320px] shrink-0 flex flex-col gap-5 lg:sticky lg:top-8 lg:self-start">
               {/* Profile Card */}
-              <div className="bg-[#111] border border-[#222] rounded-xl p-6">
+              <div className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <div className="flex flex-col items-center text-center">
                   {/* Avatar */}
                   <div className="relative group mb-4">
@@ -348,10 +348,10 @@ export default function FreelancerProfile() {
                         <img
                           src={user.picture}
                           alt={displayName}
-                          className="h-24 w-24 rounded-full object-cover border-2 border-[#222] group-hover:opacity-85 transition"
+                          className="h-24 w-24 rounded-full object-cover border-2 border-white dark:border-[#222] shadow-sm group-hover:opacity-85 transition"
                         />
                       ) : (
-                        <div className="h-24 w-24 rounded-full bg-[#E65A1E] flex items-center justify-center text-3xl font-bold text-white border-2 border-[#222] group-hover:brightness-105 transition">
+                        <div className="h-24 w-24 rounded-full bg-[#E65A1E] flex items-center justify-center text-3xl font-bold text-white border-2 border-white dark:border-[#222] shadow-sm group-hover:brightness-105 transition">
                           {displayName.charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -370,31 +370,31 @@ export default function FreelancerProfile() {
                       <Pencil size={12} />
                     </button>
                   </div>
-                  <h2 className="text-lg font-bold text-white">{displayName}</h2>
-                  <p className="text-sm text-[#888] mt-0.5">
+                  <h2 className="text-lg font-bold text-ink dark:text-white">{displayName}</h2>
+                  <p className="text-sm text-inkmuted dark:text-[#888] mt-0.5">
                     {user?.area || "Your Location"} · {user?.email || ""}
                   </p>
                 </div>
 
                 {/* Quick stats */}
-                <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-[#222]">
+                <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-[#e5e5e5] dark:border-[#222]">
                   <div className="text-center">
-                    <p className="text-lg font-bold text-white">
+                    <p className="text-lg font-bold text-ink dark:text-white">
                       {profile.employment_history.length}
                     </p>
-                    <p className="text-[10px] text-[#666] uppercase tracking-wider">Jobs</p>
+                    <p className="text-[10px] text-inkmuted dark:text-[#666] uppercase tracking-wider">Jobs</p>
                   </div>
-                  <div className="w-px h-8 bg-[#222]" />
+                  <div className="w-px h-8 bg-[#e5e5e5] dark:bg-[#222]" />
                   <div className="text-center">
-                    <p className="text-lg font-bold text-white">{profile.skills.length}</p>
-                    <p className="text-[10px] text-[#666] uppercase tracking-wider">Skills</p>
+                    <p className="text-lg font-bold text-ink dark:text-white">{profile.skills.length}</p>
+                    <p className="text-[10px] text-inkmuted dark:text-[#666] uppercase tracking-wider">Skills</p>
                   </div>
-                  <div className="w-px h-8 bg-[#222]" />
+                  <div className="w-px h-8 bg-[#e5e5e5] dark:bg-[#222]" />
                   <div className="text-center">
-                    <p className="text-lg font-bold text-white">
+                    <p className="text-lg font-bold text-ink dark:text-white">
                       {profile.portfolio.length}
                     </p>
-                    <p className="text-[10px] text-[#666] uppercase tracking-wider">Works</p>
+                    <p className="text-[10px] text-inkmuted dark:text-[#666] uppercase tracking-wider">Works</p>
                   </div>
                 </div>
               </div>
@@ -410,8 +410,8 @@ export default function FreelancerProfile() {
                   })
                 }
               >
-                <p className="text-sm text-[#ccc]">{profile.hours_per_week || "Not set"}</p>
-                <p className="text-xs text-[#666] mt-0.5">
+                <p className="text-sm text-ink dark:text-[#ccc]">{profile.hours_per_week || "Not set"}</p>
+                <p className="text-xs text-inkmuted dark:text-[#666] mt-0.5">
                   {profile.availability || ""}
                 </p>
               </SidebarSection>
@@ -434,13 +434,13 @@ export default function FreelancerProfile() {
                   <div className="flex flex-col gap-1">
                     {profile.languages.map((l, i) => (
                       <div key={i} className="flex items-baseline justify-between">
-                        <span className="text-sm text-[#ccc]">{l.language}</span>
-                        <span className="text-xs text-[#666]">{l.proficiency}</span>
+                        <span className="text-sm text-ink dark:text-[#ccc]">{l.language}</span>
+                        <span className="text-xs text-inkmuted dark:text-[#666]">{l.proficiency}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-[#555] italic">Add your languages</p>
+                  <p className="text-xs text-inkmuted dark:text-[#555] italic">Add your languages</p>
                 )}
               </SidebarSection>
 
@@ -461,11 +461,11 @@ export default function FreelancerProfile() {
                     href={profile.github_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-[#ccc] hover:text-[#E65A1E] transition"
+                    className="flex items-center gap-2 text-sm text-ink dark:text-[#ccc] hover:text-[#E65A1E] transition"
                   >
-                    <Github size={16} className="text-[#888]" />
+                    <Github size={16} className="text-inkmuted dark:text-[#888]" />
                     <span>{profile.github_username || "GitHub"}</span>
-                    <ExternalLink size={12} className="text-[#555]" />
+                    <ExternalLink size={12} className="text-inkmuted dark:text-[#555]" />
                   </a>
                 ) : null}
                 {profile.upwork_url ? (
@@ -473,17 +473,17 @@ export default function FreelancerProfile() {
                     href={profile.upwork_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-[#ccc] hover:text-[#E65A1E] transition mt-1"
+                    className="flex items-center gap-2 text-sm text-ink dark:text-[#ccc] hover:text-[#E65A1E] transition mt-1"
                   >
                     <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#E65A1E] text-white text-[8px] font-bold">
                       U
                     </span>
                     <span>Upwork</span>
-                    <ExternalLink size={12} className="text-[#555]" />
+                    <ExternalLink size={12} className="text-inkmuted dark:text-[#555]" />
                   </a>
                 ) : null}
                 {!profile.github_url && !profile.upwork_url && (
-                  <p className="text-xs text-[#555] italic">Link your accounts</p>
+                  <p className="text-xs text-inkmuted dark:text-[#555] italic">Link your accounts</p>
                 )}
               </SidebarSection>
             </aside>
@@ -491,11 +491,11 @@ export default function FreelancerProfile() {
             {/* ═══════════ MAIN CONTENT ═══════════ */}
             <main className="flex-1 flex flex-col gap-6 min-w-0">
               {/* Title + Rate + Description */}
-              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <h1 className="text-xl font-bold text-white">{displayTitle}</h1>
+                      <h1 className="text-xl font-bold text-ink dark:text-white">{displayTitle}</h1>
                       <EditBtn
                         onClick={() =>
                           openEdit("title", {
@@ -512,14 +512,14 @@ export default function FreelancerProfile() {
                   </div>
                 </div>
                 {profile.description ? (
-                  <div className="mt-4 pt-4 border-t border-[#222]">
-                    <p className="text-sm text-[#bbb] leading-relaxed whitespace-pre-wrap">
+                  <div className="mt-4 pt-4 border-t border-[#e5e5e5] dark:border-[#222]">
+                    <p className="text-sm text-ink dark:text-[#bbb] leading-relaxed whitespace-pre-wrap">
                       {profile.description}
                     </p>
                   </div>
                 ) : (
-                  <div className="mt-4 pt-4 border-t border-[#222]">
-                    <p className="text-sm text-[#555] italic">
+                  <div className="mt-4 pt-4 border-t border-[#e5e5e5] dark:border-[#222]">
+                    <p className="text-sm text-inkmuted dark:text-[#555] italic">
                       Write a professional description about yourself, your experience, and what you
                       can offer to clients...
                     </p>
@@ -528,7 +528,7 @@ export default function FreelancerProfile() {
               </section>
 
               {/* Portfolio */}
-              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader
                   title="Portfolio"
                   onAdd={() => openEdit("portfolio-add")}
@@ -538,7 +538,7 @@ export default function FreelancerProfile() {
                     {profile.portfolio.map((item) => (
                       <div
                         key={item.id}
-                        className="group relative bg-[#1a1a1a] border border-[#222] rounded-lg overflow-hidden aspect-[4/3]"
+                        className="group relative bg-[#f0f0f0] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222] rounded-lg overflow-hidden aspect-[4/3]"
                       >
                         {item.image_data ? (
                           <img
@@ -551,7 +551,7 @@ export default function FreelancerProfile() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[#333]">
+                          <div className="w-full h-full flex items-center justify-center text-inkmuted dark:text-[#333]">
                             <Code2 size={32} />
                           </div>
                         )}
@@ -577,7 +577,7 @@ export default function FreelancerProfile() {
               </section>
 
               {/* Employment History */}
-              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader
                   title="Employment history"
                   onAdd={() =>
@@ -613,7 +613,7 @@ export default function FreelancerProfile() {
               </section>
 
               {/* Certifications */}
-              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader
                   title="Certifications"
                   onAdd={() =>
@@ -634,17 +634,17 @@ export default function FreelancerProfile() {
                       profile.certifications.map((cert) => (
                         <div
                           key={cert.id}
-                          className="flex items-start justify-between bg-[#1a1a1a] border border-[#222] rounded-lg p-4"
+                          className="flex items-start justify-between bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222] rounded-lg p-4"
                         >
                           <div className="flex items-start gap-3">
                             <div className="h-10 w-10 rounded-lg bg-[#E65A1E]/10 flex items-center justify-center shrink-0">
                               <Award size={18} className="text-[#E65A1E]" />
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-white">
+                              <p className="text-sm font-semibold text-ink dark:text-white">
                                 {cert.name}
                               </p>
-                              <p className="text-xs text-[#888] mt-0.5">
+                              <p className="text-xs text-inkmuted dark:text-[#888] mt-0.5">
                                 {cert.issuer}
                                 {cert.year ? ` · ${cert.year}` : ""}
                               </p>
@@ -669,24 +669,24 @@ export default function FreelancerProfile() {
                         </div>
                       ))
                     ) : (
-                      <EmptyState text="Listing certifications helps prove your knowledge (+10%)" icon={<Award size={28} className="text-[#444]" />} />
+                      <EmptyState text="Listing certifications helps prove your knowledge (+10%)" icon={<Award size={28} className="text-inkmuted dark:text-[#444]" />} />
                     )}
                   </div>
                 )}
               </section>
 
               {/* Skills */}
-              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader title="Skills" onEdit={() => openEdit("skills")} />
                 <div className="mt-4">
                   {profile.skills.length > 0 ? (
                     <>
-                      <p className="text-xs text-[#666] mb-3">Self-reported</p>
+                      <p className="text-xs text-inkmuted dark:text-[#666] mb-3">Self-reported</p>
                       <div className="flex flex-wrap gap-2">
                         {profile.skills.map((skill) => (
                           <span
                             key={skill}
-                            className="group relative px-3 py-1.5 text-xs font-medium text-[#ccc] bg-[#1a1a1a] border border-[#333] rounded-full hover:border-[#E65A1E] transition cursor-default"
+                            className="group relative px-3 py-1.5 text-xs font-medium text-ink dark:text-[#ccc] bg-[#f0f0f0] dark:bg-[#1a1a1a] border border-[#ddd] dark:border-[#333] rounded-full hover:border-[#E65A1E] transition cursor-default"
                           >
                             {skill}
                             <button
@@ -731,7 +731,7 @@ export default function FreelancerProfile() {
                   {/* Suggestions */}
                   {profile.skills.length < 15 && (
                     <div className="mt-3">
-                      <p className="text-xs text-[#555] mb-2">Suggested:</p>
+                      <p className="text-xs text-inkmuted dark:text-[#555] mb-2">Suggested:</p>
                       <div className="flex flex-wrap gap-1.5">
                         {SKILL_SUGGESTIONS.filter(
                           (s) => !profile.skills.includes(s)
@@ -741,7 +741,7 @@ export default function FreelancerProfile() {
                             <button
                               key={s}
                               onClick={() => addSkill(s)}
-                              className="px-2.5 py-1 text-[11px] text-[#888] border border-[#2a2a2a] rounded-full hover:border-[#E65A1E] hover:text-[#E65A1E] transition"
+                              className="px-2.5 py-1 text-[11px] text-inkmuted dark:text-[#888] border border-[#ddd] dark:border-[#2a2a2a] rounded-full hover:border-[#E65A1E] hover:text-[#E65A1E] transition"
                             >
                               + {s}
                             </button>
@@ -753,7 +753,7 @@ export default function FreelancerProfile() {
               </section>
 
               {/* Education */}
-              <section className="bg-[#111] border border-[#222] rounded-xl p-6">
+              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader
                   title="Education"
                   onAdd={() =>
@@ -773,21 +773,21 @@ export default function FreelancerProfile() {
                     profile.education.map((edu) => (
                       <div
                         key={edu.id}
-                        className="flex items-start justify-between bg-[#1a1a1a] border border-[#222] rounded-lg p-4"
+                        className="flex items-start justify-between bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222] rounded-lg p-4"
                       >
                         <div className="flex items-start gap-3">
                           <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                            <GraduationCap size={18} className="text-blue-400" />
+                            <GraduationCap size={18} className="text-blue-500 dark:text-blue-400" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-white">
+                            <p className="text-sm font-semibold text-ink dark:text-white">
                               {edu.school}
                             </p>
-                            <p className="text-xs text-[#888] mt-0.5">
+                            <p className="text-xs text-inkmuted dark:text-[#888] mt-0.5">
                               {edu.degree}
                               {edu.field ? `, ${edu.field}` : ""}
                             </p>
-                            <p className="text-xs text-[#555] mt-0.5">
+                            <p className="text-xs text-inkmuted dark:text-[#555] mt-0.5">
                               {edu.start_year}
                               {" - "}
                               {edu.is_current
@@ -798,13 +798,15 @@ export default function FreelancerProfile() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          <EditBtn onClick={() => openEdit("education", { ...edu })} />
+                          <EditBtn
+                            onClick={() => openEdit("education", { ...edu })}
+                          />
                           <DeleteBtn onClick={() => deleteEducation(edu.id)} />
                         </div>
                       </div>
                     ))
                   ) : (
-                    <EmptyState text="Add your educational background" icon={<GraduationCap size={28} className="text-[#444]" />} />
+                    <EmptyState text="Add your educational background" icon={<GraduationCap size={28} className="text-inkmuted dark:text-[#444]" />} />
                   )}
                 </div>
               </section>
@@ -815,25 +817,29 @@ export default function FreelancerProfile() {
 
       {/* ═══════════ MODALS ═══════════ */}
 
-      {/* Title / Description / Rate */}
+      {/* Title & Rate & Description */}
       <EditModal
         isOpen={editingSection === "title"}
         onClose={closeEdit}
-        title="Edit your title & description"
+        title="Edit Title, Rate & Description"
         onSave={() =>
-          saveTitle(editData?.title, editData?.description, editData?.rate_hr)
+          saveTitle(
+            editData?.title,
+            editData?.description,
+            editData?.rate_hr
+          )
         }
         wide
       >
         <div className="flex flex-col gap-4">
           <div>
-            <p className={labelCls}>Professional Title</p>
+            <p className={labelCls}>Your Professional Title</p>
             <input
               value={editData?.title || ""}
               onChange={(e) =>
                 setEditData((d) => ({ ...d, title: e.target.value }))
               }
-              placeholder="e.g. 3yr+ Experienced Developer | Next.js, React"
+              placeholder="e.g. Full Stack Developer | React & Node.js Expert"
               className={inputCls}
             />
           </div>
@@ -878,7 +884,7 @@ export default function FreelancerProfile() {
           {/* Avatar upload / preview */}
           <div>
             <p className={labelCls}>Profile Photo</p>
-            <div className="flex items-center gap-4 mt-2 p-3 bg-[#0d0d0d] border border-[#222] rounded-xl">
+            <div className="flex items-center gap-4 mt-2 p-3 bg-[#f9f9f9] dark:bg-[#0d0d0d] border border-[#ddd] dark:border-[#222] rounded-xl">
               <div className="relative shrink-0">
                 {editData?.picture ? (
                   <img
@@ -887,7 +893,7 @@ export default function FreelancerProfile() {
                     className="h-16 w-16 rounded-full object-cover border-2 border-[#E65A1E]"
                   />
                 ) : (
-                  <div className="h-16 w-16 rounded-full bg-[#E65A1E] flex items-center justify-center text-2xl font-bold text-white border-2 border-[#333]">
+                  <div className="h-16 w-16 rounded-full bg-[#E65A1E] flex items-center justify-center text-2xl font-bold text-white border-2 border-white dark:border-[#333] shadow-sm">
                     {(editData?.name || displayName || "U").charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -917,7 +923,7 @@ export default function FreelancerProfile() {
                   <button
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
-                    className="px-3 py-1.5 rounded-lg bg-[#1f1f1f] hover:bg-[#282828] border border-[#333] text-xs font-semibold text-white flex items-center gap-1.5 transition"
+                    className="px-3 py-1.5 rounded-lg bg-white dark:bg-[#1f1f1f] hover:bg-gray-100 dark:hover:bg-[#282828] border border-[#ddd] dark:border-[#333] text-xs font-semibold text-ink dark:text-white flex items-center gap-1.5 transition shadow-sm"
                   >
                     <Upload size={13} className="text-[#E65A1E]" />
                     {editData?.picture ? "Change Photo" : "Upload Photo"}
@@ -930,14 +936,14 @@ export default function FreelancerProfile() {
                         if (photoInputRef.current) photoInputRef.current.value = "";
                         setEditData((d) => ({ ...d, picture: "" }));
                       }}
-                      className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold text-red-400 border border-red-500/20 flex items-center gap-1.5 transition"
+                      className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold text-red-500 dark:text-red-400 border border-red-500/20 flex items-center gap-1.5 transition"
                     >
                       <Trash2 size={13} />
                       Remove
                     </button>
                   )}
                 </div>
-                <p className="text-[11px] text-[#777]">
+                <p className="text-[11px] text-inkmuted dark:text-[#777]">
                   Supports JPG, PNG, WebP up to 5MB.
                 </p>
               </div>
@@ -1018,7 +1024,7 @@ export default function FreelancerProfile() {
               />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm text-[#ccc] cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-ink dark:text-[#ccc] cursor-pointer">
             <input
               type="checkbox"
               checked={editData?.is_current || false}
@@ -1173,7 +1179,7 @@ export default function FreelancerProfile() {
               />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm text-[#ccc] cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-ink dark:text-[#ccc] cursor-pointer">
             <input
               type="checkbox"
               checked={editData?.is_current || false}
@@ -1231,7 +1237,7 @@ export default function FreelancerProfile() {
                   const updated = editData.languages.filter((_, j) => j !== i);
                   setEditData((d) => ({ ...d, languages: updated }));
                 }}
-                className="h-8 w-8 rounded-full flex items-center justify-center text-red-400 hover:bg-red-500/10 transition shrink-0"
+                className="h-8 w-8 rounded-full flex items-center justify-center text-red-500 dark:text-red-400 hover:bg-red-500/10 transition shrink-0"
               >
                 <Trash2 size={14} />
               </button>
@@ -1268,10 +1274,10 @@ export default function FreelancerProfile() {
         }
       >
         <div className="flex flex-col gap-5">
-          <div className="p-4 rounded-lg bg-[#1a1a1a] border border-[#222]">
+          <div className="p-4 rounded-lg bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222]">
             <div className="flex items-center gap-2 mb-3">
-              <Github size={18} className="text-white" />
-              <span className="text-sm font-semibold text-white">GitHub</span>
+              <Github size={18} className="text-ink dark:text-white" />
+              <span className="text-sm font-semibold text-ink dark:text-white">GitHub</span>
             </div>
             <div className="flex flex-col gap-3">
               <div>
@@ -1302,12 +1308,12 @@ export default function FreelancerProfile() {
             </div>
           </div>
 
-          <div className="p-4 rounded-lg bg-[#1a1a1a] border border-[#222]">
+          <div className="p-4 rounded-lg bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222]">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E65A1E] text-white text-[10px] font-bold">
                 U
               </span>
-              <span className="text-sm font-semibold text-white">Upwork</span>
+              <span className="text-sm font-semibold text-ink dark:text-white">Upwork</span>
             </div>
             <div>
               <p className={labelCls}>Upwork Profile URL</p>
@@ -1405,7 +1411,7 @@ export default function FreelancerProfile() {
           </div>
           <div>
             <p className={labelCls}>Project Image</p>
-            <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-[#333] rounded-lg cursor-pointer hover:border-[#E65A1E] transition bg-[#1a1a1a]">
+            <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-[#ddd] dark:border-[#333] rounded-lg cursor-pointer hover:border-[#E65A1E] transition bg-[#f9f9f9] dark:bg-[#1a1a1a]">
               {editData?.image_data ? (
                 <img
                   src={editData.image_data}
@@ -1414,8 +1420,8 @@ export default function FreelancerProfile() {
                 />
               ) : (
                 <div className="text-center">
-                  <Plus size={24} className="text-[#555] mx-auto mb-2" />
-                  <p className="text-xs text-[#555]">Click to upload image</p>
+                  <Plus size={24} className="text-inkmuted dark:text-[#555] mx-auto mb-2" />
+                  <p className="text-xs text-inkmuted dark:text-[#555]">Click to upload image</p>
                 </div>
               )}
               <input
@@ -1440,7 +1446,7 @@ export default function FreelancerProfile() {
         </div>
       </EditModal>
 
-      {/* ═══════════ TOP RIGHT SLIDE-OVER DRAWER MENU (PIC 3) ═══════════ */}
+      {/* ═══════════ TOP RIGHT SLIDE-OVER DRAWER MENU ═══════════ */}
       {menuDrawerOpen && (
         <div
           data-testid="profile-menu-drawer-backdrop"
@@ -1451,36 +1457,36 @@ export default function FreelancerProfile() {
         >
           <div
             data-testid="profile-menu-drawer"
-            className="w-full max-w-md h-full bg-[#111] border-l border-[#222] p-5 sm:p-6 overflow-y-auto flex flex-col justify-between shadow-2xl"
+            className="w-full max-w-md h-full bg-white dark:bg-[#111] border-l border-[#e5e5e5] dark:border-[#222] p-5 sm:p-6 overflow-y-auto flex flex-col justify-between shadow-2xl"
           >
             <div className="flex flex-col gap-4">
               {/* Drawer Header */}
-              <div className="flex items-center justify-between border-b border-[#222] pb-4">
+              <div className="flex items-center justify-between border-b border-[#e5e5e5] dark:border-[#222] pb-4">
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E65A1E]/15 text-[#E65A1E]">
                     <Menu size={18} />
                   </span>
                   <div>
-                    <h3 className="text-base font-bold text-white">Menu & Settings</h3>
-                    <p className="text-[11px] text-[#777]">Account, platform links & preferences</p>
+                    <h3 className="text-base font-bold text-ink dark:text-white">Menu & Settings</h3>
+                    <p className="text-[11px] text-inkmuted dark:text-[#777]">Account, platform links & preferences</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setMenuDrawerOpen(false)}
                   data-testid="profile-menu-drawer-close"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#333] bg-[#1a1a1a] text-[#888] hover:text-white hover:bg-[#252525] transition"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#ddd] dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-inkmuted dark:text-[#888] hover:text-ink dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#252525] transition"
                 >
                   <X size={16} />
                 </button>
               </div>
 
               {/* PRO PROFILE SETTINGS (Phone & Skill) */}
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4" data-testid="pro-profile-card">
+              <div className="bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl p-4" data-testid="pro-profile-card">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Briefcase size={14} className="text-[#E65A1E]" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-white">PRO PROFILE</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink dark:text-white">PRO PROFILE</span>
                 </div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#888]">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-inkmuted dark:text-[#888]">
                   Phone Number (shown to employers after unlock)
                 </label>
                 <input
@@ -1488,10 +1494,10 @@ export default function FreelancerProfile() {
                   value={proPhone}
                   onChange={(e) => setProPhone(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))}
                   placeholder="10-digit mobile number"
-                  className="w-full mt-1 bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#E65A1E] transition"
+                  className="w-full mt-1 bg-white dark:bg-[#111] border border-[#ddd] dark:border-[#333] rounded-lg px-3 py-2 text-sm text-ink dark:text-white placeholder:text-[#999] dark:placeholder:text-[#555] focus:outline-none focus:border-[#E65A1E] transition"
                 />
 
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#888] mt-3 block">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-inkmuted dark:text-[#888] mt-3 block">
                   Primary Skill
                 </label>
                 <input
@@ -1499,7 +1505,7 @@ export default function FreelancerProfile() {
                   value={proSkill}
                   onChange={(e) => setProSkill(e.target.value)}
                   placeholder="e.g. Full Stack Pro"
-                  className="w-full mt-1 bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#E65A1E] transition"
+                  className="w-full mt-1 bg-white dark:bg-[#111] border border-[#ddd] dark:border-[#333] rounded-lg px-3 py-2 text-sm text-ink dark:text-white placeholder:text-[#999] dark:placeholder:text-[#555] focus:outline-none focus:border-[#E65A1E] transition"
                 />
 
                 {proSaveMsg && (
@@ -1516,21 +1522,21 @@ export default function FreelancerProfile() {
                   data-testid="pro-save-btn"
                   disabled={proSaving}
                   onClick={saveProDetails}
-                  className="w-full mt-3 flex items-center justify-center bg-white text-black py-2.5 rounded-lg text-xs font-extrabold tracking-wider hover:bg-[#E65A1E] hover:text-white transition disabled:opacity-50"
+                  className="w-full mt-3 flex items-center justify-center bg-ink text-white dark:bg-white dark:text-black py-2.5 rounded-lg text-xs font-extrabold tracking-wider hover:bg-[#E65A1E] hover:text-white transition disabled:opacity-50"
                 >
                   {proSaving ? <Loader2 size={16} className="animate-spin" /> : "SAVE PRO DETAILS"}
                 </button>
               </div>
 
               {/* Escrow Wallet Quick Access */}
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3.5 flex items-center justify-between">
+              <div className="bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl p-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FFF3C4] text-black">
                     <Wallet size={18} />
                   </span>
                   <div>
-                    <p className="text-xs font-bold text-white">Escrow Wallet & Payouts</p>
-                    <p className="text-[10px] text-[#777]">Milestones & UPI withdrawal</p>
+                    <p className="text-xs font-bold text-ink dark:text-white">Escrow Wallet & Payouts</p>
+                    <p className="text-[10px] text-inkmuted dark:text-[#777]">Milestones & UPI withdrawal</p>
                   </div>
                 </div>
                 <button
@@ -1538,13 +1544,13 @@ export default function FreelancerProfile() {
                     setWalletOpen(true);
                     setMenuDrawerOpen(false);
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-white text-black text-xs font-bold hover:bg-[#E65A1E] hover:text-white transition"
+                  className="px-3 py-1.5 rounded-lg bg-ink text-white dark:bg-white dark:text-black text-xs font-bold hover:bg-[#E65A1E] hover:text-white transition"
                 >
                   OPEN
                 </button>
               </div>
 
-              {/* Platform Navigation Cards (Pic 3) */}
+              {/* Platform Navigation Cards */}
               <div className="flex flex-col gap-2">
                 {user?.is_admin && (
                   <button
@@ -1552,16 +1558,16 @@ export default function FreelancerProfile() {
                       nav("/admin");
                       setMenuDrawerOpen(false);
                     }}
-                    className="flex items-center gap-3 rounded-xl border border-[#333] bg-[#1a1a1a] p-3 text-left transition hover:bg-[#252525] hover:border-[#E65A1E]"
+                    className="flex items-center gap-3 rounded-xl border border-[#e5e5e5] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#1a1a1a] p-3 text-left transition hover:bg-gray-100 dark:hover:bg-[#252525] hover:border-[#E65A1E]"
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#222] text-[#E65A1E]">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white dark:bg-[#222] text-[#E65A1E] shadow-sm">
                       <Shield size={18} />
                     </span>
                     <div className="flex-1">
-                      <p className="text-xs font-bold text-white">Admin Dashboard</p>
-                      <p className="text-[10px] text-[#777]">Users, payments, complaints & coupons</p>
+                      <p className="text-xs font-bold text-ink dark:text-white">Admin Dashboard</p>
+                      <p className="text-[10px] text-inkmuted dark:text-[#777]">Users, payments, complaints & coupons</p>
                     </div>
-                    <ChevronRight size={16} className="text-[#666]" />
+                    <ChevronRight size={16} className="text-inkmuted dark:text-[#666]" />
                   </button>
                 )}
 
@@ -1573,23 +1579,23 @@ export default function FreelancerProfile() {
                       nav(m.to);
                       setMenuDrawerOpen(false);
                     }}
-                    className="flex items-center gap-3 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3 text-left transition hover:bg-[#252525] hover:border-[#E65A1E]"
+                    className="flex items-center gap-3 rounded-xl border border-[#e5e5e5] dark:border-[#2a2a2a] bg-[#f9f9f9] dark:bg-[#1a1a1a] p-3 text-left transition hover:bg-gray-100 dark:hover:bg-[#252525] hover:border-[#E65A1E]"
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#111] text-[#E65A1E]">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white dark:bg-[#111] text-[#E65A1E] shadow-sm">
                       <m.icon size={18} />
                     </span>
                     <div className="flex-1">
-                      <p className="text-xs font-bold text-white">{m.label}</p>
-                      <p className="text-[10px] text-[#777]">{m.sub}</p>
+                      <p className="text-xs font-bold text-ink dark:text-white">{m.label}</p>
+                      <p className="text-[10px] text-inkmuted dark:text-[#777]">{m.sub}</p>
                     </div>
-                    <ChevronRight size={16} className="text-[#666]" />
+                    <ChevronRight size={16} className="text-inkmuted dark:text-[#666]" />
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-4 border-t border-[#222] mt-4 flex flex-col gap-3">
+            <div className="pt-4 border-t border-[#e5e5e5] dark:border-[#222] mt-4 flex flex-col gap-3">
               {user && (
                 <button
                   data-testid="profile-drawer-logout-btn"
@@ -1598,12 +1604,12 @@ export default function FreelancerProfile() {
                     setMenuDrawerOpen(false);
                     nav("/");
                   }}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-red-600/20 border border-red-500/30 py-3 text-xs font-bold text-red-400 hover:bg-red-600 hover:text-white transition"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-red-600/10 border border-red-500/20 py-3 text-xs font-bold text-red-500 dark:text-red-400 hover:bg-red-600 hover:text-white transition"
                 >
                   <LogOut size={16} /> LOG OUT
                 </button>
               )}
-              <p className="text-center text-[10px] text-[#666]">WorkHop v2 · Made in Bengaluru 🧡</p>
+              <p className="text-center text-[10px] text-inkmuted dark:text-[#666]">WorkHop v2 · Made in Bengaluru 🧡</p>
             </div>
           </div>
         </div>
@@ -1621,11 +1627,11 @@ function SectionHeader({ title, onAdd, onEdit, expanded, onToggle }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <h2 className="text-base font-bold text-white">{title}</h2>
+        <h2 className="text-base font-bold text-ink dark:text-white">{title}</h2>
         {onToggle && (
           <button
             onClick={onToggle}
-            className="h-6 w-6 rounded-full flex items-center justify-center text-[#666] hover:text-white transition"
+            className="h-6 w-6 rounded-full flex items-center justify-center text-inkmuted dark:text-[#666] hover:text-ink dark:hover:text-white transition"
           >
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
@@ -1648,11 +1654,11 @@ function SectionHeader({ title, onAdd, onEdit, expanded, onToggle }) {
 
 function SidebarSection({ icon, title, children, onEdit, onAdd }) {
   return (
-    <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+    <div className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-[#E65A1E]">{icon}</span>
-          <h3 className="text-sm font-semibold text-white">{title}</h3>
+          <h3 className="text-sm font-semibold text-ink dark:text-white">{title}</h3>
         </div>
         <div className="flex items-center gap-1">
           {onEdit && <EditBtn onClick={onEdit} size={14} />}
@@ -1681,31 +1687,31 @@ function HistoryCard({ entry, onEdit, onDelete }) {
   };
 
   return (
-    <div className="bg-[#1a1a1a] border border-[#222] rounded-lg p-4">
+    <div className="bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222] rounded-lg p-4">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 rounded-lg bg-[#E65A1E]/10 flex items-center justify-center shrink-0 mt-0.5">
             <Briefcase size={18} className="text-[#E65A1E]" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">
+            <p className="text-sm font-semibold text-ink dark:text-white">
               {entry.title}
               {entry.company ? ` | ${entry.company}` : ""}
             </p>
-            <p className="text-xs text-[#E65A1E] mt-0.5">
+            <p className="text-xs text-[#E65A1E] font-medium mt-0.5">
               {formatDate(entry.start_date)}
               {" - "}
               {entry.is_current ? "Present" : formatDate(entry.end_date)}
             </p>
             {entry.description && (
-              <p className={`text-xs text-[#888] mt-2 leading-relaxed ${!expanded && entry.description.length > 200 ? "line-clamp-2" : ""}`}>
+              <p className={`text-xs text-inkmuted dark:text-[#888] mt-2 leading-relaxed ${!expanded && entry.description.length > 200 ? "line-clamp-2" : ""}`}>
                 {entry.description}
               </p>
             )}
             {entry.description && entry.description.length > 200 && (
               <button
                 onClick={() => setExpanded((v) => !v)}
-                className="text-xs text-[#E65A1E] mt-1 hover:underline"
+                className="text-xs text-[#E65A1E] mt-1 hover:underline font-medium"
               >
                 {expanded ? "less" : "more"}
               </button>
@@ -1736,7 +1742,7 @@ function DeleteBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="h-8 w-8 rounded-full flex items-center justify-center text-red-400 hover:bg-red-500/10 transition"
+      className="h-8 w-8 rounded-full flex items-center justify-center text-red-500 dark:text-red-400 hover:bg-red-500/10 transition"
     >
       <Trash2 size={14} />
     </button>
