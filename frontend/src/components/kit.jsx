@@ -50,6 +50,71 @@ export function IconBtn({ onClick, children, testID, className = "", active = fa
   );
 }
 
+export function Logo({ size = "default", className = "" }) {
+  if (size === "header") {
+    return (
+      <div className={`flex items-center gap-2.5 sm:gap-3 group select-none ${className}`} data-testid="landing-logo">
+        {/* Aesthetic Circular Emblem Badge */}
+        <div className="relative flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full border-2 border-ink dark:border-white/80 bg-white p-0.5 shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] overflow-hidden transition-transform duration-200 group-hover:scale-105 group-hover:rotate-3">
+          <img
+            src="/workhop-logo.png"
+            alt="WorkHop Emblem"
+            className="h-full w-full object-cover object-top scale-125"
+            draggable={false}
+          />
+        </div>
+
+        {/* Brand Lockup */}
+        <div className="flex flex-col text-left">
+          <div className="flex items-center gap-1.5 leading-none">
+            <span className="text-lg sm:text-xl font-black tracking-tight text-ink dark:text-white">
+              WORK<span className="text-brand">HOP</span>
+            </span>
+            <span className="hidden xs:inline-block border border-ink dark:border-white/40 bg-brand/10 dark:bg-brand/20 px-1 py-0.5 text-[8.5px] font-black tracking-widest text-brand rounded">
+              BLR
+            </span>
+          </div>
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.14em] text-inkmuted dark:text-stone-400 mt-0.5">
+            Bengaluru Gig Network
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Large / Hero variant (for loading screens, modal sidebars, and hero sections)
+  return (
+    <div className={`flex flex-col items-center sm:items-start group select-none ${className}`} data-testid="landing-logo">
+      <div className="flex items-center gap-3.5">
+        <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full border-2 border-ink dark:border-white/80 bg-white p-1 shadow-[3px_3px_0px_#121212] dark:shadow-[3px_3px_0px_#E65A1E] overflow-hidden transition-transform duration-200 group-hover:scale-105">
+          <img
+            src="/workhop-logo.png"
+            alt="WorkHop Emblem"
+            className="h-full w-full object-cover object-top scale-125"
+            draggable={false}
+          />
+        </div>
+        <div className="flex flex-col text-left">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl sm:text-3xl font-black tracking-tight text-ink dark:text-white">
+              WORK<span className="text-brand">HOP</span>
+            </span>
+            <span className="border-2 border-ink dark:border-white/40 bg-brand px-1.5 py-0.5 text-[9px] font-black tracking-widest text-white shadow-[1px_1px_0px_#121212]">
+              BLR
+            </span>
+          </div>
+          <span className="text-[10px] font-black tracking-wider text-brand uppercase">
+            Hyperlocal Talent Network
+          </span>
+        </div>
+      </div>
+      <span className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-inkmuted dark:text-stone-400">
+        your next local gig, one minute away
+      </span>
+    </div>
+  );
+}
+
 // Global Full-Screen Navigation Header
 export function GlobalNav() {
   const nav = useNavigate();
@@ -71,18 +136,8 @@ export function GlobalNav() {
       <header className="w-full border-b-2 border-ink bg-white">
         <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-4 px-4 py-3 sm:px-8">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
-            <img
-              src="/workhop-logo.png"
-              alt="WorkHop"
-              className="h-9 w-auto object-contain"
-              onError={(e) => {
-                e.target.style.display = "none";
-              }}
-            />
-            <span className="hidden sm:inline-block border-2 border-ink bg-brand px-2 py-0.5 text-[10px] font-black tracking-widest text-white shadow-[1.5px_1.5px_0px_#121212]">
-              HYPERLOCAL
-            </span>
+          <Link to="/" className="flex items-center">
+            <Logo size="header" />
           </Link>
 
           {/* Nav Links */}

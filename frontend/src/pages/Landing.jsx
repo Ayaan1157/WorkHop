@@ -12,23 +12,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import AuthModal from "@/components/AuthModal";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
-import { sanitizeInput, checkRateLimit, resetRateLimit } from "@/lib/security";
-
-function Logo() {
-  return (
-    <div className="flex flex-col items-center sm:items-start" data-testid="landing-logo">
-      <img
-        src="/workhop-logo.png"
-        alt="WorkHop"
-        className="h-auto w-[240px] max-w-full select-none"
-        draggable={false}
-      />
-      <span className="-mt-1 text-[11px] uppercase tracking-[0.15em] text-inkmuted">
-        your next local gig, one minute away
-      </span>
-    </div>
-  );
-}
+import { Logo } from "@/components/kit";
 
 export default function Landing() {
   const nav = useNavigate();
@@ -875,7 +859,9 @@ export default function Landing() {
       
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b-2 border-ink bg-white px-4 py-3 sm:px-8">
-        <Logo />
+        <Link to="/" className="flex items-center">
+          <Logo size="header" />
+        </Link>
         {user ? (
           <div className="flex items-center gap-2 sm:gap-3">
             <button
