@@ -6,7 +6,7 @@ import {
   Loader2, Expand, Heart, SlidersHorizontal, ShieldCheck, Sparkles, ArrowUpDown
 } from "lucide-react";
 import { Shell, TopBar, IconBtn, CategoryTiles } from "@/components/kit";
-import OSMMap from "@/components/OSMMap";
+import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
 import { ProCardSkeleton } from "@/components/Skeletons";
 import BoostPreviewModal from "@/components/BoostPreviewModal";
@@ -141,7 +141,7 @@ export default function Employer() {
 
       {/* MAP VIEW */}
       <div className="relative h-[180px] border-b-2 border-ink" data-testid="employer-map">
-        <OSMMap pins={mapPins} zoom={12} userLocation={coords} height="100%" />
+        <GoogleMap pins={mapPins} zoom={12} userLocation={coords} height="100%" />
         <button
           data-testid="leads-near-me-btn"
           onClick={requestLocation}
