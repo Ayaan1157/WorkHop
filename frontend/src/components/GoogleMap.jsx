@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Layers, LocateFixed, Sparkles, Navigation } from "lucide-react";
+import { Layers, LocateFixed, Sparkles, Navigation, Briefcase, User, Building2 } from "lucide-react";
 
 // Google Maps Raster Tiles & Fallbacks
 const MAP_LAYERS = {
@@ -140,7 +140,6 @@ export default function GoogleMap({
 
     const loc = userLocation || center;
     if (loc && radiusKm && radiusKm > 0) {
-      // Draw radar circle
       L.circle([loc.lat, loc.lng], {
         radius: radiusKm * 1000,
         color: "#E65A1E",
@@ -188,75 +187,132 @@ export default function GoogleMap({
           <div style="font-family:Archivo,sans-serif;padding:4px;min-width:140px;text-align:center;">
             <span style="display:inline-block;background:#2563EB;color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:2px;letter-spacing:0.1em;">YOU ARE HERE</span>
             <p style="font-size:12px;font-weight:800;margin-top:4px;color:#121212;">Your Current Location</p>
-            <p style="font-size:10px;color:#6B6B6B;">Scanning nearby talent within ${radiusKm}km</p>
+            <p style="font-size:10px;color:#6B6B6B;">Scanning nearby within ${radiusKm || 5}km</p>
           </div>
         `);
       markersByIdRef.current["user"] = userMarker;
     }
 
-    // 2. Candidate & Employer Pins
+    // 2. Pins: Candidates (Freelancers) or Jobs (Open Gigs) or Employers
     pins.forEach((p) => {
       const isCandidate = p.kind === "candidate";
+      const isJob = p.kind === "job";
       const isSelected = p.id === selectedPinId;
       const titleEsc = escapeHtml(p.title);
       const subEsc = escapeHtml(p.subtitle);
       const distStr = p.distance_km ? `${p.distance_km} km away` : "";
       const ratingStr = p.rating ? `⭐ ${p.rating}` : "";
       const rateStr = p.rate_hr ? `₹${p.rate_hr}/hr` : "";
+      const payStr = p.pay ? `₹${Number(p.pay).toLocaleString("en-IN")}` : "";
 
-      // Custom Aesthetic Badge Pin
-      const pinHtml = isCandidate
-        ? `
+      let pinHtml = "";
+      if (isCandidate) {
+        // Freelancer Pin
+        pinHtml = `
           <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};transition:transform 0.2s;">
-            <div style="display:flex;align-items:center;gap:4px;background:#E65A1E;color:#FFFFFF;border:2px solid #121212;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px #121212;white-space:nowrap;">
+            <div style="display:flex;align-items:center;gap:3px;background:#E65A1E;color:#FFFFFF;border:2px solid #121212;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px #121212;white-space:nowrap;">
               <span>👤</span>
               <span>${titleEsc.split(" ")[0]}</span>
             </div>
-            <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #121212;margin-top:-1px;"></div>
-          </div>
-        `
-        : `
-          <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};transition:transform 0.2s;">
-            <div style="display:flex;align-items:center;gap:4px;background:#121212;color:#FFFFFF;border:2px solid #FFFFFF;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px rgba(0,0,0,0.5);white-space:nowrap;">
-              <span>🏢</span>
-              <span>${titleEsc}</span>
-            </div>
-            <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #121212;margin-top:-1px;"></div>
+            <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #121212;margin-top:-1px;"></div>
           </div>
         `;
+      } else if (isJob) {
+        // Job Posting Pin
+        pinHtml = `
+          <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};transition:transform 0.2s;">
+            <div style="display:flex;align-items:center;gap:3px;background:#059669;color:#FFFFFF;border:2px solid #121212;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px #121212;white-space:nowrap;">
+              <span>💼</span>
+              <span>${payStr || titleEsc.slice(0, 12)}</span>
+            </div>
+            <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #121212;margin-top:-1px;"></div>
+          </div>
+        `;
+      } else {
+        // Employer / Company Pin
+        pinHtml = `
+          <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};transition:transform 0.2s;">
+            <div style="display:flex;align-items:center;gap:3px;background:#121212;color:#FFFFFF;border:2px solid #FFFFFF;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px rgba(0,0,0,0.5);white-space:nowrap;">
+              <span>🏢</span>
+              <span>${titleEsc.slice(0, 14)}</span>
+            </div>
+            <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid #121212;margin-top:-1px;"></div>
+          </div>
+        `;
+      }
 
       const customIcon = L.divIcon({
         className: "custom-map-pin",
         html: pinHtml,
-        iconSize: [80, 32],
-        iconAnchor: [40, 28],
+        iconSize: [80, 30],
+        iconAnchor: [40, 26],
       });
 
-      const popupContent = `
-        <div style="font-family:Archivo,sans-serif;padding:6px;min-width:180px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
-            <span style="background:${isCandidate ? "#E65A1E" : "#121212"};color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:2px;letter-spacing:0.05em;text-transform:uppercase;">
-              ${isCandidate ? "PRO TALENT" : "HIRING EMPLOYER"}
-            </span>
-            ${distStr ? `<span style="font-size:10px;font-weight:800;color:#E65A1E;">⚡ ${distStr}</span>` : ""}
+      // Rich Actionable Popup
+      let popupContent = "";
+      if (isCandidate) {
+        popupContent = `
+          <div style="font-family:Archivo,sans-serif;padding:6px;min-width:180px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+              <span style="background:#E65A1E;color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:2px;letter-spacing:0.05em;text-transform:uppercase;">
+                VERIFIED PRO
+              </span>
+              ${distStr ? `<span style="font-size:10px;font-weight:800;color:#E65A1E;">⚡ ${distStr}</span>` : ""}
+            </div>
+            <p style="font-size:13px;font-weight:900;color:#121212;margin:2px 0;">${titleEsc}</p>
+            <p style="font-size:11px;color:#555;margin:0 0 6px 0;">${subEsc}</p>
+            ${
+              ratingStr || rateStr
+                ? `<div style="display:flex;gap:8px;font-size:11px;font-weight:800;color:#121212;margin-bottom:8px;border-top:1px dashed #eee;padding-top:4px;">
+                    ${ratingStr ? `<span>${ratingStr}</span>` : ""}
+                    ${rateStr ? `<span style="color:#E65A1E;">${rateStr}</span>` : ""}
+                  </div>`
+                : ""
+            }
+            <div style="display:flex;gap:4px;margin-top:6px;">
+              <a href="/pro/${p.id}" style="display:block;width:100%;text-align:center;background:#E65A1E;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:1.5px 1.5px 0px #121212;letter-spacing:0.05em;">
+                VIEW PROFILE & CHAT →
+              </a>
+            </div>
           </div>
-          <p style="font-size:13px;font-weight:900;color:#121212;margin:2px 0;">${titleEsc}</p>
-          <p style="font-size:11px;color:#555;margin:0 0 6px 0;">${subEsc}</p>
-          ${
-            ratingStr || rateStr
-              ? `<div style="display:flex;gap:8px;font-size:11px;font-weight:800;color:#121212;margin-bottom:8px;border-top:1px dashed #eee;padding-top:4px;">
-                  ${ratingStr ? `<span>${ratingStr}</span>` : ""}
-                  ${rateStr ? `<span style="color:#E65A1E;">${rateStr}</span>` : ""}
-                </div>`
-              : ""
-          }
-          <div style="display:flex;gap:4px;margin-top:6px;">
-            <a href="${isCandidate ? `/pro/${p.id}` : `/employer`}" style="display:block;width:100%;text-align:center;background:#E65A1E;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:1.5px 1.5px 0px #121212;letter-spacing:0.05em;">
-              ${isCandidate ? "VIEW PROFILE & CHAT →" : "VIEW OPEN GIGS →"}
-            </a>
+        `;
+      } else if (isJob) {
+        popupContent = `
+          <div style="font-family:Archivo,sans-serif;padding:6px;min-width:190px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+              <span style="background:#059669;color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:2px;letter-spacing:0.05em;text-transform:uppercase;">
+                OPEN GIG · ${payStr || "FIXED"}
+              </span>
+              ${distStr ? `<span style="font-size:10px;font-weight:800;color:#059669;">⚡ ${distStr}</span>` : ""}
+            </div>
+            <p style="font-size:13px;font-weight:900;color:#121212;margin:2px 0;">${titleEsc}</p>
+            <p style="font-size:11px;color:#555;margin:0 0 6px 0;">🏢 ${p.company_name || subEsc}</p>
+            <div style="display:flex;gap:4px;margin-top:6px;">
+              <a href="/freelancer/jobs" style="display:block;width:100%;text-align:center;background:#059669;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:1.5px 1.5px 0px #121212;letter-spacing:0.05em;">
+                VIEW GIG & APPLY →
+              </a>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      } else {
+        popupContent = `
+          <div style="font-family:Archivo,sans-serif;padding:6px;min-width:180px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+              <span style="background:#121212;color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:2px;letter-spacing:0.05em;text-transform:uppercase;">
+                HIRING COMPANY
+              </span>
+              ${distStr ? `<span style="font-size:10px;font-weight:800;color:#121212;">⚡ ${distStr}</span>` : ""}
+            </div>
+            <p style="font-size:13px;font-weight:900;color:#121212;margin:2px 0;">${titleEsc}</p>
+            <p style="font-size:11px;color:#555;margin:0 0 6px 0;">${subEsc}</p>
+            <div style="display:flex;gap:4px;margin-top:6px;">
+              <a href="/employer" style="display:block;width:100%;text-align:center;background:#121212;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:1.5px 1.5px 0px #121212;letter-spacing:0.05em;">
+                VIEW OPEN GIGS →
+              </a>
+            </div>
+          </div>
+        `;
+      }
 
       const marker = L.marker([p.lat, p.lng], { icon: customIcon })
         .addTo(layer)
@@ -279,20 +335,13 @@ export default function GoogleMap({
     });
   };
 
-  // Open in Google Maps external URL
-  const handleOpenGoogleMaps = () => {
-    const loc = userLocation || center;
-    const url = `https://www.google.com/maps/search/freelancers+gigs/@${loc.lat},${loc.lng},14z`;
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
-
   return (
     <div
       className={`relative w-full overflow-hidden rounded border-2 border-ink bg-stone/20 shadow-[4px_4px_0px_#121212] ${className}`}
       style={{ height }}
       data-testid="google-map-container"
     >
-      {/* Map Element */}
+      {/* Map Canvas */}
       <div ref={elRef} className="h-full w-full" data-testid="leaflet-map-canvas" />
 
       {/* Top Floating Controls Bar */}
@@ -330,19 +379,18 @@ export default function GoogleMap({
           )}
         </div>
 
-        {/* Live Proximity Badge */}
+        {/* Live Pins Count */}
         <div className="hidden xs:flex items-center gap-1.5 border-2 border-ink bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-[2px_2px_0px_#121212]">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
           </span>
-          <span>{pins.length} Nearby Pins</span>
+          <span>{pins.length} Pins on Map</span>
         </div>
       </div>
 
       {/* Top-Right Floating Controls */}
       <div className="absolute top-3 right-3 z-[1000] flex items-center gap-2">
-        {/* Recenter Button */}
         <button
           onClick={handleRecenter}
           data-testid="map-recenter-btn"
@@ -353,11 +401,11 @@ export default function GoogleMap({
         </button>
       </div>
 
-      {/* Bottom Floating Google Maps Branding & Radius Chip */}
+      {/* Bottom Floating Status Chip */}
       <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] flex items-center gap-1.5 border border-ink/40 bg-white/95 px-2 py-0.5 text-[9px] font-black text-ink shadow-sm backdrop-blur-sm">
         <span className="text-brand">⚡ WORKHOP RADAR</span>
         <span>·</span>
-        <span>{radiusKm ? `${radiusKm}km Zone` : "Bengaluru"}</span>
+        <span>{radiusKm ? `${radiusKm}km Radius` : "Bengaluru"}</span>
       </div>
     </div>
   );

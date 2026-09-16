@@ -13,6 +13,7 @@ import BoostPreviewModal from "@/components/BoostPreviewModal";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
 import { LEAD_CATEGORY_FILTERS } from "@/lib/catalogFilters";
+import { getOrganicCoordinates } from "@/lib/locationAreas";
 import { apiGet, getEmployerId } from "@/lib/api";
 import { getSavedProIds, toggleSavePro } from "@/lib/clientStore";
 
@@ -86,14 +87,17 @@ export default function Employer() {
 
   const mapPins = sorted
     .filter((l) => l.lat && l.lng)
-    .map((l) => ({
-      id: l.id,
-      kind: "candidate",
-      title: l.name,
-      subtitle: `${l.skill} · ${l.distance_km} km away`,
-      lat: l.lat,
-      lng: l.lng,
-    }));
+    .map((l, idx) => {
+      const org = getOrganicCoordinates(l.lat, l.lng, l.id || `lead-${idx}`, 0.85);
+      return {
+        id: l.id,
+        kind: "candidate",
+        title: l.name,
+        subtitle: `${l.skill} · ${l.distance_km} km away`,
+        lat: org.lat,
+        lng: org.lng,
+      };
+    });
 
   const handlePay = async () => {
     setPaying(true);

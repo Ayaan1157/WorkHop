@@ -85,3 +85,33 @@ export function getSavedArea() {
 export function setSavedArea(areaName) {
   if (areaName) localStorage.setItem("workhop_user_area", areaName);
 }
+
+// Calculate deterministic pseudo-random organic offset around a base coordinate or area center
+// This prevents markers from overlapping or forming artificial straight diagonal lines
+export function getOrganicCoordinates(baseLat, baseLng, idOrKey, maxOffsetKm = 0.9) {
+  let lat = Number(baseLat) || 12.9352; // Default Koramangala
+  let lng = Number(baseLng) || 77.6245;
+
+  const str = String(idOrKey || "0");
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const absHash = Math.abs(hash);
+
+  // Golden-ratio angle distribution ensures even 360-degree organic radial scatter
+  const angle = ((absHash * 137.5) % 360) * (Math.PI / 180);
+  // Distance between 0.12km and maxOffsetKm (e.g. 0.9km)
+  const normalizedDist = 0.12 + ((absHash % 1000) / 1000) * (maxOffsetKm - 0.12);
+
+  // 1 deg latitude ≈ 111.32 km
+  // 1 deg longitude ≈ 111.32 km * cos(lat) (≈ 108.5 km in Bengaluru ~12.97°N)
+  const latDelta = (normalizedDist * Math.cos(angle)) / 111.32;
+  const lngDelta = (normalizedDist * Math.sin(angle)) / (111.32 * Math.cos((lat * Math.PI) / 180));
+
+  return {
+    lat: Math.round((lat + latDelta) * 100000) / 100000,
+    lng: Math.round((lng + lngDelta) * 100000) / 100000,
+  };
+}
