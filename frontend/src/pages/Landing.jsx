@@ -159,7 +159,7 @@ export default function Landing() {
 
   // Sign In Handler with Mandatory Password
   const handleSignIn = async () => {
-    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
+    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
     const cleanEmail = emailInput.trim().toLowerCase();
 
     if (!cleanEmail) {
@@ -174,8 +174,9 @@ export default function Landing() {
     setOtpLoading(true);
     setOtpError(null);
     try {
-      await passwordLoginAuth(cleanEmail, passwordInput, target);
-      completeSessionAndRedirect(target);
+      const res = await passwordLoginAuth(cleanEmail, passwordInput, target);
+      const resolvedRole = res?.user?.role || target || "freelancer";
+      completeSessionAndRedirect(resolvedRole, res?.user);
     } catch (e) {
       setOtpError(e?.message || "Incorrect email or password. Please try again.");
     } finally {
@@ -185,7 +186,7 @@ export default function Landing() {
 
   // Sign Up Handler with Mandatory Details
   const handleSignUp = async () => {
-    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
+    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
     const cleanEmail = emailInput.trim().toLowerCase();
 
     if (!nameInput.trim()) {
@@ -227,8 +228,8 @@ export default function Landing() {
         skill: target !== "employer" ? (skillInput.trim() || "UI/UX & Brand Designer") : undefined,
       };
 
-      await signupWithDetails(payload);
-      completeSessionAndRedirect(target);
+      const session = await signupWithDetails(payload);
+      completeSessionAndRedirect(target, session?.user);
     } catch (e) {
       setOtpError(e?.message || "Could not complete registration.");
     } finally {
@@ -238,7 +239,7 @@ export default function Landing() {
 
   // Google Continue Handler
   const handleGoogleAuth = async () => {
-    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
+    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
     const googleEmail = emailInput.trim() || "google.user@gmail.com";
     const googleName = nameInput.trim() || "Google Member";
     setEmailInput(googleEmail);
@@ -248,11 +249,9 @@ export default function Landing() {
     if (authMode === "signin") {
       setOtpLoading(true);
       try {
-        localStorage.setItem("workhop_pending_role", target);
-        if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
-        if (areaInput) setSavedArea(areaInput);
-        await login(googleEmail, googleName);
-        completeSessionAndRedirect(target);
+        const session = await login(googleEmail, googleName);
+        const resolvedRole = session?.user?.role || target || "freelancer";
+        completeSessionAndRedirect(resolvedRole, session?.user);
       } catch (e) {
         setOtpError(e?.message || "Google sign-in failed.");
       } finally {
@@ -270,20 +269,27 @@ export default function Landing() {
     handleSignUp();
   };
 
-  const completeSessionAndRedirect = (target) => {
+  const completeSessionAndRedirect = (target, userData = null) => {
+    const roleToUse = userData?.role || target || "freelancer";
     localStorage.removeItem("workhop_pending_role");
-    localStorage.setItem("workhop_auth_role", target);
-    if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
-    if (areaInput) setSavedArea(areaInput);
-    if (target === "employer" && companyInput) localStorage.setItem("workhop_company_name", companyInput);
-    if (target !== "employer" && skillInput) localStorage.setItem("workhop_pro_skill", skillInput);
+    localStorage.setItem("workhop_auth_role", roleToUse);
+    if (userData?.phone || phoneDigits) localStorage.setItem("workhop_pro_phone", userData?.phone || phoneDigits);
+    if (userData?.area || areaInput) setSavedArea(userData?.area || areaInput);
+    if (userData?.company_name || (roleToUse === "employer" && companyInput)) {
+      localStorage.setItem("workhop_company_name", userData?.company_name || companyInput);
+    }
+    if (userData?.skill || (roleToUse !== "employer" && skillInput)) {
+      localStorage.setItem("workhop_pro_skill", userData?.skill || skillInput);
+    }
 
     setPendingRole(null);
     setOtpStage("idle");
     setEmailInput("");
     setPasswordInput("");
     setOtpInput("");
-    if (target === "employer") {
+    if (userData?.is_admin || roleToUse === "admin") {
+      nav("/admin");
+    } else if (roleToUse === "employer") {
       nav("/employer");
     } else {
       nav("/freelancer/jobs");
@@ -295,8 +301,9 @@ export default function Landing() {
       if (role === "employer") return nav("/employer");
       return nav("/freelancer/jobs");
     }
-    localStorage.setItem("workhop_pending_role", role);
-    setPendingRole(role);
+    setAuthModalRole(role);
+    setAuthModalMode("signup");
+    setAuthModalOpen(true);
   };
 
   if (loading) {
@@ -691,6 +698,43 @@ export default function Landing() {
                     ⚠️ {otpError}
                   </p>
                 )}
+
+                {/* Clear switch footer: "Not signed up? Sign up now" or "Already have an account? Sign in" */}
+                <div className="mt-4 border-2 border-dashed border-ink bg-sand/60 p-3.5 text-center">
+                  {authMode === "signin" ? (
+                    <p className="text-xs text-ink font-bold">
+                      Not signed up yet?{" "}
+                      <button
+                        type="button"
+                        data-testid="landing-switch-to-signup"
+                        onClick={() => {
+                          setAuthMode("signup");
+                          setOtpError(null);
+                          setOtpStage("idle");
+                        }}
+                        className="font-black text-brand underline underline-offset-4 hover:text-ink transition ml-1"
+                      >
+                        Sign up now to enter your details →
+                      </button>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-ink font-bold">
+                      Already have an account?{" "}
+                      <button
+                        type="button"
+                        data-testid="landing-switch-to-signin"
+                        onClick={() => {
+                          setAuthMode("signin");
+                          setOtpError(null);
+                          setOtpStage("idle");
+                        }}
+                        className="font-black text-brand underline underline-offset-4 hover:text-ink transition ml-1"
+                      >
+                        Sign in with your email &amp; password →
+                      </button>
+                    </p>
+                  )}
+                </div>
 
               </div>
             </div>

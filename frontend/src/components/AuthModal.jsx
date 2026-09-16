@@ -70,15 +70,13 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     if (!fullName) setFullName(googleName);
     setGoogleConnected(true);
 
-    // If already in sign in mode and phone is not strictly required, or if user is signing in
+    // If already in sign in mode, log in directly and look up saved profile
     if (mode === "signin") {
       setLoading(true);
       try {
-        localStorage.setItem("workhop_pending_role", role);
-        if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
-        if (area) setSavedArea(area);
-        await login(googleEmail, googleName);
-        completeAndRedirect(role);
+        const session = await login(googleEmail, googleName);
+        const resolvedRole = session?.user?.role || role || "freelancer";
+        completeAndRedirect(resolvedRole, session?.user);
       } catch (e) {
         setError(e?.message || "Google sign-in failed.");
       } finally {
@@ -144,10 +142,10 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       const data = await apiPost("/auth/email/verify-otp", payload);
       if (data?.session_token && data?.user) {
         await adoptSession(data.session_token, data.user);
-        completeAndRedirect(role);
+        completeAndRedirect(data.user.role || role, data.user);
       } else {
-        await signupWithDetails(payload);
-        completeAndRedirect(role);
+        const session = await signupWithDetails(payload);
+        completeAndRedirect(session?.user?.role || role, session?.user);
       }
     } catch {
       const payload = {
@@ -159,14 +157,14 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         company_name: isEmployer ? (companyName.trim() || "Hyperlocal Co.") : undefined,
         skill: !isEmployer ? (skill.trim() || "UI/UX & Brand Designer") : undefined,
       };
-      await signupWithDetails(payload);
-      completeAndRedirect(role);
+      const session = await signupWithDetails(payload);
+      completeAndRedirect(session?.user?.role || role, session?.user);
     } finally {
       setLoading(false);
     }
   };
 
-  // Sign In with Password Handler
+  // Sign In with Password Handler (Restores user's registered role e.g. freelancer)
   const handleSignInSubmit = async () => {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail) {
@@ -181,8 +179,9 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setLoading(true);
     setError(null);
     try {
-      await passwordLoginAuth(cleanEmail, password, role);
-      completeAndRedirect(role);
+      const res = await passwordLoginAuth(cleanEmail, password, role);
+      const userRole = res?.user?.role || "freelancer";
+      completeAndRedirect(userRole, res?.user);
     } catch (e) {
       setError(e?.message || "Incorrect email or password. Please try again.");
     } finally {
@@ -232,8 +231,8 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         skill: !isEmployer ? (skill.trim() || "UI/UX & Brand Designer") : undefined,
       };
 
-      await signupWithDetails(payload);
-      completeAndRedirect(role);
+      const session = await signupWithDetails(payload);
+      completeAndRedirect(role, session?.user);
     } catch (e) {
       setError(e?.message || "Sign up failed. Please check your information.");
     } finally {
@@ -241,15 +240,22 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     }
   };
 
-  const completeAndRedirect = (selectedRole) => {
-    localStorage.setItem("workhop_auth_role", selectedRole);
-    if (area) setSavedArea(area);
-    if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
-    if (isEmployer && companyName) localStorage.setItem("workhop_company_name", companyName);
-    if (!isEmployer && skill) localStorage.setItem("workhop_pro_skill", skill);
+  const completeAndRedirect = (selectedRole, userData = null) => {
+    const targetRole = userData?.role || selectedRole || "freelancer";
+    localStorage.setItem("workhop_auth_role", targetRole);
+    if (userData?.area || area) setSavedArea(userData?.area || area);
+    if (userData?.phone || phoneDigits) localStorage.setItem("workhop_pro_phone", userData?.phone || phoneDigits);
+    if (userData?.company_name || (targetRole === "employer" && companyName)) {
+      localStorage.setItem("workhop_company_name", userData?.company_name || companyName);
+    }
+    if (userData?.skill || (targetRole !== "employer" && skill)) {
+      localStorage.setItem("workhop_pro_skill", userData?.skill || skill);
+    }
 
     onClose();
-    if (selectedRole === "employer") {
+    if (userData?.is_admin || targetRole === "admin") {
+      nav("/admin");
+    } else if (targetRole === "employer") {
       nav("/employer");
     } else {
       nav("/freelancer/jobs");
@@ -268,7 +274,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         data-testid="auth-modal-container"
         className="relative my-auto w-full max-w-2xl border-2 border-ink bg-white p-5 sm:p-8 shadow-[8px_8px_0px_#121212] transition-all"
       >
-        {/* Header with Close & Mode Switcher */}
+        {/* Header with Close */}
         <div className="flex items-start justify-between border-b-2 border-ink pb-4">
           <div>
             <div className="flex items-center gap-2">
@@ -285,7 +291,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
             <p className="text-xs text-inkmuted font-semibold">
               {mode === "signup"
                 ? "Enter your details and mobile number to start connecting locally"
-                : "Sign in with your email and password to continue"}
+                : "Sign in with your email and password to access your account"}
             </p>
           </div>
           <button
@@ -299,22 +305,6 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
 
         {/* Prominent Mode Switcher Tabs */}
         <div className="mt-4 flex border-2 border-ink bg-sand p-1">
-          <button
-            type="button"
-            data-testid="auth-tab-signup"
-            onClick={() => {
-              setMode("signup");
-              setError(null);
-              setOtpStage("idle");
-            }}
-            className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
-              mode === "signup"
-                ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
-                : "bg-transparent text-ink hover:bg-white"
-            }`}
-          >
-            ✨ SIGN UP (NEW USER)
-          </button>
           <button
             type="button"
             data-testid="auth-tab-signin"
@@ -331,79 +321,97 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
           >
             🔐 SIGN IN (EXISTING USER)
           </button>
+          <button
+            type="button"
+            data-testid="auth-tab-signup"
+            onClick={() => {
+              setMode("signup");
+              setError(null);
+              setOtpStage("idle");
+            }}
+            className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
+              mode === "signup"
+                ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
+                : "bg-transparent text-ink hover:bg-white"
+            }`}
+          >
+            ✨ SIGN UP (NEW USER)
+          </button>
         </div>
 
-        {/* STEP 1: Upwork-style 2-Card Role Selector */}
-        <div className="mt-5">
-          <label className="text-[11px] font-black uppercase tracking-wider text-inkmuted">
-            1. I AM SIGNING IN AS:
-          </label>
-          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Employer Card */}
-            <button
-              type="button"
-              data-testid="auth-role-employer"
-              onClick={() => setRole("employer")}
-              className={`flex flex-col justify-between border-2 p-4 text-left transition ${
-                isEmployer
-                  ? "border-ink bg-ink text-white shadow-[3px_3px_0px_#E65A1E]"
-                  : "border-ink bg-sand/60 text-ink hover:bg-sand"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span
-                  className={`flex h-8 w-8 items-center justify-center border-2 ${
-                    isEmployer ? "border-brand bg-brand text-white" : "border-ink bg-white text-ink"
-                  }`}
-                >
-                  <Users size={16} />
-                </span>
-                {isEmployer && <CheckCircle2 size={18} className="text-brand" />}
-              </div>
-              <div className="mt-3">
-                <p className="text-sm font-black">🏢 I'm hiring talent</p>
-                <p className={`text-[11px] leading-4 mt-0.5 ${isEmployer ? "text-[#D6D6D6]" : "text-inkmuted"}`}>
-                  Find verified local freelancers within 5km and contact directly.
-                </p>
-              </div>
-            </button>
+        {/* SIGN UP ONLY: Role Selector */}
+        {mode === "signup" && (
+          <div className="mt-5">
+            <label className="text-[11px] font-black uppercase tracking-wider text-inkmuted">
+              1. I AM JOINING AS:
+            </label>
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Freelancer Card */}
+              <button
+                type="button"
+                data-testid="auth-role-freelancer"
+                onClick={() => setRole("freelancer")}
+                className={`flex flex-col justify-between border-2 p-4 text-left transition ${
+                  !isEmployer
+                    ? "border-ink bg-brand text-white shadow-[3px_3px_0px_#121212]"
+                    : "border-ink bg-sand/60 text-ink hover:bg-sand"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center border-2 ${
+                      !isEmployer ? "border-white bg-ink text-white" : "border-ink bg-white text-ink"
+                    }`}
+                  >
+                    <Briefcase size={16} />
+                  </span>
+                  {!isEmployer && <CheckCircle2 size={18} className="text-white" />}
+                </div>
+                <div className="mt-3">
+                  <p className="text-sm font-black">🛠️ I'm looking for a job</p>
+                  <p className={`text-[11px] leading-4 mt-0.5 ${!isEmployer ? "text-white/90" : "text-inkmuted"}`}>
+                    Apply to local gigs in your 5km radius and keep 100% of your earnings.
+                  </p>
+                </div>
+              </button>
 
-            {/* Freelancer Card */}
-            <button
-              type="button"
-              data-testid="auth-role-freelancer"
-              onClick={() => setRole("freelancer")}
-              className={`flex flex-col justify-between border-2 p-4 text-left transition ${
-                !isEmployer
-                  ? "border-ink bg-brand text-white shadow-[3px_3px_0px_#121212]"
-                  : "border-ink bg-sand/60 text-ink hover:bg-sand"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span
-                  className={`flex h-8 w-8 items-center justify-center border-2 ${
-                    !isEmployer ? "border-white bg-ink text-white" : "border-ink bg-white text-ink"
-                  }`}
-                >
-                  <Briefcase size={16} />
-                </span>
-                {!isEmployer && <CheckCircle2 size={18} className="text-white" />}
-              </div>
-              <div className="mt-3">
-                <p className="text-sm font-black">🛠️ I'm looking for a job</p>
-                <p className={`text-[11px] leading-4 mt-0.5 ${!isEmployer ? "text-white/90" : "text-inkmuted"}`}>
-                  Apply to local gigs in your 5km radius and keep 100% of your earnings.
-                </p>
-              </div>
-            </button>
+              {/* Employer Card */}
+              <button
+                type="button"
+                data-testid="auth-role-employer"
+                onClick={() => setRole("employer")}
+                className={`flex flex-col justify-between border-2 p-4 text-left transition ${
+                  isEmployer
+                    ? "border-ink bg-ink text-white shadow-[3px_3px_0px_#E65A1E]"
+                    : "border-ink bg-sand/60 text-ink hover:bg-sand"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center border-2 ${
+                      isEmployer ? "border-brand bg-brand text-white" : "border-ink bg-white text-ink"
+                    }`}
+                  >
+                    <Users size={16} />
+                  </span>
+                  {isEmployer && <CheckCircle2 size={18} className="text-brand" />}
+                </div>
+                <div className="mt-3">
+                  <p className="text-sm font-black">🏢 I'm hiring talent</p>
+                  <p className={`text-[11px] leading-4 mt-0.5 ${isEmployer ? "text-[#D6D6D6]" : "text-inkmuted"}`}>
+                    Find verified local freelancers within 5km and contact directly.
+                  </p>
+                </div>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* STEP 2: Details & Credentials Form */}
         <div className="mt-5 border-t-2 border-ink pt-5">
           <div className="flex items-center justify-between mb-3">
             <label className="text-[11px] font-black uppercase tracking-wider text-inkmuted">
-              2. {mode === "signup" ? "ENTER YOUR DETAILS & MOBILE NUMBER" : "ENTER EMAIL & PASSWORD"}
+              {mode === "signup" ? "2. ENTER YOUR DETAILS & MOBILE NUMBER" : "ENTER EMAIL & PASSWORD"}
             </label>
             {googleConnected && (
               <span className="text-[11px] font-bold text-ok flex items-center gap-1">
@@ -551,7 +559,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
               </div>
             </div>
 
-            {/* Password Field (Required for Sign In, and Create Password for Sign Up) */}
+            {/* Password Field */}
             <div>
               <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
                 {mode === "signup" ? "Create Password (Min 6 chars) *" : "Password *"}
@@ -704,8 +712,45 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
           </div>
         </div>
 
+        {/* Clear switch footer: "Not signed up? Sign up now" or "Already have an account? Sign in" */}
+        <div className="mt-5 border-2 border-dashed border-ink bg-sand/60 p-3.5 text-center">
+          {mode === "signin" ? (
+            <p className="text-xs text-ink font-bold">
+              Not signed up yet?{" "}
+              <button
+                type="button"
+                data-testid="auth-switch-to-signup"
+                onClick={() => {
+                  setMode("signup");
+                  setError(null);
+                  setOtpStage("idle");
+                }}
+                className="font-black text-brand underline underline-offset-4 hover:text-ink transition ml-1"
+              >
+                Sign up now to enter your details →
+              </button>
+            </p>
+          ) : (
+            <p className="text-xs text-ink font-bold">
+              Already have an account?{" "}
+              <button
+                type="button"
+                data-testid="auth-switch-to-signin"
+                onClick={() => {
+                  setMode("signin");
+                  setError(null);
+                  setOtpStage("idle");
+                }}
+                className="font-black text-brand underline underline-offset-4 hover:text-ink transition ml-1"
+              >
+                Sign in with your email &amp; password →
+              </button>
+            </p>
+          )}
+        </div>
+
         {/* Footer info badge */}
-        <div className="mt-5 border-t border-ink/15 pt-3 flex items-center justify-between text-[11px] text-inkmuted font-semibold">
+        <div className="mt-4 border-t border-ink/15 pt-3 flex items-center justify-between text-[11px] text-inkmuted font-semibold">
           <div className="flex items-center gap-1.5">
             <ShieldCheck size={14} className="text-ok" />
             <span>100% Privacy Protected · Zero Spam</span>

@@ -296,30 +296,41 @@ export function passwordLogin(email, password, fallbackRole = "freelancer") {
     throw err;
   }
 
+  // Determine user's saved role: if they registered as freelancer, use freelancer!
+  const actualRole = existing?.role || fallbackRole || "freelancer";
+
   // Save/Update registered user
-  saveRegisteredUser(cleanEmail, password, existing || { role: fallbackRole });
+  saveRegisteredUser(cleanEmail, password, {
+    ...(existing || {}),
+    role: actualRole,
+  });
 
   const session = createMockSession(cleanEmail, {
     ...(existing || {}),
-    role: existing?.role || fallbackRole,
+    role: actualRole,
   });
   return session;
 }
 
 export function createMockSession(email = "user@workhop.local", details = {}) {
-  const fallbackName = email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  const role = details.role || localStorage.getItem("workhop_auth_role") || "freelancer";
-  const phone = details.phone || localStorage.getItem("workhop_pro_phone") || "9876543210";
-  const area = details.area || localStorage.getItem("workhop_user_area") || "Koramangala";
-  const skill = details.skill || localStorage.getItem("workhop_pro_skill") || (role === "employer" ? "Business Owner" : "UI/UX & Brand Designer");
-  const company_name = details.company_name || localStorage.getItem("workhop_company_name") || "Hyperlocal Co.";
-  const isAdmin = isUserAdmin(email) || !!details.is_admin;
+  const cleanEmail = (email || "").trim().toLowerCase();
+  const regUsers = getRegisteredUsers();
+  const existing = regUsers[cleanEmail] || {};
+
+  const role = details.role || existing.role || localStorage.getItem("workhop_auth_role") || "freelancer";
+  const fallbackName = cleanEmail.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const name = details.name || existing.name || fallbackName || (isUserAdmin(cleanEmail) ? "Zenith Developers (Admin)" : "Verified User");
+  const phone = details.phone || existing.phone || localStorage.getItem("workhop_pro_phone") || "9876543210";
+  const area = details.area || existing.area || localStorage.getItem("workhop_user_area") || "Koramangala";
+  const skill = details.skill || existing.skill || localStorage.getItem("workhop_pro_skill") || (role === "employer" ? "Business Owner" : "UI/UX & Brand Designer");
+  const company_name = details.company_name || existing.company_name || localStorage.getItem("workhop_company_name") || "Hyperlocal Co.";
+  const isAdmin = isUserAdmin(cleanEmail) || !!details.is_admin || !!existing.is_admin;
 
   const user = {
-    id: `usr_${Math.random().toString(36).slice(2, 10)}`,
-    email,
-    name: details.name || fallbackName || (isAdmin ? "Zenith Developers (Admin)" : "Verified User"),
-    picture: details.picture || null,
+    id: details.id || existing.id || `usr_${Math.random().toString(36).slice(2, 10)}`,
+    email: cleanEmail,
+    name: name,
+    picture: details.picture || existing.picture || null,
     role: role === "employer" ? "employer" : "freelancer",
     phone: phone,
     area: area,
@@ -329,7 +340,7 @@ export function createMockSession(email = "user@workhop.local", details = {}) {
     id_verified: true,
     portfolio_uploaded: true,
     is_admin: isAdmin,
-    created_at: new Date().toISOString(),
+    created_at: existing.created_at || new Date().toISOString(),
   };
 
   // Sync specific helper keys
