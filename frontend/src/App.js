@@ -27,7 +27,8 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile" element={<FreelancerProfile />} />
+            <Route path="/settings" element={<Profile />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="/support" element={<Support />} />

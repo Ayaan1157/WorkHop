@@ -4,10 +4,13 @@ import {
   Pencil, Plus, Trash2, ChevronLeft, Github, ExternalLink,
   Briefcase, GraduationCap, Award, Globe, Link2, Clock,
   MapPin, Star, ChevronDown, ChevronUp, X, User, DollarSign,
-  Code2, Loader2
+  Code2, Loader2, Menu, MessagesSquare, Map as MapIcon,
+  LayoutGrid, Tag, LifeBuoy, FileText, Shield, ChevronRight,
+  LogOut, Wallet, ShieldCheck
 } from "lucide-react";
 import { Shell } from "@/components/kit";
 import EditModal from "@/components/EditModal";
+import EscrowWalletModal from "@/components/EscrowWalletModal";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, getFreelancerId } from "@/lib/api";
 import { getFreelancerProfile, saveFreelancerProfile } from "@/lib/clientStore";
@@ -51,6 +54,97 @@ export default function FreelancerProfile() {
   // Collapsible
   const [expandedEmployment, setExpandedEmployment] = useState(true);
   const [expandedCerts, setExpandedCerts] = useState(true);
+
+  // Top-right Menu Drawer & Escrow Wallet states
+  const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
+  const [walletOpen, setWalletOpen] = useState(false);
+  const [proPhone, setProPhone] = useState(() => user?.phone || localStorage.getItem("workhop_pro_phone") || "");
+  const [proSkill, setProSkill] = useState(() => user?.skill || localStorage.getItem("workhop_pro_skill") || "");
+  const [proSaving, setProSaving] = useState(false);
+  const [proSaveMsg, setProSaveMsg] = useState(null);
+
+  const saveProDetails = async () => {
+    const digits = proPhone.replace(/\D/g, "");
+    if (digits.length !== 10) return setProSaveMsg({ ok: false, text: "Phone must be exactly 10 digits." });
+    setProSaving(true);
+    setProSaveMsg(null);
+    try {
+      localStorage.setItem("workhop_pro_phone", digits);
+      if (proSkill) localStorage.setItem("workhop_pro_skill", proSkill);
+      if (freelancerId) {
+        await apiPut(`/freelancer/${freelancerId}/profile`, {
+          phone: digits,
+          skill: proSkill.trim() || null,
+        });
+        setProSaveMsg({ ok: true, text: "Saved pro details successfully!" });
+      } else {
+        setProSaveMsg({ ok: true, text: `Saved · phone set to +91 ${digits}` });
+      }
+    } catch (e) {
+      setProSaveMsg({ ok: false, text: e?.message || "Could not save." });
+    } finally {
+      setProSaving(false);
+    }
+  };
+
+  const navMenuItems = [
+    {
+      icon: Briefcase,
+      label: "Employer Site (Nearby Pros)",
+      sub: "Explore 50+ verified pros & unlock leads",
+      to: "/employer",
+      testID: "profile-employer",
+    },
+    {
+      icon: Tag,
+      label: "Employee Site (Find Gigs)",
+      sub: "Browse 50+ active gigs in 5km radius",
+      to: "/freelancer/jobs",
+      testID: "profile-jobs",
+    },
+    {
+      icon: MessagesSquare,
+      label: "My Messages",
+      sub: "Chats with employers & pros",
+      to: "/freelancer/chats",
+      testID: "profile-chats",
+    },
+    {
+      icon: MapIcon,
+      label: "Live Map",
+      sub: "Pros & employers near you",
+      to: "/map",
+      testID: "profile-map",
+    },
+    {
+      icon: LayoutGrid,
+      label: "Browse Categories",
+      sub: "All gigs & sub-gigs",
+      to: "/categories",
+      testID: "profile-categories",
+    },
+    {
+      icon: Tag,
+      label: "Plans & Pricing",
+      sub: "Job posts, boosts & branding",
+      to: "/employer/plans",
+      testID: "profile-plans",
+    },
+    {
+      icon: LifeBuoy,
+      label: "Support & Complaints",
+      sub: "FAQs, help and reporting",
+      to: "/support",
+      testID: "profile-support",
+    },
+    {
+      icon: FileText,
+      label: "Legal & Policies",
+      sub: "Terms, privacy — Bengaluru",
+      to: "/legal",
+      testID: "profile-legal",
+    },
+  ];
 
   const loadProfile = useCallback(async () => {
     try {
@@ -206,14 +300,24 @@ export default function FreelancerProfile() {
   return (
     <Shell>
       <div className="min-h-screen bg-[#0a0a0a]">
-        {/* BACK NAV */}
-        <div className="border-b border-[#1a1a1a] px-4 py-3 sm:px-8">
+        {/* TOP NAV BAR WITH SETTINGS MENU ON THE RIGHT */}
+        <div className="border-b border-[#1a1a1a] bg-[#111]/90 backdrop-blur px-4 py-3 sm:px-8 flex items-center justify-between sticky top-0 z-30">
           <button
-            onClick={() => nav("/profile")}
+            onClick={() => nav("/freelancer/jobs")}
+            data-testid="profile-back-btn"
             className="flex items-center gap-2 text-sm text-[#14a800] hover:text-[#1dc000] transition font-semibold"
           >
             <ChevronLeft size={16} />
             Back to Dashboard
+          </button>
+
+          <button
+            onClick={() => setMenuDrawerOpen(true)}
+            data-testid="profile-top-menu-btn"
+            className="flex items-center gap-2 rounded-lg border border-[#333] bg-[#1a1a1a] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#252525] hover:border-[#14a800] transition shadow-md active:translate-y-0.5"
+          >
+            <Menu size={16} className="text-[#14a800]" />
+            <span>MENU & SETTINGS</span>
           </button>
         </div>
 
@@ -1242,6 +1346,178 @@ export default function FreelancerProfile() {
           </div>
         </div>
       </EditModal>
+
+      {/* ═══════════ TOP RIGHT SLIDE-OVER DRAWER MENU (PIC 3) ═══════════ */}
+      {menuDrawerOpen && (
+        <div
+          data-testid="profile-menu-drawer-backdrop"
+          className="fixed inset-0 z-50 flex justify-end bg-black/75 backdrop-blur-sm transition-opacity"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setMenuDrawerOpen(false);
+          }}
+        >
+          <div
+            data-testid="profile-menu-drawer"
+            className="w-full max-w-md h-full bg-[#111] border-l border-[#222] p-5 sm:p-6 overflow-y-auto flex flex-col justify-between shadow-2xl"
+          >
+            <div className="flex flex-col gap-4">
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between border-b border-[#222] pb-4">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#14a800]/15 text-[#14a800]">
+                    <Menu size={18} />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-bold text-white">Menu & Settings</h3>
+                    <p className="text-[11px] text-[#777]">Account, platform links & preferences</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMenuDrawerOpen(false)}
+                  data-testid="profile-menu-drawer-close"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#333] bg-[#1a1a1a] text-[#888] hover:text-white hover:bg-[#252525] transition"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* PRO PROFILE SETTINGS (Phone & Skill) */}
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4" data-testid="pro-profile-card">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Briefcase size={14} className="text-[#14a800]" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-white">PRO PROFILE</span>
+                </div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[#888]">
+                  Phone Number (shown to employers after unlock)
+                </label>
+                <input
+                  data-testid="pro-phone-input"
+                  value={proPhone}
+                  onChange={(e) => setProPhone(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))}
+                  placeholder="10-digit mobile number"
+                  className="w-full mt-1 bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#14a800] transition"
+                />
+
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[#888] mt-3 block">
+                  Primary Skill
+                </label>
+                <input
+                  data-testid="pro-skill-input"
+                  value={proSkill}
+                  onChange={(e) => setProSkill(e.target.value)}
+                  placeholder="e.g. Full Stack Pro"
+                  className="w-full mt-1 bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#14a800] transition"
+                />
+
+                {proSaveMsg && (
+                  <p
+                    data-testid="pro-save-msg"
+                    className="text-xs font-bold mt-2"
+                    style={{ color: proSaveMsg.ok ? "#00A86B" : "#FF4D5A" }}
+                  >
+                    {proSaveMsg.text}
+                  </p>
+                )}
+
+                <button
+                  data-testid="pro-save-btn"
+                  disabled={proSaving}
+                  onClick={saveProDetails}
+                  className="w-full mt-3 flex items-center justify-center bg-white text-black py-2.5 rounded-lg text-xs font-extrabold tracking-wider hover:bg-[#14a800] hover:text-white transition disabled:opacity-50"
+                >
+                  {proSaving ? <Loader2 size={16} className="animate-spin" /> : "SAVE PRO DETAILS"}
+                </button>
+              </div>
+
+              {/* Escrow Wallet Quick Access */}
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FFF3C4] text-black">
+                    <Wallet size={18} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-white">Escrow Wallet & Payouts</p>
+                    <p className="text-[10px] text-[#777]">Milestones & UPI withdrawal</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setWalletOpen(true);
+                    setMenuDrawerOpen(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-white text-black text-xs font-bold hover:bg-[#14a800] hover:text-white transition"
+                >
+                  OPEN
+                </button>
+              </div>
+
+              {/* Platform Navigation Cards (Pic 3) */}
+              <div className="flex flex-col gap-2">
+                {user?.is_admin && (
+                  <button
+                    onClick={() => {
+                      nav("/admin");
+                      setMenuDrawerOpen(false);
+                    }}
+                    className="flex items-center gap-3 rounded-xl border border-[#333] bg-[#1a1a1a] p-3 text-left transition hover:bg-[#252525] hover:border-[#14a800]"
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#222] text-[#14a800]">
+                      <Shield size={18} />
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-white">Admin Dashboard</p>
+                      <p className="text-[10px] text-[#777]">Users, payments, complaints & coupons</p>
+                    </div>
+                    <ChevronRight size={16} className="text-[#666]" />
+                  </button>
+                )}
+
+                {navMenuItems.map((m) => (
+                  <button
+                    key={m.label}
+                    data-testid={m.testID}
+                    onClick={() => {
+                      nav(m.to);
+                      setMenuDrawerOpen(false);
+                    }}
+                    className="flex items-center gap-3 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3 text-left transition hover:bg-[#252525] hover:border-[#14a800]"
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#111] text-[#14a800]">
+                      <m.icon size={18} />
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-white">{m.label}</p>
+                      <p className="text-[10px] text-[#777]">{m.sub}</p>
+                    </div>
+                    <ChevronRight size={16} className="text-[#666]" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="pt-4 border-t border-[#222] mt-4 flex flex-col gap-3">
+              {user && (
+                <button
+                  data-testid="profile-drawer-logout-btn"
+                  onClick={async () => {
+                    await logout();
+                    setMenuDrawerOpen(false);
+                    nav("/");
+                  }}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-red-600/20 border border-red-500/30 py-3 text-xs font-bold text-red-400 hover:bg-red-600 hover:text-white transition"
+                >
+                  <LogOut size={16} /> LOG OUT
+                </button>
+              )}
+              <p className="text-center text-[10px] text-[#666]">WorkHop v2 · Made in Bengaluru 🧡</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Escrow Wallet Modal */}
+      <EscrowWalletModal isOpen={walletOpen} onClose={() => setWalletOpen(false)} />
     </Shell>
   );
 }
