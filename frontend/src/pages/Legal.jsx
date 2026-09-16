@@ -39,7 +39,7 @@ export default function Legal() {
   return (
     <Shell>
       <TopBar title="LEGAL & POLICIES" sub="WorkHop · Bengaluru, Karnataka · Updated June 2026" backTestID="legal-back-btn" />
-      <div className="flex flex-col gap-8 p-4 pb-16">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-4 sm:p-6 pb-16">
         {SECTIONS.map((s) => (
           <div key={s.title} className="flex flex-col gap-3">
             <div className="self-start bg-ink px-3 py-1.5">

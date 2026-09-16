@@ -43,7 +43,7 @@ export default function Inbox() {
           sub="When a verified pro applies to one of your gigs, their application and distance show up here."
         />
       ) : (
-        <div className="flex flex-col gap-3 p-4 sm:p-6 pb-16">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 p-4 sm:p-6 pb-16">
           {chats.map((c, i) => {
             const dist = c.distance_km ?? 1.4;
             const suit = getDistanceSuitability(dist);

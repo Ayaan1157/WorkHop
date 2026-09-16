@@ -245,149 +245,159 @@ export default function Jobs() {
       />
 
       {/* Upwork-style Profile Progress Bar & Guidance */}
-      <div className="border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
-        <Breadcrumbs items={[{ label: "Find Gigs", to: "/freelancer/jobs" }, { label: catFilter === "ALL" ? "All Categories" : catFilter }]} />
-        <div className="mt-3">
-          <ProfileProgressBar user={user} role="freelancer" />
+      <div className="border-b-2 border-ink bg-white">
+        <div className="mx-auto w-full max-w-6xl px-4 py-3 sm:px-6">
+          <Breadcrumbs items={[{ label: "Find Gigs", to: "/freelancer/jobs" }, { label: catFilter === "ALL" ? "All Categories" : catFilter }]} />
+          <div className="mt-3">
+            <ProfileProgressBar user={user} role="freelancer" />
+          </div>
         </div>
       </div>
 
       {/* Quota Bar */}
       {isVerified && quota && (
-        <div className="flex items-center justify-between gap-3 border-b-2 border-ink bg-brand px-4 py-2 sm:px-8 lg:px-12 xl:px-16" data-testid="quota-bar">
-          <div className="flex items-center gap-2">
-            {hasBoost ? <Rocket size={15} className="text-white" /> : <Zap size={15} className="text-white" />}
-            <span className="text-xs font-black tracking-wider text-white">
-              {hasBoost ? `${Math.max(quotaLimit - quotaUsed, 0)} of ${quotaLimit} APPLIES LEFT · 24H BOOST ACTIVE` : `${Math.max(quotaLimit - quotaUsed, 0)} of ${quotaLimit} FREE APPLIES REMAINING TODAY`}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setBoostPreviewOpen(true)} className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-white underline">
-              <Sparkles size={12} /> Preview Boost
-            </button>
-            {!hasBoost && (
-              <button data-testid="quota-upgrade-btn" onClick={() => setPaywallOpen(true)} className="border-2 border-ink bg-ink px-3 py-1 text-[10px] font-black text-white hover:bg-black transition">
-                +5 APPLIES ₹149
+        <div className="border-b-2 border-ink bg-brand" data-testid="quota-bar">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-2 sm:px-6">
+            <div className="flex items-center gap-2">
+              {hasBoost ? <Rocket size={15} className="text-white" /> : <Zap size={15} className="text-white" />}
+              <span className="text-xs font-black tracking-wider text-white">
+                {hasBoost ? `${Math.max(quotaLimit - quotaUsed, 0)} of ${quotaLimit} APPLIES LEFT · 24H BOOST ACTIVE` : `${Math.max(quotaLimit - quotaUsed, 0)} of ${quotaLimit} FREE APPLIES REMAINING TODAY`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setBoostPreviewOpen(true)} className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-white underline">
+                <Sparkles size={12} /> Preview Boost
               </button>
-            )}
+              {!hasBoost && (
+                <button data-testid="quota-upgrade-btn" onClick={() => setPaywallOpen(true)} className="border-2 border-ink bg-ink px-3 py-1 text-[10px] font-black text-white hover:bg-black transition shadow-[1.5px_1.5px_0px_#FFFFFF]">
+                  +5 APPLIES ₹149
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* View Switcher Tabs: All Gigs vs Saved Bookmarks */}
-      <div className="flex border-b-2 border-ink bg-white px-4 sm:px-8 lg:px-12 xl:px-16">
-        <button
-          onClick={() => setViewTab("all")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
-            viewTab === "all" ? "border-brand bg-sand text-ink" : "border-transparent text-inkmuted hover:text-ink"
-          }`}
-        >
-          <span>ALL GIGS ({jobs.length})</span>
-        </button>
-        <button
-          onClick={() => setViewTab("saved")}
-          className={`flex items-center gap-1.5 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
-            viewTab === "saved" ? "border-brand bg-sand text-ink" : "border-transparent text-inkmuted hover:text-ink"
-          }`}
-        >
-          <Heart size={14} className={savedJobIds.length > 0 ? "text-brand" : "text-inkmuted"} fill={savedJobIds.length > 0 ? "#E65A1E" : "none"} />
-          <span>SAVED ({savedJobIds.length})</span>
-        </button>
+      <div className="border-b-2 border-ink bg-white">
+        <div className="mx-auto flex w-full max-w-6xl px-4 sm:px-6">
+          <button
+            onClick={() => setViewTab("all")}
+            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
+              viewTab === "all" ? "border-brand bg-sand text-ink" : "border-transparent text-inkmuted hover:text-ink"
+            }`}
+          >
+            <span>ALL GIGS ({jobs.length})</span>
+          </button>
+          <button
+            onClick={() => setViewTab("saved")}
+            className={`flex items-center gap-1.5 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
+              viewTab === "saved" ? "border-brand bg-sand text-ink" : "border-transparent text-inkmuted hover:text-ink"
+            }`}
+          >
+            <Heart size={14} className={savedJobIds.length > 0 ? "text-brand" : "text-inkmuted"} fill={savedJobIds.length > 0 ? "#E65A1E" : "none"} />
+            <span>SAVED ({savedJobIds.length})</span>
+          </button>
+        </div>
       </div>
 
       {/* Search & Sort & Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3 border-b-2 border-ink px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
-        <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-sand px-3 min-w-[240px]">
-          <Search size={16} className="text-inkmuted" />
-          <input
-            data-testid="jobs-search-input"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search gigs — UI design, reels, react, flutter…"
-            className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink placeholder:text-inkmuted"
-          />
-          {search && (
-            <button data-testid="search-clear-btn" onClick={() => setSearch("")} className="flex h-5 w-5 items-center justify-center bg-ink">
-              <X size={13} className="text-white" />
-            </button>
-          )}
-        </div>
+      <div className="border-b-2 border-ink bg-white">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+          <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-sand px-3 min-w-[240px] shadow-[1.5px_1.5px_0px_#121212]">
+            <Search size={16} className="text-inkmuted" />
+            <input
+              data-testid="jobs-search-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search gigs — UI design, reels, react, flutter…"
+              className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink placeholder:text-inkmuted"
+            />
+            {search && (
+              <button data-testid="search-clear-btn" onClick={() => setSearch("")} className="flex h-5 w-5 items-center justify-center bg-ink">
+                <X size={13} className="text-white" />
+              </button>
+            )}
+          </div>
 
-        {/* Sorting Dropdown */}
-        <div className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2">
-          <ArrowUpDown size={14} className="text-inkmuted" />
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="bg-transparent text-xs font-black text-ink outline-none cursor-pointer"
+          {/* Sorting Dropdown */}
+          <div className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2 shadow-[1.5px_1.5px_0px_#121212]">
+            <ArrowUpDown size={14} className="text-inkmuted" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-transparent text-xs font-black text-ink outline-none cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Filter Toggle Button */}
+          <button
+            data-testid="jobs-filter-btn"
+            onClick={() => setFiltersOpen((v) => !v)}
+            className={`flex h-11 items-center gap-2 border-2 border-ink px-4 transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
+              activeFilterCount > 0 ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+            }`}
           >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+            <SlidersHorizontal size={16} />
+            <span className="text-xs font-black tracking-wider">FILTERS</span>
+            {activeFilterCount > 0 && (
+              <span className="flex h-4 w-4 items-center justify-center bg-brand text-[9px] font-black text-white">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
         </div>
-
-        {/* Filter Toggle Button */}
-        <button
-          data-testid="jobs-filter-btn"
-          onClick={() => setFiltersOpen((v) => !v)}
-          className={`flex h-11 items-center gap-2 border-2 border-ink px-3.5 transition ${
-            activeFilterCount > 0 ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
-          }`}
-        >
-          <SlidersHorizontal size={16} />
-          <span className="text-xs font-black tracking-wider">FILTERS</span>
-          {activeFilterCount > 0 && (
-            <span className="flex h-4 w-4 items-center justify-center bg-brand text-[9px] font-black text-white">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
       </div>
 
       {/* Multi-Facet Filter Drawer */}
       {filtersOpen && (
-        <div className="flex flex-col gap-4 border-b-2 border-ink bg-sand p-4 sm:px-8 lg:px-12 xl:px-16" data-testid="jobs-filters-panel">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <FilterGroup label="BUDGET (GIG PAY)" options={BUDGETS} value={filters.budget} onPick={(v) => setFilters((p) => ({ ...p, budget: v }))} />
-            <FilterGroup label="LOCATION RADIUS" options={DISTS} value={filters.dist} onPick={(v) => setFilters((p) => ({ ...p, dist: v }))} />
-            <div>
-              <p className="mb-1.5 text-[10px] font-black tracking-wider text-inkmuted uppercase">EMPLOYER RATING</p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { label: "ALL", value: null },
-                  { label: "4.5★+", value: 4.5 },
-                  { label: "4.8★+", value: 4.8 },
-                ].map((r) => (
-                  <button
-                    key={r.label}
-                    onClick={() => setFilters((p) => ({ ...p, minRating: r.value }))}
-                    className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black ${
-                      filters.minRating === r.value ? "bg-ink text-white" : "bg-white text-ink"
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
+        <div className="border-b-2 border-ink bg-sand" data-testid="jobs-filters-panel">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 sm:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <FilterGroup label="BUDGET (GIG PAY)" options={BUDGETS} value={filters.budget} onPick={(v) => setFilters((p) => ({ ...p, budget: v }))} />
+              <FilterGroup label="LOCATION RADIUS" options={DISTS} value={filters.dist} onPick={(v) => setFilters((p) => ({ ...p, dist: v }))} />
+              <div>
+                <p className="mb-1.5 text-[10px] font-black tracking-wider text-inkmuted uppercase">EMPLOYER RATING</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: "ALL", value: null },
+                    { label: "4.5★+", value: 4.5 },
+                    { label: "4.8★+", value: 4.8 },
+                  ].map((r) => (
+                    <button
+                      key={r.label}
+                      onClick={() => setFilters((p) => ({ ...p, minRating: r.value }))}
+                      className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black ${
+                        filters.minRating === r.value ? "bg-ink text-white" : "bg-white text-ink"
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center justify-between border-t border-ink/20 pt-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.verifiedOnly}
-                onChange={(e) => setFilters((p) => ({ ...p, verifiedOnly: e.target.checked }))}
-                className="h-4 w-4 border-2 border-ink"
-              />
-              <span className="text-xs font-bold text-ink">Verified Employers Only</span>
-            </label>
-            <button
-              onClick={() => setFilters({ budget: null, dist: null, minRating: null, verifiedOnly: false })}
-              className="text-xs font-black text-brand underline"
-            >
-              RESET ALL FILTERS
-            </button>
+            <div className="flex items-center justify-between border-t border-ink/20 pt-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.verifiedOnly}
+                  onChange={(e) => setFilters((p) => ({ ...p, verifiedOnly: e.target.checked }))}
+                  className="h-4 w-4 border-2 border-ink"
+                />
+                <span className="text-xs font-bold text-ink">Verified Employers Only</span>
+              </label>
+              <button
+                onClick={() => setFilters({ budget: null, dist: null, minRating: null, verifiedOnly: false })}
+                className="text-xs font-black text-brand underline"
+              >
+                RESET ALL FILTERS
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -397,26 +407,28 @@ export default function Jobs() {
 
       {/* Unverified Banner */}
       {!isVerified && (
-        <div className="flex items-center gap-3 border-b-2 border-ink bg-ink p-4 sm:px-8 lg:px-12 xl:px-16" data-testid="unverified-banner">
-          <span className="flex h-10 w-10 items-center justify-center border-2 border-white bg-brand text-white">
-            <Lock size={18} />
-          </span>
-          <div className="flex-1">
-            <p className="text-[13px] font-black text-white">{user ? "Browse freely — verify once to apply to all gigs" : "Browse freely — sign in to apply"}</p>
-            <p className="mt-0.5 text-[11px] leading-4 text-[#D6D6D6]">Aadhaar + email verification unlocks direct chat and instant hiring.</p>
+        <div className="border-b-2 border-ink bg-ink" data-testid="unverified-banner">
+          <div className="mx-auto flex w-full max-w-6xl items-center gap-3 p-4 sm:px-6">
+            <span className="flex h-10 w-10 items-center justify-center border-2 border-white bg-brand text-white">
+              <Lock size={18} />
+            </span>
+            <div className="flex-1">
+              <p className="text-[13px] font-black text-white">{user ? "Browse freely — verify once to apply to all gigs" : "Browse freely — sign in to apply"}</p>
+              <p className="mt-0.5 text-[11px] leading-4 text-[#D6D6D6]">Aadhaar + email verification unlocks direct chat and instant hiring.</p>
+            </div>
+            <button
+              data-testid="banner-verify-cta"
+              onClick={gotoVerify}
+              className="border-2 border-white bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#FFFFFF] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+            >
+              {!user ? "SIGN IN" : freelancerId ? "RESUME" : "VERIFY ₹99"}
+            </button>
           </div>
-          <button
-            data-testid="banner-verify-cta"
-            onClick={gotoVerify}
-            className="border-2 border-white bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#FFFFFF] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
-          >
-            {!user ? "SIGN IN" : freelancerId ? "RESUME" : "VERIFY ₹99"}
-          </button>
         </div>
       )}
 
       {/* Gig Cards Grid */}
-      <div className="px-4 py-6 sm:px-8 lg:px-12 xl:px-16 pb-24">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 pb-24">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <JobCardSkeleton />

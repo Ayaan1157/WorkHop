@@ -308,24 +308,26 @@ export default function FreelancerProfile() {
     <Shell>
       <div className="min-h-screen bg-[#F9F9F6] dark:bg-[#0a0a0a] text-ink dark:text-white selection:bg-[#E65A1E]">
         {/* TOP NAV BAR WITH SETTINGS MENU ON THE RIGHT */}
-        <div className="border-b border-[#e5e5e5] dark:border-[#1a1a1a] bg-white/90 dark:bg-[#111]/90 backdrop-blur px-4 py-3 sm:px-8 flex items-center justify-between sticky top-0 z-30">
-          <button
-            onClick={() => nav("/freelancer/jobs")}
-            data-testid="profile-back-btn"
-            className="flex items-center gap-2 text-sm text-[#E65A1E] hover:text-[#F06B2E] transition font-semibold"
-          >
-            <ChevronLeft size={16} />
-            Back to Dashboard
-          </button>
+        <div className="border-b border-[#e5e5e5] dark:border-[#1a1a1a] bg-white/90 dark:bg-[#111]/90 backdrop-blur sticky top-0 z-30">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-8">
+            <button
+              onClick={() => nav("/freelancer/jobs")}
+              data-testid="profile-back-btn"
+              className="flex items-center gap-2 text-sm text-[#E65A1E] hover:text-[#F06B2E] transition font-semibold"
+            >
+              <ChevronLeft size={16} />
+              Back to Dashboard
+            </button>
 
-          <button
-            onClick={() => setMenuDrawerOpen(true)}
-            data-testid="profile-top-menu-btn"
-            className="flex items-center gap-2 rounded-lg border border-[#ddd] dark:border-[#333] bg-white dark:bg-[#1a1a1a] px-3.5 py-1.5 text-xs font-bold text-ink dark:text-white hover:bg-gray-100 dark:hover:bg-[#252525] hover:border-[#E65A1E] transition shadow-sm active:translate-y-0.5"
-          >
-            <Menu size={16} className="text-[#E65A1E]" />
-            <span>MENU & SETTINGS</span>
-          </button>
+            <button
+              onClick={() => setMenuDrawerOpen(true)}
+              data-testid="profile-top-menu-btn"
+              className="flex items-center gap-2 rounded-lg border border-[#ddd] dark:border-[#333] bg-white dark:bg-[#1a1a1a] px-3.5 py-1.5 text-xs font-bold text-ink dark:text-white hover:bg-gray-100 dark:hover:bg-[#252525] hover:border-[#E65A1E] transition shadow-sm active:translate-y-0.5"
+            >
+              <Menu size={16} className="text-[#E65A1E]" />
+              <span>MENU & SETTINGS</span>
+            </button>
+          </div>
         </div>
 
         <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8">

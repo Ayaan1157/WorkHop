@@ -84,7 +84,7 @@ export default function Pro() {
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 p-4 sm:p-6 pb-20">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 sm:p-6 pb-20">
           {/* BREADCRUMBS */}
           <Breadcrumbs
             items={[

@@ -42,37 +42,43 @@ export default function LiveMap() {
       />
 
       {status === "idle" && !coords && (
-        <button data-testid="map-locate-banner" onClick={requestLocation} className="flex w-full items-center gap-2 bg-ink px-4 py-2.5 text-left">
-          <Navigation size={14} className="text-white" />
-          <span className="flex-1 text-[11px] font-bold text-white">Use my location to find the closest pros & gigs</span>
-          <span className="text-[11px] font-black tracking-wider text-brand">ENABLE</span>
-        </button>
+        <div className="bg-ink">
+          <button data-testid="map-locate-banner" onClick={requestLocation} className="mx-auto flex max-w-6xl w-full items-center gap-2 px-4 py-2.5 text-left">
+            <Navigation size={14} className="text-white" />
+            <span className="flex-1 text-[11px] font-bold text-white">Use my location to find the closest pros & gigs</span>
+            <span className="text-[11px] font-black tracking-wider text-brand">ENABLE</span>
+          </button>
+        </div>
       )}
       {(status === "denied" || status === "blocked") && (
-        <div data-testid="map-locate-denied" className="flex items-center gap-2 bg-ink px-4 py-2.5">
-          <AlertCircle size={14} className="text-white" />
-          <span className="flex-1 text-[11px] font-bold text-white">
-            {status === "blocked" ? "Location is blocked. Enable it in your browser settings." : "Location permission needed to center the map on you."}
-          </span>
-          <button data-testid="map-locate-retry" onClick={requestLocation} className="text-[11px] font-black tracking-wider text-brand">RETRY</button>
+        <div className="bg-ink">
+          <div data-testid="map-locate-denied" className="mx-auto flex max-w-6xl w-full items-center gap-2 px-4 py-2.5">
+            <AlertCircle size={14} className="text-white" />
+            <span className="flex-1 text-[11px] font-bold text-white">
+              {status === "blocked" ? "Location is blocked. Enable it in your browser settings." : "Location permission needed to center the map on you."}
+            </span>
+            <button data-testid="map-locate-retry" onClick={requestLocation} className="text-[11px] font-black tracking-wider text-brand">RETRY</button>
+          </div>
         </div>
       )}
 
-      <div className="flex gap-2 border-b-2 border-ink px-4 py-3" data-testid="map-filter-row">
-        {[
-          { key: "all", label: "ALL" },
-          { key: "candidate", label: "🟠 PROS" },
-          { key: "employer", label: "⬛ EMPLOYERS" },
-        ].map((f) => (
-          <button
-            key={f.key}
-            data-testid={`map-filter-${f.key}`}
-            onClick={() => setFilter(f.key)}
-            className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black tracking-wider ${filter === f.key ? "bg-brand text-white" : "bg-white text-ink"}`}
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="border-b-2 border-ink bg-white">
+        <div className="mx-auto flex max-w-6xl gap-2 px-4 py-3" data-testid="map-filter-row">
+          {[
+            { key: "all", label: "ALL" },
+            { key: "candidate", label: "🟠 PROS" },
+            { key: "employer", label: "⬛ EMPLOYERS" },
+          ].map((f) => (
+            <button
+              key={f.key}
+              data-testid={`map-filter-${f.key}`}
+              onClick={() => setFilter(f.key)}
+              className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black tracking-wider ${filter === f.key ? "bg-brand text-white" : "bg-white text-ink"}`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
@@ -83,10 +89,12 @@ export default function LiveMap() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-6 p-4 sm:p-6 bg-sand">
-        <div className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-full border-2 border-ink bg-brand" /><span className="text-xs font-bold text-ink">Verified pros</span></div>
-        <div className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-full border-2 border-ink bg-ink" /><span className="text-xs font-bold text-ink">Hiring employers</span></div>
-        <span className="ml-auto text-xs text-inkmuted">Tap any pin to view details and contact info</span>
+      <div className="bg-sand border-b-2 border-ink">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-6 p-4 sm:p-6">
+          <div className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-full border-2 border-ink bg-brand" /><span className="text-xs font-bold text-ink">Verified pros</span></div>
+          <div className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-full border-2 border-ink bg-ink" /><span className="text-xs font-bold text-ink">Hiring employers</span></div>
+          <span className="ml-auto text-xs text-inkmuted">Tap any pin to view details and contact info</span>
+        </div>
       </div>
     </Shell>
   );

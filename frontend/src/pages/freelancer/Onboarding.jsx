@@ -143,8 +143,8 @@ export default function Onboarding() {
   const fieldLabel = "text-[11px] font-black uppercase tracking-wider text-inkmuted";
 
   return (
-    <div className="min-h-screen w-full bg-white text-ink">
-      <div className="w-full min-h-screen">
+    <div className="min-h-screen w-full bg-sand/30 text-ink">
+      <div className="w-full min-h-screen bg-white max-w-2xl mx-auto border-x-0 sm:border-x-2 border-ink shadow-sm">
         <div className="flex items-center gap-3 border-b-2 border-ink px-4 py-3">
           <button data-testid="freelancer-back-btn" onClick={() => nav(-1)} className="flex h-10 w-10 items-center justify-center border-2 border-ink"><ChevronLeft size={22} /></button>
           <div className="flex-1"><p className="text-[14px] font-black tracking-[0.12em] text-ink">VERIFIED PRO ONBOARDING</p><p className="text-[11px] text-inkmuted">Step {Math.min(completed + 1, TOTAL)} of {TOTAL}</p></div>
@@ -159,7 +159,7 @@ export default function Onboarding() {
           })}
         </div>
 
-        <div className="flex flex-col gap-4 p-4 pb-16">
+        <div className="flex flex-col gap-4 p-4 sm:p-6 pb-16">
           {/* STEP 1 */}
           <Step n={1} title="Payment Gateway Tether" active testID="step1-card">
             <div className="flex items-center gap-3 border-2 border-ink bg-sand p-3">

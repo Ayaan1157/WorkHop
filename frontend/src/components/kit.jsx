@@ -67,23 +67,25 @@ export function GlobalNav() {
 
   return (
     <>
-      <header className="w-full border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
-        <div className="flex w-full items-center justify-between gap-4">
+      <header className="w-full border-b-2 border-ink bg-white">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
             <img
               src="/workhop-logo.png"
               alt="WorkHop"
-              className="h-9 w-auto select-none"
-              draggable={false}
+              className="h-9 w-auto object-contain"
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
             />
-            <span className="hidden rounded bg-brand px-2 py-0.5 text-[10px] font-black tracking-widest text-white md:inline-block">
+            <span className="hidden sm:inline-block border-2 border-ink bg-brand px-2 py-0.5 text-[10px] font-black tracking-widest text-white shadow-[1.5px_1.5px_0px_#121212]">
               HYPERLOCAL
             </span>
           </Link>
 
-          {/* Desktop Landscape Nav Links */}
-          <nav className="hidden items-center gap-2 md:flex">
+          {/* Nav Links */}
+          <nav className="hidden lg:flex items-center gap-6">
             {links.map((link) => {
               const active = loc.pathname === link.path;
               return (
@@ -91,10 +93,10 @@ export function GlobalNav() {
                   key={link.path}
                   to={link.path}
                   data-testid={link.testId}
-                  className={`border-b-2 px-4 py-1.5 text-xs font-black tracking-wider transition ${
+                  className={`text-xs font-black tracking-wider transition ${
                     active
-                      ? "border-brand bg-sand text-ink"
-                      : "border-transparent text-inkmuted hover:border-ink hover:text-ink"
+                      ? "text-brand underline decoration-2 underline-offset-4"
+                      : "text-ink hover:text-brand"
                   }`}
                 >
                   {link.label}
@@ -103,14 +105,13 @@ export function GlobalNav() {
             })}
           </nav>
 
-          {/* Right Action buttons */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Persistent Header Credits Pill */}
+          {/* Right Action Icons & Auth */}
+          <div className="flex items-center gap-2">
+            {/* Free Credits Badge */}
             <Link
               to="/employer/plans"
-              data-testid="header-credits-pill"
-              className="hidden sm:flex items-center gap-1.5 border-2 border-ink bg-sand px-3 py-1.5 text-xs font-black text-ink hover:bg-white transition"
-              title="Available Job Post / Apply Credits"
+              className="hidden md:flex items-center gap-1 border-2 border-ink bg-sand px-2.5 py-1 text-[11px] font-black text-ink hover:bg-stone transition"
+              title="Your active credits"
             >
               <Coins size={14} className="text-brand" />
               <span>5 CREDITS</span>
@@ -178,21 +179,23 @@ export function GlobalNav() {
 export function TopBar({ title, sub, onBack, right, backTestID = "back-btn" }) {
   const nav = useNavigate();
   return (
-    <div className="sticky top-0 z-20 flex w-full items-center gap-4 border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
-      {onBack !== false && (
-        <button
-          data-testid={backTestID}
-          onClick={typeof onBack === "function" ? onBack : () => nav(-1)}
-          className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-white transition hover:bg-sand active:translate-y-0.5"
-        >
-          <ChevronLeft size={22} />
-        </button>
-      )}
-      <div className="min-w-0 flex-1">
-        <h1 className="truncate text-base font-black tracking-tight text-ink sm:text-lg">{title}</h1>
-        {sub && <p className="truncate text-[11px] font-semibold text-inkmuted">{sub}</p>}
+    <div className="sticky top-0 z-20 w-full border-b-2 border-ink bg-white">
+      <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+        {onBack !== false && (
+          <button
+            data-testid={backTestID}
+            onClick={typeof onBack === "function" ? onBack : () => nav(-1)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-white transition hover:bg-sand active:translate-y-0.5"
+          >
+            <ChevronLeft size={22} />
+          </button>
+        )}
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-base font-black tracking-tight text-ink sm:text-lg">{title}</h1>
+          {sub && <p className="truncate text-[11px] font-semibold text-inkmuted">{sub}</p>}
+        </div>
+        {right}
       </div>
-      {right}
     </div>
   );
 }
@@ -218,29 +221,31 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
       .catch(() => {});
   }, []);
   return (
-    <div className="wh-scroll flex w-full gap-3 overflow-x-auto border-b-2 border-ink bg-white px-4 py-3 sm:px-8 lg:px-12 xl:px-16">
-      {cats.map((key) => {
-        const v = CATEGORY_VISUALS[key] || CATEGORY_VISUALS.ALL;
-        const on = selected === key;
-        return (
-          <button
-            key={key}
-            data-testid={`${testIDPrefix}-${key.toLowerCase().replace(/[^a-z]+/g, "-")}`}
-            onClick={() => onSelect(key)}
-            className={`flex w-[100px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2.5 transition-transform active:translate-y-0.5 ${on ? "bg-ink" : "bg-white hover:bg-sand"}`}
-          >
-            <span
-              className="flex h-10 w-10 items-center justify-center border-2 border-ink"
-              style={{ background: on ? "#E65A1E" : v.bg }}
+    <div className="w-full border-b-2 border-ink bg-white">
+      <div className="wh-scroll mx-auto flex w-full max-w-6xl gap-3 overflow-x-auto px-4 py-3 sm:px-6">
+        {cats.map((key) => {
+          const v = CATEGORY_VISUALS[key] || CATEGORY_VISUALS.ALL;
+          const on = selected === key;
+          return (
+            <button
+              key={key}
+              data-testid={`${testIDPrefix}-${key.toLowerCase().replace(/[^a-z]+/g, "-")}`}
+              onClick={() => onSelect(key)}
+              className={`flex w-[100px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2.5 transition-transform active:translate-y-0.5 ${on ? "bg-ink" : "bg-white hover:bg-sand"}`}
             >
-              <CatIcon name={v.icon} size={20} className="text-ink" />
-            </span>
-            <span className={`text-center text-[10px] font-black leading-tight ${on ? "text-white" : "text-ink"}`}>
-              {(CATEGORY_SHORT_LABELS[key] || key).toUpperCase()}
-            </span>
-          </button>
-        );
-      })}
+              <span
+                className="flex h-10 w-10 items-center justify-center border-2 border-ink"
+                style={{ background: on ? "#E65A1E" : v.bg }}
+              >
+                <CatIcon name={v.icon} size={20} className="text-ink" />
+              </span>
+              <span className={`text-center text-[10px] font-black leading-tight ${on ? "text-white" : "text-ink"}`}>
+                {(CATEGORY_SHORT_LABELS[key] || key).toUpperCase()}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

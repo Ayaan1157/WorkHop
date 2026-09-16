@@ -32,7 +32,7 @@ export default function FreelancerChats() {
           action={<button data-testid="chats-browse-btn" onClick={() => nav("/freelancer/jobs")} className="mt-1 bg-ink px-6 py-3 text-xs font-black tracking-wider text-white">BROWSE GIGS</button>}
         />
       ) : (
-        <div className="flex flex-col gap-3 p-4 pb-16">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 p-4 sm:p-6 pb-16">
           {chats.map((c, i) => (
             <button key={c.conversation_id} data-testid={`chat-row-${i}`} onClick={() => nav(`/chat/${c.conversation_id}?role=freelancer`)} className="flex items-center gap-3 border-2 border-ink bg-white p-3 text-left transition active:translate-y-0.5">
               <div className="flex h-11 w-11 items-center justify-center border-2 border-ink bg-ink text-lg font-black text-white">{c.company_name.slice(0, 1)}</div>

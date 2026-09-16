@@ -48,7 +48,7 @@ export default function Support() {
   return (
     <Shell>
       <TopBar title="SUPPORT" sub="WorkHop · Bengaluru" backTestID="support-back-btn" />
-      <div className="flex flex-col gap-2 p-4 pb-16">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 p-4 sm:p-6 pb-16">
         <p className="mb-0.5 text-[11px] font-black tracking-[0.15em] text-ink">FREQUENTLY ASKED</p>
         {FAQS.map((f, i) => (
           <button key={f.q} data-testid={`faq-${i}`} onClick={() => setOpenFaq(openFaq === i ? null : i)} className="border-2 border-ink p-3 text-left">

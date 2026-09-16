@@ -169,162 +169,165 @@ export default function Employer() {
       </div>
 
       {/* POST JOB CTA BAR */}
-      <div className="px-4 pt-3">
-        <button
-          data-testid="post-job-btn"
-          onClick={() => nav("/employer/post-job")}
-          className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3 text-xs font-black tracking-wider text-white transition active:translate-y-0.5 hover:bg-brand/95"
-        >
-          <PlusCircle size={16} /> POST A JOB · FROM ₹299
-        </button>
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 pt-4">
+        <div className="flex justify-center">
+          <button
+            data-testid="post-job-btn"
+            onClick={() => nav("/employer/post-job")}
+            className="flex w-full max-w-xl items-center justify-center gap-2 border-2 border-ink bg-brand py-3 px-6 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-y-0.5 hover:bg-brand/95"
+          >
+            <PlusCircle size={16} /> POST A JOB · FROM ₹299
+          </button>
+        </div>
       </div>
 
       {/* SEARCH & FILTERS BAR */}
-      <div className="flex flex-col gap-2 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-white px-3">
-            <Search size={16} className="text-inkmuted" />
-            <input
-              data-testid="leads-search-input"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search pros — logo, shopify, gst, reels…"
-              className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink placeholder:text-inkmuted"
-            />
-            {search && (
-              <button
-                data-testid="leads-search-clear-btn"
-                onClick={() => setSearch("")}
-                className="flex h-[22px] w-[22px] items-center justify-center bg-ink"
-              >
-                <X size={14} className="text-white" />
-              </button>
-            )}
-          </div>
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-3">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-white px-3 shadow-[1.5px_1.5px_0px_#121212]">
+              <Search size={16} className="text-inkmuted" />
+              <input
+                data-testid="leads-search-input"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search pros — logo, shopify, gst, reels…"
+                className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink placeholder:text-inkmuted"
+              />
+              {search && (
+                <button
+                  data-testid="leads-search-clear-btn"
+                  onClick={() => setSearch("")}
+                  className="flex h-[22px] w-[22px] items-center justify-center bg-ink"
+                >
+                  <X size={14} className="text-white" />
+                </button>
+              )}
+            </div>
 
-          <button
-            onClick={() => setFiltersDrawerOpen(!filtersDrawerOpen)}
-            className={`flex h-11 items-center gap-1.5 border-2 border-ink px-3 text-xs font-black transition active:translate-y-0.5 ${
-              filtersDrawerOpen || maxDistance || minRating ? "bg-ink text-white" : "bg-white text-ink"
-            }`}
-          >
-            <SlidersHorizontal size={15} />
-            <span className="hidden sm:inline">FILTERS</span>
-            {(maxDistance || minRating) && <span className="h-2 w-2 rounded-full bg-brand" />}
-          </button>
-        </div>
-
-        {/* TABS: ALL vs SAVED */}
-        <div className="flex items-center justify-between gap-2 border-t border-ink/10 pt-2">
-          <div className="flex gap-2">
             <button
-              onClick={() => setOnlySaved(false)}
-              className={`border-2 border-ink px-3 py-1 text-[11px] font-black transition ${
-                !onlySaved ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+              onClick={() => setFiltersDrawerOpen(!filtersDrawerOpen)}
+              className={`flex h-11 items-center gap-1.5 border-2 border-ink px-4 text-xs font-black shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5 ${
+                filtersDrawerOpen || maxDistance || minRating ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
               }`}
             >
-              ALL PROS ({distFiltered.length})
-            </button>
-            <button
-              onClick={() => setOnlySaved(true)}
-              className={`flex items-center gap-1.5 border-2 border-ink px-3 py-1 text-[11px] font-black transition ${
-                onlySaved ? "bg-brand text-white" : "bg-white text-ink hover:bg-sand"
-              }`}
-            >
-              <Heart size={12} fill={onlySaved ? "white" : "none"} />
-              SAVED ({savedPros.length})
+              <SlidersHorizontal size={15} />
+              <span className="hidden sm:inline">FILTERS</span>
+              {(maxDistance || minRating) && <span className="h-2 w-2 rounded-full bg-brand" />}
             </button>
           </div>
 
-          {/* SORT DROPDOWN */}
-          <div className="flex items-center gap-1 border-2 border-ink bg-white px-2 py-1">
-            <ArrowUpDown size={12} className="text-inkmuted" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-transparent text-[11px] font-black text-ink outline-none cursor-pointer"
-            >
-              <option value="distance">Nearest First</option>
-              <option value="rating">Top Rated</option>
-              <option value="jobs">Most Completed</option>
-              <option value="rate">Rate: Low to High</option>
-            </select>
-          </div>
-        </div>
-
-        {/* EXPANDABLE FILTER DRAWER */}
-        {filtersDrawerOpen && (
-          <div className="flex flex-col gap-3 border-2 border-ink bg-sand p-3 mt-1 animate-in fade-in duration-150">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-wider text-ink">QUICK FILTERS</span>
+          {/* TABS: ALL vs SAVED */}
+          <div className="flex items-center justify-between gap-2 border-t border-ink/10 pt-2 flex-wrap">
+            <div className="flex gap-2">
               <button
-                onClick={() => {
-                  setMaxDistance(null);
-                  setMinRating(null);
-                  setCatFilter("ALL");
-                  setSearch("");
-                }}
-                className="text-[10px] font-bold text-brand hover:underline"
+                onClick={() => setOnlySaved(false)}
+                className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black transition ${
+                  !onlySaved ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+                }`}
               >
-                Reset All
+                ALL PROS ({distFiltered.length})
+              </button>
+              <button
+                onClick={() => setOnlySaved(true)}
+                className={`flex items-center gap-1.5 border-2 border-ink px-3 py-1.5 text-[11px] font-black transition ${
+                  onlySaved ? "bg-brand text-white" : "bg-white text-ink hover:bg-sand"
+                }`}
+              >
+                <Heart size={12} fill={onlySaved ? "white" : "none"} />
+                SAVED ({savedPros.length})
               </button>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-black tracking-wider text-inkmuted">MAX DISTANCE</span>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { label: "ALL", val: null },
-                  { label: "≤ 2 KM", val: 2 },
-                  { label: "≤ 5 KM", val: 5 },
-                  { label: "≤ 10 KM", val: 10 },
-                ].map((d) => (
-                  <button
-                    key={d.label}
-                    onClick={() => setMaxDistance(d.val)}
-                    className={`border border-ink px-2 py-0.5 text-[10px] font-black ${
-                      maxDistance === d.val ? "bg-ink text-white" : "bg-white text-ink"
-                    }`}
-                  >
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-black tracking-wider text-inkmuted">MINIMUM RATING</span>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { label: "ANY", val: null },
-                  { label: "4.5★+", val: 4.5 },
-                  { label: "4.8★+", val: 4.8 },
-                ].map((r) => (
-                  <button
-                    key={r.label}
-                    onClick={() => setMinRating(r.val)}
-                    className={`border border-ink px-2 py-0.5 text-[10px] font-black ${
-                      minRating === r.val ? "bg-ink text-white" : "bg-white text-ink"
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
+            {/* SORT DROPDOWN */}
+            <div className="flex items-center gap-1 border-2 border-ink bg-white px-3 py-1.5 shadow-[1px_1px_0px_#121212]">
+              <ArrowUpDown size={12} className="text-inkmuted" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-transparent text-[11px] font-black text-ink outline-none cursor-pointer"
+              >
+                <option value="distance">Nearest First</option>
+                <option value="rating">Top Rated</option>
+                <option value="jobs">Most Completed</option>
+                <option value="rate">Rate: Low to High</option>
+              </select>
             </div>
           </div>
-        )}
+
+          {/* EXPANDABLE FILTER DRAWER */}
+          {filtersDrawerOpen && (
+            <div className="flex flex-col gap-3 border-2 border-ink bg-sand p-4 mt-2 animate-in fade-in duration-150 shadow-[2px_2px_0px_#121212]">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase tracking-wider text-ink">QUICK FILTERS</span>
+                <button
+                  onClick={() => {
+                    setMaxDistance(null);
+                    setMinRating(null);
+                    setCatFilter("ALL");
+                    setSearch("");
+                  }}
+                  className="text-[10px] font-bold text-brand hover:underline"
+                >
+                  Reset All
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-black tracking-wider text-inkmuted">MAX DISTANCE</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: "ALL", val: null },
+                    { label: "≤ 2 KM", val: 2 },
+                    { label: "≤ 5 KM", val: 5 },
+                    { label: "≤ 10 KM", val: 10 },
+                  ].map((d) => (
+                    <button
+                      key={d.label}
+                      onClick={() => setMaxDistance(d.val)}
+                      className={`border border-ink px-2.5 py-1 text-[10px] font-black ${
+                        maxDistance === d.val ? "bg-ink text-white" : "bg-white text-ink hover:bg-stone"
+                      }`}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-black tracking-wider text-inkmuted">MINIMUM RATING</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: "ANY", val: null },
+                    { label: "4.5★+", val: 4.5 },
+                    { label: "4.8★+", val: 4.8 },
+                  ].map((r) => (
+                    <button
+                      key={r.label}
+                      onClick={() => setMinRating(r.val)}
+                      className={`border border-ink px-2.5 py-1 text-[10px] font-black ${
+                        minRating === r.val ? "bg-ink text-white" : "bg-white text-ink hover:bg-stone"
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <CategoryTiles selected={catFilter} onSelect={setCatFilter} testIDPrefix="lead-cat-tile" />
 
-      <div className="p-4 sm:p-6 pb-16">
+      {/* PRO LISTINGS */}
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-2 pb-16 flex flex-col gap-4">
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ProCardSkeleton />
-            <ProCardSkeleton />
-            <ProCardSkeleton />
-            <ProCardSkeleton />
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 size={24} className="animate-spin text-brand" />
+            <p className="text-xs font-bold text-inkmuted">Finding verified pros near you…</p>
           </div>
         ) : (
           <>
@@ -367,7 +370,7 @@ export default function Employer() {
             </div>
 
             {!unlocked && sorted.length > 0 && (
-              <div className="relative my-4 border-2 border-ink p-6 bg-sand" data-testid="unlock-banner">
+              <div className="relative my-2 border-2 border-ink p-6 bg-sand shadow-[3px_3px_0px_#121212]" data-testid="unlock-banner">
                 <div className="absolute -left-0.5 -top-0.5 h-8 w-8 bg-brand" />
                 <p className="whitespace-pre-line text-2xl font-black leading-tight text-ink">
                   Unlock the Closest 5{"\n"}Verified Experts on Your Block.
@@ -389,7 +392,7 @@ export default function Employer() {
             {unlocked && (
               <div
                 data-testid="unlocked-badge"
-                className="my-4 flex items-center justify-center gap-2 border-2 border-ok bg-[#E5F8EE] p-4"
+                className="my-2 flex items-center justify-center gap-2 border-2 border-ok bg-[#E5F8EE] p-4 shadow-[2px_2px_0px_#121212]"
               >
                 <CheckCircle2 size={20} className="text-ok" />
                 <span className="text-sm font-extrabold text-ink">
@@ -398,7 +401,7 @@ export default function Employer() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
               {sorted.slice(2).map((l, i) => (
                 <LeadCard
                   key={l.id}
@@ -415,20 +418,17 @@ export default function Employer() {
             <button
               data-testid="plans-banner"
               onClick={() => nav("/employer/plans")}
-              className="mt-6 flex flex-col gap-3 border-2 border-ink bg-ink p-6 text-left transition hover:bg-ink/95"
+              className="mt-4 flex flex-col gap-3 border-2 border-ink bg-ink p-6 text-left transition hover:bg-ink/95 shadow-[3px_3px_0px_#E65A1E]"
             >
               <span className="self-start bg-brand px-3 py-1 text-[10px] font-black tracking-[0.15em] text-white">
-                FOR EMPLOYERS
+                EMPLOYER BRANDING PLANS
               </span>
-              <p className="whitespace-pre-line text-2xl font-black leading-tight text-white">
-                Post jobs. Boost listings.{"\n"}Brand your company.
+              <p className="text-xl font-black text-white">
+                Looking to Hire At Scale or Need Urgent Talent?
               </p>
-              <p className="text-sm text-[#D6D6D6]">
-                Job posts from ₹299 · Enterprise branding &amp; classified ads.
+              <p className="text-xs text-white/75">
+                Explore Pro Employer Plans · Unlimited Lead Unlocks · Dedicated Account Manager · Custom Boosts
               </p>
-              <span className="flex items-center justify-center gap-2 border-2 border-brand bg-brand py-3 text-[13px] font-black tracking-wider text-white max-w-xs">
-                VIEW PLANS &amp; PRICING <ArrowRight size={16} />
-              </span>
             </button>
           </>
         )}

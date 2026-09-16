@@ -137,7 +137,7 @@ export default function Profile() {
   return (
     <Shell>
       <TopBar title="MY PROFILE" backTestID="profile-back-btn" />
-      <div className="flex flex-col gap-4 p-4 pb-16">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 sm:p-6 pb-16">
         {/* PROFILE HERO */}
         <div className="flex flex-col items-center gap-2 border-2 border-ink p-6 bg-white shadow-[3px_3px_0px_#121212]" data-testid="profile-hero">
           {user?.picture ? (

@@ -146,7 +146,7 @@ export default function PostJob() {
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 p-4 sm:p-6 pb-20">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 sm:p-6 pb-20">
           {/* PRIVACY & AREA NOTICE */}
           <div className="flex items-start gap-2.5 border-2 border-ink bg-[#FFF3C4] p-3.5 shadow-[2px_2px_0px_#121212]">
             <ShieldCheck size={18} className="text-brand shrink-0 mt-0.5" />
