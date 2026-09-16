@@ -74,9 +74,22 @@ export function AuthProvider({ children }) {
     })();
   }, [processSessionId, checkStoredSession]);
 
-  const login = useCallback(() => {
-    const redirectUrl = window.location.origin + "/";
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  const login = useCallback(async (customEmail = null, customName = null) => {
+    const email = customEmail || "user@workhop.local";
+    const role = localStorage.getItem("workhop_pending_role") || localStorage.getItem("workhop_auth_role") || "freelancer";
+    const name = customName || (email.includes("@") ? email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "WorkHop User");
+    const session = createMockSession(email, {
+      name: name,
+      role: role,
+      area: localStorage.getItem("workhop_user_area") || "Koramangala",
+      phone: localStorage.getItem("workhop_pro_phone") || "9876543210",
+      company_name: localStorage.getItem("workhop_company_name") || "Hyperlocal Co.",
+      skill: localStorage.getItem("workhop_pro_skill") || "UI/UX & Brand Designer",
+    });
+    setToken(session.session_token);
+    saveStoredUser(session.user);
+    setUser(session.user);
+    return session;
   }, []);
 
   const logout = useCallback(async () => {

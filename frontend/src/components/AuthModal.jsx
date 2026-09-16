@@ -556,11 +556,12 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                 <button
                   type="button"
                   data-testid="auth-google-btn"
-                  onClick={() => {
+                  onClick={async () => {
                     localStorage.setItem("workhop_pending_role", role);
                     if (phoneDigits) localStorage.setItem("workhop_pro_phone", phoneDigits);
                     if (area) setSavedArea(area);
-                    login();
+                    await login();
+                    completeAndRedirect(role);
                   }}
                   className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-3 text-xs font-black text-white hover:bg-black transition"
                 >

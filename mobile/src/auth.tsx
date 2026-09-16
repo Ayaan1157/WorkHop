@@ -126,22 +126,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => sub?.remove();
   }, [processSessionId, checkStoredSession]);
 
-  const login = useCallback(async () => {
-    const redirectUrl =
-      Platform.OS === "web"
-        ? window.location.origin + "/"
-        : Linking.createURL("auth");
-    const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-    if (Platform.OS === "web") {
-      window.location.href = authUrl;
-      return;
-    }
-    const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
-    if (result.type === "success" && result.url) {
-      const sid = parseSessionId(result.url);
-      if (sid) await processSessionId(sid);
-    }
-  }, [processSessionId]);
+  const login = useCallback(async (customEmail = "user@workhop.local") => {
+    const sessionUser = {
+      user_id: "user_" + Math.random().toString(36).substring(2, 11),
+      email: customEmail,
+      name: customEmail.split("@")[0],
+    };
+    const token = "mock_session_" + Math.random().toString(36).substring(2, 15);
+    await setToken(token);
+    await AsyncStorage.setItem("workhop_user", JSON.stringify(sessionUser));
+    setUser(sessionUser);
+  }, []);
 
   const logout = useCallback(async () => {
     const token = await getToken();

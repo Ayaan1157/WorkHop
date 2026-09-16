@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.emergent.hyperlocalonboard.gqap26",
+      "bundleIdentifier": "in.workhop.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Find gigs and pros nearest to you"
       }
@@ -21,7 +21,7 @@
         "backgroundColor": "#000"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.emergent.hyperlocalonboard.gqap26",
+      "package": "in.workhop.app",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
