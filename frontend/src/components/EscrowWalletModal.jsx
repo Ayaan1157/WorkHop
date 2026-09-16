@@ -86,7 +86,7 @@ export default function EscrowWalletModal({ isOpen, onClose }) {
             <p className="mt-1 text-xl font-black text-ink">
               ₹{wallet.lifetime_earnings.toLocaleString("en-IN")}
             </p>
-            <span className="mt-1 inline-block text-[9px] font-bold text-inkmuted">Zero platform commission</span>
+            <span className="mt-1 inline-block text-[9px] font-bold text-inkmuted">Direct platform payments</span>
           </div>
         </div>
 

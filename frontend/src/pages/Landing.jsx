@@ -701,7 +701,7 @@ export default function Landing() {
           </h1>
           <div className="mt-4 h-2 w-28 bg-brand" />
           <p className="mt-6 max-w-2xl text-base leading-7 text-inkmuted sm:text-xl">
-            <span className="font-extrabold text-ink">Your next local gig, one minute away.</span> Connect with top-rated, Aadhaar &amp; portfolio-verified professionals within 5km. Direct chats, zero commission on wages, instant hires.
+            <span className="font-extrabold text-ink">Your next local gig, one minute away.</span> Connect with top-rated, portfolio-verified professionals within 5km. Direct chats, instant hires.
           </p>
         </div>
 
@@ -739,49 +739,41 @@ export default function Landing() {
           <button
             data-testid="role-freelancer-card"
             onClick={() => chooseRole("freelancer")}
-            className="group border-2 border-ink bg-brand p-8 text-left shadow-[5px_5px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1 sm:p-10"
+            className="group border-2 border-ink bg-ink p-8 text-left shadow-[5px_5px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1 sm:p-10"
           >
             <div className="mb-6 flex items-center justify-between">
-              <span className="bg-ink px-4 py-1.5 text-xs font-black tracking-[0.15em] text-white">
+              <span className="bg-brand px-4 py-1.5 text-xs font-black tracking-[0.15em] text-white">
                 I'M LOOKING FOR A JOB (EMPLOYEE)
               </span>
               <div className="flex h-11 w-11 items-center justify-center border-2 border-ink bg-ink group-hover:bg-white">
                 <ArrowRight size={24} className="text-white group-hover:text-ink" />
               </div>
             </div>
-            <p className="whitespace-pre-line text-3xl font-black leading-tight text-ink sm:text-4xl">
-              Go live in your{"\n"}5km radius
+            <p className="whitespace-pre-line text-3xl font-black leading-tight text-white sm:text-4xl">
+              Find gigs in your{"\n"}neighborhood today
             </p>
-            <p className="mt-4 text-base leading-7 text-ink/90">
-              One-time ₹99 onboarding. Email + portfolio verified. Get discovered by local companies and apply to high-paying gigs in 2 hours.
+            <p className="mt-4 text-base leading-7 text-white/90">
+              Apply to verified jobs within 5km of your area. Direct chat with employers, milestone escrow payments, and zero delays.
             </p>
-            <div className="mt-8 flex items-center gap-3 border-t border-ink/20 pt-5 text-sm font-extrabold text-ink">
-              <span>100% Verified Badge</span>
+            <div className="mt-8 flex items-center gap-3 border-t border-white/20 pt-5 text-sm font-extrabold text-white">
+              <span>3 Free Applies Daily</span>
               <span>•</span>
-              <span>Keep 100% of your earnings</span>
+              <span>Keep 100% Earnings</span>
             </div>
           </button>
 
         </div>
       </section>
 
-      {/* Feature Highlights Full Width Grid */}
-      <section className="w-full border-b-2 border-ink bg-sand px-6 py-12 sm:px-10 lg:px-16 xl:px-20">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="border-2 border-ink bg-white p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-brand text-white">
-              <MapPin size={24} />
-            </div>
-            <h3 className="mt-4 text-base font-black text-ink">5KM HYPERLOCAL RADIUS</h3>
-            <p className="mt-2 text-xs leading-5 text-inkmuted">Meet nearby talent in person or work locally with lightning-fast turnarounds.</p>
-          </div>
-          
+      {/* Feature Value Props (3-Column Grid) */}
+      <section className="w-full border-b-2 border-ink bg-sand/40 px-6 py-12 sm:px-10 lg:px-16 xl:px-20">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <div className="border-2 border-ink bg-white p-6 shadow-[3px_3px_0px_#121212]">
             <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-ink text-white">
               <ShieldCheck size={24} />
             </div>
             <h3 className="mt-4 text-base font-black text-ink">100% VERIFIED PROFILES</h3>
-            <p className="mt-2 text-xs leading-5 text-inkmuted">Every freelancer is verified with government ID, email, and live portfolios.</p>
+            <p className="mt-2 text-xs leading-5 text-inkmuted">Every freelancer is verified with email and live portfolios.</p>
           </div>
 
           <div className="border-2 border-ink bg-white p-6 shadow-[3px_3px_0px_#121212]">
@@ -796,8 +788,8 @@ export default function Landing() {
             <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-ink text-white">
               <Sparkles size={24} />
             </div>
-            <h3 className="mt-4 text-base font-black text-ink">ZERO WAGE COMMISSIONS</h3>
-            <p className="mt-2 text-xs leading-5 text-inkmuted">Keep 100% of your earnings with simple, transparent one-time unlock fees.</p>
+            <h3 className="mt-4 text-base font-black text-ink">TRANSPARENT PRICING</h3>
+            <p className="mt-2 text-xs leading-5 text-inkmuted">Simple, transparent one-time unlock fees with direct payments and zero hidden cuts.</p>
           </div>
         </div>
       </section>

@@ -414,7 +414,7 @@ export default function Jobs() {
             </span>
             <div className="flex-1">
               <p className="text-[13px] font-black text-white">{user ? "Browse freely — verify once to apply to all gigs" : "Browse freely — sign in to apply"}</p>
-              <p className="mt-0.5 text-[11px] leading-4 text-[#D6D6D6]">Aadhaar + email verification unlocks direct chat and instant hiring.</p>
+              <p className="mt-0.5 text-[11px] leading-4 text-[#D6D6D6]">Profile & email verification unlocks direct chat and instant hiring.</p>
             </div>
             <button
               data-testid="banner-verify-cta"
