@@ -275,7 +275,7 @@ function SiteControlsTab({ adminFetch }) {
               value={settings.broadcast_banner_text || ""}
               onChange={(e) => setSettings({ ...settings, broadcast_banner_text: e.target.value })}
               placeholder="e.g. ⚡ Special Launch: 100% verified local Bengaluru freelancers within 5km radius!"
-              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+              className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-black placeholder:text-gray-500 focus:border-brand outline-none"
               required
             />
           </div>
@@ -289,7 +289,7 @@ function SiteControlsTab({ adminFetch }) {
               value={settings.broadcast_banner_cta || ""}
               onChange={(e) => setSettings({ ...settings, broadcast_banner_cta: e.target.value })}
               placeholder="e.g. EXPLORE GIGS"
-              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+              className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-black placeholder:text-gray-500 focus:border-brand outline-none"
             />
           </div>
 
@@ -302,7 +302,7 @@ function SiteControlsTab({ adminFetch }) {
               value={settings.broadcast_banner_link || ""}
               onChange={(e) => setSettings({ ...settings, broadcast_banner_link: e.target.value })}
               placeholder="e.g. /freelancer/jobs"
-              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+              className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-black placeholder:text-gray-500 focus:border-brand outline-none"
             />
           </div>
 
@@ -345,9 +345,9 @@ function SiteControlsTab({ adminFetch }) {
               color: "#fff",
             }}
           >
-            <span className="truncate">{settings.broadcast_banner_text || "Announcement message..."}</span>
+            <span className="truncate text-white">{settings.broadcast_banner_text || "Announcement message..."}</span>
             {settings.broadcast_banner_cta && (
-              <span className="shrink-0 bg-white text-ink px-2.5 py-1 text-[10px] font-black uppercase tracking-wider">
+              <span className="shrink-0 bg-white text-black px-2.5 py-1 text-[10px] font-black uppercase tracking-wider">
                 {settings.broadcast_banner_cta}
               </span>
             )}
@@ -373,7 +373,7 @@ function SiteControlsTab({ adminFetch }) {
               type="number"
               value={settings.onboarding_fee || 99}
               onChange={(e) => setSettings({ ...settings, onboarding_fee: Number(e.target.value) })}
-              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-sm font-black text-ink focus:border-brand outline-none"
+              className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-sm font-black text-black placeholder:text-gray-500 focus:border-brand outline-none"
             />
           </div>
 
@@ -385,7 +385,7 @@ function SiteControlsTab({ adminFetch }) {
               type="number"
               value={settings.lead_unlock_fee || 199}
               onChange={(e) => setSettings({ ...settings, lead_unlock_fee: Number(e.target.value) })}
-              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-sm font-black text-ink focus:border-brand outline-none"
+              className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-sm font-black text-black placeholder:text-gray-500 focus:border-brand outline-none"
             />
           </div>
 
@@ -397,7 +397,7 @@ function SiteControlsTab({ adminFetch }) {
               type="number"
               value={settings.quota_boost_fee || 149}
               onChange={(e) => setSettings({ ...settings, quota_boost_fee: Number(e.target.value) })}
-              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-sm font-black text-ink focus:border-brand outline-none"
+              className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-sm font-black text-black placeholder:text-gray-500 focus:border-brand outline-none"
             />
           </div>
         </div>
@@ -567,7 +567,7 @@ function GigsModerationTab({ adminFetch }) {
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 placeholder="e.g. Lead UI Designer for E-Commerce App Sprint"
-                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-ink outline-none"
+                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-black placeholder:text-gray-500 outline-none"
                 required
               />
             </div>
@@ -578,7 +578,7 @@ function GigsModerationTab({ adminFetch }) {
                 value={newCompany}
                 onChange={(e) => setNewCompany(e.target.value)}
                 placeholder="e.g. BrewBox Studio"
-                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-ink outline-none"
+                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-black placeholder:text-gray-500 outline-none"
               />
             </div>
             <div>
@@ -588,7 +588,7 @@ function GigsModerationTab({ adminFetch }) {
                 value={newPay}
                 onChange={(e) => setNewPay(e.target.value)}
                 placeholder="15000"
-                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-ink outline-none"
+                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-black placeholder:text-gray-500 outline-none"
               />
             </div>
             <div>
@@ -596,7 +596,7 @@ function GigsModerationTab({ adminFetch }) {
               <select
                 value={newArea}
                 onChange={(e) => setNewArea(e.target.value)}
-                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-ink outline-none"
+                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-black outline-none"
               >
                 {BENGALURU_AREAS.map((a) => (
                   <option key={a.name} value={a.name}>{a.name}</option>
@@ -610,7 +610,7 @@ function GigsModerationTab({ adminFetch }) {
                 onChange={(e) => setNewDesc(e.target.value)}
                 placeholder="Describe deliverables and milestone details..."
                 rows={3}
-                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-ink outline-none"
+                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-xs font-bold text-black placeholder:text-gray-500 outline-none"
               />
             </div>
           </div>
