@@ -9,7 +9,7 @@ import { apiPost } from "@/lib/api";
 import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
 import { useUserLocation } from "@/hooks/useUserLocation";
 
-export default function AuthModal({ isOpen, onClose, initialRole = null, initialMode = "signup" }) {
+export default function AuthModal({ isOpen, onClose, initialRole = null, initialMode = "signin" }) {
   const nav = useNavigate();
   const { user, login, adoptSession, signupWithDetails, adminLogin, passwordLoginAuth } = useAuth();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
@@ -17,7 +17,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   // Role: "employer" | "freelancer"
   const [role, setRole] = useState(initialRole || "freelancer");
   // Mode: "signup" | "signin"
-  const [mode, setMode] = useState(initialMode);
+  const [mode, setMode] = useState(initialMode || "signin");
 
   // Form Fields
   const [fullName, setFullName] = useState("");
@@ -41,7 +41,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
 
   useEffect(() => {
     if (initialRole) setRole(initialRole);
-    if (initialMode) setMode(initialMode);
+    setMode(initialMode || "signin");
   }, [initialRole, initialMode, isOpen]);
 
   // If GPS detects coords, update area automatically

@@ -35,11 +35,11 @@ export default function Landing() {
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalRole, setAuthModalRole] = useState("freelancer");
-  const [authModalMode, setAuthModalMode] = useState("signup");
+  const [authModalMode, setAuthModalMode] = useState("signin");
 
   // Sign in / Sign up flow state
   const [pendingRole, setPendingRole] = useState(null); // "employer" | "freelancer"
-  const [authMode, setAuthMode] = useState("signup"); // "signup" | "signin"
+  const [authMode, setAuthMode] = useState("signin"); // "signup" | "signin"
 
   const [nameInput, setNameInput] = useState("");
   const [emailInput, setEmailInput] = useState("");
