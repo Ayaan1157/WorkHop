@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import AuthModal from "@/components/AuthModal";
+import BroadcastBanner from "@/components/BroadcastBanner";
 
 function Logo() {
   return (
@@ -702,6 +703,7 @@ export default function Landing() {
   // ---- Main Public Landing View (Default) ----
   return (
     <div className="min-h-screen w-full bg-sand/30 font-sans text-ink">
+      <BroadcastBanner />
       
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b-2 border-ink bg-white px-4 py-3 sm:px-8">

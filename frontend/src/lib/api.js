@@ -14,6 +14,14 @@ import {
   getStoredChats,
   getFreelancerProfile,
   saveFreelancerProfile,
+  getSiteSettings,
+  saveSiteSettings,
+  getAdminLogs,
+  addAdminGig,
+  toggleBoostGig,
+  deleteGigAdmin,
+  getEscrowOrders,
+  resolveEscrowOrder,
 } from "./clientStore";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
@@ -216,14 +224,52 @@ function mockRouter(path, method = "GET", body = null) {
 
   // Admin Dashboard endpoints
   if (cleanPath === "/admin/overview") {
+    const jobs = getStoredJobs();
+    const leads = getStoredLeads();
     return {
       users: 142,
       employers: 38,
-      freelancers: 104,
+      freelancers: leads.length || 104,
+      gigs: jobs.length || 202,
       payments_paid: 29,
       revenue_rupees: 184500,
+      escrow_held: 53500,
       complaints: 2,
     };
+  }
+  if (cleanPath === "/admin/site-settings" && method === "GET") {
+    return getSiteSettings();
+  }
+  if (cleanPath === "/admin/site-settings" && method === "POST") {
+    return saveSiteSettings(body);
+  }
+  if (cleanPath === "/admin/logs" && method === "GET") {
+    return getAdminLogs();
+  }
+  if (cleanPath === "/admin/gigs" && method === "GET") {
+    return getStoredJobs();
+  }
+  if (cleanPath === "/admin/gigs" && method === "POST") {
+    return addAdminGig(body);
+  }
+  if (cleanPath.startsWith("/admin/gigs/") && cleanPath.endsWith("/boost") && method === "POST") {
+    const jobId = cleanPath.split("/")[3];
+    return toggleBoostGig(jobId);
+  }
+  if (cleanPath.startsWith("/admin/gigs/") && method === "DELETE") {
+    const jobId = cleanPath.split("/")[3];
+    return deleteGigAdmin(jobId);
+  }
+  if (cleanPath === "/admin/escrow" && method === "GET") {
+    return getEscrowOrders();
+  }
+  if (cleanPath.startsWith("/admin/escrow/") && cleanPath.endsWith("/release") && method === "POST") {
+    const orderId = cleanPath.split("/")[3];
+    return resolveEscrowOrder(orderId, "release");
+  }
+  if (cleanPath.startsWith("/admin/escrow/") && cleanPath.endsWith("/refund") && method === "POST") {
+    const orderId = cleanPath.split("/")[3];
+    return resolveEscrowOrder(orderId, "refund");
   }
   if (cleanPath === "/admin/users") {
     return [

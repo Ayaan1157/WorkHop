@@ -561,3 +561,201 @@ export function saveFreelancerProfile(profile) {
   localStorage.setItem(FREELANCER_PROFILE_KEY, JSON.stringify(profile));
   return profile;
 }
+
+// 12. Site Settings & Broadcast Banner
+const SITE_SETTINGS_KEY = "workhop_site_settings";
+const ADMIN_LOGS_KEY = "workhop_admin_logs";
+const ESCROW_ORDERS_KEY = "workhop_escrow_orders";
+
+export function getDefaultSiteSettings() {
+  return {
+    broadcast_banner_active: true,
+    broadcast_banner_text: "⚡ Bengaluru Hyperlocal Live: Verified local creators & engineers available within 5km!",
+    broadcast_banner_tone: "brand", // "brand" | "green" | "black" | "alert"
+    broadcast_banner_link: "/freelancer/jobs",
+    broadcast_banner_cta: "EXPLORE GIGS",
+    maintenance_mode: false,
+    maintenance_message: "WorkHop is performing a scheduled infrastructure upgrade. We'll be back shortly.",
+    onboarding_fee: 99,
+    lead_unlock_fee: 199,
+    quota_boost_fee: 149,
+    auto_approve_pros: false,
+    direct_chat_enabled: true,
+  };
+}
+
+export function getSiteSettings() {
+  const raw = localStorage.getItem(SITE_SETTINGS_KEY);
+  if (raw) {
+    try { return { ...getDefaultSiteSettings(), ...JSON.parse(raw) }; } catch { /* ignore */ }
+  }
+  return getDefaultSiteSettings();
+}
+
+export function saveSiteSettings(updates) {
+  const current = getSiteSettings();
+  const next = { ...current, ...updates };
+  localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(next));
+  addAdminLog("UPDATED_SITE_SETTINGS", "Site configuration and broadcast banner updated");
+  return next;
+}
+
+// 13. Audit Logs
+export function getAdminLogs() {
+  const raw = localStorage.getItem(ADMIN_LOGS_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch { /* ignore */ }
+  }
+  return [
+    { id: "log-1", action: "SYSTEM_INITIALIZED", details: "Admin command center initialized", admin: "Zenith Developers", timestamp: new Date(Date.now() - 3600000 * 24).toISOString() },
+    { id: "log-2", action: "SECURITY_SYNC", details: "Updated admin access credentials and session token", admin: "Zenith Developers", timestamp: new Date(Date.now() - 3600000 * 5).toISOString() },
+    { id: "log-3", action: "COUPON_CREATED", details: "Generated WELCOME50 promotion for ₹99 onboarding", admin: "Zenith Developers", timestamp: new Date(Date.now() - 3600000 * 2).toISOString() },
+  ];
+}
+
+export function addAdminLog(action, details, target = null) {
+  const logs = getAdminLogs();
+  const newLog = {
+    id: `log-${Date.now()}`,
+    action,
+    details,
+    target,
+    admin: "Zenith Developers (Admin)",
+    timestamp: new Date().toISOString(),
+  };
+  localStorage.setItem(ADMIN_LOGS_KEY, JSON.stringify([newLog, ...logs].slice(0, 100)));
+  return newLog;
+}
+
+// 14. Admin Gig Moderation
+export function toggleBoostGig(jobId) {
+  const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  let found = false;
+  const updatedCustom = custom.map((j) => {
+    if (j.id === jobId) {
+      found = true;
+      return { ...j, is_boosted: !j.is_boosted, boosted_at: new Date().toISOString() };
+    }
+    return j;
+  });
+  if (found) {
+    localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify(updatedCustom));
+  } else {
+    // If it's a seed job, add an override
+    const allJobs = getStoredJobs();
+    const job = allJobs.find((j) => j.id === jobId);
+    if (job) {
+      const newJob = { ...job, is_boosted: !job.is_boosted, boosted_at: new Date().toISOString() };
+      localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify([newJob, ...custom]));
+    }
+  }
+  addAdminLog("GIG_BOOST_TOGGLED", `Boost status toggled for gig ID ${jobId}`, jobId);
+  return { ok: true, jobId };
+}
+
+export function deleteGigAdmin(jobId) {
+  const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  const filtered = custom.filter((j) => j.id !== jobId);
+  localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify(filtered));
+  addAdminLog("GIG_DELETED", `Removed gig listing ID ${jobId}`, jobId);
+  return { ok: true, jobId };
+}
+
+export function addAdminGig(jobData) {
+  const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  const newJob = {
+    id: `job-admin-${Date.now()}`,
+    title: jobData.title,
+    pay: Number(jobData.pay) || 15000,
+    pay_label: `₹${(Number(jobData.pay) || 15000).toLocaleString("en-IN")}`,
+    employer_name: jobData.employer_name || "WorkHop Verified Partner",
+    company_name: jobData.company_name || "Featured Employer",
+    description: jobData.description || "High-priority gig curated directly by WorkHop administrators.",
+    category: jobData.category || "Programming & Tech",
+    bucket: jobData.category || "Programming & Tech",
+    area: jobData.area || "Indiranagar",
+    distance_km: 0.5,
+    posted_minutes_ago: 1,
+    applicants_count: 0,
+    employer_rating: "5.0",
+    employer_reviews: 24,
+    verified_employer: true,
+    is_featured: true,
+    is_boosted: true,
+    created_at: new Date().toISOString(),
+    lat: 12.9716,
+    lng: 77.5946,
+    keywords: [jobData.category || "General", "Verified"],
+  };
+  localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify([newJob, ...custom]));
+  addAdminLog("GIG_CREATED_BY_ADMIN", `Posted official featured gig: "${newJob.title}"`, newJob.id);
+  return newJob;
+}
+
+// 15. Escrow & Disputes
+export function getEscrowOrders() {
+  const raw = localStorage.getItem(ESCROW_ORDERS_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch { /* ignore */ }
+  }
+  return [
+    {
+      order_id: "esc_9901",
+      job_title: "Brand Logo & Packaging Identity",
+      freelancer_name: "Karthik Sharma",
+      freelancer_email: "karthik.sharma@gmail.com",
+      employer_name: "Anita J. · BrewBox Cafe",
+      employer_email: "anita.j@ledgerlite.com",
+      amount_rupees: 18500,
+      status: "held_in_escrow",
+      milestone: "Final Packaging Assets Delivery",
+      created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
+      dispute_reason: null,
+    },
+    {
+      order_id: "esc_9902",
+      job_title: "React / Tailwind SaaS Dashboard Redesign",
+      freelancer_name: "Priya Nair",
+      freelancer_email: "priya.nair@craftly.in",
+      employer_name: "Vikram Mehta · Urban Bites",
+      employer_email: "vikram@urbanbites.com",
+      amount_rupees: 35000,
+      status: "under_review",
+      milestone: "Responsive Mobile Breakpoints",
+      created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+      dispute_reason: "Client requested minor revision before final sign-off.",
+    },
+    {
+      order_id: "esc_9903",
+      job_title: "Product Video Reels & Social Cut",
+      freelancer_name: "Rohan V.",
+      freelancer_email: "rohan.v@gmail.com",
+      employer_name: "Studio Luxe",
+      employer_email: "contact@studioluxe.in",
+      amount_rupees: 12000,
+      status: "released",
+      milestone: "Full 4K Video Exports Released",
+      created_at: new Date(Date.now() - 3600000 * 96).toISOString(),
+      dispute_reason: null,
+    },
+  ];
+}
+
+export function resolveEscrowOrder(orderId, action) {
+  const orders = getEscrowOrders();
+  const updated = orders.map((o) => {
+    if (o.order_id === orderId) {
+      return {
+        ...o,
+        status: action === "release" ? "released" : action === "refund" ? "refunded" : "held_in_escrow",
+        resolved_at: new Date().toISOString(),
+        resolved_by: "Zenith Developers (Admin)",
+      };
+    }
+    return o;
+  });
+  localStorage.setItem(ESCROW_ORDERS_KEY, JSON.stringify(updated));
+  addAdminLog(action === "release" ? "ESCROW_FORCE_RELEASED" : "ESCROW_REFUNDED", `Escrow Order ${orderId} marked as ${action === "release" ? "RELEASED to Freelancer" : "REFUNDED to Client"}`, orderId);
+  return { ok: true, orderId, action };
+}
+
