@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Layers, LocateFixed, ExternalLink, Sparkles, Navigation } from "lucide-react";
+import { Layers, LocateFixed, Sparkles, Navigation } from "lucide-react";
 
 // Google Maps Raster Tiles & Fallbacks
 const MAP_LAYERS = {
@@ -346,21 +346,10 @@ export default function GoogleMap({
         <button
           onClick={handleRecenter}
           data-testid="map-recenter-btn"
-          className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-white text-ink shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
+          className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-white text-ink shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
           title="Center on My Location"
         >
-          <LocateFixed size={18} className={userLocation ? "text-brand" : "text-ink"} />
-        </button>
-
-        {/* External Google Maps Button */}
-        <button
-          onClick={handleOpenGoogleMaps}
-          data-testid="map-open-external-btn"
-          className="flex h-9 items-center gap-1 border-2 border-ink bg-white px-2.5 text-xs font-black text-ink shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
-          title="Open in Google Maps Application"
-        >
-          <ExternalLink size={13} className="text-brand" />
-          <span className="hidden sm:inline">Google Maps</span>
+          <LocateFixed size={16} className={userLocation ? "text-brand" : "text-ink"} />
         </button>
       </div>
 

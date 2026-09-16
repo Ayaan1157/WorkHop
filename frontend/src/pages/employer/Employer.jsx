@@ -33,6 +33,7 @@ export default function Employer() {
   const [boostModalOpen, setBoostModalOpen] = useState(false);
   const [coupon, setCoupon] = useState(null);
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
+  const [showMap, setShowMap] = useState(true);
   const { startPayment } = useRazorpay();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
 
@@ -139,33 +140,59 @@ export default function Employer() {
         }
       />
 
-      {/* MAP VIEW */}
-      <div className="relative h-[180px] border-b-2 border-ink" data-testid="employer-map">
-        <GoogleMap pins={mapPins} zoom={12} userLocation={coords} height="100%" />
-        <button
-          data-testid="leads-near-me-btn"
-          onClick={requestLocation}
-          className={`absolute bottom-3 left-3 z-[400] flex items-center gap-1.5 border-2 border-ink px-3 py-1.5 transition active:translate-y-0.5 ${
-            coords ? "bg-brand" : "bg-ink"
-          }`}
-        >
-          {locStatus === "locating" ? (
-            <Loader2 size={13} className="animate-spin text-white" />
-          ) : (
-            <LocateFixed size={13} className="text-white" />
+      {/* PROPORTIONAL & AESTHETIC RADAR MAP CARD */}
+      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 pt-3">
+        <div className="border-2 border-ink bg-white dark:bg-[#121212] shadow-[3px_3px_0px_#121212]">
+          {/* Header Bar */}
+          <div className="flex items-center justify-between border-b-2 border-ink bg-sand/70 dark:bg-[#1a1a1a] px-3.5 py-2">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-brand animate-ping" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-ink dark:text-white">
+                Live Talent Radar · {leads.length} Verified Pros Nearby
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                data-testid="toggle-employer-map-btn"
+                onClick={() => setShowMap(!showMap)}
+                className="border border-ink bg-white dark:bg-[#222] px-2 py-0.5 text-[10px] font-black text-ink dark:text-white hover:bg-sand transition"
+              >
+                {showMap ? "Hide Map" : "Show Map"}
+              </button>
+              <button
+                data-testid="map-expand-btn"
+                onClick={() => nav("/map")}
+                className="flex items-center gap-1 border border-ink bg-brand px-2 py-0.5 text-[10px] font-black text-white hover:opacity-90 shadow-[1px_1px_0px_#121212]"
+              >
+                <span>Interactive Radar</span>
+                <Expand size={11} />
+              </button>
+            </div>
+          </div>
+
+          {/* Collapsible Map Body with proper proportions */}
+          {showMap && (
+            <div className="relative h-[250px] sm:h-[280px] w-full bg-sand/20" data-testid="employer-map">
+              <GoogleMap pins={mapPins} zoom={13} userLocation={coords} height="100%" radiusKm={2} />
+              <button
+                data-testid="leads-near-me-btn"
+                onClick={requestLocation}
+                className={`absolute bottom-3 left-3 z-[400] flex items-center gap-1.5 border-2 border-ink px-2.5 py-1 text-xs font-black shadow-[2px_2px_0px_#121212] transition active:translate-y-0.5 ${
+                  coords ? "bg-brand text-white" : "bg-white text-ink hover:bg-sand"
+                }`}
+              >
+                {locStatus === "locating" ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <LocateFixed size={13} className={coords ? "text-white" : "text-brand"} />
+                )}
+                <span className="text-[10px] font-black tracking-wider">
+                  {coords ? "GPS ACTIVE" : "NEAR ME"}
+                </span>
+              </button>
+            </div>
           )}
-          <span className="text-[10px] font-black tracking-wider text-white">
-            {coords ? "NEAR YOU" : "NEAR ME"}
-          </span>
-        </button>
-        <button
-          data-testid="map-expand-btn"
-          onClick={() => nav("/map")}
-          className="absolute bottom-3 right-3 z-[400] flex items-center gap-1.5 border-2 border-ink bg-ink px-3 py-1.5 transition active:translate-y-0.5"
-        >
-          <Expand size={13} className="text-white" />
-          <span className="text-[10px] font-black tracking-wider text-white">FULL MAP</span>
-        </button>
+        </div>
       </div>
 
       {/* POST JOB CTA BAR */}
