@@ -176,6 +176,18 @@ function mockRouter(path, method = "GET", body = null) {
   }
 
   // 5. Auth
+  if (cleanPath === "/auth/mobile/request-otp") {
+    const phone = body?.phone || "9876543210";
+    const devOtp = String(Math.floor(100000 + Math.random() * 900000));
+    return { message: "Mobile OTP sent via SMS / WhatsApp", dev_otp: devOtp, phone };
+  }
+  if (cleanPath === "/auth/mobile/verify-otp") {
+    const email = body?.email || "user@example.com";
+    const session = createMockSession(email, { ...(body || {}), phone_verified: true });
+    setToken(session.session_token);
+    saveStoredUser(session.user);
+    return session;
+  }
   if (cleanPath === "/auth/email/request-otp") {
     return { message: "Code sent", dev_otp: "123456" };
   }

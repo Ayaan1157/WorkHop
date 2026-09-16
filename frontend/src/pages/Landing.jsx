@@ -54,14 +54,25 @@ export default function Landing() {
   const [googleConnected, setGoogleConnected] = useState(false);
 
   const [otpInput, setOtpInput] = useState("");
-  const [otpStage, setOtpStage] = useState("idle");
+  const [otpStage, setOtpStage] = useState("idle"); // "idle" | "sent"
+  const [otpType, setOtpType] = useState("mobile"); // "mobile" | "email"
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState(null);
   const [devOtp, setDevOtp] = useState(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Recaptcha Security State
   const [captchaToken, setCaptchaToken] = useState(null);
   const [captchaReset, setCaptchaReset] = useState(0);
+
+  // Resend Countdown Timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     if (loading || user) return;
@@ -98,6 +109,7 @@ export default function Landing() {
   const phoneDigits = phoneInput.replace(/\D/g, "");
   const isPhoneValid = phoneDigits.length === 10;
 
+  // Request Email OTP (Sign In via Email OTP)
   const requestOtp = async () => {
     const email = emailInput.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
@@ -109,8 +121,10 @@ export default function Landing() {
     try {
       const data = await apiPost("/auth/email/request-otp", { email });
       setDevOtp(data?.dev_otp || "123456");
+      setOtpType("email");
       setOtpStage("sent");
       setOtpInput("");
+      setResendCooldown(30);
     } catch {
       setOtpError("Network error. Try again.");
     } finally {
@@ -118,46 +132,76 @@ export default function Landing() {
     }
   };
 
+  // Resend OTP (Mobile SMS or Email)
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      if (otpType === "mobile") {
+        const res = await apiPost("/auth/mobile/request-otp", { phone: phoneDigits, email: emailInput.trim() });
+        setDevOtp(res?.dev_otp || String(Math.floor(100000 + Math.random() * 900000)));
+        setResendCooldown(30);
+      } else {
+        await requestOtp();
+      }
+    } catch {
+      setOtpError("Could not resend OTP code.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Verify OTP & Complete Auth
   const verifyOtp = async () => {
     if (otpInput.trim().length !== 6) {
-      setOtpError("Enter the 6-digit code.");
+      setOtpError("Enter the 6-digit verification code.");
       return;
     }
     setOtpLoading(true);
     setOtpError(null);
     const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
+    const cleanEmail = emailInput.trim().toLowerCase();
+    const cleanName = sanitizeInput(nameInput);
+    const cleanSkill = sanitizeInput(skillInput);
+    const cleanCompany = sanitizeInput(companyInput);
+
     try {
       const payload = {
-        email: emailInput.trim().toLowerCase(),
+        email: cleanEmail,
+        password: passwordInput,
         otp: otpInput.trim(),
         role: target,
-        name: nameInput.trim() || undefined,
+        name: cleanName || undefined,
         phone: phoneDigits || undefined,
+        phone_verified: true,
         area: areaInput,
-        company_name: target === "employer" ? (companyInput.trim() || "Hyperlocal Co.") : undefined,
-        skill: target !== "employer" ? (skillInput.trim() || "UI/UX & Brand Designer") : undefined,
+        company_name: target === "employer" ? (cleanCompany || "Hyperlocal Co.") : undefined,
+        skill: target !== "employer" ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
       };
 
-      const data = await apiPost("/auth/email/verify-otp", payload);
-      if (data?.session_token && data?.user) {
-        await adoptSession(data.session_token, data.user);
-        completeSessionAndRedirect(target);
+      if (otpType === "mobile") {
+        const data = await apiPost("/auth/mobile/verify-otp", payload);
+        resetRateLimit(`landing_signup_${cleanEmail}`);
+        if (data?.session_token && data?.user) {
+          await adoptSession(data.session_token, data.user);
+          completeSessionAndRedirect(target, data.user);
+        } else {
+          const session = await signupWithDetails(payload);
+          completeSessionAndRedirect(target, session?.user);
+        }
       } else {
-        await signupWithDetails(payload);
-        completeSessionAndRedirect(target);
+        const data = await apiPost("/auth/email/verify-otp", payload);
+        if (data?.session_token && data?.user) {
+          await adoptSession(data.session_token, data.user);
+          completeSessionAndRedirect(target, data.user);
+        } else {
+          const session = await signupWithDetails(payload);
+          completeSessionAndRedirect(target, session?.user);
+        }
       }
     } catch {
-      const payload = {
-        email: emailInput.trim().toLowerCase(),
-        role: target,
-        name: nameInput.trim() || undefined,
-        phone: phoneDigits || undefined,
-        area: areaInput,
-        company_name: target === "employer" ? (companyInput.trim() || "Hyperlocal Co.") : undefined,
-        skill: target !== "employer" ? (skillInput.trim() || "UI/UX & Brand Designer") : undefined,
-      };
-      await signupWithDetails(payload);
-      completeSessionAndRedirect(target);
+      setOtpError("Invalid verification code. Please check and try again.");
     } finally {
       setOtpLoading(false);
     }
@@ -255,24 +299,20 @@ export default function Landing() {
     setOtpLoading(true);
     setOtpError(null);
     try {
-      const payload = {
-        email: cleanEmail,
-        password: passwordInput,
-        role: target,
-        name: cleanName,
+      // Safety Measure: Request Mobile Phone OTP
+      const res = await apiPost("/auth/mobile/request-otp", {
         phone: phoneDigits,
-        area: areaInput,
-        company_name: target === "employer" ? (cleanCompany || "Hyperlocal Co.") : undefined,
-        skill: target !== "employer" ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
-      };
-
-      const session = await signupWithDetails(payload);
-      resetRateLimit(`landing_signup_${cleanEmail}`);
-      completeSessionAndRedirect(target, session?.user);
+        email: cleanEmail,
+      });
+      setDevOtp(res?.dev_otp || String(Math.floor(100000 + Math.random() * 900000)));
+      setOtpType("mobile");
+      setOtpStage("sent");
+      setOtpInput("");
+      setResendCooldown(30);
     } catch (e) {
       setCaptchaReset((prev) => prev + 1);
       setCaptchaToken(null);
-      setOtpError(e?.message || "Could not complete registration.");
+      setOtpError(e?.message || "Could not send mobile verification code.");
     } finally {
       setOtpLoading(false);
     }
@@ -634,42 +674,74 @@ export default function Landing() {
                   </div>
                 </div>
 
-                {/* OTP Stage */}
+                {/* Dedicated OTP Verification Card */}
                 {otpStage === "sent" ? (
-                  <div data-testid="otp-block" className="border-2 border-ink bg-sand p-4 shadow-[2px_2px_0px_#121212]">
-                    <p className="text-xs text-ink font-bold">
-                      We emailed a 6-digit code to <span className="font-black text-brand">{emailInput.trim()}</span>
-                    </p>
+                  <div data-testid="otp-block" className="border-2 border-ink bg-sand p-4 shadow-[4px_4px_0px_#121212] animate-in fade-in">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-brand text-white text-sm font-black shrink-0">
+                        {otpType === "mobile" ? "📱" : "✉️"}
+                      </span>
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wider text-ink">
+                          {otpType === "mobile" ? "Mobile Phone OTP Verification" : "Email Verification Code"}
+                        </p>
+                        <p className="text-[11px] text-inkmuted font-semibold">
+                          {otpType === "mobile" ? (
+                            <>We sent a 6-digit code to <strong className="text-brand">🇮🇳 +91 {phoneDigits}</strong></>
+                          ) : (
+                            <>We sent a 6-digit code to <strong className="text-brand">{emailInput.trim()}</strong></>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
                     {devOtp && (
-                      <p data-testid="dev-otp-text" className="mt-2 border-2 border-ink bg-[#FFF3C4] p-2 text-xs font-black text-ink">
-                        TEST MODE — your verification code: {devOtp}
-                      </p>
+                      <div data-testid="dev-otp-text" className="mt-3 flex items-center justify-between border-2 border-ink bg-[#FFF3C4] px-3 py-2 text-xs font-black text-ink">
+                        <span>TEST MODE — Your 6-digit {otpType === "mobile" ? "Mobile" : "Email"} OTP:</span>
+                        <span className="font-mono text-sm tracking-widest text-brand bg-white px-2 py-0.5 border border-ink">
+                          {devOtp}
+                        </span>
+                      </div>
                     )}
-                    <div className="mt-2 flex h-12 items-center gap-2 border-2 border-ink bg-white px-3">
-                      <KeyRound size={16} className="text-inkmuted" />
+
+                    <div className="mt-3 flex h-12 items-center gap-2 border-2 border-ink bg-white px-3 shadow-[2px_2px_0px_#121212]">
+                      <KeyRound size={18} className="text-inkmuted shrink-0" />
                       <input
                         data-testid="login-otp-input"
                         value={otpInput}
                         onChange={(e) => { setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6)); setOtpError(null); }}
-                        placeholder="6-digit code"
-                        className="wh-input flex-1 bg-transparent text-base font-black tracking-[0.4em] text-ink placeholder:tracking-normal placeholder:font-normal placeholder:text-inkmuted"
+                        placeholder="Enter 6-digit code"
+                        className="wh-input flex-1 bg-transparent text-lg font-black tracking-[0.35em] text-ink placeholder:tracking-normal placeholder:font-bold placeholder:text-sm placeholder:text-inkmuted/50"
+                        autoFocus
                       />
                     </div>
+
                     <button
                       data-testid="login-otp-verify-btn"
                       onClick={verifyOtp}
-                      disabled={otpLoading}
-                      className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-3.5 text-base font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60"
+                      disabled={otpLoading || otpInput.trim().length !== 6}
+                      className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-sm font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60"
                     >
-                      {otpLoading ? <Loader2 size={18} className="animate-spin" /> : "Verify & Complete"}
+                      {otpLoading ? <Loader2 size={18} className="animate-spin" /> : "VERIFY OTP & ACTIVATE ACCOUNT"}
                     </button>
-                    <button
-                      data-testid="login-otp-change-email"
-                      onClick={() => { setOtpStage("idle"); setOtpError(null); setDevOtp(null); }}
-                      className="mt-2 text-xs font-bold text-brand hover:underline"
-                    >
-                      ← Use a different email / resend
-                    </button>
+
+                    <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2.5 text-xs">
+                      <button
+                        data-testid="login-otp-change-email"
+                        onClick={() => { setOtpStage("idle"); setOtpError(null); }}
+                        className="font-bold text-brand hover:underline"
+                      >
+                        ← Edit details / mobile number
+                      </button>
+                      <button
+                        type="button"
+                        disabled={resendCooldown > 0 || otpLoading}
+                        onClick={handleResendOtp}
+                        className="font-bold text-ink hover:text-brand hover:underline disabled:opacity-50"
+                      >
+                        {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend OTP"}
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2.5 mt-2">

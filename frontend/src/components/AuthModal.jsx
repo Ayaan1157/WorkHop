@@ -38,12 +38,23 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   // Google Pre-fill banner
   const [googleConnected, setGoogleConnected] = useState(false);
 
-  // OTP Stage
+  // OTP Stage & Type ("mobile" | "email")
   const [otpStage, setOtpStage] = useState("idle"); // "idle" | "sent"
+  const [otpType, setOtpType] = useState("mobile"); // "mobile" | "email"
   const [otpInput, setOtpInput] = useState("");
   const [devOtp, setDevOtp] = useState(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Resend Countdown Timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     if (initialRole) setRole(initialRole);
@@ -101,7 +112,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     handleSignupSubmit();
   };
 
-  // Request Email OTP
+  // Request Email OTP (Sign In via OTP)
   const handleRequestOtp = async () => {
     const cleanEmail = email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
@@ -114,16 +125,38 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     try {
       const res = await apiPost("/auth/email/request-otp", { email: cleanEmail });
       setDevOtp(res?.dev_otp || "123456");
+      setOtpType("email");
       setOtpStage("sent");
       setOtpInput("");
+      setResendCooldown(30);
     } catch (e) {
-      setError(e?.message || "Could not send verification code.");
+      setError(e?.message || "Could not send email verification code.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Verify OTP & Complete Auth
+  // Resend OTP (Mobile SMS or Email)
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    setError(null);
+    try {
+      if (otpType === "mobile") {
+        const res = await apiPost("/auth/mobile/request-otp", { phone: phoneDigits, email: email.trim() });
+        setDevOtp(res?.dev_otp || String(Math.floor(100000 + Math.random() * 900000)));
+        setResendCooldown(30);
+      } else {
+        await handleRequestOtp();
+      }
+    } catch (e) {
+      setError(e?.message || "Could not resend OTP code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Verify OTP & Complete Auth (Mobile or Email)
   const handleVerifyOtp = async () => {
     if (otpInput.trim().length !== 6) {
       setError("Please enter the 6-digit verification code.");
@@ -133,38 +166,46 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setError(null);
 
     const cleanEmail = email.trim().toLowerCase();
+    const cleanName = sanitizeInput(fullName);
+    const cleanSkill = sanitizeInput(skill);
+    const cleanCompany = sanitizeInput(companyName);
+
     try {
       const payload = {
         email: cleanEmail,
+        password: password,
         otp: otpInput.trim(),
         role: role,
-        name: fullName.trim() || undefined,
+        name: cleanName || undefined,
         phone: phoneDigits || undefined,
+        phone_verified: true,
         area: area,
-        company_name: isEmployer ? (companyName.trim() || "Hyperlocal Co.") : undefined,
-        skill: !isEmployer ? (skill.trim() || "UI/UX & Brand Designer") : undefined,
+        company_name: isEmployer ? (cleanCompany || "Hyperlocal Co.") : undefined,
+        skill: !isEmployer ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
       };
 
-      const data = await apiPost("/auth/email/verify-otp", payload);
-      if (data?.session_token && data?.user) {
-        await adoptSession(data.session_token, data.user);
-        completeAndRedirect(data.user.role || role, data.user);
+      if (otpType === "mobile") {
+        const data = await apiPost("/auth/mobile/verify-otp", payload);
+        resetRateLimit(`signup_${cleanEmail}`);
+        if (data?.session_token && data?.user) {
+          await adoptSession(data.session_token, data.user);
+          completeAndRedirect(data.user.role || role, data.user);
+        } else {
+          const session = await signupWithDetails(payload);
+          completeAndRedirect(session?.user?.role || role, session?.user);
+        }
       } else {
-        const session = await signupWithDetails(payload);
-        completeAndRedirect(session?.user?.role || role, session?.user);
+        const data = await apiPost("/auth/email/verify-otp", payload);
+        if (data?.session_token && data?.user) {
+          await adoptSession(data.session_token, data.user);
+          completeAndRedirect(data.user.role || role, data.user);
+        } else {
+          const session = await signupWithDetails(payload);
+          completeAndRedirect(session?.user?.role || role, session?.user);
+        }
       }
-    } catch {
-      const payload = {
-        email: cleanEmail,
-        role: role,
-        name: fullName.trim() || undefined,
-        phone: phoneDigits || undefined,
-        area: area,
-        company_name: isEmployer ? (companyName.trim() || "Hyperlocal Co.") : undefined,
-        skill: !isEmployer ? (skill.trim() || "UI/UX & Brand Designer") : undefined,
-      };
-      const session = await signupWithDetails(payload);
-      completeAndRedirect(session?.user?.role || role, session?.user);
+    } catch (e) {
+      setError(e?.message || "Invalid verification code. Please check and try again.");
     } finally {
       setLoading(false);
     }
@@ -259,24 +300,20 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setLoading(true);
     setError(null);
     try {
-      const payload = {
-        email: cleanEmail,
-        password: password,
-        role: role,
-        name: cleanName,
+      // Safety Measure: Request 6-Digit Mobile SMS / WhatsApp OTP
+      const res = await apiPost("/auth/mobile/request-otp", {
         phone: phoneDigits,
-        area: area,
-        company_name: isEmployer ? (cleanCompany || "Hyperlocal Co.") : undefined,
-        skill: !isEmployer ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
-      };
-
-      const session = await signupWithDetails(payload);
-      resetRateLimit(`signup_${cleanEmail}`);
-      completeAndRedirect(role, session?.user);
+        email: cleanEmail,
+      });
+      setDevOtp(res?.dev_otp || String(Math.floor(100000 + Math.random() * 900000)));
+      setOtpType("mobile");
+      setOtpStage("sent");
+      setOtpInput("");
+      setResendCooldown(30);
     } catch (e) {
       setCaptchaReset((prev) => prev + 1);
       setCaptchaToken(null);
-      setError(e?.message || "Sign up failed. Please check your information.");
+      setError(e?.message || "Could not send mobile verification code.");
     } finally {
       setLoading(false);
     }
@@ -629,22 +666,41 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
               </div>
             </div>
 
-            {/* OTP Verification Stage if triggered */}
+            {/* Dedicated OTP Verification Stage */}
             {otpStage === "sent" && (
-              <div data-testid="auth-otp-block" className="border-2 border-ink bg-sand p-4">
-                <p className="text-xs text-ink font-bold">
-                  Enter the 6-digit code sent to <span className="font-black text-brand">{email.trim()}</span>
-                </p>
+              <div data-testid="auth-otp-block" className="border-2 border-ink bg-sand p-4 shadow-[4px_4px_0px_#121212] animate-in fade-in">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-brand text-white text-sm font-black shrink-0">
+                    {otpType === "mobile" ? "📱" : "✉️"}
+                  </span>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-ink">
+                      {otpType === "mobile" ? "Mobile Phone OTP Verification" : "Email Verification Code"}
+                    </p>
+                    <p className="text-[11px] text-inkmuted font-semibold">
+                      {otpType === "mobile" ? (
+                        <>We sent a 6-digit code to <strong className="text-brand">🇮🇳 +91 {phoneDigits}</strong></>
+                      ) : (
+                        <>We sent a 6-digit code to <strong className="text-brand">{email.trim()}</strong></>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
                 {devOtp && (
-                  <p
+                  <div
                     data-testid="auth-dev-otp"
-                    className="mt-1.5 border-2 border-ink bg-[#FFF3C4] p-1.5 text-xs font-black text-ink"
+                    className="mt-3 flex items-center justify-between border-2 border-ink bg-[#FFF3C4] px-3 py-2 text-xs font-black text-ink"
                   >
-                    TEST MODE — your verification code: {devOtp}
-                  </p>
+                    <span>TEST MODE — Your 6-digit {otpType === "mobile" ? "Mobile" : "Email"} OTP:</span>
+                    <span className="font-mono text-sm tracking-widest text-brand bg-white px-2 py-0.5 border border-ink">
+                      {devOtp}
+                    </span>
+                  </div>
                 )}
-                <div className="mt-2 flex items-center border-2 border-ink bg-white px-3 py-2">
-                  <KeyRound size={16} className="text-inkmuted mr-2" />
+
+                <div className="mt-3 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                  <KeyRound size={18} className="text-inkmuted mr-2.5 shrink-0" />
                   <input
                     data-testid="auth-otp-input"
                     value={otpInput}
@@ -652,29 +708,42 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                       setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6));
                       setError(null);
                     }}
-                    placeholder="6-digit code"
-                    className="w-full bg-transparent text-base font-black tracking-[0.4em] text-ink focus:outline-none"
+                    placeholder="Enter 6-digit code"
+                    className="w-full bg-transparent text-lg font-black tracking-[0.35em] text-ink focus:outline-none placeholder:tracking-normal placeholder:font-bold placeholder:text-sm placeholder:text-inkmuted/50"
+                    autoFocus
                   />
                 </div>
+
                 <button
                   type="button"
                   data-testid="auth-verify-otp-btn"
-                  disabled={loading}
+                  disabled={loading || otpInput.trim().length !== 6}
                   onClick={handleVerifyOtp}
-                  className="mt-2.5 flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-3 text-sm font-black text-white shadow-[2px_2px_0px_#121212] hover:bg-brand transition"
+                  className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-sm font-black text-white shadow-[2px_2px_0px_#121212] hover:bg-ink disabled:opacity-60 transition"
                 >
-                  {loading ? <Loader2 size={16} className="animate-spin" /> : "Verify & Complete"}
+                  {loading ? <Loader2 size={18} className="animate-spin" /> : "VERIFY OTP & ACTIVATE ACCOUNT"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOtpStage("idle");
-                    setError(null);
-                  }}
-                  className="mt-2 text-[11px] font-bold text-brand hover:underline"
-                >
-                  ← Change email / resend
-                </button>
+
+                <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpStage("idle");
+                      setError(null);
+                    }}
+                    className="font-bold text-brand hover:underline"
+                  >
+                    ← Edit details / mobile number
+                  </button>
+                  <button
+                    type="button"
+                    disabled={resendCooldown > 0 || loading}
+                    onClick={handleResendOtp}
+                    className="font-bold text-ink hover:text-brand hover:underline disabled:opacity-50"
+                  >
+                    {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend OTP"}
+                  </button>
+                </div>
               </div>
             )}
 
