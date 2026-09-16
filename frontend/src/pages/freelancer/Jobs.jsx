@@ -302,16 +302,16 @@ export default function Jobs() {
       </div>
 
       {/* Search & Sort & Filter Bar */}
-      <div className="border-b-2 border-ink bg-white">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center gap-3 px-4 py-3 sm:px-8">
-          <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-sand px-3 min-w-[240px] shadow-[1.5px_1.5px_0px_#121212]">
+      <div className="border-b-2 border-ink bg-white dark:bg-[#121212]">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col sm:flex-row items-stretch sm:items-center gap-2.5 px-3 py-2.5 sm:px-8">
+          <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-sand dark:bg-[#1f1f1f] px-3 shadow-[1.5px_1.5px_0px_#121212]">
             <Search size={16} className="text-inkmuted" />
             <input
               data-testid="jobs-search-input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search gigs — UI design, reels, react, flutter…"
-              className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink placeholder:text-inkmuted"
+              className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink dark:text-white placeholder:text-inkmuted"
             />
             {search && (
               <button data-testid="search-clear-btn" onClick={() => setSearch("")} className="flex h-5 w-5 items-center justify-center bg-ink">
@@ -320,36 +320,38 @@ export default function Jobs() {
             )}
           </div>
 
-          {/* Sorting Dropdown */}
-          <div className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2 shadow-[1.5px_1.5px_0px_#121212]">
-            <ArrowUpDown size={14} className="text-inkmuted" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-transparent text-xs font-black text-ink outline-none cursor-pointer"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
+          <div className="flex items-center gap-2">
+            {/* Sorting Dropdown */}
+            <div className="flex-1 sm:flex-none flex items-center justify-between gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 py-2 shadow-[1.5px_1.5px_0px_#121212]">
+              <ArrowUpDown size={14} className="text-inkmuted" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-transparent text-xs font-black text-ink dark:text-white outline-none cursor-pointer"
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value} className="text-black">{o.label}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Filter Toggle Button */}
-          <button
-            data-testid="jobs-filter-btn"
-            onClick={() => setFiltersOpen((v) => !v)}
-            className={`flex h-11 items-center gap-2 border-2 border-ink px-4 transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
-              activeFilterCount > 0 ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-sand"
-            }`}
-          >
-            <SlidersHorizontal size={16} />
-            <span className="text-xs font-black tracking-wider">FILTERS</span>
-            {activeFilterCount > 0 && (
-              <span className="flex h-4 w-4 items-center justify-center bg-brand text-[9px] font-black text-white">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+            {/* Filter Toggle Button */}
+            <button
+              data-testid="jobs-filter-btn"
+              onClick={() => setFiltersOpen((v) => !v)}
+              className={`flex h-10 sm:h-11 items-center gap-2 border-2 border-ink px-3 sm:px-4 transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
+                activeFilterCount > 0 ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand"
+              }`}
+            >
+              <SlidersHorizontal size={15} />
+              <span className="text-xs font-black tracking-wider">FILTERS</span>
+              {activeFilterCount > 0 && (
+                <span className="flex h-4 w-4 items-center justify-center bg-brand text-[9px] font-black text-white">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 

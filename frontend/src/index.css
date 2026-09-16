@@ -34,13 +34,33 @@
     transition: background-color 0.2s ease, color 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+html {
+    overflow-x: hidden;
+    width: 100%;
+    -webkit-text-size-adjust: 100%;
+}
+
 body {
     margin: 0;
+    width: 100%;
+    overflow-x: hidden;
     font-family: "Archivo", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
     background: var(--color-surface);
     color: var(--color-ink);
+}
+
+/* ═══════ Mobile Safe-Area & Touch Helpers ═══════ */
+.pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4.5rem);
+}
+
+.wh-touch-card {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* ═══════ Dark mode global overrides ═══════ */

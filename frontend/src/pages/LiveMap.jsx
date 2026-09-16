@@ -288,14 +288,14 @@ export default function LiveMap() {
       )}
 
       {/* DUAL ROLE EXPLORATION MODE SWITCHER (Hiring vs Freelancer) */}
-      <div className="border-b-2 border-ink bg-white dark:bg-[#121212] px-4 py-3 sm:px-8">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="border-b-2 border-ink bg-white dark:bg-[#121212] px-3 py-2.5 sm:px-8">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col sm:flex-row items-center justify-between gap-2.5">
           
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400 mr-1 hidden sm:inline">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+            <span className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400 hidden sm:inline">
               Map View Mode:
             </span>
-            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 w-full sm:w-auto">
               {/* Option 1: I'm Hiring (Show Freelancers) */}
               <button
                 data-testid="mode-employer-btn"
@@ -303,14 +303,14 @@ export default function LiveMap() {
                   setViewMode("employer");
                   setSelectedPinId(null);
                 }}
-                className={`flex items-center justify-center gap-2 border-2 border-ink px-4 py-2 text-xs font-black transition ${
+                className={`flex items-center justify-center gap-2 border-2 border-ink px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-black transition ${
                   viewMode === "employer"
                     ? "bg-brand text-white shadow-[2px_2px_0px_#121212] -translate-y-0.5"
                     : "bg-sand dark:bg-[#1f1f1f] text-ink dark:text-white hover:bg-stone/20"
                 }`}
               >
                 <span>🏢</span>
-                <span>I'M HIRING (SHOW FREELANCERS)</span>
+                <span>I'M HIRING (FREELANCERS)</span>
               </button>
 
               {/* Option 2: I'm a Freelancer (Show Open Gigs) */}
@@ -320,30 +320,30 @@ export default function LiveMap() {
                   setViewMode("freelancer");
                   setSelectedPinId(null);
                 }}
-                className={`flex items-center justify-center gap-2 border-2 border-ink px-4 py-2 text-xs font-black transition ${
+                className={`flex items-center justify-center gap-2 border-2 border-ink px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-black transition ${
                   viewMode === "freelancer"
                     ? "bg-[#059669] text-white shadow-[2px_2px_0px_#121212] -translate-y-0.5"
                     : "bg-sand dark:bg-[#1f1f1f] text-ink dark:text-white hover:bg-stone/20"
                 }`}
               >
                 <span>💼</span>
-                <span>I'M A FREELANCER (SHOW OPEN GIGS)</span>
+                <span>I'M A FREELANCER (GIGS)</span>
               </button>
             </div>
           </div>
 
           {/* Quick Context Pill */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
             <span
-              className={`border-2 border-ink px-3 py-1 text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#121212] ${
+              className={`w-full sm:w-auto text-center border-2 border-ink px-3 py-1 text-[10px] sm:text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#121212] ${
                 viewMode === "employer"
                   ? "bg-[#FFF3E9] text-brand dark:bg-[#251710] dark:text-[#FFA07A]"
                   : "bg-[#E6F4EA] text-[#059669] dark:bg-[#11291E] dark:text-[#34D399]"
               }`}
             >
               {viewMode === "employer"
-                ? `👤 Viewing ${filteredFreelancers.length} Freelancer Profiles`
-                : `💼 Viewing ${filteredJobs.length} Open Job Postings`}
+                ? `👤 ${filteredFreelancers.length} Freelancer Profiles Near You`
+                : `💼 ${filteredJobs.length} Open Job Postings Near You`}
             </span>
           </div>
 
@@ -352,60 +352,59 @@ export default function LiveMap() {
 
       {/* Hyperlocal Control Toolbar (Location + Radius + Search) */}
       <div className="border-b-2 border-ink bg-sand/60 dark:bg-[#181818]">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-8">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 px-3 py-2.5 sm:px-8">
           
-          {/* Location Area Picker */}
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-brand text-white shrink-0 shadow-[1.5px_1.5px_0px_#121212]">
-              <MapPin size={15} />
-            </span>
-            <div className="flex flex-col">
-              <span className="text-[9px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400">
-                Active Neighborhood
+          <div className="flex items-center justify-between sm:justify-start gap-3 flex-wrap">
+            {/* Location Area Picker */}
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-brand text-white shrink-0 shadow-[1.5px_1.5px_0px_#121212]">
+                <MapPin size={15} />
               </span>
-              <select
-                data-testid="map-area-select"
-                value={selectedArea}
-                onChange={(e) => handleAreaChange(e.target.value)}
-                className="cursor-pointer border-b-2 border-ink bg-transparent text-xs font-black text-ink dark:text-white outline-none"
-              >
-                {BENGALURU_AREAS.map((a) => (
-                  <option key={a.name} value={a.name} className="text-black">
-                    {a.name} ({a.zone})
-                  </option>
-                ))}
-              </select>
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400">
+                  Active Area
+                </span>
+                <select
+                  data-testid="map-area-select"
+                  value={selectedArea}
+                  onChange={(e) => handleAreaChange(e.target.value)}
+                  className="cursor-pointer border-b-2 border-ink bg-transparent text-xs font-black text-ink dark:text-white outline-none"
+                >
+                  {BENGALURU_AREAS.map((a) => (
+                    <option key={a.name} value={a.name} className="text-black">
+                      {a.name} ({a.zone})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Radius Selector Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+              {[
+                { km: 2, label: "2 km" },
+                { km: 5, label: "5 km" },
+                { km: 10, label: "10 km" },
+                { km: 25, label: "All BLR" },
+              ].map((r) => (
+                <button
+                  key={r.km}
+                  data-testid={`radius-pill-${r.km}`}
+                  onClick={() => setRadiusKm(r.km)}
+                  className={`border-2 border-ink px-2.5 py-1 text-[10px] sm:text-[11px] font-black whitespace-nowrap transition ${
+                    radiusKm === r.km
+                      ? "bg-brand text-white shadow-[1.5px_1.5px_0px_#121212]"
+                      : "bg-white dark:bg-[#222] text-ink dark:text-white hover:bg-stone/20"
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Radius Selector Pills */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-black uppercase text-inkmuted dark:text-stone-400 mr-1 hidden sm:inline">
-              Radar Radius:
-            </span>
-            {[
-              { km: 2, label: "2 km · Walking" },
-              { km: 5, label: "5 km · Nearby" },
-              { km: 10, label: "10 km · Zone" },
-              { km: 25, label: "All Bengaluru" },
-            ].map((r) => (
-              <button
-                key={r.km}
-                data-testid={`radius-pill-${r.km}`}
-                onClick={() => setRadiusKm(r.km)}
-                className={`border-2 border-ink px-2.5 py-1 text-[11px] font-black transition ${
-                  radiusKm === r.km
-                    ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
-                    : "bg-white dark:bg-[#222] text-ink dark:text-white hover:bg-stone/20"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-
           {/* Search Box */}
-          <div className="relative flex items-center min-w-[200px] sm:min-w-[240px]">
+          <div className="relative flex items-center w-full sm:w-auto min-w-[200px] sm:min-w-[240px]">
             <Search size={14} className="absolute left-2.5 text-inkmuted" />
             <input
               type="text"
@@ -424,19 +423,19 @@ export default function LiveMap() {
 
       {/* Category Chips Bar */}
       <div className="border-b-2 border-ink bg-white dark:bg-[#141414]">
-        <div className="mx-auto flex w-full max-w-[1600px] items-center gap-1.5 overflow-x-auto px-4 py-2 sm:px-8 text-[10px] font-black">
-          <span className="text-inkmuted dark:text-stone-400 mr-1 uppercase">Filter Category:</span>
+        <div className="mx-auto flex w-full max-w-[1600px] items-center gap-1.5 overflow-x-auto px-3 py-2 sm:px-8 text-[10px] font-black">
+          <span className="text-inkmuted dark:text-stone-400 mr-1 uppercase whitespace-nowrap hidden xs:inline">Filter:</span>
           {["all", "Creative", "Tech", "Marketing", "Video", "Writing"].map((cat) => (
             <button
               key={cat}
               onClick={() => setCatFilter(cat)}
-              className={`px-2.5 py-1 border-2 border-ink transition uppercase whitespace-nowrap ${
+              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 border-2 border-ink transition uppercase whitespace-nowrap ${
                 catFilter === cat
                   ? "bg-ink text-white dark:bg-white dark:text-ink font-black shadow-[1.5px_1.5px_0px_#E65A1E]"
                   : "bg-sand/60 dark:bg-[#222] text-ink dark:text-white hover:bg-sand"
               }`}
             >
-              {cat === "all" ? "ALL DISCIPLINES" : cat}
+              {cat === "all" ? "ALL" : cat}
             </button>
           ))}
         </div>

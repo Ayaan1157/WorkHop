@@ -211,17 +211,17 @@ export default function Employer() {
       </div>
 
       {/* SEARCH & FILTERS BAR */}
-      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 py-3">
+      <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-8 py-2.5 sm:py-3">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-white px-3 shadow-[1.5px_1.5px_0px_#121212]">
+            <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 shadow-[1.5px_1.5px_0px_#121212]">
               <Search size={16} className="text-inkmuted" />
               <input
                 data-testid="leads-search-input"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search pros — logo, shopify, gst, reels…"
-                className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink placeholder:text-inkmuted"
+                className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink dark:text-white placeholder:text-inkmuted"
               />
               {search && (
                 <button
@@ -236,8 +236,8 @@ export default function Employer() {
 
             <button
               onClick={() => setFiltersDrawerOpen(!filtersDrawerOpen)}
-              className={`flex h-11 items-center gap-1.5 border-2 border-ink px-4 text-xs font-black shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5 ${
-                filtersDrawerOpen || maxDistance || minRating ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+              className={`flex h-11 items-center gap-1.5 border-2 border-ink px-3 sm:px-4 text-xs font-black shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5 ${
+                filtersDrawerOpen || maxDistance || minRating ? "bg-ink text-white" : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand"
               }`}
             >
               <SlidersHorizontal size={15} />
@@ -246,21 +246,21 @@ export default function Employer() {
             </button>
           </div>
 
-          {/* TABS: ALL vs SAVED */}
+          {/* TABS: ALL vs SAVED & SORT */}
           <div className="flex items-center justify-between gap-2 border-t border-ink/10 pt-2 flex-wrap">
             <div className="flex gap-2">
               <button
                 onClick={() => setOnlySaved(false)}
-                className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black transition ${
-                  !onlySaved ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-sand"
+                className={`border-2 border-ink px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-black transition ${
+                  !onlySaved ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white dark:bg-[#222] text-ink dark:text-white hover:bg-sand"
                 }`}
               >
                 ALL PROS ({distFiltered.length})
               </button>
               <button
                 onClick={() => setOnlySaved(true)}
-                className={`flex items-center gap-1.5 border-2 border-ink px-3 py-1.5 text-[11px] font-black transition ${
-                  onlySaved ? "bg-brand text-white" : "bg-white text-ink hover:bg-sand"
+                className={`flex items-center gap-1.5 border-2 border-ink px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-black transition ${
+                  onlySaved ? "bg-brand text-white" : "bg-white dark:bg-[#222] text-ink dark:text-white hover:bg-sand"
                 }`}
               >
                 <Heart size={12} fill={onlySaved ? "white" : "none"} />
@@ -269,17 +269,17 @@ export default function Employer() {
             </div>
 
             {/* SORT DROPDOWN */}
-            <div className="flex items-center gap-1 border-2 border-ink bg-white px-3 py-1.5 shadow-[1px_1px_0px_#121212]">
+            <div className="flex items-center gap-1 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-2.5 sm:px-3 py-1.5 shadow-[1px_1px_0px_#121212]">
               <ArrowUpDown size={12} className="text-inkmuted" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-transparent text-[11px] font-black text-ink outline-none cursor-pointer"
+                className="bg-transparent text-[10px] sm:text-[11px] font-black text-ink dark:text-white outline-none cursor-pointer"
               >
-                <option value="distance">Nearest First</option>
-                <option value="rating">Top Rated</option>
-                <option value="jobs">Most Completed</option>
-                <option value="rate">Rate: Low to High</option>
+                <option value="distance" className="text-black">Nearest First</option>
+                <option value="rating" className="text-black">Top Rated</option>
+                <option value="jobs" className="text-black">Most Completed</option>
+                <option value="rate" className="text-black">Rate: Low to High</option>
               </select>
             </div>
           </div>

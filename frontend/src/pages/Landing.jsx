@@ -1036,79 +1036,79 @@ export default function Landing() {
       </header>
 
       {/* Hero Section (Edge-to-Edge) */}
-      <section className="w-full border-b-2 border-ink bg-white px-6 py-12 sm:px-10 lg:px-16 xl:px-20">
+      <section className="w-full border-b-2 border-ink bg-white dark:bg-[#121212] px-4 py-8 sm:px-10 lg:px-16 xl:px-20">
         
         {/* Quick Direct Workspace Shortcut Bar if already authenticated */}
         {user && (
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-2 border-ink bg-[#FFF3E9] p-4 shadow-[4px_4px_0px_#121212]">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-brand text-white">
-                <Sparkles size={20} />
+          <div className="mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-[#FFF3E9] dark:bg-[#251710] p-3.5 sm:p-4 shadow-[3px_3px_0px_#121212]">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center border-2 border-ink bg-brand text-white">
+                <Sparkles size={18} />
               </span>
               <div>
-                <p className="text-sm font-black text-ink">Welcome back, {user.name || "Member"}!</p>
-                <p className="text-[11px] text-inkmuted">Select your workspace to view experts or apply to gigs</p>
+                <p className="text-xs sm:text-sm font-black text-ink dark:text-white">Welcome back, {user.name || "Member"}!</p>
+                <p className="text-[10px] sm:text-[11px] text-inkmuted dark:text-stone-400">Select your workspace to view experts or apply to gigs</p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
                 data-testid="quick-employer-btn"
                 onClick={() => nav("/employer")}
-                className="flex items-center gap-1.5 border-2 border-ink bg-ink px-4 py-2.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-ink bg-ink text-white px-3.5 py-2 text-xs font-black shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
               >
                 <Users size={14} />
-                <span>🏢 EMPLOYER SITE</span>
+                <span>🏢 EMPLOYER</span>
               </button>
               <button
                 data-testid="quick-freelancer-btn"
                 onClick={() => nav("/freelancer/jobs")}
-                className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-ink bg-brand text-white px-3.5 py-2 text-xs font-black shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
               >
                 <Briefcase size={14} />
-                <span>💼 EMPLOYEE SITE</span>
+                <span>💼 FREELANCER</span>
               </button>
             </div>
           </div>
         )}
 
         <div className="max-w-4xl">
-          <div className="inline-flex items-center gap-2 border-2 border-ink bg-sand px-3.5 py-1.5 text-xs font-black tracking-wider">
-            <span className="h-2.5 w-2.5 rounded-full bg-ok animate-pulse" />
-            <span>YOUR NEXT LOCAL GIG, ONE MINUTE AWAY · BENGALURU LIVE</span>
+          <div className="inline-flex items-center gap-2 border-2 border-ink bg-sand dark:bg-[#222] px-3 py-1 text-[10px] sm:text-xs font-black tracking-wider">
+            <span className="h-2 w-2 rounded-full bg-ok animate-pulse shrink-0" />
+            <span className="truncate">YOUR NEXT LOCAL GIG, ONE MINUTE AWAY · BENGALURU</span>
           </div>
-          <h1 className="mt-5 text-5xl font-black leading-[1.02] tracking-[-0.03em] text-ink sm:text-7xl lg:text-8xl">
+          <h1 className="mt-4 text-3xl xs:text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.06] tracking-tight text-ink dark:text-white">
             Pick a side.<br />Get to work.
           </h1>
-          <div className="mt-4 h-2 w-28 bg-brand" />
-          <p className="mt-6 max-w-2xl text-base leading-7 text-inkmuted sm:text-xl">
-            <span className="font-extrabold text-ink">Your next local gig, one minute away.</span> Connect with top-rated, portfolio-verified professionals within 5km. Direct chats, instant hires.
+          <div className="mt-3 h-1.5 w-20 sm:w-28 bg-brand" />
+          <p className="mt-4 max-w-2xl text-sm sm:text-lg leading-relaxed text-inkmuted dark:text-stone-300">
+            <span className="font-extrabold text-ink dark:text-white">Your next local gig, one minute away.</span> Connect with top-rated, portfolio-verified professionals within 5km. Direct chats, instant hires.
           </p>
         </div>
 
         {/* Dual Action Cards Stretching Full Width */}
-        <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2">
+        <div className="mt-8 sm:mt-12 grid grid-cols-1 gap-5 sm:gap-8 md:grid-cols-2">
           
           {/* Employer Card */}
           <button
             data-testid="role-employer-card"
             onClick={() => chooseRole("employer")}
-            className="group border-2 border-ink bg-ink p-8 text-left shadow-[5px_5px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1 sm:p-10"
+            className="group border-2 border-ink bg-ink p-5 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
           >
-            <div className="mb-6 flex items-center justify-between">
-              <span className="bg-brand px-4 py-1.5 text-xs font-black tracking-[0.15em] text-white">
+            <div className="mb-4 sm:mb-6 flex items-center justify-between">
+              <span className="bg-brand px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.12em] text-white">
                 I'M HIRING (EMPLOYER)
               </span>
-              <div className="flex h-11 w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-brand">
-                <ArrowRight size={24} className="text-white" />
+              <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-brand transition">
+                <ArrowRight size={20} className="text-white" />
               </div>
             </div>
-            <p className="whitespace-pre-line text-3xl font-black leading-tight text-white sm:text-4xl">
-              Find 5 verified{"\n"}experts on your block
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-white">
+              Find 5 verified experts on your block
             </p>
-            <p className="mt-4 text-base leading-7 text-[#D6D6D6]">
+            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-[#D6D6D6]">
               Unlock direct phone numbers and full verified portfolios of top designers, developers, videographers, and creators near you.
             </p>
-            <div className="mt-8 flex items-center gap-3 border-t border-white/20 pt-5 text-sm font-extrabold text-brand">
+            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/20 pt-4 text-xs font-extrabold text-brand">
               <span>One-time unlock from ₹199</span>
               <span>•</span>
               <span>Instant Call &amp; Chat</span>
@@ -1119,23 +1119,23 @@ export default function Landing() {
           <button
             data-testid="role-freelancer-card"
             onClick={() => chooseRole("freelancer")}
-            className="group border-2 border-ink bg-brand p-8 text-left shadow-[5px_5px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1 sm:p-10"
+            className="group border-2 border-ink bg-brand p-5 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
           >
-            <div className="mb-6 flex items-center justify-between">
-              <span className="bg-ink px-4 py-1.5 text-xs font-black tracking-[0.15em] text-white">
-                I'M LOOKING FOR GIGS (EMPLOYEE)
+            <div className="mb-4 sm:mb-6 flex items-center justify-between">
+              <span className="bg-ink px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.12em] text-white">
+                I'M LOOKING FOR GIGS (FREELANCER)
               </span>
-              <div className="flex h-11 w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-ink">
-                <ArrowRight size={24} className="text-white" />
+              <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-ink transition">
+                <ArrowRight size={20} className="text-white" />
               </div>
             </div>
-            <p className="whitespace-pre-line text-3xl font-black leading-tight text-white sm:text-4xl">
-              Apply to 200+ gigs{"\n"}within 5km of you
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-white">
+              Apply to 200+ gigs within 5km of you
             </p>
-            <p className="mt-4 text-base leading-7 text-white/90">
+            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-white/90">
               Direct chat with Bengaluru employers looking for immediate hires. Zero middlemen, keep 100% earnings.
             </p>
-            <div className="mt-8 flex items-center gap-3 border-t border-white/20 pt-5 text-sm font-extrabold text-white">
+            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/20 pt-4 text-xs font-extrabold text-white">
               <span>Hyperlocal matching</span>
               <span>•</span>
               <span>Same-day payment releases</span>
@@ -1146,61 +1146,61 @@ export default function Landing() {
       </section>
 
       {/* Trust & Live Metrics Strip */}
-      <section className="border-b-2 border-ink bg-[#FFF3E9] py-8 px-6 sm:px-10 lg:px-16">
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+      <section className="border-b-2 border-ink bg-[#FFF3E9] dark:bg-[#1a1410] py-6 sm:py-8 px-4 sm:px-10 lg:px-16">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
           <div>
-            <p className="text-3xl sm:text-4xl font-black text-ink">5 KM</p>
-            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-inkmuted">Hyperlocal Radius</p>
+            <p className="text-2xl sm:text-4xl font-black text-ink dark:text-white">5 KM</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-inkmuted dark:text-stone-400">Hyperlocal Radius</p>
           </div>
           <div>
-            <p className="text-3xl sm:text-4xl font-black text-ink">200+</p>
-            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-inkmuted">Active Bengaluru Gigs</p>
+            <p className="text-2xl sm:text-4xl font-black text-ink dark:text-white">200+</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-inkmuted dark:text-stone-400">Active Bengaluru Gigs</p>
           </div>
           <div>
-            <p className="text-3xl sm:text-4xl font-black text-brand">100%</p>
-            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-inkmuted">Keep Your Earnings</p>
+            <p className="text-2xl sm:text-4xl font-black text-brand">100%</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-inkmuted dark:text-stone-400">Keep Your Earnings</p>
           </div>
           <div>
-            <p className="text-3xl sm:text-4xl font-black text-ink">1 MIN</p>
-            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-inkmuted">Fast Onboarding</p>
+            <p className="text-2xl sm:text-4xl font-black text-ink dark:text-white">1 MIN</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-inkmuted dark:text-stone-400">Fast Onboarding</p>
           </div>
         </div>
       </section>
 
       {/* Feature Value Props */}
-      <section className="border-b-2 border-ink bg-white py-16 px-6 sm:px-10 lg:px-16">
+      <section className="border-b-2 border-ink bg-white dark:bg-[#121212] py-10 sm:py-16 px-4 sm:px-10 lg:px-16">
         <div className="max-w-3xl">
           <span className="text-xs font-black uppercase tracking-widest text-brand">WHY WORKHOP</span>
-          <h2 className="mt-2 text-3xl sm:text-4xl font-black text-ink">Built specifically for high-speed local collaborations</h2>
+          <h2 className="mt-1 text-2xl sm:text-4xl font-black text-ink dark:text-white">Built specifically for high-speed local collaborations</h2>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="border-2 border-ink bg-sand/50 p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-brand text-white font-black">
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
+          <div className="border-2 border-ink bg-sand/50 dark:bg-[#1c1c1c] p-5 sm:p-6 shadow-[3px_3px_0px_#121212]">
+            <div className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-brand text-white font-black text-sm">
               1
             </div>
-            <h3 className="mt-4 text-lg font-black text-ink">VERIFIED TALENT</h3>
-            <p className="mt-2 text-xs leading-5 text-inkmuted">
-              Every freelancer is verified with email and live portfolios.
+            <h3 className="mt-3 text-base sm:text-lg font-black text-ink dark:text-white">VERIFIED TALENT</h3>
+            <p className="mt-1.5 text-xs leading-5 text-inkmuted dark:text-stone-400">
+              Every freelancer is verified with email, Aadhaar, and live portfolios.
             </p>
           </div>
 
-          <div className="border-2 border-ink bg-sand/50 p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-ink text-white font-black">
+          <div className="border-2 border-ink bg-sand/50 dark:bg-[#1c1c1c] p-5 sm:p-6 shadow-[3px_3px_0px_#121212]">
+            <div className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-ink dark:bg-white text-white dark:text-ink font-black text-sm">
               2
             </div>
-            <h3 className="mt-4 text-lg font-black text-ink">DIRECT CONTACT</h3>
-            <p className="mt-2 text-xs leading-5 text-inkmuted">
+            <h3 className="mt-3 text-base sm:text-lg font-black text-ink dark:text-white">DIRECT CONTACT</h3>
+            <p className="mt-1.5 text-xs leading-5 text-inkmuted dark:text-stone-400">
               Unlock direct mobile numbers and start chatting on WhatsApp/Phone immediately without waiting.
             </p>
           </div>
 
-          <div className="border-2 border-ink bg-sand/50 p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-ok text-white font-black">
+          <div className="border-2 border-ink bg-sand/50 dark:bg-[#1c1c1c] p-5 sm:p-6 shadow-[3px_3px_0px_#121212]">
+            <div className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-ok text-white font-black text-sm">
               3
             </div>
-            <h3 className="mt-4 text-lg font-black text-ink">TRANSPARENT PRICING</h3>
-            <p className="mt-2 text-xs leading-5 text-inkmuted">
+            <h3 className="mt-3 text-base sm:text-lg font-black text-ink dark:text-white">TRANSPARENT PRICING</h3>
+            <p className="mt-1.5 text-xs leading-5 text-inkmuted dark:text-stone-400">
               Simple flat unlocking credits. No hidden deductions or surprise cuts taken from freelancer payouts.
             </p>
           </div>
@@ -1208,9 +1208,9 @@ export default function Landing() {
       </section>
 
       {/* Footer Navigation */}
-      <footer className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t-2 border-ink bg-white px-6 py-8 text-xs font-bold text-inkmuted">
+      <footer className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t-2 border-ink bg-white dark:bg-[#121212] px-4 py-8 pb-24 sm:pb-8 text-xs font-bold text-inkmuted dark:text-stone-400">
         <p>© 2026 WorkHop Technologies · Hyperlocal Workspace</p>
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
           <Link to="/map" className="hover:text-brand">Live Map</Link>
           <Link to="/categories" className="hover:text-brand">Categories</Link>
           <Link to="/employer/plans" className="hover:text-brand">Plans</Link>
