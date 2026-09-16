@@ -3,6 +3,8 @@ import { ChevronDown, ChevronUp, Mail, CheckCircle2, Loader2 } from "lucide-reac
 import { Shell, TopBar } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
 import { apiPost } from "@/lib/api";
+import RecaptchaWidget from "@/components/RecaptchaWidget";
+import { sanitizeInput, checkSpamKeywords, checkRateLimit } from "@/lib/security";
 
 const SUPPORT_EMAIL = "manarastudio22@gmail.com";
 
@@ -22,23 +24,50 @@ export default function Support() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   const submit = async () => {
     setError("");
-    if (!subject.trim() || !message.trim()) return setError("Add a subject and describe the issue.");
+    const cleanSubject = sanitizeInput(subject);
+    const cleanMsg = sanitizeInput(message);
+
+    if (!cleanSubject || !cleanMsg) return setError("Add a subject and describe the issue.");
+
+    // Rate limiting: max 3 complaints every 2 minutes
+    const senderKey = user?.email || "guest_support";
+    const rate = checkRateLimit(`support_${senderKey}`, 3, 120000);
+    if (!rate.allowed) {
+      return setError(`Limit reached: Please wait ${rate.waitSeconds}s before submitting another ticket.`);
+    }
+
+    // Safety spam filter
+    const spamCheck = checkSpamKeywords(`${cleanSubject} ${cleanMsg}`);
+    if (spamCheck.isSpam) {
+      return setError(`Safety filter: Message contains flagged content (${spamCheck.matched.join(", ")}).`);
+    }
+
+    // Human Verification Check
+    if (!captchaToken) {
+      return setError("Please complete the reCAPTCHA human verification check before submitting.");
+    }
+
     setSending(true);
     try {
       await apiPost("/complaints", {
         name: user?.name || "WorkHop user",
         email: user?.email || "not-signed-in",
-        role: "user",
-        subject,
-        message,
+        role: user?.role || "user",
+        subject: cleanSubject,
+        message: cleanMsg,
       });
       setSent(true);
       setSubject("");
       setMessage("");
+      setCaptchaToken(null);
     } catch {
+      setCaptchaReset((prev) => prev + 1);
+      setCaptchaToken(null);
       setError("Could not submit. Try again.");
     } finally {
       setSending(false);
@@ -79,7 +108,19 @@ export default function Support() {
             <input data-testid="complaint-subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject — e.g. Payment issue" className="wh-input h-12 border-2 border-ink bg-white px-3 text-sm font-semibold text-ink" />
             <textarea data-testid="complaint-message" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Describe the issue in detail…" className="wh-input h-28 border-2 border-ink bg-white p-3 text-sm font-semibold text-ink" />
             {!!error && <p className="text-xs font-bold text-[#C62828]">{error}</p>}
-            <button data-testid="complaint-submit-btn" disabled={sending} onClick={submit} className="flex items-center justify-center bg-ink py-4 text-[13px] font-black tracking-wider text-white disabled:opacity-60">
+            
+            {/* Human Verification reCAPTCHA */}
+            <RecaptchaWidget
+              onVerify={(tok) => {
+                setCaptchaToken(tok);
+                setError("");
+              }}
+              onExpire={() => setCaptchaToken(null)}
+              resetTrigger={captchaReset}
+              className="my-1"
+            />
+
+            <button data-testid="complaint-submit-btn" disabled={sending} onClick={submit} className="flex items-center justify-center bg-ink py-4 text-[13px] font-black tracking-wider text-white disabled:opacity-60 shadow-[2px_2px_0px_#121212] hover:bg-brand transition">
               {sending ? <Loader2 size={18} className="animate-spin" /> : "SUBMIT COMPLAINT"}
             </button>
           </>

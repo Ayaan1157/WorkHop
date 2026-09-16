@@ -7,6 +7,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
 import { apiGet, apiPost, setFreelancerId, getFreelancerId } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { sanitizeInput } from "@/lib/security";
 
 const TOTAL = 4;
 
@@ -125,11 +126,21 @@ export default function Onboarding() {
     setSubmitting(true);
     try {
       await apiPost("/freelancer/submit", {
-        freelancer_id: state.freelancerId, linkedin_url: linkedin, portfolio_url: portfolio,
-        portfolio_images: slots.filter(Boolean), phone: phoneDigits, skill: skill.trim(), category,
-        lat: coords?.lat ?? null, lng: coords?.lng ?? null, rate_hr: Number(rateHr) || null, intro: intro.trim(),
-        languages: langs, delivery_days: deliveryDays,
-        external_platform: hasExternal ? extPlatform : "", external_url: hasExternal ? extUrl.trim() : "",
+        freelancer_id: state.freelancerId,
+        linkedin_url: sanitizeInput(linkedin),
+        portfolio_url: sanitizeInput(portfolio),
+        portfolio_images: slots.filter(Boolean),
+        phone: phoneDigits,
+        skill: sanitizeInput(skill),
+        category,
+        lat: coords?.lat ?? null,
+        lng: coords?.lng ?? null,
+        rate_hr: Number(rateHr) || null,
+        intro: sanitizeInput(intro),
+        languages: langs,
+        delivery_days: deliveryDays,
+        external_platform: hasExternal ? extPlatform : "",
+        external_url: hasExternal ? sanitizeInput(extUrl) : "",
         external_rating: hasExternal && extRating ? Math.min(5, parseFloat(extRating)) : null,
         external_reviews: hasExternal && extReviews ? parseInt(extReviews, 10) : null,
       });

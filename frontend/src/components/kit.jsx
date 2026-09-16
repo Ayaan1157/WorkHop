@@ -19,6 +19,7 @@ export { default as RatingBreakdown } from "@/components/RatingBreakdown";
 export { default as EscrowWalletModal } from "@/components/EscrowWalletModal";
 export { default as BoostPreviewModal } from "@/components/BoostPreviewModal";
 export { default as AuthModal } from "@/components/AuthModal";
+export { default as RecaptchaWidget } from "@/components/RecaptchaWidget";
 export * from "@/components/Skeletons";
 
 const ICONS = {

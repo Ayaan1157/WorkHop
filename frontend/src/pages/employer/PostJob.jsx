@@ -9,6 +9,8 @@ import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { BENGALURU_AREAS, findNearestArea, getAreaCoordinates } from "@/lib/locationAreas";
 import { API, apiGet, apiPost, getEmployerId } from "@/lib/api";
+import RecaptchaWidget from "@/components/RecaptchaWidget";
+import { sanitizeInput, checkSpamKeywords } from "@/lib/security";
 
 export default function PostJob() {
   const nav = useNavigate();
@@ -26,6 +28,8 @@ export default function PostJob() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [posted, setPosted] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   const loadCredits = useCallback(async () => {
     try {
@@ -59,22 +63,39 @@ export default function PostJob() {
 
   const submit = async (retryAfterPay = true) => {
     setError("");
-    if (!company.trim() || !title.trim() || !description.trim() || !pay) {
+    const cleanCompany = sanitizeInput(company);
+    const cleanTitle = sanitizeInput(title);
+    const cleanDesc = sanitizeInput(description);
+    const cleanArea = sanitizeInput(area);
+
+    if (!cleanCompany || !cleanTitle || !cleanDesc || !pay) {
       return setError("Fill in company, title, pay, and description.");
     }
+
+    // Safety Measure: Content Moderation & Spam Keyword Scanner
+    const spamCheck = checkSpamKeywords(`${cleanTitle} ${cleanDesc} ${cleanCompany}`);
+    if (spamCheck.isSpam) {
+      return setError(`Safety filter notice: Job description contains flagged content (${spamCheck.matched.join(", ")}). Please remove before posting.`);
+    }
+
+    // Safety Measure: Human Verification reCAPTCHA
+    if (!captchaToken) {
+      return setError("Please complete the reCAPTCHA human verification check before publishing your gig.");
+    }
+
     setSubmitting(true);
     try {
       const eid = getEmployerId();
-      const areaCoords = customCoords || getAreaCoordinates(area);
+      const areaCoords = customCoords || getAreaCoordinates(cleanArea);
 
       const data = await apiPost("/employer/jobs", {
         employer_id: eid,
-        company_name: company,
-        title,
+        company_name: cleanCompany,
+        title: cleanTitle,
         bucket,
         pay: parseInt(pay, 10) || 0,
-        description,
-        area: area || "Bengaluru",
+        description: cleanDesc,
+        area: cleanArea || "Bengaluru",
         lat: areaCoords.lat,
         lng: areaCoords.lng,
       });
@@ -282,6 +303,17 @@ export default function PostJob() {
               <p data-testid="postjob-error">{error}</p>
             </div>
           )}
+
+          {/* Human Verification reCAPTCHA */}
+          <RecaptchaWidget
+            onVerify={(tok) => {
+              setCaptchaToken(tok);
+              setError("");
+            }}
+            onExpire={() => setCaptchaToken(null)}
+            resetTrigger={captchaReset}
+            className="my-1"
+          />
 
           <button
             data-testid="postjob-submit-btn"

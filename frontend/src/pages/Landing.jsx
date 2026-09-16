@@ -11,6 +11,8 @@ import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAr
 import { useUserLocation } from "@/hooks/useUserLocation";
 import AuthModal from "@/components/AuthModal";
 import BroadcastBanner from "@/components/BroadcastBanner";
+import RecaptchaWidget from "@/components/RecaptchaWidget";
+import { sanitizeInput, checkRateLimit, resetRateLimit } from "@/lib/security";
 
 function Logo() {
   return (
@@ -56,6 +58,10 @@ export default function Landing() {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState(null);
   const [devOtp, setDevOtp] = useState(null);
+
+  // Recaptcha Security State
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   useEffect(() => {
     if (loading || user) return;
@@ -171,13 +177,29 @@ export default function Landing() {
       return;
     }
 
+    // Rate Limiting Anti-Brute Force Protection
+    const rate = checkRateLimit(`landing_signin_${cleanEmail}`, 5, 60000);
+    if (!rate.allowed) {
+      setOtpError(`Security lockout: Too many failed login attempts. Please wait ${rate.waitSeconds} seconds.`);
+      return;
+    }
+
+    // Human Verification Check
+    if (!captchaToken) {
+      setOtpError("Please complete the reCAPTCHA human verification check before signing in.");
+      return;
+    }
+
     setOtpLoading(true);
     setOtpError(null);
     try {
       const res = await passwordLoginAuth(cleanEmail, passwordInput, target);
+      resetRateLimit(`landing_signin_${cleanEmail}`);
       const resolvedRole = res?.user?.role || target || "freelancer";
       completeSessionAndRedirect(resolvedRole, res?.user);
     } catch (e) {
+      setCaptchaReset((prev) => prev + 1);
+      setCaptchaToken(null);
       setOtpError(e?.message || "Incorrect email or password. Please try again.");
     } finally {
       setOtpLoading(false);
@@ -188,8 +210,11 @@ export default function Landing() {
   const handleSignUp = async () => {
     const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
     const cleanEmail = emailInput.trim().toLowerCase();
+    const cleanName = sanitizeInput(nameInput);
+    const cleanSkill = sanitizeInput(skillInput);
+    const cleanCompany = sanitizeInput(companyInput);
 
-    if (!nameInput.trim()) {
+    if (!cleanName) {
       setOtpError("Please enter your full name.");
       return;
     }
@@ -201,7 +226,7 @@ export default function Landing() {
       setOtpError("Please select your neighborhood area.");
       return;
     }
-    if (target !== "employer" && !skillInput.trim()) {
+    if (target !== "employer" && !cleanSkill) {
       setOtpError("Please enter your primary skill / trade.");
       return;
     }
@@ -214,6 +239,19 @@ export default function Landing() {
       return;
     }
 
+    // Rate Limiting on Signups
+    const rate = checkRateLimit(`landing_signup_${cleanEmail}`, 4, 120000);
+    if (!rate.allowed) {
+      setOtpError(`Security limit reached: Please wait ${rate.waitSeconds} seconds before trying to register again.`);
+      return;
+    }
+
+    // Human Verification Check
+    if (!captchaToken) {
+      setOtpError("Please complete the reCAPTCHA human verification check before creating an account.");
+      return;
+    }
+
     setOtpLoading(true);
     setOtpError(null);
     try {
@@ -221,16 +259,19 @@ export default function Landing() {
         email: cleanEmail,
         password: passwordInput,
         role: target,
-        name: nameInput.trim(),
+        name: cleanName,
         phone: phoneDigits,
         area: areaInput,
-        company_name: target === "employer" ? (companyInput.trim() || "Hyperlocal Co.") : undefined,
-        skill: target !== "employer" ? (skillInput.trim() || "UI/UX & Brand Designer") : undefined,
+        company_name: target === "employer" ? (cleanCompany || "Hyperlocal Co.") : undefined,
+        skill: target !== "employer" ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
       };
 
       const session = await signupWithDetails(payload);
+      resetRateLimit(`landing_signup_${cleanEmail}`);
       completeSessionAndRedirect(target, session?.user);
     } catch (e) {
+      setCaptchaReset((prev) => prev + 1);
+      setCaptchaToken(null);
       setOtpError(e?.message || "Could not complete registration.");
     } finally {
       setOtpLoading(false);
@@ -633,6 +674,17 @@ export default function Landing() {
                 ) : (
                   <div className="flex flex-col gap-2.5 mt-2">
                     
+                    {/* Recaptcha Widget */}
+                    <RecaptchaWidget
+                      onVerify={(tok) => {
+                        setCaptchaToken(tok);
+                        setOtpError(null);
+                      }}
+                      onExpire={() => setCaptchaToken(null)}
+                      resetTrigger={captchaReset}
+                      className="my-1"
+                    />
+
                     {/* Primary Submit Button */}
                     <button
                       type="button"

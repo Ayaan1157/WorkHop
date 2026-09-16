@@ -11,6 +11,8 @@ import { TopBar, Spinner } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPost, apiPatch, apiPut } from "@/lib/api";
 import { BENGALURU_AREAS } from "@/lib/locationAreas";
+import RecaptchaWidget from "@/components/RecaptchaWidget";
+import { checkRateLimit, resetRateLimit } from "@/lib/security";
 
 const TABS = [
   { id: "OVERVIEW", label: "📊 OVERVIEW & STATS" },
@@ -889,14 +891,33 @@ export default function Admin() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState(null);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   const handleAdminSignIn = async (e) => {
     e?.preventDefault();
+
+    // Anti-Brute-Force Rate Limiting
+    const rate = checkRateLimit(`admin_auth_${loginEmail.trim().toLowerCase()}`, 5, 60000);
+    if (!rate.allowed) {
+      setLoginError(`Admin portal locked: Too many failed unlock attempts. Please wait ${rate.waitSeconds}s.`);
+      return;
+    }
+
+    // Human Verification Check
+    if (!captchaToken) {
+      setLoginError("Please complete the reCAPTCHA human verification check before unlocking.");
+      return;
+    }
+
     setLoginBusy(true);
     setLoginError(null);
     try {
       await adminLogin(loginEmail, loginPassword);
+      resetRateLimit(`admin_auth_${loginEmail.trim().toLowerCase()}`);
     } catch (err) {
+      setCaptchaReset((prev) => prev + 1);
+      setCaptchaToken(null);
       setLoginError(err?.message || "Invalid admin email or password.");
     } finally {
       setLoginBusy(false);
@@ -1014,6 +1035,17 @@ export default function Admin() {
                 ⚠️ {loginError}
               </p>
             )}
+
+            {/* Recaptcha Verification */}
+            <RecaptchaWidget
+              onVerify={(tok) => {
+                setCaptchaToken(tok);
+                setLoginError(null);
+              }}
+              onExpire={() => setCaptchaToken(null)}
+              resetTrigger={captchaReset}
+              className="my-1"
+            />
 
             <button
               type="submit"

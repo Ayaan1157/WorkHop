@@ -8,6 +8,8 @@ import { useAuth } from "@/context/AuthContext";
 import { apiPost } from "@/lib/api";
 import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import RecaptchaWidget from "@/components/RecaptchaWidget";
+import { sanitizeInput, checkRateLimit, resetRateLimit } from "@/lib/security";
 
 export default function AuthModal({ isOpen, onClose, initialRole = null, initialMode = "signup" }) {
   const nav = useNavigate();
@@ -28,6 +30,10 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   const [area, setArea] = useState("Koramangala");
   const [companyName, setCompanyName] = useState("");
   const [skill, setSkill] = useState("");
+
+  // Safety & Human Verification State
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   // Google Pre-fill banner
   const [googleConnected, setGoogleConnected] = useState(false);
@@ -176,13 +182,29 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       return;
     }
 
+    // Rate Limiting Anti-Brute Force Protection
+    const rate = checkRateLimit(`signin_${cleanEmail}`, 5, 60000);
+    if (!rate.allowed) {
+      setError(`Security lockout: Too many failed login attempts. Please wait ${rate.waitSeconds} seconds.`);
+      return;
+    }
+
+    // Human Verification Check
+    if (!captchaToken) {
+      setError("Please complete the reCAPTCHA human verification check below before signing in.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const res = await passwordLoginAuth(cleanEmail, password, role);
+      resetRateLimit(`signin_${cleanEmail}`);
       const userRole = res?.user?.role || "freelancer";
       completeAndRedirect(userRole, res?.user);
     } catch (e) {
+      setCaptchaReset((prev) => prev + 1);
+      setCaptchaToken(null);
       setError(e?.message || "Incorrect email or password. Please try again.");
     } finally {
       setLoading(false);
@@ -192,7 +214,11 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   // Sign Up with Details & Password Handler
   const handleSignupSubmit = async () => {
     const cleanEmail = email.trim().toLowerCase();
-    if (!fullName.trim()) {
+    const cleanName = sanitizeInput(fullName);
+    const cleanSkill = sanitizeInput(skill);
+    const cleanCompany = sanitizeInput(companyName);
+
+    if (!cleanName) {
       setError("Please enter your full name.");
       return;
     }
@@ -204,7 +230,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       setError("Please select your neighborhood area.");
       return;
     }
-    if (!isEmployer && !skill.trim()) {
+    if (!isEmployer && !cleanSkill) {
       setError("Please enter your primary profession / skill.");
       return;
     }
@@ -217,6 +243,19 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       return;
     }
 
+    // Rate limiting on registrations
+    const rate = checkRateLimit(`signup_${cleanEmail}`, 4, 120000);
+    if (!rate.allowed) {
+      setError(`Security limit reached: Please wait ${rate.waitSeconds} seconds before trying to register again.`);
+      return;
+    }
+
+    // Human Verification Check
+    if (!captchaToken) {
+      setError("Please complete the reCAPTCHA human verification check below before creating your account.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -224,16 +263,19 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         email: cleanEmail,
         password: password,
         role: role,
-        name: fullName.trim(),
+        name: cleanName,
         phone: phoneDigits,
         area: area,
-        company_name: isEmployer ? (companyName.trim() || "Hyperlocal Co.") : undefined,
-        skill: !isEmployer ? (skill.trim() || "UI/UX & Brand Designer") : undefined,
+        company_name: isEmployer ? (cleanCompany || "Hyperlocal Co.") : undefined,
+        skill: !isEmployer ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
       };
 
       const session = await signupWithDetails(payload);
+      resetRateLimit(`signup_${cleanEmail}`);
       completeAndRedirect(role, session?.user);
     } catch (e) {
+      setCaptchaReset((prev) => prev + 1);
+      setCaptchaToken(null);
       setError(e?.message || "Sign up failed. Please check your information.");
     } finally {
       setLoading(false);
@@ -646,6 +688,17 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
             {otpStage === "idle" && (
               <div className="mt-2 flex flex-col gap-2">
                 
+                {/* Human Verification Recaptcha */}
+                <RecaptchaWidget
+                  onVerify={(tok) => {
+                    setCaptchaToken(tok);
+                    setError(null);
+                  }}
+                  onExpire={() => setCaptchaToken(null)}
+                  resetTrigger={captchaReset}
+                  className="my-1"
+                />
+
                 {/* Main Action Button */}
                 <button
                   type="button"
