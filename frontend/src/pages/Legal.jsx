@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ShieldCheck, FileText, Lock, DollarSign, AlertTriangle, Scale,
-  ChevronRight, ArrowUpRight, Search, Printer, CheckCircle2, Mail, MapPin, Building2
+  ShieldCheck, FileText, Lock, DollarSign, Scale, Printer
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 
@@ -11,7 +10,7 @@ const TABS = [
   { id: "PRIVACY", label: "PRIVACY POLICY (DPDP)", icon: Lock },
   { id: "PAYMENTS", label: "PAYMENTS & ESCROW", icon: DollarSign },
   { id: "SAFETY", label: "COMMUNITY & SAFETY", icon: ShieldCheck },
-  { id: "GRIEVANCE", label: "DISCLAIMERS & GRIEVANCE", icon: Scale },
+  { id: "GRIEVANCE", label: "DISCLAIMERS & JURISDICTION", icon: Scale },
 ];
 
 export default function Legal() {
@@ -240,10 +239,10 @@ export default function Legal() {
           </div>
         )}
 
-        {/* Tab 5: Disclaimers & Statutory Grievance Redressal */}
+        {/* Tab 5: Disclaimers & Governing Jurisdiction */}
         {activeTab === "GRIEVANCE" && (
           <div className="flex flex-col gap-5 animate-in fade-in">
-            <SectionHeader title="5. DISCLAIMERS & STATUTORY GRIEVANCE REDRESSAL" badge="LEGAL CONTACT" />
+            <SectionHeader title="5. DISCLAIMERS, LIABILITY & GOVERNING JURISDICTION" badge="JURISDICTION" />
 
             <PolicyCard
               num="5.1"
@@ -262,58 +261,6 @@ export default function Legal() {
               title="Governing Law & Exclusive Jurisdiction"
               desc="This Agreement, platform transactions, and any dispute or claim arising out of them shall be governed by and construed in accordance with the substantive laws of the Republic of India. The courts situated in Bengaluru, Karnataka, India shall have exclusive legal jurisdiction to adjudicate any matters arising under this Agreement."
             />
-
-            {/* Official Statutory Grievance Redressal Officer Card */}
-            <div className="border-2 border-ink bg-white dark:bg-[#1a1a1a] p-5 shadow-[4px_4px_0px_#121212] dark:shadow-[4px_4px_0px_#000]">
-              <div className="flex items-center gap-2 border-b-2 border-ink pb-3">
-                <span className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-brand text-white font-black text-xs">
-                  ⚖️
-                </span>
-                <div>
-                  <h3 className="text-sm font-black uppercase text-ink dark:text-white">
-                    Designated Grievance Redressal Officer (IT Rules, 2021 &amp; DPDP Act 2023)
-                  </h3>
-                  <p className="text-[11px] text-inkmuted dark:text-gray-400">
-                    Pursuant to Rule 3(2) of the Information Technology (Intermediary Guidelines) Rules, 2021
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="border border-ink/20 p-3 bg-sand dark:bg-[#222]">
-                  <p className="text-[10px] font-black uppercase text-inkmuted dark:text-gray-400">Grievance Officer</p>
-                  <p className="text-sm font-black text-ink dark:text-white mt-0.5">Ayaan S. / Legal Compliance Head</p>
-                  <p className="text-xs text-inkmuted dark:text-gray-300 mt-1">WorkHop Technologies &amp; Zenith Developers</p>
-                  <p className="text-xs text-inkmuted dark:text-gray-300">Bengaluru Metropolitan Region, Karnataka, India</p>
-                </div>
-
-                <div className="border border-ink/20 p-3 bg-sand dark:bg-[#222]">
-                  <p className="text-[10px] font-black uppercase text-inkmuted dark:text-gray-400">Official Contact Channels</p>
-                  <p className="text-xs font-bold text-ink dark:text-white mt-1">
-                    📧 Primary: <a href="mailto:manarastudio22@gmail.com" className="text-brand hover:underline font-black">manarastudio22@gmail.com</a>
-                  </p>
-                  <p className="text-xs font-bold text-ink dark:text-white mt-1">
-                    📧 Admin: <a href="mailto:Zenithdeveleoperss@gmail.com" className="text-brand hover:underline font-black">Zenithdeveleoperss@gmail.com</a>
-                  </p>
-                  <p className="text-[11px] text-ok font-bold mt-2">
-                    ⚡ Statutory Resolution Timeline: Acknowledgment within 24 hours · Final Resolution within 15 working days.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 border-t border-ink/10 pt-3 flex flex-wrap items-center justify-between gap-3 text-[11px]">
-                <span className="text-inkmuted dark:text-gray-400">
-                  Need direct assistance regarding a transaction or ticket?
-                </span>
-                <Link
-                  to="/support"
-                  className="flex items-center gap-1 border border-ink bg-brand px-3 py-1 text-xs font-black text-white hover:opacity-90 shadow-[1px_1px_0px_#121212]"
-                >
-                  <span>Open Support Ticket</span>
-                  <ArrowUpRight size={12} />
-                </Link>
-              </div>
-            </div>
           </div>
         )}
 
