@@ -152,7 +152,7 @@ export default function Employer() {
             <div className="flex items-center gap-2">
               <span className="flex h-2 w-2 rounded-full bg-brand animate-ping" />
               <span className="text-[11px] font-black uppercase tracking-wider text-ink dark:text-white">
-                Live Talent Radar · {leads.length} Verified Pros Nearby
+                Live Talent Radar (2km) · {leads.length} Verified Pros Nearby
               </span>
             </div>
             <div className="flex items-center gap-2">

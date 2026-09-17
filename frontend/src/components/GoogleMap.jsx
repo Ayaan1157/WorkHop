@@ -402,7 +402,7 @@ export default function GoogleMap({
       </div>
 
       {/* Bottom Floating Status Chip */}
-      <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] flex items-center gap-1.5 border border-ink/40 bg-white/95 px-2 py-0.5 text-[9px] font-black text-ink shadow-sm backdrop-blur-sm">
+      <div className="pointer-events-none absolute bottom-3 right-3 z-[300] hidden sm:flex items-center gap-1.5 border border-ink/40 bg-white/95 dark:bg-[#1a1a1a]/95 px-2 py-0.5 text-[9px] font-black text-ink dark:text-white shadow-sm backdrop-blur-sm">
         <span className="text-brand">⚡ WORKHOP RADAR</span>
         <span>·</span>
         <span>{radiusKm ? `${radiusKm}km Radius` : "Bengaluru"}</span>
