@@ -70,9 +70,6 @@ export function Logo({ size = "default", className = "" }) {
             <span className="text-base sm:text-lg font-black tracking-tight text-ink dark:text-white">
               WORK<span className="text-brand">HOP</span>
             </span>
-            <span className="border border-ink dark:border-white/40 bg-brand/10 dark:bg-brand/20 px-1 py-0.2 text-[8px] font-black tracking-widest text-brand rounded">
-              BLR
-            </span>
           </div>
           <span className="text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-[0.12em] text-inkmuted dark:text-stone-400 mt-0.5">
             Bengaluru Gig Network
@@ -98,9 +95,6 @@ export function Logo({ size = "default", className = "" }) {
           <div className="flex items-center gap-2">
             <span className="text-xl sm:text-2xl font-black tracking-tight text-ink dark:text-white">
               WORK<span className="text-brand">HOP</span>
-            </span>
-            <span className="border-2 border-ink dark:border-white/40 bg-brand px-1.5 py-0.5 text-[8.5px] font-black tracking-widest text-white shadow-[1px_1px_0px_#121212]">
-              BLR
             </span>
           </div>
           <span className="text-[9.5px] font-black tracking-wider text-brand uppercase">
