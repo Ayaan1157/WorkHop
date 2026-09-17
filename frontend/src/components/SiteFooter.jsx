@@ -190,11 +190,6 @@ export default function SiteFooter() {
                   Help Desk &amp; Grievance Redressal
                 </Link>
               </li>
-              <li>
-                <Link to="/admin" className="hover:text-white transition">
-                  Staff / Admin Portal
-                </Link>
-              </li>
             </ul>
           </div>
         </div>
