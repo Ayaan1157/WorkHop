@@ -28,9 +28,9 @@ const ICONS = {
   briefcase: Briefcase, users: Users,
 };
 
-export function CatIcon({ name, ...props }) {
+export function CatIcon({ name, className = "", ...props }) {
   const C = ICONS[name] || Grid3x3;
-  return <C {...props} />;
+  return <C className={`cat-icon ${className}`} strokeWidth={2.2} {...props} />;
 }
 
 export function Spinner({ className = "" }) {
@@ -560,7 +560,7 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
                 className="flex h-10 w-10 items-center justify-center border-2 border-ink"
                 style={{ background: on ? "#E65A1E" : v.bg }}
               >
-                <CatIcon name={v.icon} size={20} className={on ? "text-white" : "text-[#121212] dark:text-[#121212]"} />
+                <CatIcon name={v.icon} size={20} className={on ? "text-white stroke-white" : "!text-[#121212] !stroke-[#121212] text-black"} />
               </span>
               <span className={`text-center text-[10px] font-black leading-tight ${on ? "text-white dark:!text-white" : "text-ink dark:!text-white"}`}>
                 {(CATEGORY_SHORT_LABELS[key] || key).toUpperCase()}

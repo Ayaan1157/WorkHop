@@ -30,20 +30,20 @@ export default function Categories() {
               const expanded = open === c.category;
               const v = CATEGORY_VISUALS[c.category] || CATEGORY_VISUALS.ALL;
               return (
-                <div key={c.category} className="border-2 border-ink bg-white shadow-[2px_2px_0px_#121212]">
+                <div key={c.category} className="border-2 border-ink bg-white dark:bg-[#181818] shadow-[2px_2px_0px_#121212]">
                   <button
                     data-testid={`cat-${c.category.toLowerCase().replace(/[^a-z]+/g, "-")}`}
                     onClick={() => setOpen(expanded ? null : c.category)}
-                    className="flex w-full items-center gap-3 p-3.5 text-left hover:bg-sand"
+                    className="flex w-full items-center gap-3 p-3.5 text-left hover:bg-sand dark:hover:bg-[#222]"
                   >
                     <span className="flex h-11 w-11 items-center justify-center border-2 border-ink" style={{ background: v.bg }}>
-                      <CatIcon name={v.icon} size={20} className="text-ink" />
+                      <CatIcon name={v.icon} size={20} className="!text-[#121212] !stroke-[#121212] text-black" />
                     </span>
                     <div className="flex-1">
-                      <p className="text-base font-black text-ink">{c.category}</p>
-                      <p className="text-xs text-inkmuted">{c.subcategories.length} services</p>
+                      <p className="text-base font-black text-ink dark:text-white">{c.category}</p>
+                      <p className="text-xs text-inkmuted dark:text-stone-400">{c.subcategories.length} services</p>
                     </div>
-                    {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    {expanded ? <ChevronUp size={18} className="text-ink dark:text-white" /> : <ChevronDown size={18} className="text-ink dark:text-white" />}
                   </button>
                   {expanded && (
                     <div className="flex flex-wrap gap-2 border-t border-ink/20 p-3.5 bg-sand">

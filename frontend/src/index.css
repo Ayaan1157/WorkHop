@@ -267,6 +267,21 @@ html:not(.dark) [class*="bg-blue-100"] * {
     color: #FFFFFF !important;
 }
 
+/* ═══════ CATEGORY LOGOS & ICONS: ALWAYS SOLID BLACK ON PASTEL BACKGROUNDS ═══════ */
+.cat-icon,
+svg.cat-icon,
+[data-testid*="cat-"] span[style*="background"] svg,
+[data-testid*="cat-tile"] span[style*="background"] svg {
+    color: #121212 !important;
+    stroke: #121212 !important;
+}
+
+/* Active tile with orange background uses white icon */
+[data-testid*="cat-tile"] span[style*="#E65A1E"] svg {
+    color: #FFFFFF !important;
+    stroke: #FFFFFF !important;
+}
+
 /* Dark mode ink buttons: dark surfaces with crisp white text */
 .dark .bg-ink:not([class*="dark:bg-white"]) {
     background-color: var(--color-surface-elevated);
