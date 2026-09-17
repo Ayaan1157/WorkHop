@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { ArrowUpRight, MapPin, ShieldCheck, Zap } from "lucide-react";
 
 export default function SiteFooter() {
   return (
@@ -79,8 +78,8 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        {/* Main Grid: 2 columns on mobile, 4 columns on tablet & desktop */}
-        <div className="grid grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-8 sm:gap-y-10 md:grid-cols-4 pt-8 sm:pt-12">
+        {/* Main Grid: 2 columns on mobile, 3 columns on tablet & desktop */}
+        <div className="grid grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-8 sm:gap-y-10 sm:grid-cols-3 pt-8 sm:pt-12">
           
           {/* Column 1: For Employers (Business) */}
           <div className="flex flex-col gap-3">
@@ -157,66 +156,11 @@ export default function SiteFooter() {
                   Portfolio Showcase
                 </Link>
               </li>
-              <li>
-                <span className="text-brand font-bold text-xs flex items-center gap-1">
-                  <Zap size={13} /> 100% Zero Commission
-                </span>
-              </li>
-              <li>
-                <span className="text-emerald-400 font-bold text-xs flex items-center gap-1">
-                  <ShieldCheck size={13} /> Same-Day Payout Release
-                </span>
-              </li>
             </ul>
           </div>
 
-          {/* Column 3: Bengaluru Hubs (Neighborhoods) */}
-          <div className="flex flex-col gap-3">
-            <h4 className="text-sm font-black uppercase tracking-wider text-white">
-              Bengaluru Hubs
-            </h4>
-            <ul className="flex flex-col gap-2 text-xs sm:text-sm text-stone-400">
-              <li>
-                <Link to="/map" className="hover:text-white transition flex items-center gap-1">
-                  <MapPin size={12} className="text-brand shrink-0" />
-                  <span>Koramangala (HQ)</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/map" className="hover:text-white transition flex items-center gap-1">
-                  <MapPin size={12} className="text-brand shrink-0" />
-                  <span>Indiranagar</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/map" className="hover:text-white transition flex items-center gap-1">
-                  <MapPin size={12} className="text-brand shrink-0" />
-                  <span>HSR Layout</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/map" className="hover:text-white transition flex items-center gap-1">
-                  <MapPin size={12} className="text-brand shrink-0" />
-                  <span>Whitefield</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/map" className="hover:text-white transition flex items-center gap-1">
-                  <MapPin size={12} className="text-brand shrink-0" />
-                  <span>Jayanagar &amp; JP Nagar</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/map" className="hover:text-white transition flex items-center gap-1">
-                  <MapPin size={12} className="text-brand shrink-0" />
-                  <span>BTM Layout</span>
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Platform & Compliance (Trust & Legal) */}
-          <div className="flex flex-col gap-3">
+          {/* Column 3: Platform & Compliance (Trust & Legal) */}
+          <div className="flex flex-col gap-3 col-span-2 sm:col-span-1">
             <h4 className="text-sm font-black uppercase tracking-wider text-white">
               Trust &amp; Legal
             </h4>
@@ -253,7 +197,6 @@ export default function SiteFooter() {
               </li>
             </ul>
           </div>
-
         </div>
 
         {/* Bottom Strip: Copyright & Statutory Badges */}
