@@ -3,12 +3,13 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   Search, X, Grid3x3, Map as MapIcon, MessagesSquare, ShieldCheck, ShieldHalf,
   Zap, Rocket, SlidersHorizontal, MapPin, IndianRupee, Send, Lock, CheckCircle2,
-  Loader2, Check, Heart, ArrowUpDown, Star, Sparkles, Filter, LocateFixed
+  Loader2, Check, Heart, ArrowUpDown, Star, Sparkles, Filter, LocateFixed, Expand
 } from "lucide-react";
 import {
   Shell, TopBar, IconBtn, CategoryTiles, EmptyBlock, Breadcrumbs,
   ProfileProgressBar, BoostPreviewModal, JobCardSkeleton
 } from "@/components/kit";
+import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -19,6 +20,7 @@ import {
   getDistanceSuitability,
   getSavedArea,
   setSavedArea,
+  getProximityCoordinates,
 } from "@/lib/locationAreas";
 import { JOB_CATEGORY_FILTERS } from "@/lib/catalogFilters";
 import { apiGet, apiPost, getFreelancerId } from "@/lib/api";
@@ -77,10 +79,16 @@ export default function Jobs() {
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [boostPreviewOpen, setBoostPreviewOpen] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  const [showMap, setShowMap] = useState(true);
   const [boostCoupon, setBoostCoupon] = useState(null);
   const { startPayment } = useRazorpay();
   const { coords: liveCoords, status: locStatus, requestLocation } = useUserLocation();
   const [applicantArea, setApplicantArea] = useState(getSavedArea());
+
+  // Auto-request GPS on mount
+  useEffect(() => {
+    requestLocation();
+  }, [requestLocation]);
 
   // Auto-detect closest locality when GPS granted
   useEffect(() => {
@@ -170,6 +178,23 @@ export default function Jobs() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobs, catFilter, filters, term, sortBy, viewTab, savedJobIds]);
 
+  const mapPins = useMemo(() => {
+    const center = liveCoords || { lat: 12.9352, lng: 77.6245 };
+    return filtered.slice(0, 40).map((j, idx) => {
+      const coords = getProximityCoordinates(center.lat, center.lng, j.distance_km || (0.4 + (idx % 15) * 0.3), j.id || idx);
+      return {
+        id: j.id,
+        kind: "job",
+        title: j.title,
+        subtitle: `${j.company_name} · ₹${Number(j.pay || 0).toLocaleString("en-IN")} · ${j.distance_km || 0.5} km`,
+        pay: j.pay,
+        lat: j.lat || coords.lat,
+        lng: j.lng || coords.lng,
+        distance_km: j.distance_km,
+      };
+    });
+  }, [filtered, liveCoords]);
+
   const appliedSet = new Set(quota?.applied_job_ids || []);
   const quotaUsed = quota?.quota_used ?? 0;
   const quotaLimit = quota?.quota_limit ?? 3;
@@ -235,7 +260,7 @@ export default function Jobs() {
         right={
           <div className="flex items-center gap-2">
             <IconBtn testID="jobs-categories-btn" onClick={() => nav("/categories")} title="Categories"><Grid3x3 size={17} /></IconBtn>
-            <IconBtn testID="jobs-map-btn" onClick={() => nav("/map")} title="Live Map"><MapIcon size={18} /></IconBtn>
+            <IconBtn testID="jobs-map-btn" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "Show Map"}><MapIcon size={18} className={showMap ? "text-brand" : ""} /></IconBtn>
             <IconBtn testID="jobs-chats-btn" onClick={() => nav("/freelancer/chats")} title="My Chats"><MessagesSquare size={18} className="text-brand" /></IconBtn>
             <span data-testid="verify-status-badge" className={`flex items-center gap-1 border-2 border-ink px-2.5 py-1.5 text-[10px] font-black tracking-wide text-white ${isVerified ? "bg-ok" : "bg-ink"}`}>
               {isVerified ? <ShieldCheck size={14} /> : <ShieldHalf size={14} />}{isVerified ? "VERIFIED PRO" : "UNVERIFIED"}
@@ -245,12 +270,78 @@ export default function Jobs() {
       />
 
       {/* Upwork-style Profile Progress Bar & Guidance */}
-      <div className="border-b-2 border-ink bg-white">
+      <div className="border-b-2 border-ink bg-white dark:bg-[#161618]">
         <div className="mx-auto w-full max-w-[1600px] px-4 py-3 sm:px-8">
           <Breadcrumbs items={[{ label: "Find Gigs", to: "/freelancer/jobs" }, { label: catFilter === "ALL" ? "All Categories" : catFilter }]} />
           <div className="mt-3">
             <ProfileProgressBar user={user} role="freelancer" />
           </div>
+        </div>
+      </div>
+
+      {/* PROPORTIONAL & AESTHETIC LIVE GIG RADAR MAP CARD */}
+      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 pt-3">
+        <div className="border-2 border-ink bg-white dark:bg-[#121212] shadow-[3px_3px_0px_#121212]">
+          {/* Header Bar */}
+          <div className="flex items-center justify-between border-b-2 border-ink bg-sand/70 dark:bg-[#1a1a1a] px-3.5 py-2">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-[#059669] animate-ping" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-ink dark:text-white">
+                Live Gig Radar (5km) · {filtered.length} Local Gigs Nearby
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                data-testid="toggle-jobs-map-btn"
+                onClick={() => setShowMap(!showMap)}
+                className="border border-ink bg-white dark:bg-[#222] px-2 py-0.5 text-[10px] font-black text-ink dark:text-white hover:bg-sand transition"
+              >
+                {showMap ? "Hide Map" : "Show Map"}
+              </button>
+              <button
+                data-testid="jobs-map-expand-btn"
+                onClick={() => nav("/map")}
+                className="flex items-center gap-1 border border-ink bg-[#059669] px-2 py-0.5 text-[10px] font-black text-white hover:opacity-90 shadow-[1px_1px_0px_#121212]"
+              >
+                <span>Interactive Radar</span>
+                <Expand size={11} />
+              </button>
+            </div>
+          </div>
+
+          {/* Collapsible Map Body with proper proportions */}
+          {showMap && (
+            <div className="relative isolate h-[160px] sm:h-[280px] w-full bg-sand/20" data-testid="jobs-radar-map">
+              <GoogleMap
+                pins={mapPins}
+                zoom={13}
+                userLocation={liveCoords}
+                height="100%"
+                radiusKm={5}
+                onSelectPin={(pin) => {
+                  const target = filtered.find((j) => j.id === pin.id);
+                  if (target) {
+                    setActiveJob(target);
+                    setApplyOpen(true);
+                  }
+                }}
+              />
+              <button
+                data-testid="jobs-near-me-btn"
+                onClick={requestLocation}
+                className={`absolute bottom-3 left-3 z-[400] flex items-center gap-1.5 border-2 border-ink px-2.5 py-1 text-xs font-black shadow-[2px_2px_0px_#121212] transition active:translate-y-0.5 ${
+                  liveCoords ? "bg-[#059669] text-white" : "bg-white text-ink hover:bg-sand"
+                }`}
+              >
+                {locStatus === "locating" ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <LocateFixed size={13} />
+                )}
+                <span>{liveCoords ? "GPS Locked" : "Locate Me"}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Search, X, Star, MapPin, IndianRupee, Clock, CheckCheck, Lock, LockOpen,
   PlusCircle, ArrowRight, MessagesSquare, Tag, LocateFixed, CheckCircle2,
-  Loader2, Expand, Heart, SlidersHorizontal, ShieldCheck, Sparkles, ArrowUpDown
+  Loader2, Expand, Heart, SlidersHorizontal, ShieldCheck, Sparkles, ArrowUpDown,
+  Map as MapIcon
 } from "lucide-react";
 import { Shell, TopBar, IconBtn, CategoryTiles } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
@@ -140,6 +141,9 @@ export default function Employer() {
             >
               <Sparkles size={13} className="text-brand" /> BOOST
             </button>
+            <IconBtn testID="employer-map-btn" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "Show Map"}>
+              <MapIcon size={18} className={showMap ? "text-brand" : "text-ink"} />
+            </IconBtn>
             <IconBtn testID="employer-inbox-btn" onClick={() => nav("/employer/inbox")}>
               <MessagesSquare size={18} className="text-ink" />
             </IconBtn>
