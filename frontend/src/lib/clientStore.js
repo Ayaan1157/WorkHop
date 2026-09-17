@@ -22,7 +22,9 @@ export function maskPhone(phone) {
 
 // 1. Leads / Verified Pros
 export function getStoredLeads() {
-  const isUnlocked = localStorage.getItem("workhop_employer_unlocked") === "1";
+  const currentUser = getStoredUser();
+  const isAdmin = Boolean(currentUser?.is_admin || currentUser?.role === "admin" || (currentUser?.email && ADMIN_EMAILS.includes(currentUser.email.trim().toLowerCase())));
+  const isUnlocked = isAdmin || localStorage.getItem("workhop_employer_unlocked") === "1";
   return leadsSeed.map((lead, idx) => ({
     id: lead.id || `lead-${idx + 1}`,
     name: lead.name,

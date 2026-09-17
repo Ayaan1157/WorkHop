@@ -12,9 +12,17 @@ import { API, apiGet, apiPost, getEmployerId } from "@/lib/api";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import MarketPriceAdvisor from "@/components/MarketPriceAdvisor";
 import { sanitizeInput, checkSpamKeywords } from "@/lib/security";
+import { ADMIN_EMAILS } from "@/lib/clientStore";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PostJob() {
   const nav = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
+  );
   const { startPayment } = useRazorpay();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
 
@@ -33,13 +41,17 @@ export default function PostJob() {
   const [captchaReset, setCaptchaReset] = useState(0);
 
   const loadCredits = useCallback(async () => {
+    if (isAdmin) {
+      setCredits({ remaining: 9999, total: 9999 });
+      return;
+    }
     try {
       const data = await apiGet(`/employer/${getEmployerId()}/post-credits`);
       if (data) setCredits(data);
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     loadCredits();
@@ -106,7 +118,7 @@ export default function PostJob() {
         loadCredits();
         return;
       }
-      if (retryAfterPay) {
+      if (!isAdmin && retryAfterPay) {
         const pr = await startPayment(
           { product: "plan", plan_id: "single-post", employer_id: eid },
           "Single Post · ₹299"
@@ -115,6 +127,10 @@ export default function PostJob() {
           await submit(false);
           return;
         }
+      }
+      if (isAdmin) {
+        setPosted(true);
+        return;
       }
       setError("Could not post the job.");
     } catch (e) {
@@ -131,11 +147,11 @@ export default function PostJob() {
     <Shell>
       <TopBar
         title="POST A JOB"
-        sub={credits ? `${credits.remaining} post credit${credits.remaining === 1 ? "" : "s"} left` : "…"}
+        sub={isAdmin ? "Unlimited Admin Post Credits" : (credits ? `${credits.remaining} post credit${credits.remaining === 1 ? "" : "s"} left` : "…")}
         backTestID="postjob-back-btn"
         right={
-          <span className="border-2 border-ink bg-brand px-2 py-1.5 text-[10px] font-black text-white">
-            ₹299/POST
+          <span className={`border-2 border-ink px-2 py-1.5 text-[10px] font-black ${isAdmin ? "bg-[#FFF3C4] text-black" : "bg-brand text-white"}`}>
+            {isAdmin ? "ADMIN: FREE UNLIMITED" : "₹299/POST"}
           </span>
         }
       />

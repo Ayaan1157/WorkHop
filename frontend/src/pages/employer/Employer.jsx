@@ -4,7 +4,7 @@ import {
   Search, X, Star, MapPin, IndianRupee, Clock, CheckCheck, Lock, LockOpen,
   PlusCircle, ArrowRight, MessagesSquare, Tag, LocateFixed, CheckCircle2,
   Loader2, Expand, Heart, SlidersHorizontal, ShieldCheck, Sparkles, ArrowUpDown,
-  Map as MapIcon
+  Map as MapIcon, Shield, Briefcase
 } from "lucide-react";
 import { Shell, TopBar, IconBtn, CategoryTiles } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
@@ -16,10 +16,17 @@ import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
 import { LEAD_CATEGORY_FILTERS } from "@/lib/catalogFilters";
 import { getOrganicCoordinates, getProximityCoordinates } from "@/lib/locationAreas";
 import { apiGet, getEmployerId } from "@/lib/api";
-import { getSavedProIds, toggleSavePro } from "@/lib/clientStore";
+import { getSavedProIds, toggleSavePro, ADMIN_EMAILS } from "@/lib/clientStore";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Employer() {
   const nav = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
+  );
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
@@ -44,13 +51,13 @@ export default function Employer() {
   }, [requestLocation]);
 
   useEffect(() => {
-    if (localStorage.getItem("workhop_employer_unlocked") === "1") setUnlocked(true);
+    if (isAdmin || localStorage.getItem("workhop_employer_unlocked") === "1") setUnlocked(true);
     setSavedPros(getSavedProIds());
     apiGet("/leads/preview")
       .then(setLeads)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [isAdmin]);
 
   const handleToggleSave = (proId, e) => {
     if (e) e.stopPropagation();
@@ -130,10 +137,24 @@ export default function Employer() {
     <Shell>
       <TopBar
         title="NEARBY EXPERTS"
-        sub="Bengaluru · live map · 2km radius"
+        sub="Bengaluru · live map"
         backTestID="employer-back-btn"
         right={
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                onClick={() => nav("/freelancer/jobs")}
+                className="hidden sm:flex items-center gap-1 border-2 border-ink bg-white px-2 py-1 text-[10px] font-black text-ink hover:bg-sand transition"
+                title="Switch to Freelancer Gigs"
+              >
+                <Briefcase size={12} className="text-brand" /> GIGS VIEW
+              </button>
+            )}
+            {isAdmin && (
+              <IconBtn testID="employer-admin-btn" onClick={() => nav("/admin")} title="Admin Dashboard">
+                <Shield size={18} className="text-brand" />
+              </IconBtn>
+            )}
             <button
               onClick={() => setBoostModalOpen(true)}
               className="hidden sm:flex items-center gap-1 border-2 border-ink bg-[#FFF3C4] px-2.5 py-1 text-[10px] font-black text-black hover:bg-[#FFEAA0]"
@@ -399,7 +420,7 @@ export default function Employer() {
                 <LeadCard
                   key={l.id}
                   lead={l}
-                  unlocked={unlocked}
+                  unlocked={isAdmin || unlocked}
                   index={i}
                   isSaved={savedPros.includes(String(l.id))}
                   onToggleSave={(e) => handleToggleSave(l.id, e)}
@@ -408,7 +429,7 @@ export default function Employer() {
               ))}
             </div>
 
-            {!unlocked && sorted.length > 0 && (
+            {!(isAdmin || unlocked) && sorted.length > 0 && (
               <div className="relative my-2 border-2 border-ink p-6 bg-sand shadow-[3px_3px_0px_#121212]" data-testid="unlock-banner">
                 <div className="absolute -left-0.5 -top-0.5 h-8 w-8 bg-brand" />
                 <p className="whitespace-pre-line text-2xl font-black leading-tight text-ink">
@@ -428,15 +449,33 @@ export default function Employer() {
               </div>
             )}
 
-            {unlocked && (
+            {(isAdmin || unlocked) && (
               <div
                 data-testid="unlocked-badge"
-                className="my-2 flex items-center justify-center gap-2 border-2 border-ok bg-[#E5F8EE] p-4 shadow-[2px_2px_0px_#121212]"
+                className="my-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-2 border-ok bg-[#E5F8EE] dark:bg-[#132c1e] p-3 sm:p-4 shadow-[2px_2px_0px_#121212]"
               >
-                <CheckCircle2 size={20} className="text-ok" />
-                <span className="text-sm font-extrabold text-ink">
-                  Payment verified · All 5 leads unlocked
-                </span>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={20} className="text-ok shrink-0" />
+                  <span className="text-xs sm:text-sm font-extrabold text-ink dark:text-emerald-200">
+                    {isAdmin ? "Admin Full Access · All Pro Leads Unlocked (Zero Paywall)" : "Payment verified · All 5 leads unlocked"}
+                  </span>
+                </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => nav("/freelancer/jobs")}
+                      className="border border-ink bg-white dark:bg-[#1a1a1a] px-2.5 py-1 text-[10px] font-black text-ink dark:text-white hover:bg-sand"
+                    >
+                      SWITCH TO GIGS →
+                    </button>
+                    <button
+                      onClick={() => nav("/admin")}
+                      className="border border-ink bg-brand text-white px-2.5 py-1 text-[10px] font-black"
+                    >
+                      ADMIN DASHBOARD
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -445,7 +484,7 @@ export default function Employer() {
                 <LeadCard
                   key={l.id}
                   lead={l}
-                  unlocked={unlocked}
+                  unlocked={isAdmin || unlocked}
                   index={i + 2}
                   isSaved={savedPros.includes(String(l.id))}
                   onToggleSave={(e) => handleToggleSave(l.id, e)}

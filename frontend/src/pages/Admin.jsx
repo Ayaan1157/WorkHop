@@ -1111,13 +1111,29 @@ export default function Admin() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/employer"
+              className="flex items-center gap-1.5 border-2 border-ink bg-[#FFF3C4] px-3 py-1.5 text-xs font-black tracking-wider text-ink hover:bg-[#FFEAA0] transition shadow-[1.5px_1.5px_0px_#121212]"
+              title="Switch to Employer view (explore pros, plans, post jobs)"
+            >
+              <Users size={13} className="text-brand" />
+              <span>EMPLOYER SITE</span>
+            </Link>
+            <Link
+              to="/freelancer/jobs"
+              className="flex items-center gap-1.5 border-2 border-ink bg-[#E5F8EE] px-3 py-1.5 text-xs font-black tracking-wider text-ink hover:bg-[#D0F2E0] transition shadow-[1.5px_1.5px_0px_#121212]"
+              title="Switch to Freelancer view (find gigs, apply, chats)"
+            >
+              <Briefcase size={13} className="text-ok" />
+              <span>FREELANCER SITE</span>
+            </Link>
             <Link
               to="/"
               className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-1.5 text-xs font-black tracking-wider text-ink hover:bg-sand transition"
             >
               <ExternalLink size={13} />
-              <span className="hidden sm:inline">VIEW LIVE SITE</span>
+              <span className="hidden sm:inline">HOME</span>
             </Link>
             <button
               onClick={() => load(tab)}

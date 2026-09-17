@@ -126,9 +126,14 @@ export function GlobalNav() {
     setMobileMenuOpen(false);
   }, [loc.pathname]);
 
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
+  );
   const userRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
-  const isEmployer = Boolean(user && (userRole?.includes("employ") || userRole?.includes("client")));
-  const isFreelancer = Boolean(user && !isEmployer);
+  const isEmployer = Boolean(user && (isAdmin || userRole?.includes("employ") || userRole?.includes("client")));
+  const isFreelancer = Boolean(user && (isAdmin || !userRole?.includes("employ") && !userRole?.includes("client")));
 
   const allLinks = [
     { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users, forRole: "employer" },
@@ -136,10 +141,12 @@ export function GlobalNav() {
     { label: "LIVE MAP", path: "/map", testId: "nav-map", icon: MapPin },
     { label: "CATEGORIES", path: "/categories", testId: "nav-categories", icon: Grid3x3 },
     { label: "PLANS", path: "/employer/plans", testId: "nav-plans", icon: Coins },
+    ...(isAdmin ? [{ label: "ADMIN PORTAL", path: "/admin", testId: "nav-admin", icon: Shield }] : []),
   ];
 
   const links = allLinks.filter((link) => {
     if (!user) return true; // Show both if not signed in
+    if (isAdmin) return true; // Admin gets access to both sides and everything!
     if (link.forRole === "employer") return isEmployer;
     if (link.forRole === "freelancer") return isFreelancer;
     return true;
@@ -177,15 +184,26 @@ export function GlobalNav() {
 
           {/* Right Action Icons & Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Free Credits Badge (Desktop) */}
-            <Link
-              to="/employer/plans"
-              className="hidden md:flex items-center gap-1 border-2 border-ink bg-sand dark:bg-[#222] px-2.5 py-1 text-[11px] font-black text-ink dark:text-white hover:bg-stone transition"
-              title="Your active credits"
-            >
-              <Coins size={14} className="text-brand" />
-              <span>5 CREDITS</span>
-            </Link>
+            {/* Admin Full Access Badge or Credits Badge (Desktop) */}
+            {isAdmin ? (
+              <Link
+                to="/admin"
+                className="hidden md:flex items-center gap-1.5 border-2 border-ink bg-[#FFF3C4] dark:bg-[#2d2212] px-2.5 py-1 text-[11px] font-black text-ink dark:text-amber-300 hover:bg-amber-200 transition shadow-[1.5px_1.5px_0px_#121212]"
+                title="Admin Command Center (Full Platform Unlocked)"
+              >
+                <Shield size={13} className="text-brand" />
+                <span>ADMIN FULL ACCESS</span>
+              </Link>
+            ) : (
+              <Link
+                to="/employer/plans"
+                className="hidden md:flex items-center gap-1 border-2 border-ink bg-sand dark:bg-[#222] px-2.5 py-1 text-[11px] font-black text-ink dark:text-white hover:bg-stone transition"
+                title="Your active credits"
+              >
+                <Coins size={14} className="text-brand" />
+                <span>5 CREDITS</span>
+              </Link>
+            )}
 
             {/* In-App Notification Bell */}
             <NotificationBell />
@@ -368,6 +386,16 @@ export function GlobalNav() {
 
             {/* Secondary Pages & Links */}
             <div className="mt-6 flex flex-col gap-2 border-t-2 border-dashed border-ink/20 pt-4 text-xs font-bold">
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 font-black text-brand bg-[#FFF3C4] dark:bg-[#2d2212] p-2 border border-ink"
+                >
+                  <Shield size={16} />
+                  <span>Admin Command Center (Full Access)</span>
+                </Link>
+              )}
               <Link
                 to="/profile"
                 onClick={() => setMobileMenuOpen(false)}
@@ -415,11 +443,19 @@ export function MobileBottomNav() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("signin");
 
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
+  );
+
   const tabs = [
     { label: "Home", path: "/", icon: Home, testId: "bottom-nav-home" },
     { label: "Pros", path: "/employer", icon: Users, testId: "bottom-nav-pros" },
     { label: "Gigs", path: "/freelancer/jobs", icon: Briefcase, testId: "bottom-nav-gigs" },
-    { label: "Live Map", path: "/map", icon: MapPin, testId: "bottom-nav-map" },
+    ...(isAdmin
+      ? [{ label: "Admin", path: "/admin", icon: Shield, testId: "bottom-nav-admin" }]
+      : [{ label: "Live Map", path: "/map", icon: MapPin, testId: "bottom-nav-map" }]),
     {
       label: "Profile",
       path: user ? "/profile" : null,

@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   Search, X, Grid3x3, Map as MapIcon, MessagesSquare, ShieldCheck, ShieldHalf,
   Zap, Rocket, SlidersHorizontal, MapPin, IndianRupee, Send, Lock, CheckCircle2,
-  Loader2, Check, Heart, ArrowUpDown, Star, Sparkles, Filter, LocateFixed, Expand
+  Loader2, Check, Heart, ArrowUpDown, Star, Sparkles, Filter, LocateFixed, Expand,
+  Users, Shield
 } from "lucide-react";
 import {
   Shell, TopBar, IconBtn, CategoryTiles, EmptyBlock, Breadcrumbs,
@@ -24,7 +25,7 @@ import {
 } from "@/lib/locationAreas";
 import { JOB_CATEGORY_FILTERS } from "@/lib/catalogFilters";
 import { apiGet, apiPost, getFreelancerId } from "@/lib/api";
-import { getSavedJobIds, toggleSaveJob } from "@/lib/clientStore";
+import { getSavedJobIds, toggleSaveJob, ADMIN_EMAILS } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 
 const BUDGETS = [
@@ -53,6 +54,11 @@ const SORT_OPTIONS = [
 export default function Jobs() {
   const nav = useNavigate();
   const { user } = useAuth();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
+  );
   const [sp] = useSearchParams();
   const [jobs, setJobs] = useState([]);
   const [status, setStatus] = useState(null);
@@ -134,7 +140,7 @@ export default function Jobs() {
     setSavedJobIds(updated);
   };
 
-  const isVerified = !!status?.is_verified;
+  const isVerified = isAdmin || !!status?.is_verified;
   const term = search.trim().toLowerCase();
   const activeFilter = JOB_CATEGORY_FILTERS.find((f) => f.key === catFilter);
   const inCat = (j) => catFilter === "ALL" || !activeFilter || activeFilter.cats.includes(j.category);
@@ -199,7 +205,7 @@ export default function Jobs() {
   const quotaUsed = quota?.quota_used ?? 0;
   const quotaLimit = quota?.quota_limit ?? 3;
   const hasBoost = !!quota?.has_boost;
-  const quotaExhausted = quotaUsed >= quotaLimit;
+  const quotaExhausted = isAdmin ? false : (quotaUsed >= quotaLimit);
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
   const gotoVerify = () => {
@@ -259,11 +265,25 @@ export default function Jobs() {
         backTestID="jobs-back-btn"
         right={
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                onClick={() => nav("/employer")}
+                className="hidden sm:flex items-center gap-1 border-2 border-ink bg-white px-2 py-1 text-[10px] font-black text-ink hover:bg-sand transition"
+                title="Switch to Employer (Explore Pros)"
+              >
+                <Users size={12} className="text-brand" /> PROS VIEW
+              </button>
+            )}
+            {isAdmin && (
+              <IconBtn testID="jobs-admin-btn" onClick={() => nav("/admin")} title="Admin Dashboard">
+                <Shield size={18} className="text-brand" />
+              </IconBtn>
+            )}
             <IconBtn testID="jobs-categories-btn" onClick={() => nav("/categories")} title="Categories"><Grid3x3 size={17} /></IconBtn>
             <IconBtn testID="jobs-map-btn" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "Show Map"}><MapIcon size={18} className={showMap ? "text-brand" : ""} /></IconBtn>
             <IconBtn testID="jobs-chats-btn" onClick={() => nav("/freelancer/chats")} title="My Chats"><MessagesSquare size={18} className="text-brand" /></IconBtn>
             <span data-testid="verify-status-badge" className={`hidden xs:flex items-center gap-1 border-2 border-ink px-2.5 py-1.5 text-[10px] font-black tracking-wide text-white ${isVerified ? "bg-ok" : "bg-ink"}`}>
-              {isVerified ? <ShieldCheck size={14} /> : <ShieldHalf size={14} />}{isVerified ? "VERIFIED PRO" : "UNVERIFIED"}
+              {isVerified ? <ShieldCheck size={14} /> : <ShieldHalf size={14} />}{isAdmin ? "ADMIN VERIFIED" : (isVerified ? "VERIFIED PRO" : "UNVERIFIED")}
             </span>
           </div>
         }

@@ -8,9 +8,18 @@ import { Shell, TopBar, Spinner, IconBtn } from "@/components/kit";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { apiGet, getEmployerId } from "@/lib/api";
+import { ADMIN_EMAILS } from "@/lib/clientStore";
+import { useAuth } from "@/context/AuthContext";
+import { Shield } from "lucide-react";
 
 export default function Plans() {
   const nav = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
+  );
   const [plans, setPlans] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,17 +122,19 @@ export default function Plans() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-black uppercase tracking-wider text-brand">
-                    EMPLOYER ACCOUNT
+                    {isAdmin ? "ADMIN MASTER ACCOUNT" : "EMPLOYER ACCOUNT"}
                   </span>
-                  <span className="bg-ink text-white px-2 py-0.5 text-[9px] font-black">
-                    5 CREDITS ACTIVE
+                  <span className={`px-2 py-0.5 text-[9px] font-black ${isAdmin ? "bg-brand text-white" : "bg-ink text-white"}`}>
+                    {isAdmin ? "ALL UNLOCKED (9999 CREDITS)" : "5 CREDITS ACTIVE"}
                   </span>
                 </div>
                 <h2 className="text-xl font-black text-ink mt-0.5">
-                  Need More Job Post Credits?
+                  {isAdmin ? "Full Platform Plans & Credits Unlocked" : "Need More Job Post Credits?"}
                 </h2>
                 <p className="text-xs text-inkmuted font-semibold mt-1">
-                  1 Credit = 1 Live Job Post in your 5km radius for 30 days. Credits never expire.
+                  {isAdmin
+                    ? "As an administrator, you have unrestricted access to all posting plans, candidate unlocks, and employer branding."
+                    : "1 Credit = 1 Live Job Post in your 5km radius for 30 days. Credits never expire."}
                 </p>
               </div>
             </div>

@@ -22,6 +22,7 @@ import {
   deleteGigAdmin,
   getEscrowOrders,
   resolveEscrowOrder,
+  ADMIN_EMAILS,
 } from "./clientStore";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
@@ -61,7 +62,9 @@ function mockRouter(path, method = "GET", body = null) {
     return postCustomJob(body);
   }
   if (cleanPath.includes("/post-credits")) {
-    return { remaining: 5, total: 5 };
+    const u = getStoredUser();
+    const isAdmin = Boolean(u?.is_admin || u?.role === "admin" || (u?.email && ADMIN_EMAILS.includes(u.email.trim().toLowerCase())));
+    return { remaining: isAdmin ? 9999 : 5, total: isAdmin ? 9999 : 5, is_admin: isAdmin };
   }
   if (cleanPath.includes("/apply") && method === "POST") {
     const parts = cleanPath.split("/");
@@ -328,7 +331,16 @@ function mockRouter(path, method = "GET", body = null) {
 
   // 6. Freelancer Profile / Status / Quota
   if (cleanPath.includes("/quota")) {
-    return { applies_used_today: 0, applies_limit_today: 3, has_boost: false };
+    const u = getStoredUser();
+    const isAdmin = Boolean(u?.is_admin || u?.role === "admin" || (u?.email && ADMIN_EMAILS.includes(u.email.trim().toLowerCase())));
+    return {
+      applies_used_today: 0,
+      applies_limit_today: isAdmin ? 9999 : 3,
+      quota_used: 0,
+      quota_limit: isAdmin ? 9999 : 3,
+      has_boost: isAdmin,
+      is_admin: isAdmin,
+    };
   }
   if (cleanPath.startsWith("/freelancer/") && cleanPath.endsWith("/full-profile") && method === "GET") {
     return getFreelancerProfile();

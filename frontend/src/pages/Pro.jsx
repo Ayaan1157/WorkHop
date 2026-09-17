@@ -12,12 +12,20 @@ import { ProfileSkeleton } from "@/components/Skeletons";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { apiGet, getEmployerId } from "@/lib/api";
+import { ADMIN_EMAILS } from "@/lib/clientStore";
+import { useAuth } from "@/context/AuthContext";
 
 const Blur = () => <span className="pointer-events-none absolute inset-0 backdrop-blur-[6px]" />;
 
 export default function Pro() {
   const { id } = useParams();
   const nav = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
+  );
   const [pro, setPro] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,8 +45,8 @@ export default function Pro() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-    if (localStorage.getItem("workhop_employer_unlocked") === "1") setUnlocked(true);
-  }, [id]);
+    if (isAdmin || localStorage.getItem("workhop_employer_unlocked") === "1") setUnlocked(true);
+  }, [id, isAdmin]);
 
   const handleUnlock = async () => {
     setPaying(true);
@@ -138,7 +146,7 @@ export default function Pro() {
                     {pro.rate_hr ? `₹${pro.rate_hr}/hr` : "Custom Quote"}
                   </p>
                 </div>
-                {!unlocked ? (
+                {!(isAdmin || unlocked) ? (
                   <button
                     onClick={handleUnlock}
                     disabled={paying}
@@ -148,10 +156,10 @@ export default function Pro() {
                   </button>
                 ) : (
                   <a
-                    href={`tel:${pro.phone || ""}`}
+                    href={`tel:${pro.phone || "9876543210"}`}
                     className="w-full sm:w-auto flex items-center justify-center gap-2 border-2 border-ink bg-ok px-5 py-2.5 text-xs font-black tracking-wider text-white"
                   >
-                    <Phone size={14} /> CALL {pro.phone || "PRO"}
+                    <Phone size={14} /> CALL {pro.phone || "PRO"} {isAdmin ? "(ADMIN)" : ""}
                   </a>
                 )}
               </div>
