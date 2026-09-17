@@ -116,6 +116,7 @@ export function GlobalNav() {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("signin");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Close mobile menu on route change
@@ -230,7 +231,10 @@ export function GlobalNav() {
             ) : (
               <button
                 data-testid="nav-signin-btn"
-                onClick={() => setAuthOpen(true)}
+                onClick={() => {
+                  setAuthMode("signin");
+                  setAuthOpen(true);
+                }}
                 className="hidden sm:flex border-2 border-ink bg-ink px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
               >
                 SIGN IN
@@ -308,6 +312,7 @@ export function GlobalNav() {
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);
+                      setAuthMode("signin");
                       setAuthOpen(true);
                     }}
                     className="w-full border-2 border-ink bg-brand py-2 text-xs font-black tracking-wider text-white shadow-[1.5px_1.5px_0px_#121212]"
@@ -396,7 +401,7 @@ export function GlobalNav() {
         </div>
       )}
 
-      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+      <AuthModal isOpen={authOpen} initialMode={authMode} onClose={() => setAuthOpen(false)} />
     </>
   );
 }
@@ -406,6 +411,7 @@ export function MobileBottomNav() {
   const loc = useLocation();
   const { user } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("signin");
 
   const tabs = [
     { label: "Home", path: "/", icon: Home, testId: "bottom-nav-home" },
@@ -417,7 +423,10 @@ export function MobileBottomNav() {
       path: user ? "/profile" : null,
       icon: UserCircle2,
       testId: "bottom-nav-profile",
-      action: user ? null : () => setAuthOpen(true),
+      action: user ? null : () => {
+        setAuthMode("signin");
+        setAuthOpen(true);
+      },
     },
   ];
 
@@ -476,7 +485,7 @@ export function MobileBottomNav() {
           );
         })}
       </nav>
-      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+      <AuthModal isOpen={authOpen} initialMode={authMode} onClose={() => setAuthOpen(false)} />
     </>
   );
 }

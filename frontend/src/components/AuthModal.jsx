@@ -12,7 +12,7 @@ import RecaptchaWidget from "@/components/RecaptchaWidget";
 import GoogleAccountPicker from "@/components/GoogleAccountPicker";
 import { sanitizeInput, checkRateLimit, resetRateLimit } from "@/lib/security";
 
-export default function AuthModal({ isOpen, onClose, initialRole = null, initialMode = "signup" }) {
+export default function AuthModal({ isOpen, onClose, initialRole = null, initialMode = "signin" }) {
   const nav = useNavigate();
   const { user, login, adoptSession, signupWithDetails, adminLogin, passwordLoginAuth } = useAuth();
   const { coords, status: locStatus, requestLocation } = useUserLocation();

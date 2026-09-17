@@ -24,12 +24,12 @@ export default function Landing() {
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalRole, setAuthModalRole] = useState("freelancer");
-  const [authModalMode, setAuthModalMode] = useState("signup");
+  const [authModalMode, setAuthModalMode] = useState("signin");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Sign in / Sign up flow state
   const [pendingRole, setPendingRole] = useState(null); // "employer" | "freelancer"
-  const [authMode, setAuthMode] = useState("signup"); // "signup" | "signin"
+  const [authMode, setAuthMode] = useState("signin"); // "signin" | "signup"
 
   const [nameInput, setNameInput] = useState("");
   const [emailInput, setEmailInput] = useState("");
@@ -476,22 +476,6 @@ export default function Landing() {
               <div className="flex border-2 border-ink bg-sand p-1 mb-5">
                 <button
                   type="button"
-                  data-testid="landing-tab-signup"
-                  onClick={() => {
-                    setAuthMode("signup");
-                    setOtpError(null);
-                    setOtpStage("idle");
-                  }}
-                  className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
-                    authMode === "signup"
-                      ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
-                      : "bg-transparent text-ink hover:bg-white"
-                  }`}
-                >
-                  ✨ SIGN UP (NEW USER)
-                </button>
-                <button
-                  type="button"
                   data-testid="landing-tab-signin"
                   onClick={() => {
                     setAuthMode("signin");
@@ -505,6 +489,22 @@ export default function Landing() {
                   }`}
                 >
                   🔐 SIGN IN (EXISTING USER)
+                </button>
+                <button
+                  type="button"
+                  data-testid="landing-tab-signup"
+                  onClick={() => {
+                    setAuthMode("signup");
+                    setOtpError(null);
+                    setOtpStage("idle");
+                  }}
+                  className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
+                    authMode === "signup"
+                      ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
+                      : "bg-transparent text-ink hover:bg-white"
+                  }`}
+                >
+                  ✨ SIGN UP (NEW USER)
                 </button>
               </div>
 
