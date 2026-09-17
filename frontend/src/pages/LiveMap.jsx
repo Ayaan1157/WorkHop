@@ -47,6 +47,7 @@ export default function LiveMap() {
   const [catFilter, setCatFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPinId, setSelectedPinId] = useState(null);
+  const [mobileTab, setMobileTab] = useState("map"); // "map" | "list" for mobile viewports
 
   // Auto-request location on mount to center around closest real location
   useEffect(() => {
@@ -237,6 +238,10 @@ export default function LiveMap() {
 
   const handleSelectPin = (item) => {
     setSelectedPinId(item.id);
+    if (item.lat && item.lng) {
+      setUserLocation({ lat: item.lat, lng: item.lng });
+    }
+    setMobileTab("map");
   };
 
   return (
@@ -299,7 +304,7 @@ export default function LiveMap() {
             <span className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400 hidden sm:inline">
               Map View Mode:
             </span>
-            <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 w-full sm:w-auto">
               {/* Option 1: I'm Hiring (Show Freelancers) */}
               <button
                 data-testid="mode-employer-btn"
@@ -307,14 +312,16 @@ export default function LiveMap() {
                   setViewMode("employer");
                   setSelectedPinId(null);
                 }}
-                className={`flex items-center justify-center gap-2 border-2 border-ink px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-black transition ${
+                className={`flex items-center justify-center gap-1 sm:gap-2 border-2 border-ink px-2.5 sm:px-4 py-2 text-[11px] sm:text-xs font-black transition ${
                   viewMode === "employer"
                     ? "bg-brand text-white shadow-[2px_2px_0px_#121212] -translate-y-0.5"
                     : "bg-sand dark:bg-[#1f1f1f] text-ink dark:text-white hover:bg-stone/20"
                 }`}
               >
                 <span>🏢</span>
-                <span>I'M HIRING (FREELANCERS)</span>
+                <span className="hidden xs:inline sm:hidden">HIRING</span>
+                <span className="hidden sm:inline">I'M HIRING (PROS)</span>
+                <span className="xs:hidden">HIRING</span>
               </button>
 
               {/* Option 2: I'm a Freelancer (Show Open Gigs) */}
@@ -324,14 +331,16 @@ export default function LiveMap() {
                   setViewMode("freelancer");
                   setSelectedPinId(null);
                 }}
-                className={`flex items-center justify-center gap-2 border-2 border-ink px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-black transition ${
+                className={`flex items-center justify-center gap-1 sm:gap-2 border-2 border-ink px-2.5 sm:px-4 py-2 text-[11px] sm:text-xs font-black transition ${
                   viewMode === "freelancer"
                     ? "bg-[#059669] text-white shadow-[2px_2px_0px_#121212] -translate-y-0.5"
                     : "bg-sand dark:bg-[#1f1f1f] text-ink dark:text-white hover:bg-stone/20"
                 }`}
               >
                 <span>💼</span>
-                <span>I'M A FREELANCER (GIGS)</span>
+                <span className="hidden xs:inline sm:hidden">GIGS</span>
+                <span className="hidden sm:inline">I'M A FREELANCER (GIGS)</span>
+                <span className="xs:hidden">GIGS</span>
               </button>
             </div>
           </div>
@@ -445,12 +454,46 @@ export default function LiveMap() {
         </div>
       </div>
 
+      {/* Mobile Segmented View Switcher (Radar Map vs Feed) */}
+      <div className="lg:hidden mx-auto w-full max-w-[1600px] px-3 pt-3">
+        <div className="grid grid-cols-2 gap-1.5 border-2 border-ink bg-sand/70 dark:bg-[#1a1a1a] p-1.5 shadow-[2px_2px_0px_#121212]">
+          <button
+            type="button"
+            data-testid="mobile-tab-map"
+            onClick={() => setMobileTab("map")}
+            className={`flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase transition border-2 ${
+              mobileTab === "map"
+                ? "bg-brand text-white border-ink shadow-[1.5px_1.5px_0px_#121212]"
+                : "bg-white dark:bg-[#252525] text-ink dark:text-white border-transparent hover:bg-white/80"
+            }`}
+          >
+            <span>🗺️</span>
+            <span>Radar Map</span>
+          </button>
+          <button
+            type="button"
+            data-testid="mobile-tab-list"
+            onClick={() => setMobileTab("list")}
+            className={`flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase transition border-2 ${
+              mobileTab === "list"
+                ? "bg-brand text-white border-ink shadow-[1.5px_1.5px_0px_#121212]"
+                : "bg-white dark:bg-[#252525] text-ink dark:text-white border-transparent hover:bg-white/80"
+            }`}
+          >
+            <span>📋</span>
+            <span>
+              Feed ({viewMode === "employer" ? filteredFreelancers.length : filteredJobs.length})
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* Main Content Area: Responsive Split Workspace (Map + Side Feed) */}
-      <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="mx-auto w-full max-w-[1600px] p-3 sm:p-6 lg:p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
           
           {/* Left Column: Appealing Compact Google Map Viewport (7 Cols) */}
-          <div className="lg:col-span-7 flex flex-col gap-3">
+          <div className={`lg:col-span-7 flex-col gap-3 ${mobileTab === "map" ? "flex" : "hidden lg:flex"}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span
@@ -471,7 +514,7 @@ export default function LiveMap() {
 
             {/* Compact Google Map Card */}
             {loading ? (
-              <div className="flex h-[470px] w-full flex-col items-center justify-center gap-3 border-2 border-ink bg-white dark:bg-[#1a1a1a]">
+              <div className="flex h-[360px] sm:h-[470px] w-full flex-col items-center justify-center gap-3 border-2 border-ink bg-white dark:bg-[#1a1a1a]">
                 <Spinner className="!h-8 !w-8 text-brand" />
                 <p className="text-xs font-black uppercase tracking-wider text-inkmuted">
                   Loading Google Maps Radar...
@@ -519,7 +562,7 @@ export default function LiveMap() {
           </div>
 
           {/* Right Column: "Close By People / Open Gigs" Interactive Feed (5 Cols) */}
-          <div className="lg:col-span-5 flex flex-col gap-3">
+          <div className={`lg:col-span-5 flex-col gap-3 ${mobileTab === "list" ? "flex" : "hidden lg:flex"}`}>
             
             {/* Header */}
             <div className="flex items-center justify-between border-b-2 border-ink pb-2">

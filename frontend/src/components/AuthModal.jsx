@@ -350,14 +350,14 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   return (
     <div
       data-testid="auth-modal-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-6 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2.5 sm:p-6 backdrop-blur-sm overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
         data-testid="auth-modal-container"
-        className="relative my-auto w-full max-w-2xl border-2 border-ink bg-white p-5 sm:p-8 shadow-[8px_8px_0px_#121212] transition-all"
+        className="relative my-auto w-full max-w-2xl max-h-[92vh] overflow-y-auto border-2 border-ink bg-white p-4 sm:p-8 shadow-[6px_6px_0px_#121212] sm:shadow-[8px_8px_0px_#121212] transition-all"
       >
         {/* Header with Close */}
         <div className="flex items-start justify-between border-b-2 border-ink pb-4">

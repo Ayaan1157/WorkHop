@@ -434,8 +434,8 @@ export function MobileBottomNav() {
     <>
       <nav
         data-testid="mobile-bottom-nav"
-        className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden items-center justify-around border-t-2 border-ink bg-white dark:bg-[#121212] px-1 py-1 shadow-[0px_-2px_10px_rgba(0,0,0,0.1)]"
-        style={{ paddingBottom: "max(4px, env(safe-area-inset-bottom))" }}
+        className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden items-center justify-around border-t-2 border-ink bg-white dark:bg-[#121212] px-1 shadow-[0px_-2px_10px_rgba(0,0,0,0.1)]"
+        style={{ paddingBottom: "max(6px, env(safe-area-inset-bottom))" }}
       >
         {tabs.map((t) => {
           const active = t.path ? loc.pathname === t.path : false;
@@ -447,10 +447,10 @@ export function MobileBottomNav() {
                 key={t.label}
                 data-testid={t.testId}
                 onClick={t.action}
-                className="flex flex-1 flex-col items-center justify-center py-1 text-center transition-transform active:scale-95"
+                className="flex flex-1 min-h-[50px] flex-col items-center justify-center py-1 text-center transition-transform active:scale-95"
               >
                 <span className="flex h-6 w-6 items-center justify-center text-inkmuted dark:text-stone-400">
-                  <Icon size={18} />
+                  <Icon size={19} />
                 </span>
                 <span className="text-[10px] font-black tracking-tight text-inkmuted dark:text-stone-400 mt-0.5">
                   {t.label}
@@ -464,19 +464,19 @@ export function MobileBottomNav() {
               key={t.label}
               to={t.path}
               data-testid={t.testId}
-              className={`flex flex-1 flex-col items-center justify-center py-1 text-center transition-transform active:scale-95 ${
+              className={`flex flex-1 min-h-[50px] flex-col items-center justify-center py-1 text-center transition-transform active:scale-95 ${
                 active ? "text-brand" : "text-inkmuted dark:text-stone-400"
               }`}
             >
               <div className="relative flex h-6 w-6 items-center justify-center">
-                <Icon size={18} className={active ? "text-brand" : "currentColor"} />
+                <Icon size={19} className={active ? "text-brand" : "currentColor"} />
                 {active && (
-                  <span className="absolute -top-0.5 right-0 h-1.5 w-1.5 rounded-full bg-brand" />
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-brand" />
                 )}
               </div>
               <span
                 className={`text-[10px] font-black tracking-tight mt-0.5 ${
-                  active ? "text-brand" : "text-ink dark:text-stone-300"
+                  active ? "text-brand font-black" : "text-ink dark:text-stone-300"
                 }`}
               >
                 {t.label}
@@ -495,12 +495,12 @@ export function TopBar({ title, sub, right, onBack, backTestID = "topbar-back-bt
   const nav = useNavigate();
   return (
     <div className="sticky top-0 z-20 w-full border-b-2 border-ink bg-white dark:bg-[#121212]">
-      <div className="mx-auto flex w-full max-w-[1600px] items-center gap-2.5 sm:gap-4 px-3 py-2.5 sm:px-8">
+      <div className="mx-auto flex w-full max-w-[1600px] items-center gap-2.5 sm:gap-4 px-3 py-2 sm:py-2.5 sm:px-8">
         {onBack !== false && (
           <button
             data-testid={backTestID}
             onClick={typeof onBack === "function" ? onBack : () => nav(-1)}
-            className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center border-2 border-ink bg-white dark:bg-[#1f1f1f] text-ink dark:text-white transition hover:bg-sand active:translate-y-0.5"
+            className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-white dark:bg-[#1f1f1f] text-ink dark:text-white transition hover:bg-sand active:translate-y-0.5 shadow-[1px_1px_0px_#121212]"
             aria-label="Back"
           >
             <ChevronLeft size={20} />
@@ -527,7 +527,7 @@ export function Shell({ children, className = "" }) {
   return (
     <div className={`min-h-screen w-full bg-white dark:bg-[#0f0f10] text-ink dark:text-white ${className}`}>
       <GlobalNav />
-      <main className="w-full pb-16 lg:pb-0">{children}</main>
+      <main className="w-full pb-24 sm:pb-28 lg:pb-0">{children}</main>
       <MobileBottomNav />
     </div>
   );

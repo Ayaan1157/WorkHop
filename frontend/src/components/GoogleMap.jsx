@@ -90,6 +90,21 @@ export default function GoogleMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Ensure map recalculates tile bounds when viewport changes or container mounts
+  useEffect(() => {
+    const handleResize = () => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    const timer = setTimeout(handleResize, 200);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(timer);
+    };
+  }, [height]);
+
   // Switch Tile Layer (Google Roads / Satellite / OSM)
   const switchLayer = (type) => {
     setActiveLayerType(type);

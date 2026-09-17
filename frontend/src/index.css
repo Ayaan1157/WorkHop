@@ -48,22 +48,61 @@ select,
     transition: background-color 0.12s ease-out, border-color 0.12s ease-out;
 }
 
-html {
-    overflow-x: hidden;
+html,
+body,
+#root {
     width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    position: relative;
     -webkit-text-size-adjust: 100%;
 }
 
 body {
     margin: 0;
-    width: 100%;
-    overflow-x: hidden;
     font-family: "Archivo", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
     background: var(--color-surface);
     color: var(--color-ink);
+}
+
+/* ═══════ Mobile Safe-Area & Touch Helpers ═══════ */
+.pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+}
+
+.wh-touch-card {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* iOS Safari auto-zoom prevention on small screen inputs */
+@media (max-width: 640px) {
+    input,
+    textarea,
+    select,
+    .wh-input {
+        font-size: 16px !important;
+    }
+}
+
+/* Momentum scrolling for touch devices */
+.wh-scroll,
+[class*="overflow-x-auto"],
+[class*="overflow-y-auto"] {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Tactile touch active feedback for mobile */
+@media (hover: none) and (pointer: coarse) {
+    button:active:not(:disabled),
+    a:active:not(:disabled) {
+        transform: scale(0.985);
+        transition: transform 0.06s ease;
+    }
 }
 
 /* ═══════ Light Mode: Eye-Friendly Off-White Surfaces ═══════ */
@@ -74,17 +113,6 @@ body {
 /* ═══════ Lighter Black Neo-Brutalist Borders ═══════ */
 .border-ink {
     border-color: var(--color-border-ink);
-}
-
-/* ═══════ Mobile Safe-Area & Touch Helpers ═══════ */
-.pb-safe {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4.5rem);
-}
-
-.wh-touch-card {
-    touch-action: manipulation;
-    -webkit-user-select: none;
-    user-select: none;
 }
 
 /* ═══════ Dark mode global surfaces ═══════ */

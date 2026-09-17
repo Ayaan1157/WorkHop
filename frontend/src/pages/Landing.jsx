@@ -1112,10 +1112,10 @@ export default function Landing() {
           <button
             data-testid="role-employer-card"
             onClick={() => chooseRole("employer")}
-            className="group border-2 border-ink bg-white dark:bg-[#1a1a1a] p-5 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
+            className="group border-2 border-ink bg-white dark:bg-[#1a1a1a] p-4 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
           >
             <div className="mb-4 sm:mb-6 flex items-center justify-between">
-              <span className="bg-brand px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.12em] text-white">
+              <span className="bg-brand px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.1em] text-white">
                 I'M HIRING (EMPLOYER)
               </span>
               <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-ink bg-sand dark:bg-[#2a2a2a] group-hover:bg-brand group-hover:text-white transition">
@@ -1139,10 +1139,10 @@ export default function Landing() {
           <button
             data-testid="role-freelancer-card"
             onClick={() => chooseRole("freelancer")}
-            className="group border-2 border-ink bg-brand p-5 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
+            className="group border-2 border-ink bg-brand p-4 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
           >
             <div className="mb-4 sm:mb-6 flex items-center justify-between">
-              <span className="bg-ink px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.12em] text-white">
+              <span className="bg-ink px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.1em] text-white">
                 I'M LOOKING FOR GIGS (FREELANCER)
               </span>
               <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-ink transition">
