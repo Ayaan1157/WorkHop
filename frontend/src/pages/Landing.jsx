@@ -977,7 +977,7 @@ export default function Landing() {
                     setAuthModalMode("signin");
                     setAuthModalOpen(true);
                   }}
-                  className="border-2 border-[#121212] dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-3.5 py-2 text-xs font-black tracking-wider text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition"
+                  className="border-2 border-ink dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-3.5 py-2 text-xs font-black tracking-wider text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition"
                 >
                   SIGN IN
                 </button>
@@ -987,7 +987,7 @@ export default function Landing() {
                     setAuthModalMode("signup");
                     setAuthModalOpen(true);
                   }}
-                  className="border-2 border-[#121212] dark:border-white bg-[#121212] dark:bg-white px-3.5 py-2 text-xs font-black tracking-wider text-white dark:text-black hover:bg-black dark:hover:bg-gray-100 transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#000]"
+                  className="border-2 border-ink dark:border-white bg-[#121212] dark:bg-white px-3.5 py-2 text-xs font-black tracking-wider text-white dark:text-black hover:bg-black dark:hover:bg-gray-100 transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#000]"
                 >
                   SIGN UP
                 </button>

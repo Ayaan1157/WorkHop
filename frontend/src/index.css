@@ -6,6 +6,7 @@
 :root {
     --color-brand: #E65A1E;
     --color-ink: #121212;
+    --color-border-ink: #303030;
     --color-sand: #EFECE6;
     --color-stone: #E5E2DA;
     --color-inkmuted: #6B6B6B;
@@ -19,6 +20,7 @@
 .dark {
     --color-brand: #F06B2E;
     --color-ink: #E8E8E8;
+    --color-border-ink: #383838;
     --color-sand: #1a1a1a;
     --color-stone: #2a2a2a;
     --color-inkmuted: #999999;
@@ -67,6 +69,11 @@ body {
 /* ═══════ Light Mode: Eye-Friendly Off-White Surfaces ═══════ */
 .bg-white {
     background-color: var(--color-surface);
+}
+
+/* ═══════ Lighter Black Neo-Brutalist Borders ═══════ */
+.border-ink {
+    border-color: var(--color-border-ink);
 }
 
 /* ═══════ Mobile Safe-Area & Touch Helpers ═══════ */

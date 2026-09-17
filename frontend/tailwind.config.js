@@ -15,6 +15,9 @@ module.exports = {
       fontFamily: {
         sans: ['Archivo', 'system-ui', 'sans-serif'],
       },
+      borderColor: {
+        ink: 'var(--color-border-ink)',
+      },
       colors: {
         brand: 'var(--color-brand)',
         ink: 'var(--color-ink)',
