@@ -20,7 +20,9 @@ export { default as EscrowWalletModal } from "@/components/EscrowWalletModal";
 export { default as BoostPreviewModal } from "@/components/BoostPreviewModal";
 export { default as AuthModal } from "@/components/AuthModal";
 export { default as RecaptchaWidget } from "@/components/RecaptchaWidget";
+export { default as SiteFooter } from "@/components/SiteFooter";
 export * from "@/components/Skeletons";
+import SiteFooter from "@/components/SiteFooter";
 
 const ICONS = {
   grid: Grid3x3, palette: Palette, code: Code2, megaphone: Megaphone,
@@ -522,12 +524,13 @@ export function TopBar({ title, sub, right, onBack, backTestID = "topbar-back-bt
   );
 }
 
-// Shell component (Full width responsive container with bottom nav)
+// Shell component (Full width responsive container with bottom nav and footer)
 export function Shell({ children, className = "" }) {
   return (
-    <div className={`min-h-screen w-full bg-white dark:bg-[#0f0f10] text-ink dark:text-white ${className}`}>
+    <div className={`min-h-screen w-full bg-white dark:bg-[#0f0f10] text-ink dark:text-white flex flex-col ${className}`}>
       <GlobalNav />
-      <main className="w-full pb-24 sm:pb-28 lg:pb-0">{children}</main>
+      <main className="w-full flex-1">{children}</main>
+      <SiteFooter />
       <MobileBottomNav />
     </div>
   );

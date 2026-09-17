@@ -14,6 +14,7 @@ import AuthModal from "@/components/AuthModal";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import GoogleAccountPicker from "@/components/GoogleAccountPicker";
+import SiteFooter from "@/components/SiteFooter";
 import { Logo } from "@/components/kit";
 
 export default function Landing() {
@@ -1227,18 +1228,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer Navigation */}
-      <footer className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t-2 border-ink bg-white dark:bg-[#121212] px-4 py-8 pb-24 sm:pb-8 text-xs font-bold text-inkmuted dark:text-stone-400">
-        <p>© 2026 WorkHop Technologies · Hyperlocal Workspace</p>
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
-          <Link to="/map" className="hover:text-brand">Live Map</Link>
-          <Link to="/categories" className="hover:text-brand">Categories</Link>
-          <Link to="/employer/plans" className="hover:text-brand">Plans</Link>
-          <Link to="/support" className="hover:text-brand">Support</Link>
-          <Link to="/legal" className="hover:text-brand">Legal</Link>
-          <Link to="/admin" className="hover:text-brand">Admin</Link>
-        </div>
-      </footer>
+      {/* Full-Featured Global Site Footer */}
+      <SiteFooter />
 
       {/* Auth Modal for Global Direct Sign-in / Sign-up */}
       <AuthModal
