@@ -28,7 +28,19 @@ export function ThemeProvider({ children }) {
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      const root = document.documentElement;
+      if (next === "dark") {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch (e) {}
+      return next;
+    });
   }, []);
 
   return (
