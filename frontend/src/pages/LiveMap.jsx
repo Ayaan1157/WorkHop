@@ -13,6 +13,7 @@ import {
   findNearestArea,
   getAreaCoordinates,
   getOrganicCoordinates,
+  getProximityCoordinates,
 } from "@/lib/locationAreas";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet } from "@/lib/api";
@@ -46,6 +47,11 @@ export default function LiveMap() {
   const [catFilter, setCatFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPinId, setSelectedPinId] = useState(null);
+
+  // Auto-request location on mount to center around closest real location
+  useEffect(() => {
+    requestLocation();
+  }, [requestLocation]);
 
   // Sync GPS Coordinates when acquired
   useEffect(() => {
@@ -82,16 +88,15 @@ export default function LiveMap() {
   }, []);
 
   // Compute organic coordinates and dynamic distances for Freelancers (Leads)
+  // Ensures freelancers are distributed organically around active location starting from closest
   const processedFreelancers = useMemo(() => {
-    const activeLoc = userLocation || { lat: 12.9716, lng: 77.5946 };
+    const activeLoc = userLocation || { lat: 12.9352, lng: 77.6245 };
     return leads.map((l, idx) => {
-      // Deterministically scatter coordinates around area or base lat/lng to prevent overlapping
-      const baseAreaCoords = l.area ? getAreaCoordinates(l.area) : { lat: l.lat || 12.9352, lng: l.lng || 77.6245 };
-      const organicCoords = getOrganicCoordinates(
-        baseAreaCoords.lat,
-        baseAreaCoords.lng,
-        l.id || `lead-${idx}`,
-        0.85
+      const organicCoords = getProximityCoordinates(
+        activeLoc.lat,
+        activeLoc.lng,
+        l.distance_km || (0.3 + (idx % 15) * 0.25),
+        l.id || `lead-${idx}`
       );
 
       const dist = distanceKm(activeLoc, organicCoords);
@@ -115,14 +120,13 @@ export default function LiveMap() {
 
   // Compute organic coordinates and dynamic distances for Open Gigs (Jobs)
   const processedJobs = useMemo(() => {
-    const activeLoc = userLocation || { lat: 12.9716, lng: 77.5946 };
+    const activeLoc = userLocation || { lat: 12.9352, lng: 77.6245 };
     return jobs.map((j, idx) => {
-      const baseAreaCoords = j.area ? getAreaCoordinates(j.area) : { lat: j.lat || 12.9784, lng: j.lng || 77.6408 };
-      const organicCoords = getOrganicCoordinates(
-        baseAreaCoords.lat,
-        baseAreaCoords.lng,
-        j.id || `job-${idx}`,
-        0.95
+      const organicCoords = getProximityCoordinates(
+        activeLoc.lat,
+        activeLoc.lng,
+        j.distance_km || (0.4 + (idx % 15) * 0.3),
+        j.id || `job-${idx}`
       );
 
       const dist = distanceKm(activeLoc, organicCoords);
@@ -136,13 +140,13 @@ export default function LiveMap() {
         bucket: j.bucket || "Creative",
         category: j.category || "General",
         description: j.description || "Exciting gig opportunity with immediate onboarding.",
-        area: j.area || "Bengaluru",
+        area: j.area || selectedArea || "Bengaluru",
         lat: organicCoords.lat,
         lng: organicCoords.lng,
         distance_km: Math.round(dist * 10) / 10,
       };
     });
-  }, [jobs, userLocation]);
+  }, [jobs, userLocation, selectedArea]);
 
   // Filter Freelancers based on Radius, Category, and Search
   const filteredFreelancers = useMemo(() => {

@@ -13,7 +13,7 @@ import BoostPreviewModal from "@/components/BoostPreviewModal";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
 import { LEAD_CATEGORY_FILTERS } from "@/lib/catalogFilters";
-import { getOrganicCoordinates } from "@/lib/locationAreas";
+import { getOrganicCoordinates, getProximityCoordinates } from "@/lib/locationAreas";
 import { apiGet, getEmployerId } from "@/lib/api";
 import { getSavedProIds, toggleSavePro } from "@/lib/clientStore";
 
@@ -37,6 +37,10 @@ export default function Employer() {
   const [showMap, setShowMap] = useState(true);
   const { startPayment } = useRazorpay();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
+
+  useEffect(() => {
+    requestLocation();
+  }, [requestLocation]);
 
   useEffect(() => {
     if (localStorage.getItem("workhop_employer_unlocked") === "1") setUnlocked(true);
@@ -69,11 +73,16 @@ export default function Employer() {
     );
   });
 
-  const withDist = base.map((l) => {
-    if (coords && l.lat && l.lng) {
-      return { ...l, distance_km: Math.round(distanceKm(coords, { lat: l.lat, lng: l.lng }) * 10) / 10 };
-    }
-    return { ...l, distance_km: l.distance_km || 1.2 };
+  const withDist = base.map((l, idx) => {
+    const center = coords || { lat: 12.9352, lng: 77.6245 };
+    const org = getProximityCoordinates(center.lat, center.lng, l.distance_km || (0.3 + (idx % 15) * 0.25), l.id || idx);
+    const dist = distanceKm(center, org);
+    return {
+      ...l,
+      lat: org.lat,
+      lng: org.lng,
+      distance_km: Math.round(dist * 10) / 10,
+    };
   });
 
   const distFiltered = maxDistance ? withDist.filter((l) => (l.distance_km || 0) <= maxDistance) : withDist;
@@ -87,17 +96,14 @@ export default function Employer() {
 
   const mapPins = sorted
     .filter((l) => l.lat && l.lng)
-    .map((l, idx) => {
-      const org = getOrganicCoordinates(l.lat, l.lng, l.id || `lead-${idx}`, 0.85);
-      return {
-        id: l.id,
-        kind: "candidate",
-        title: l.name,
-        subtitle: `${l.skill} · ${l.distance_km} km away`,
-        lat: org.lat,
-        lng: org.lng,
-      };
-    });
+    .map((l) => ({
+      id: l.id,
+      kind: "candidate",
+      title: l.name,
+      subtitle: `${l.skill} · ${l.distance_km} km away`,
+      lat: l.lat,
+      lng: l.lng,
+    }));
 
   const handlePay = async () => {
     setPaying(true);

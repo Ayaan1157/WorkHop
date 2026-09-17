@@ -115,3 +115,32 @@ export function getOrganicCoordinates(baseLat, baseLng, idOrKey, maxOffsetKm = 0
     lng: Math.round((lng + lngDelta) * 100000) / 100000,
   };
 }
+
+// Calculate realistic organic coordinates at a specific target distance from a center point
+// Ensures natural 360-degree radial scattering without overlaps
+export function getProximityCoordinates(centerLat, centerLng, targetDistKm, idOrKey) {
+  const lat = Number(centerLat) || 12.9352;
+  const lng = Number(centerLng) || 77.6245;
+  const dist = Math.max(0.2, Number(targetDistKm) || 0.8);
+
+  const str = String(idOrKey || "0");
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const absHash = Math.abs(hash);
+
+  // Golden ratio angle distribution for even 360-degree organic scatter
+  const angle = ((absHash * 137.5) % 360) * (Math.PI / 180);
+
+  // 1 deg lat ≈ 111.32 km
+  // 1 deg lng ≈ 111.32 km * cos(lat)
+  const latDelta = (dist * Math.cos(angle)) / 111.32;
+  const lngDelta = (dist * Math.sin(angle)) / (111.32 * Math.cos((lat * Math.PI) / 180));
+
+  return {
+    lat: Math.round((lat + latDelta) * 100000) / 100000,
+    lng: Math.round((lng + lngDelta) * 100000) / 100000,
+  };
+}
