@@ -176,7 +176,7 @@ export default function Employer() {
 
           {/* Collapsible Map Body with proper proportions */}
           {showMap && (
-            <div className="relative h-[250px] sm:h-[280px] w-full bg-sand/20" data-testid="employer-map">
+            <div className="relative isolate h-[160px] sm:h-[280px] w-full bg-sand/20" data-testid="employer-map">
               <GoogleMap pins={mapPins} zoom={13} userLocation={coords} height="100%" radiusKm={2} />
               <button
                 data-testid="leads-near-me-btn"
@@ -410,7 +410,7 @@ export default function Employer() {
                 <button
                   data-testid="unlock-cta-btn"
                   onClick={() => setSheetOpen(true)}
-                  className="mt-4 flex w-full max-w-md items-center justify-center gap-2 border-2 border-ink bg-ink py-3.5 text-[15px] font-black text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition"
+                  className="mt-4 flex w-full max-w-md items-center justify-center gap-2 border-2 border-ink bg-ink py-3.5 text-[15px] font-black text-white dark:text-black shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition"
                 >
                   <span>Unlock 5 Local Leads · ₹199</span>
                   <LockOpen size={16} />
@@ -452,10 +452,10 @@ export default function Employer() {
               <span className="self-start bg-brand px-3 py-1 text-[10px] font-black tracking-[0.15em] text-white">
                 EMPLOYER BRANDING PLANS
               </span>
-              <p className="text-xl font-black text-white">
+              <p className="text-xl font-black text-white dark:text-black">
                 Looking to Hire At Scale or Need Urgent Talent?
               </p>
-              <p className="text-xs text-white/75">
+              <p className="text-xs text-white/75 dark:text-black font-semibold">
                 Explore Pro Employer Plans · Unlimited Lead Unlocks · Dedicated Account Manager · Custom Boosts
               </p>
             </button>

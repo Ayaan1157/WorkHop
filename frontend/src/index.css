@@ -6,14 +6,14 @@
 :root {
     --color-brand: #E65A1E;
     --color-ink: #121212;
-    --color-sand: #F9F9F6;
-    --color-stone: #EAEAEA;
+    --color-sand: #EFECE6;
+    --color-stone: #E5E2DA;
     --color-inkmuted: #6B6B6B;
     --color-ok: #00A86B;
     --color-danger: #E63946;
-    --color-surface: #ffffff;
-    --color-surface-elevated: #ffffff;
-    --color-border-subtle: #e5e5e5;
+    --color-surface: #F8F7F4;
+    --color-surface-elevated: #FAF9F6;
+    --color-border-subtle: #dedbd2;
 }
 
 .dark {
@@ -50,6 +50,11 @@ body {
     -webkit-tap-highlight-color: transparent;
     background: var(--color-surface);
     color: var(--color-ink);
+}
+
+/* ═══════ Light Mode: Eye-Friendly Off-White Surfaces ═══════ */
+.bg-white {
+    background-color: var(--color-surface);
 }
 
 /* ═══════ Mobile Safe-Area & Touch Helpers ═══════ */

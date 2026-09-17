@@ -337,7 +337,7 @@ export default function GoogleMap({
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded border-2 border-ink bg-stone/20 shadow-[4px_4px_0px_#121212] ${className}`}
+      className={`relative isolate w-full overflow-hidden rounded border-2 border-ink bg-stone/20 shadow-[4px_4px_0px_#121212] ${className}`}
       style={{ height }}
       data-testid="google-map-container"
     >

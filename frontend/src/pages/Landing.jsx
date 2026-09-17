@@ -977,7 +977,7 @@ export default function Landing() {
                     setAuthModalMode("signin");
                     setAuthModalOpen(true);
                   }}
-                  className="border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3.5 py-2 text-xs font-black tracking-wider text-ink dark:text-white hover:bg-sand dark:hover:bg-[#222] transition"
+                  className="border-2 border-[#121212] dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-3.5 py-2 text-xs font-black tracking-wider text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition"
                 >
                   SIGN IN
                 </button>
@@ -987,7 +987,7 @@ export default function Landing() {
                     setAuthModalMode("signup");
                     setAuthModalOpen(true);
                   }}
-                  className="border-2 border-ink bg-ink dark:bg-white px-3.5 py-2 text-xs font-black tracking-wider text-white dark:text-black hover:bg-black dark:hover:bg-gray-100 transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#000]"
+                  className="border-2 border-[#121212] dark:border-white bg-[#121212] dark:bg-white px-3.5 py-2 text-xs font-black tracking-wider text-white dark:text-black hover:bg-black dark:hover:bg-gray-100 transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#000]"
                 >
                   SIGN UP
                 </button>
@@ -1105,7 +1105,7 @@ export default function Landing() {
             <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-black dark:text-white">
               Find 5 verified experts on your block
             </p>
-            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-black dark:text-stone-300 font-semibold">
+            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-black dark:text-white/80 font-semibold">
               Unlock direct phone numbers and full verified portfolios of top designers, developers, videographers, and creators near you.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-ink/20 dark:border-white/20 pt-4 text-xs font-black text-brand">

@@ -247,7 +247,7 @@ export function GlobalNav() {
 
       {/* MOBILE SLIDE-OUT DRAWER MENU */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[1000] flex lg:hidden animate-in fade-in duration-200">
           {/* Backdrop */}
           <div
             onClick={() => setMobileMenuOpen(false)}

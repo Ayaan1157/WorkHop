@@ -82,19 +82,19 @@ export default function MarketPriceAdvisor({
             onClick={() => onApplyRate(String(suggestion.tiers.entry.amount))}
             className={`flex flex-col items-start p-2 border-2 border-ink text-left transition hover:scale-[1.02] active:scale-[0.98] ${
               currentPayNum === suggestion.tiers.entry.amount
-                ? "bg-[#FFE8D6] dark:bg-[#332211] shadow-[2px_2px_0px_#E65A1E]"
+                ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
                 : "bg-white dark:bg-[#222] hover:bg-sand/60"
             }`}
           >
             <div className="flex items-center justify-between w-full">
-              <span className="text-[10px] font-black text-ink dark:text-white uppercase">
+              <span className={`text-[10px] font-black uppercase ${currentPayNum === suggestion.tiers.entry.amount ? "text-white" : "text-ink dark:text-white"}`}>
                 ⚡ Entry / Fast
               </span>
-              <span className="text-[11px] font-black text-ink dark:text-white">
+              <span className={`text-[11px] font-black ${currentPayNum === suggestion.tiers.entry.amount ? "text-white" : "text-ink dark:text-white"}`}>
                 ₹{suggestion.tiers.entry.amount.toLocaleString("en-IN")}
               </span>
             </div>
-            <span className="text-[9px] text-inkmuted dark:text-stone-400 mt-0.5 leading-tight">
+            <span className={`text-[9px] mt-0.5 leading-tight ${currentPayNum === suggestion.tiers.entry.amount ? "text-white/90" : "text-inkmuted dark:text-stone-400"}`}>
               Fast turnaround
             </span>
           </button>
@@ -130,19 +130,19 @@ export default function MarketPriceAdvisor({
             onClick={() => onApplyRate(String(suggestion.tiers.premium.amount))}
             className={`flex flex-col items-start p-2 border-2 border-ink text-left transition hover:scale-[1.02] active:scale-[0.98] ${
               currentPayNum === suggestion.tiers.premium.amount
-                ? "bg-[#E9D5FF] dark:bg-[#3B1754] shadow-[2px_2px_0px_#7C3AED]"
+                ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
                 : "bg-white dark:bg-[#222] hover:bg-sand/60"
             }`}
           >
             <div className="flex items-center justify-between w-full">
-              <span className="text-[10px] font-black text-ink dark:text-white uppercase">
+              <span className={`text-[10px] font-black uppercase ${currentPayNum === suggestion.tiers.premium.amount ? "text-white" : "text-ink dark:text-white"}`}>
                 👑 Top Senior
               </span>
-              <span className="text-[11px] font-black text-ink dark:text-white">
+              <span className={`text-[11px] font-black ${currentPayNum === suggestion.tiers.premium.amount ? "text-white" : "text-ink dark:text-white"}`}>
                 ₹{suggestion.tiers.premium.amount.toLocaleString("en-IN")}
               </span>
             </div>
-            <span className="text-[9px] text-inkmuted dark:text-stone-400 mt-0.5 leading-tight">
+            <span className={`text-[9px] mt-0.5 leading-tight ${currentPayNum === suggestion.tiers.premium.amount ? "text-white/90" : "text-inkmuted dark:text-stone-400"}`}>
               Top 5% rated experts
             </span>
           </button>
