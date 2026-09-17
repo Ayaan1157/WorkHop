@@ -101,7 +101,7 @@ body {
 /* Cards & elevated surfaces in dark mode */
 .dark .border-2.border-ink.bg-white,
 .dark .border-ink.bg-white,
-.dark [class*="bg-white"][class*="border"] {
+.dark [class~="bg-white"][class*="border"]:not([class*="dark:bg-"]) {
     background-color: var(--color-surface-elevated) !important;
 }
 
@@ -114,65 +114,75 @@ body {
 }
 
 /* ═══════ RULE 1: TEXT ON WHITE OR LIGHT-COLORED BACKGROUNDS MUST BE BLACK ═══════ */
-/* Applies across the entire website in both light mode and dark mode */
+/* Applies across the entire website in light mode or on un-inverted light badges */
 html:not(.dark) .bg-white,
 html:not(.dark) .bg-white *,
 html:not(.dark) .bg-sand,
 html:not(.dark) .bg-stone,
-.dark .dark\:bg-white,
-.dark .dark\:bg-white *,
-.dark [class*="dark:bg-white"],
-.dark [class*="dark:bg-white"] *,
-[class*="bg-[#FFF3C4]"],
-[class*="bg-[#FFF3C4]"] *,
-[class*="bg-[#FFEAA0]"],
-[class*="bg-[#FFEAA0]"] *,
-[class*="bg-[#E5F8EE]"],
-[class*="bg-[#E5F8EE]"] *,
-[class*="bg-[#FFF9E6]"],
-[class*="bg-[#FFF9E6]"] *,
-[class*="bg-[#FEF3C7]"],
-[class*="bg-[#FEF3C7]"] *,
-[class*="bg-[#FFEBEE]"],
-[class*="bg-[#FFEBEE]"] *,
-[class*="bg-[#FFF8E7]"],
-[class*="bg-[#FFF8E7]"] *,
-[class*="bg-[#FFF3D6]"],
-[class*="bg-[#FFF3D6]"] *,
-[class*="bg-[#FFE8D6]"],
-[class*="bg-[#FFE8D6]"] *,
-[class*="bg-[#FFF3E9]"],
-[class*="bg-[#FFF3E9]"] *,
-[class*="bg-[#D8F3DC]"],
-[class*="bg-[#D8F3DC]"] *,
-[class*="bg-[#E8F5E9]"],
-[class*="bg-[#E8F5E9]"] *,
-[class*="bg-[#F3E5F5]"],
-[class*="bg-[#F3E5F5]"] *,
-[class*="bg-[#E0F7FA]"],
-[class*="bg-[#E0F7FA]"] *,
-[class*="bg-[#FCE4EC]"],
-[class*="bg-[#FCE4EC]"] *,
-[class*="bg-[#FFF8E1]"],
-[class*="bg-[#FFF8E1]"] *,
-[class*="bg-[#EFEBE9]"],
-[class*="bg-[#EFEBE9]"] *,
-[class*="bg-[#f0f0f0]"],
-[class*="bg-[#f0f0f0]"] *,
-[class*="bg-amber-100"],
-[class*="bg-amber-100"] *,
-[class*="bg-yellow-100"],
-[class*="bg-yellow-100"] *,
-[class*="bg-emerald-100"],
-[class*="bg-emerald-100"] *,
-[class*="bg-green-100"],
-[class*="bg-green-100"] *,
-[class*="bg-orange-100"],
-[class*="bg-orange-100"] *,
-[class*="bg-red-100"],
-[class*="bg-red-100"] *,
-[class*="bg-blue-100"],
-[class*="bg-blue-100"] * {
+html:not(.dark) [class*="bg-[#FFF3C4]"],
+html:not(.dark) [class*="bg-[#FFF3C4]"] *,
+html:not(.dark) [class*="bg-[#FFEAA0]"],
+html:not(.dark) [class*="bg-[#FFEAA0]"] *,
+html:not(.dark) [class*="bg-[#E5F8EE]"],
+html:not(.dark) [class*="bg-[#E5F8EE]"] *,
+html:not(.dark) [class*="bg-[#FFF9E6]"],
+html:not(.dark) [class*="bg-[#FFF9E6]"] *,
+html:not(.dark) [class*="bg-[#FEF3C7]"],
+html:not(.dark) [class*="bg-[#FEF3C7]"] *,
+html:not(.dark) [class*="bg-[#FFEBEE]"],
+html:not(.dark) [class*="bg-[#FFEBEE]"] *,
+html:not(.dark) [class*="bg-[#FFF8E7]"],
+html:not(.dark) [class*="bg-[#FFF8E7]"] *,
+html:not(.dark) [class*="bg-[#FFF3D6]"],
+html:not(.dark) [class*="bg-[#FFF3D6]"] *,
+html:not(.dark) [class*="bg-[#FFE8D6]"],
+html:not(.dark) [class*="bg-[#FFE8D6]"] *,
+html:not(.dark) [class*="bg-[#FFF3E9]"],
+html:not(.dark) [class*="bg-[#FFF3E9]"] *,
+html:not(.dark) [class*="bg-[#D8F3DC]"],
+html:not(.dark) [class*="bg-[#D8F3DC]"] *,
+html:not(.dark) [class*="bg-[#E8F5E9]"],
+html:not(.dark) [class*="bg-[#E8F5E9]"] *,
+html:not(.dark) [class*="bg-[#F3E5F5]"],
+html:not(.dark) [class*="bg-[#F3E5F5]"] *,
+html:not(.dark) [class*="bg-[#E0F7FA]"],
+html:not(.dark) [class*="bg-[#E0F7FA]"] *,
+html:not(.dark) [class*="bg-[#FCE4EC]"],
+html:not(.dark) [class*="bg-[#FCE4EC]"] *,
+html:not(.dark) [class*="bg-[#FFF8E1]"],
+html:not(.dark) [class*="bg-[#FFF8E1]"] *,
+html:not(.dark) [class*="bg-[#EFEBE9]"],
+html:not(.dark) [class*="bg-[#EFEBE9]"] *,
+html:not(.dark) [class*="bg-[#f0f0f0]"],
+html:not(.dark) [class*="bg-[#f0f0f0]"] *,
+html:not(.dark) [class*="bg-amber-100"],
+html:not(.dark) [class*="bg-amber-100"] *,
+html:not(.dark) [class*="bg-yellow-100"],
+html:not(.dark) [class*="bg-yellow-100"] *,
+html:not(.dark) [class*="bg-emerald-100"],
+html:not(.dark) [class*="bg-emerald-100"] *,
+html:not(.dark) [class*="bg-green-100"],
+html:not(.dark) [class*="bg-green-100"] *,
+html:not(.dark) [class*="bg-orange-100"],
+html:not(.dark) [class*="bg-orange-100"] *,
+html:not(.dark) [class*="bg-red-100"],
+html:not(.dark) [class*="bg-red-100"] *,
+html:not(.dark) [class*="bg-blue-100"],
+html:not(.dark) [class*="bg-blue-100"] * {
+    color: #121212 !important;
+}
+
+/* In dark mode, light pastel chips without dark:bg overrides keep dark text */
+.dark [class*="bg-[#FFF3C4]"]:not([class*="dark:bg-"]),
+.dark [class*="bg-[#FFF3C4]"]:not([class*="dark:bg-"]) *,
+.dark [class*="bg-[#FFEAA0]"]:not([class*="dark:bg-"]),
+.dark [class*="bg-[#FFEAA0]"]:not([class*="dark:bg-"]) *,
+.dark [class*="bg-[#E5F8EE]"]:not([class*="dark:bg-"]),
+.dark [class*="bg-[#E5F8EE]"]:not([class*="dark:bg-"]) *,
+.dark [class*="bg-[#D8F3DC]"]:not([class*="dark:bg-"]),
+.dark [class*="bg-[#D8F3DC]"]:not([class*="dark:bg-"]) *,
+.dark [class*="bg-[#FEF3C7]"]:not([class*="dark:bg-"]),
+.dark [class*="bg-[#FEF3C7]"]:not([class*="dark:bg-"]) * {
     color: #121212 !important;
 }
 
@@ -180,11 +190,7 @@ html:not(.dark) .bg-stone,
 [class*="bg-[#FFF3C4]"] .text-brand,
 [class*="bg-[#FFF3C4]"] .text-brand *,
 [class*="bg-[#FFEAA0]"] .text-brand,
-[class*="bg-[#FFEAA0]"] .text-brand *,
-[class*="bg-[#FFF3E9]"] .text-brand,
-[class*="bg-[#FFF3E9]"] .text-brand *,
-.dark .dark\:bg-white .text-brand,
-.dark [class*="dark:bg-white"] .text-brand {
+[class*="bg-[#FFEAA0]"] .text-brand * {
     color: #E65A1E !important;
 }
 
@@ -208,16 +214,33 @@ html:not(.dark) .bg-stone,
 .dark nav,
 .dark aside,
 .dark section,
+.dark .dark\:text-white,
+.dark .dark\:\!text-white,
+.dark [class*="dark:text-white"],
+.dark [class*="dark:!text-white"],
 .dark [class*="bg-black"]:not([class*="bg-black/"]):not([class*="dark:bg-white"]),
 .dark [class*="bg-[#121212]"]:not([class*="dark:bg-white"]),
 .dark [class*="bg-[#0f0f10]"]:not([class*="dark:bg-white"]),
 .dark [class*="bg-[#161618]"]:not([class*="dark:bg-white"]),
 .dark [class*="bg-[#1a1a1a]"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-[#1c1c1c]"]:not([class*="dark:bg-white"]),
 .dark [class*="bg-[#1f1f1f]"]:not([class*="dark:bg-white"]),
 .dark [class*="bg-[#222]"]:not([class*="dark:bg-white"]),
 .dark [class*="bg-[#252525]"]:not([class*="dark:bg-white"]),
 .dark [class*="bg-[#2a2a2a]"]:not([class*="dark:bg-white"]),
 .dark [class*="bg-[#333]"]:not([class*="dark:bg-white"]),
+.dark [class*="dark:bg-[#251710]"],
+.dark [class*="dark:bg-[#251710]"] *,
+.dark [class*="dark:bg-[#11291E]"],
+.dark [class*="dark:bg-[#11291E]"] *,
+.dark [class*="dark:bg-[#1c1c1c]"],
+.dark [class*="dark:bg-[#1c1c1c]"] *,
+.dark [class*="dark:bg-[#1a1a1a]"],
+.dark [class*="dark:bg-[#1a1a1a]"] *,
+.dark [class*="dark:bg-[#2a2a2a]"],
+.dark [class*="dark:bg-[#2a2a2a]"] *,
+.dark [class*="dark:bg-[#222]"],
+.dark [class*="dark:bg-[#222]"] *,
 .dark [class*="bg-zinc-800"]:not([class*="dark:bg-white"]),
 .dark [class*="bg-zinc-900"]:not([class*="dark:bg-white"]),
 .dark [class*="bg-zinc-950"]:not([class*="dark:bg-white"]),
@@ -231,8 +254,16 @@ html:not(.dark) .bg-stone,
 }
 
 /* Ensure no text-black or dark:text-black renders black on dark backgrounds */
-.dark .text-black:not([class*="bg-[#FFF3C4]"]):not([class*="bg-[#FFEAA0]"]):not([class*="bg-[#E5F8EE]"]):not([class*="bg-[#FFF9E6]"]):not([class*="bg-[#FEF3C7]"]):not([class*="bg-[#FFEBEE]"]):not([class*="bg-[#FFF8E7]"]):not([class*="bg-[#FFF3D6]"]):not([class*="bg-[#FFE8D6]"]):not([class*="bg-[#FFF3E9]"]):not([class*="bg-[#D8F3DC]"]):not([class*="bg-[#E8F5E9]"]):not([class*="bg-[#F3E5F5]"]):not([class*="bg-[#E0F7FA]"]):not([class*="bg-[#FCE4EC]"]):not([class*="bg-[#FFF8E1]"]):not([class*="bg-[#EFEBE9]"]):not([class*="bg-[#f0f0f0]"]):not([class*="dark:bg-white"]):not([class*="bg-white"]):not([class*="bg-amber"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-orange"]):not([class*="bg-red"]):not(option),
-.dark .dark\:text-black:not([class*="bg-[#FFF3C4]"]):not([class*="bg-[#FFEAA0]"]):not([class*="bg-[#E5F8EE]"]):not([class*="bg-[#FFF9E6]"]):not([class*="bg-[#FEF3C7]"]):not([class*="bg-[#FFEBEE]"]):not([class*="bg-[#FFF8E7]"]):not([class*="bg-[#FFF3D6]"]):not([class*="bg-[#FFE8D6]"]):not([class*="bg-[#FFF3E9]"]):not([class*="bg-[#D8F3DC]"]):not([class*="bg-[#E8F5E9]"]):not([class*="bg-[#F3E5F5]"]):not([class*="bg-[#E0F7FA]"]):not([class*="bg-[#FCE4EC]"]):not([class*="bg-[#FFF8E1]"]):not([class*="bg-[#EFEBE9]"]):not([class*="bg-[#f0f0f0]"]):not([class*="dark:bg-white"]):not([class*="bg-white"]):not([class*="bg-amber"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-orange"]):not([class*="bg-red"]):not(option) {
+.dark .text-black:not([class*="bg-[#FFF3C4]"]):not([class*="bg-[#FFEAA0]"]):not([class*="bg-[#E5F8EE]"]):not([class*="bg-[#FFF9E6]"]):not([class*="bg-[#FEF3C7]"]):not([class*="bg-[#FFEBEE]"]):not([class*="bg-[#FFF8E7]"]):not([class*="bg-[#FFF3D6]"]):not([class*="bg-[#FFE8D6]"]):not([class*="dark:bg-"]):not([class*="dark:bg-white"]):not(option),
+.dark .dark\:text-black:not([class*="bg-[#FFF3C4]"]):not([class*="bg-[#FFEAA0]"]):not([class*="bg-[#E5F8EE]"]):not([class*="bg-[#FFF9E6]"]):not([class*="bg-[#FEF3C7]"]):not([class*="bg-[#FFEBEE]"]):not([class*="bg-[#FFF8E7]"]):not([class*="bg-[#FFF3D6]"]):not([class*="bg-[#FFE8D6]"]):not([class*="dark:bg-"]):not([class*="dark:bg-white"]):not(option) {
+    color: #FFFFFF !important;
+}
+
+/* Explicit dark:text-white overrides always prevail */
+.dark .dark\:text-white,
+.dark .dark\:\!text-white,
+.dark [class*="dark:text-white"],
+.dark [class*="dark:!text-white"] {
     color: #FFFFFF !important;
 }
 

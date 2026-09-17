@@ -1206,7 +1206,7 @@ export default function Landing() {
           </div>
 
           <div className="border-2 border-ink bg-sand/50 dark:bg-[#1c1c1c] p-5 sm:p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-ink dark:bg-white text-white dark:text-black font-black text-sm">
+            <div className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-ink dark:bg-[#2a2a2a] text-white dark:!text-white font-black text-sm">
               2
             </div>
             <h3 className="mt-3 text-base sm:text-lg font-black text-ink dark:text-white">DIRECT CONTACT</h3>

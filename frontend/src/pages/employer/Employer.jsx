@@ -262,7 +262,7 @@ export default function Employer() {
               <button
                 onClick={() => setOnlySaved(false)}
                 className={`border-2 border-ink px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-black transition ${
-                  !onlySaved ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white dark:bg-[#222] text-ink dark:text-white hover:bg-sand"
+                  !onlySaved ? "bg-ink text-white dark:bg-[#2a2a2a] dark:!text-white" : "bg-white dark:bg-[#222] text-ink dark:!text-white hover:bg-sand"
                 }`}
               >
                 ALL PROS ({distFiltered.length})
@@ -270,7 +270,7 @@ export default function Employer() {
               <button
                 onClick={() => setOnlySaved(true)}
                 className={`flex items-center gap-1.5 border-2 border-ink px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-black transition ${
-                  onlySaved ? "bg-brand text-white" : "bg-white dark:bg-[#222] text-ink dark:text-white hover:bg-sand"
+                  onlySaved ? "bg-brand text-white" : "bg-white dark:bg-[#222] text-ink dark:!text-white hover:bg-sand"
                 }`}
               >
                 <Heart size={12} fill={onlySaved ? "white" : "none"} />
@@ -296,9 +296,9 @@ export default function Employer() {
 
           {/* EXPANDABLE FILTER DRAWER */}
           {filtersDrawerOpen && (
-            <div className="flex flex-col gap-3 border-2 border-ink bg-sand p-4 mt-2 animate-in fade-in duration-150 shadow-[2px_2px_0px_#121212]">
+            <div className="flex flex-col gap-3 border-2 border-ink bg-sand dark:bg-[#1c1c1c] p-4 mt-2 animate-in fade-in duration-150 shadow-[2px_2px_0px_#121212]">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase tracking-wider text-ink">QUICK FILTERS</span>
+                <span className="text-[11px] font-black uppercase tracking-wider text-ink dark:text-white">QUICK FILTERS</span>
                 <button
                   onClick={() => {
                     setMaxDistance(null);
@@ -313,7 +313,7 @@ export default function Employer() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black tracking-wider text-inkmuted">MAX DISTANCE</span>
+                <span className="text-[10px] font-black tracking-wider text-inkmuted dark:text-stone-400">MAX DISTANCE</span>
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     { label: "ALL", val: null },
@@ -325,7 +325,7 @@ export default function Employer() {
                       key={d.label}
                       onClick={() => setMaxDistance(d.val)}
                       className={`border border-ink px-2.5 py-1 text-[10px] font-black ${
-                        maxDistance === d.val ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-stone"
+                        maxDistance === d.val ? "bg-ink text-white dark:bg-[#2a2a2a] dark:!text-white" : "bg-white text-ink dark:bg-[#222] dark:!text-white hover:bg-stone"
                       }`}
                     >
                       {d.label}
@@ -335,7 +335,7 @@ export default function Employer() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black tracking-wider text-inkmuted">MINIMUM RATING</span>
+                <span className="text-[10px] font-black tracking-wider text-inkmuted dark:text-stone-400">MINIMUM RATING</span>
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     { label: "ANY", val: null },
@@ -346,7 +346,7 @@ export default function Employer() {
                       key={r.label}
                       onClick={() => setMinRating(r.val)}
                       className={`border border-ink px-2.5 py-1 text-[10px] font-black ${
-                        minRating === r.val ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-stone"
+                        minRating === r.val ? "bg-ink text-white dark:bg-[#2a2a2a] dark:!text-white" : "bg-white text-ink dark:bg-[#222] dark:!text-white hover:bg-stone"
                       }`}
                     >
                       {r.label}

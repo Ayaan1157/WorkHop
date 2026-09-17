@@ -544,7 +544,7 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
       .catch(() => {});
   }, []);
   return (
-    <div className="w-full border-b-2 border-ink bg-white">
+    <div className="w-full border-b-2 border-ink bg-white dark:bg-[#121212]">
       <div className="wh-scroll mx-auto flex w-full max-w-[1600px] gap-3 overflow-x-auto px-4 py-3 sm:px-8">
         {cats.map((key) => {
           const v = CATEGORY_VISUALS[key] || CATEGORY_VISUALS.ALL;
@@ -554,15 +554,15 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
               key={key}
               data-testid={`${testIDPrefix}-${key.toLowerCase().replace(/[^a-z]+/g, "-")}`}
               onClick={() => onSelect(key)}
-              className={`flex w-[100px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2.5 transition-transform active:translate-y-0.5 ${on ? "bg-ink dark:bg-white" : "bg-white dark:bg-[#1a1a1a] hover:bg-sand"}`}
+              className={`flex w-[100px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2.5 transition-transform active:translate-y-0.5 ${on ? "bg-ink dark:bg-[#2a2a2a]" : "bg-white dark:bg-[#1a1a1a] hover:bg-sand"}`}
             >
               <span
                 className="flex h-10 w-10 items-center justify-center border-2 border-ink"
                 style={{ background: on ? "#E65A1E" : v.bg }}
               >
-                <CatIcon name={v.icon} size={20} className={on ? "text-white" : "text-[#121212]"} />
+                <CatIcon name={v.icon} size={20} className={on ? "text-white" : "text-[#121212] dark:text-[#121212]"} />
               </span>
-              <span className={`text-center text-[10px] font-black leading-tight ${on ? "text-white dark:text-black" : "text-ink"}`}>
+              <span className={`text-center text-[10px] font-black leading-tight ${on ? "text-white dark:!text-white" : "text-ink dark:!text-white"}`}>
                 {(CATEGORY_SHORT_LABELS[key] || key).toUpperCase()}
               </span>
             </button>

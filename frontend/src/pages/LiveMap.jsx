@@ -341,8 +341,8 @@ export default function LiveMap() {
             <span
               className={`w-full sm:w-auto text-center border-2 border-ink px-3 py-1 text-[10px] sm:text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#121212] ${
                 viewMode === "employer"
-                  ? "bg-[#FFF3E9] text-brand dark:bg-[#251710] dark:text-[#FFA07A]"
-                  : "bg-[#E6F4EA] text-[#059669] dark:bg-[#11291E] dark:text-[#34D399]"
+                  ? "bg-[#FFF3E9] text-brand dark:bg-[#251710] dark:!text-white"
+                  : "bg-[#E6F4EA] text-[#059669] dark:bg-[#11291E] dark:!text-white"
               }`}
             >
               {viewMode === "employer"
@@ -435,8 +435,8 @@ export default function LiveMap() {
               onClick={() => setCatFilter(cat)}
               className={`px-2 py-0.5 sm:px-2.5 sm:py-1 border-2 border-ink transition uppercase whitespace-nowrap ${
                 catFilter === cat
-                  ? "bg-ink text-white dark:bg-white dark:text-black font-black shadow-[1.5px_1.5px_0px_#E65A1E]"
-                  : "bg-sand/60 dark:bg-[#222] text-ink dark:text-white hover:bg-sand"
+                  ? "bg-ink text-white dark:bg-brand dark:!text-white font-black shadow-[1.5px_1.5px_0px_#E65A1E]"
+                  : "bg-sand/60 dark:bg-[#222] text-ink dark:!text-white hover:bg-sand"
               }`}
             >
               {cat === "all" ? "ALL" : cat}
