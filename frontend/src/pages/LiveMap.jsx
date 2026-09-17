@@ -435,7 +435,7 @@ export default function LiveMap() {
               onClick={() => setCatFilter(cat)}
               className={`px-2 py-0.5 sm:px-2.5 sm:py-1 border-2 border-ink transition uppercase whitespace-nowrap ${
                 catFilter === cat
-                  ? "bg-ink text-white dark:bg-white dark:text-ink font-black shadow-[1.5px_1.5px_0px_#E65A1E]"
+                  ? "bg-ink text-white dark:bg-white dark:text-black font-black shadow-[1.5px_1.5px_0px_#E65A1E]"
                   : "bg-sand/60 dark:bg-[#222] text-ink dark:text-white hover:bg-sand"
               }`}
             >
@@ -737,7 +737,7 @@ export default function LiveMap() {
             </div>
 
             {/* Bottom Quick Switch Banner */}
-            <div className="mt-2 border-2 border-ink bg-ink text-white p-3 shadow-[2px_2px_0px_#E65A1E]">
+            <div className="mt-2 border-2 border-ink bg-[#121212] dark:bg-[#161618] text-white p-3 shadow-[2px_2px_0px_#E65A1E]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles size={14} className="text-brand" />

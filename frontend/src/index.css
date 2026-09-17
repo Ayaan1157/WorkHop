@@ -87,7 +87,7 @@ body {
     user-select: none;
 }
 
-/* ═══════ Dark mode global overrides ═══════ */
+/* ═══════ Dark mode global surfaces ═══════ */
 .dark body,
 .dark .bg-white {
     background-color: var(--color-surface) !important;
@@ -113,80 +113,158 @@ body {
     border-color: #2a2a2a !important;
 }
 
-/* ═══════ Dark Mode: High Contrast Text for Light-Colored Backgrounds ═══════ */
-/* When an element has a light-colored background (yellow, peach, light green, pastel, light sand), force black text */
-.dark [class*="bg-[#FFF3C4]"],
-.dark [class*="bg-[#FFEAA0]"],
-.dark [class*="bg-[#E5F8EE]"],
-.dark [class*="bg-[#FFF9E6]"],
-.dark [class*="bg-[#FEF3C7]"],
-.dark [class*="bg-[#FFEBEE]"],
-.dark [class*="bg-[#FFF8E7]"],
-.dark [class*="bg-[#FFF3D6]"],
-.dark [class*="bg-[#FFE8D6]"],
-.dark [class*="bg-[#FFF3E9]"],
-.dark [class*="bg-[#D8F3DC]"],
-.dark [class*="bg-[#E8F5E9]"],
-.dark [class*="bg-[#F3E5F5]"],
-.dark [class*="bg-[#E0F7FA]"],
-.dark [class*="bg-[#FCE4EC]"],
-.dark [class*="bg-[#FFF8E1]"],
-.dark [class*="bg-[#EFEBE9]"],
-.dark [class*="bg-[#f0f0f0]"] {
+/* ═══════ RULE 1: TEXT ON WHITE OR LIGHT-COLORED BACKGROUNDS MUST BE BLACK ═══════ */
+/* Applies across the entire website in both light mode and dark mode */
+html:not(.dark) .bg-white,
+html:not(.dark) .bg-white *,
+html:not(.dark) .bg-sand,
+html:not(.dark) .bg-stone,
+.dark .dark\:bg-white,
+.dark .dark\:bg-white *,
+.dark [class*="dark:bg-white"],
+.dark [class*="dark:bg-white"] *,
+[class*="bg-[#FFF3C4]"],
+[class*="bg-[#FFF3C4]"] *,
+[class*="bg-[#FFEAA0]"],
+[class*="bg-[#FFEAA0]"] *,
+[class*="bg-[#E5F8EE]"],
+[class*="bg-[#E5F8EE]"] *,
+[class*="bg-[#FFF9E6]"],
+[class*="bg-[#FFF9E6]"] *,
+[class*="bg-[#FEF3C7]"],
+[class*="bg-[#FEF3C7]"] *,
+[class*="bg-[#FFEBEE]"],
+[class*="bg-[#FFEBEE]"] *,
+[class*="bg-[#FFF8E7]"],
+[class*="bg-[#FFF8E7]"] *,
+[class*="bg-[#FFF3D6]"],
+[class*="bg-[#FFF3D6]"] *,
+[class*="bg-[#FFE8D6]"],
+[class*="bg-[#FFE8D6]"] *,
+[class*="bg-[#FFF3E9]"],
+[class*="bg-[#FFF3E9]"] *,
+[class*="bg-[#D8F3DC]"],
+[class*="bg-[#D8F3DC]"] *,
+[class*="bg-[#E8F5E9]"],
+[class*="bg-[#E8F5E9]"] *,
+[class*="bg-[#F3E5F5]"],
+[class*="bg-[#F3E5F5]"] *,
+[class*="bg-[#E0F7FA]"],
+[class*="bg-[#E0F7FA]"] *,
+[class*="bg-[#FCE4EC]"],
+[class*="bg-[#FCE4EC]"] *,
+[class*="bg-[#FFF8E1]"],
+[class*="bg-[#FFF8E1]"] *,
+[class*="bg-[#EFEBE9]"],
+[class*="bg-[#EFEBE9]"] *,
+[class*="bg-[#f0f0f0]"],
+[class*="bg-[#f0f0f0]"] *,
+[class*="bg-amber-100"],
+[class*="bg-amber-100"] *,
+[class*="bg-yellow-100"],
+[class*="bg-yellow-100"] *,
+[class*="bg-emerald-100"],
+[class*="bg-emerald-100"] *,
+[class*="bg-green-100"],
+[class*="bg-green-100"] *,
+[class*="bg-orange-100"],
+[class*="bg-orange-100"] *,
+[class*="bg-red-100"],
+[class*="bg-red-100"] *,
+[class*="bg-blue-100"],
+[class*="bg-blue-100"] * {
     color: #121212 !important;
 }
 
-.dark [class*="bg-[#FFF3C4]"] *,
-.dark [class*="bg-[#FFEAA0]"] *,
-.dark [class*="bg-[#E5F8EE]"] *,
-.dark [class*="bg-[#FFF9E6]"] *,
-.dark [class*="bg-[#FEF3C7]"] *,
-.dark [class*="bg-[#FFEBEE]"] *,
-.dark [class*="bg-[#FFF8E7]"] *,
-.dark [class*="bg-[#FFF3D6]"] *,
-.dark [class*="bg-[#FFE8D6]"] *,
-.dark [class*="bg-[#FFF3E9]"] *,
-.dark [class*="bg-[#D8F3DC]"] *,
-.dark [class*="bg-[#E8F5E9]"] *,
-.dark [class*="bg-[#F3E5F5]"] *,
-.dark [class*="bg-[#E0F7FA]"] *,
-.dark [class*="bg-[#FCE4EC]"] *,
-.dark [class*="bg-[#FFF8E1]"] *,
-.dark [class*="bg-[#EFEBE9]"] *,
-.dark [class*="bg-[#f0f0f0]"] * {
-    color: #121212 !important;
-}
-
-/* Ensure brand/ok/danger accents stay vivid inside light boxes */
-.dark [class*="bg-[#FFF3C4]"] .text-brand,
-.dark [class*="bg-[#FFF3C4]"] .text-brand *,
-.dark [class*="bg-[#FFEAA0]"] .text-brand,
-.dark [class*="bg-[#FFEAA0]"] .text-brand * {
+/* Preserve bright accent badges inside light boxes */
+[class*="bg-[#FFF3C4]"] .text-brand,
+[class*="bg-[#FFF3C4]"] .text-brand *,
+[class*="bg-[#FFEAA0]"] .text-brand,
+[class*="bg-[#FFEAA0]"] .text-brand *,
+[class*="bg-[#FFF3E9]"] .text-brand,
+[class*="bg-[#FFF3E9]"] .text-brand *,
+.dark .dark\:bg-white .text-brand,
+.dark [class*="dark:bg-white"] .text-brand {
     color: #E65A1E !important;
 }
 
-.dark [class*="bg-[#E5F8EE]"] .text-ok,
-.dark [class*="bg-[#E5F8EE]"] .text-ok * {
+[class*="bg-[#E5F8EE]"] .text-ok,
+[class*="bg-[#E5F8EE]"] .text-ok *,
+[class*="bg-[#D8F3DC]"] .text-ok,
+[class*="bg-[#D8F3DC]"] .text-ok * {
     color: #00A86B !important;
 }
 
-.dark [class*="bg-[#FFEBEE]"] .text-\[\#C62828\],
-.dark [class*="bg-[#FFEBEE]"] .text-\[\#C62828\] * {
+[class*="bg-[#FFEBEE]"] .text-\[\#C62828\],
+[class*="bg-[#FFEBEE]"] .text-\[\#C62828\] * {
     color: #C62828 !important;
 }
 
-/* In dark mode, active ink buttons (bg-ink) have light background, so text must be black */
-.dark .bg-ink,
-.dark .bg-ink.text-white,
-.dark .bg-ink .text-white,
-.dark button.bg-ink,
-.dark a.bg-ink {
+/* ═══════ RULE 2: EVERY TEXT ON A BLACK OR DARK BACKGROUND IN DARK MODE MUST BE WHITE ═══════ */
+.dark body,
+.dark main,
+.dark header,
+.dark footer,
+.dark nav,
+.dark aside,
+.dark section,
+.dark [class*="bg-black"]:not([class*="bg-black/"]):not([class*="dark:bg-white"]),
+.dark [class*="bg-[#121212]"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-[#0f0f10]"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-[#161618]"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-[#1a1a1a]"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-[#1f1f1f]"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-[#222]"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-[#252525]"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-[#2a2a2a]"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-[#333]"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-zinc-800"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-zinc-900"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-zinc-950"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-neutral-800"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-neutral-900"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-neutral-950"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-gray-800"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-gray-900"]:not([class*="dark:bg-white"]),
+.dark [class*="bg-gray-950"]:not([class*="dark:bg-white"]) {
+    color: #FFFFFF;
+}
+
+/* Ensure no text-black or dark:text-black renders black on dark backgrounds */
+.dark .text-black:not([class*="bg-[#FFF3C4]"]):not([class*="bg-[#FFEAA0]"]):not([class*="bg-[#E5F8EE]"]):not([class*="bg-[#FFF9E6]"]):not([class*="bg-[#FEF3C7]"]):not([class*="bg-[#FFEBEE]"]):not([class*="bg-[#FFF8E7]"]):not([class*="bg-[#FFF3D6]"]):not([class*="bg-[#FFE8D6]"]):not([class*="bg-[#FFF3E9]"]):not([class*="bg-[#D8F3DC]"]):not([class*="bg-[#E8F5E9]"]):not([class*="bg-[#F3E5F5]"]):not([class*="bg-[#E0F7FA]"]):not([class*="bg-[#FCE4EC]"]):not([class*="bg-[#FFF8E1]"]):not([class*="bg-[#EFEBE9]"]):not([class*="bg-[#f0f0f0]"]):not([class*="dark:bg-white"]):not([class*="bg-white"]):not([class*="bg-amber"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-orange"]):not([class*="bg-red"]):not(option),
+.dark .dark\:text-black:not([class*="bg-[#FFF3C4]"]):not([class*="bg-[#FFEAA0]"]):not([class*="bg-[#E5F8EE]"]):not([class*="bg-[#FFF9E6]"]):not([class*="bg-[#FEF3C7]"]):not([class*="bg-[#FFEBEE]"]):not([class*="bg-[#FFF8E7]"]):not([class*="bg-[#FFF3D6]"]):not([class*="bg-[#FFE8D6]"]):not([class*="bg-[#FFF3E9]"]):not([class*="bg-[#D8F3DC]"]):not([class*="bg-[#E8F5E9]"]):not([class*="bg-[#F3E5F5]"]):not([class*="bg-[#E0F7FA]"]):not([class*="bg-[#FCE4EC]"]):not([class*="bg-[#FFF8E1]"]):not([class*="bg-[#EFEBE9]"]):not([class*="bg-[#f0f0f0]"]):not([class*="dark:bg-white"]):not([class*="bg-white"]):not([class*="bg-amber"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-orange"]):not([class*="bg-red"]):not(option) {
+    color: #FFFFFF !important;
+}
+
+/* Dark mode ink buttons: dark surfaces with crisp white text */
+.dark .bg-ink:not([class*="dark:bg-white"]) {
+    background-color: var(--color-surface-elevated);
+    color: #FFFFFF !important;
+}
+
+.dark .bg-ink:not([class*="dark:bg-white"]) * {
+    color: #FFFFFF;
+}
+
+.dark .bg-ink:not([class*="dark:bg-white"]) .text-brand,
+.dark .bg-ink:not([class*="dark:bg-white"]).text-brand {
+    color: #E65A1E !important;
+}
+
+.dark .bg-ink:not([class*="dark:bg-white"]) .text-ok,
+.dark .bg-ink:not([class*="dark:bg-white"]).text-ok {
+    color: #00A86B !important;
+}
+
+/* High contrast for select options across platforms */
+select option {
+    background-color: #ffffff;
     color: #121212 !important;
 }
 
-.dark .bg-ink .text-brand,
-.dark .bg-ink.text-brand {
-    color: #E65A1E !important;
+.dark select option {
+    background-color: #1a1a1a;
+    color: #ffffff !important;
 }
 
 /* Inputs */

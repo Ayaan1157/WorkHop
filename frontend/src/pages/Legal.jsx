@@ -49,7 +49,7 @@ export default function Legal() {
                 <Scale size={24} />
               </span>
               <div>
-                <span className="inline-block bg-ink text-white dark:bg-white dark:text-ink px-2 py-0.5 text-[9px] font-black uppercase tracking-widest">
+                <span className="inline-block bg-ink text-white dark:bg-white dark:text-black px-2 py-0.5 text-[9px] font-black uppercase tracking-widest">
                   STATUTORY COMPLIANCE NOTICE
                 </span>
                 <h1 className="mt-1 text-lg sm:text-2xl font-black tracking-tight text-ink dark:text-white">

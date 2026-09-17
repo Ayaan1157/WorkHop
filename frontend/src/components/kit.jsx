@@ -322,7 +322,7 @@ export function GlobalNav() {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center justify-between border-2 border-ink p-2.5 text-xs font-black transition ${
                       active
-                        ? "bg-ink text-white dark:bg-white dark:text-ink shadow-[2px_2px_0px_#E65A1E]"
+                        ? "bg-ink text-white dark:bg-white dark:text-black shadow-[2px_2px_0px_#E65A1E]"
                         : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand"
                     }`}
                   >
@@ -534,7 +534,7 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
               key={key}
               data-testid={`${testIDPrefix}-${key.toLowerCase().replace(/[^a-z]+/g, "-")}`}
               onClick={() => onSelect(key)}
-              className={`flex w-[100px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2.5 transition-transform active:translate-y-0.5 ${on ? "bg-ink" : "bg-white hover:bg-sand"}`}
+              className={`flex w-[100px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2.5 transition-transform active:translate-y-0.5 ${on ? "bg-ink dark:bg-white" : "bg-white dark:bg-[#1a1a1a] hover:bg-sand"}`}
             >
               <span
                 className="flex h-10 w-10 items-center justify-center border-2 border-ink"

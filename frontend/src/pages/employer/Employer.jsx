@@ -416,7 +416,7 @@ export default function Employer() {
                 <button
                   data-testid="unlock-cta-btn"
                   onClick={() => setSheetOpen(true)}
-                  className="mt-4 flex w-full max-w-md items-center justify-center gap-2 border-2 border-ink bg-ink py-3.5 text-[15px] font-black text-white dark:text-black shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition"
+                  className="mt-4 flex w-full max-w-md items-center justify-center gap-2 border-2 border-ink bg-[#121212] dark:bg-[#1a1a1a] py-3.5 text-[15px] font-black text-white shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition"
                 >
                   <span>Unlock 5 Local Leads · ₹199</span>
                   <LockOpen size={16} />
@@ -453,15 +453,15 @@ export default function Employer() {
             <button
               data-testid="plans-banner"
               onClick={() => nav("/employer/plans")}
-              className="mt-4 flex flex-col gap-3 border-2 border-ink bg-ink p-6 text-left transition hover:bg-ink/95 shadow-[3px_3px_0px_#E65A1E]"
+              className="mt-4 flex flex-col gap-3 border-2 border-ink bg-[#121212] dark:bg-[#161618] p-6 text-left transition hover:bg-black shadow-[3px_3px_0px_#E65A1E]"
             >
               <span className="self-start bg-brand px-3 py-1 text-[10px] font-black tracking-[0.15em] text-white">
                 EMPLOYER BRANDING PLANS
               </span>
-              <p className="text-xl font-black text-white dark:text-black">
+              <p className="text-xl font-black text-white">
                 Looking to Hire At Scale or Need Urgent Talent?
               </p>
-              <p className="text-xs text-white/75 dark:text-black font-semibold">
+              <p className="text-xs text-white/80 font-semibold">
                 Explore Pro Employer Plans · Unlimited Lead Unlocks · Dedicated Account Manager · Custom Boosts
               </p>
             </button>
