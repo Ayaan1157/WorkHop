@@ -123,13 +123,24 @@ export function GlobalNav() {
     setMobileMenuOpen(false);
   }, [loc.pathname]);
 
-  const links = [
-    { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users },
-    { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs", icon: Briefcase },
+  const userRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
+  const isEmployer = Boolean(user && (userRole?.includes("employ") || userRole?.includes("client")));
+  const isFreelancer = Boolean(user && !isEmployer);
+
+  const allLinks = [
+    { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users, forRole: "employer" },
+    { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs", icon: Briefcase, forRole: "freelancer" },
     { label: "LIVE MAP", path: "/map", testId: "nav-map", icon: MapPin },
     { label: "CATEGORIES", path: "/categories", testId: "nav-categories", icon: Grid3x3 },
     { label: "PLANS", path: "/employer/plans", testId: "nav-plans", icon: Coins },
   ];
+
+  const links = allLinks.filter((link) => {
+    if (!user) return true; // Show both if not signed in
+    if (link.forRole === "employer") return isEmployer;
+    if (link.forRole === "freelancer") return isFreelancer;
+    return true;
+  });
 
   return (
     <>

@@ -916,22 +916,32 @@ export default function Landing() {
 
           {/* Desktop Navigation Tabs */}
           <nav className="hidden lg:flex items-center gap-6" data-testid="landing-nav-tabs">
-            {[
-              { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros" },
-              { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs" },
-              { label: "LIVE MAP", path: "/map", testId: "nav-map" },
-              { label: "CATEGORIES", path: "/categories", testId: "nav-categories" },
-              { label: "PLANS", path: "/employer/plans", testId: "nav-plans" },
-            ].map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                data-testid={link.testId}
-                className="text-xs font-black tracking-wider text-ink dark:text-white transition hover:text-brand hover:underline underline-offset-4"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {(() => {
+              const uRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
+              const isEmp = Boolean(user && (uRole?.includes("employ") || uRole?.includes("client")));
+              const isFree = Boolean(user && !isEmp);
+              return [
+                { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", forRole: "employer" },
+                { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs", forRole: "freelancer" },
+                { label: "LIVE MAP", path: "/map", testId: "nav-map" },
+                { label: "CATEGORIES", path: "/categories", testId: "nav-categories" },
+                { label: "PLANS", path: "/employer/plans", testId: "nav-plans" },
+              ].filter((link) => {
+                if (!user) return true;
+                if (link.forRole === "employer") return isEmp;
+                if (link.forRole === "freelancer") return isFree;
+                return true;
+              }).map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  data-testid={link.testId}
+                  className="text-xs font-black tracking-wider text-ink dark:text-white transition hover:text-brand hover:underline underline-offset-4"
+                >
+                  {link.label}
+                </Link>
+              ));
+            })()}
           </nav>
 
           {/* Right Actions: Theme Toggle + Auth */}
@@ -1013,23 +1023,33 @@ export default function Landing() {
               <span className="text-[10px] font-black uppercase text-inkmuted dark:text-stone-400 tracking-wider">
                 Explore WorkHop
               </span>
-              {[
-                { label: "EXPLORE PROS", path: "/employer" },
-                { label: "FIND GIGS", path: "/freelancer/jobs" },
-                { label: "LIVE MAP", path: "/map" },
-                { label: "CATEGORIES", path: "/categories" },
-                { label: "PLANS", path: "/employer/plans" },
-              ].map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between border-2 border-ink bg-sand dark:bg-[#222] p-2.5 text-xs font-black text-ink dark:text-white hover:bg-white"
-                >
-                  <span>{link.label}</span>
-                  <ArrowRight size={14} className="text-brand" />
-                </Link>
-              ))}
+              {(() => {
+                const uRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
+                const isEmp = Boolean(user && (uRole?.includes("employ") || uRole?.includes("client")));
+                const isFree = Boolean(user && !isEmp);
+                return [
+                  { label: "EXPLORE PROS", path: "/employer", forRole: "employer" },
+                  { label: "FIND GIGS", path: "/freelancer/jobs", forRole: "freelancer" },
+                  { label: "LIVE MAP", path: "/map" },
+                  { label: "CATEGORIES", path: "/categories" },
+                  { label: "PLANS", path: "/employer/plans" },
+                ].filter((link) => {
+                  if (!user) return true;
+                  if (link.forRole === "employer") return isEmp;
+                  if (link.forRole === "freelancer") return isFree;
+                  return true;
+                }).map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between border-2 border-ink bg-sand dark:bg-[#222] p-2.5 text-xs font-black text-ink dark:text-white hover:bg-white"
+                  >
+                    <span>{link.label}</span>
+                    <ArrowRight size={14} className="text-brand" />
+                  </Link>
+                ));
+              })()}
             </div>
           </div>
         )}
