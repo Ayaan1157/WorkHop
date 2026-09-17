@@ -1,0 +1,23 @@
+{
+  "short_name": "WorkHop",
+  "name": "WorkHop — Local Gigs & Verified Pros",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/workhop-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FAF8F5",
+  "theme_color": "#E65A1E",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/"
+}

@@ -1351,7 +1351,8 @@ async def _issue_otp(email: str) -> dict:
     """
     sent = await _send_email(email, f"{otp} is your WorkHop verification code", html)
     resp = {"ok": True, "sent": sent, "cooldown_seconds": 60}
-    if not sent:
+    env_name = os.environ.get("ENVIRONMENT", "development").lower()
+    if not sent and env_name not in ("production", "prod"):
         # Email service unavailable — surface the code so the flow isn't blocked (dev/test only).
         resp["dev_otp"] = otp
     return resp
@@ -2101,7 +2102,7 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$|^http:\/\/localhost:\d+$",
+    allow_origin_regex=r"^https:\/\/(workhop|workhop-[a-zA-Z0-9_-]+)\.vercel\.app$|^https:\/\/(www\.)?workhop\.in$|^http:\/\/localhost:\d+$|^http:\/\/127\.0\.0\.1:\d+$",
     allow_origins=allowed_origins,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],

@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /categories
+Allow: /map
+Allow: /employer
+Allow: /freelancer/jobs
+Allow: /employer/plans
+Allow: /legal
+Allow: /support
+
+# Disallow private user and admin routes
+Disallow: /admin
+Disallow: /settings
+Disallow: /employer/inbox
+Disallow: /freelancer/chats
+Disallow: /chat/
+
+# Sitemap location
+Sitemap: https://workhop.in/sitemap.xml
