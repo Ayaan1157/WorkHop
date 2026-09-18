@@ -15,12 +15,23 @@ import Employer from "@/pages/employer/Employer";
 import Plans from "@/pages/employer/Plans";
 import PostJob from "@/pages/employer/PostJob";
 import Inbox from "@/pages/employer/Inbox";
+import EmployerDashboard from "@/pages/employer/EmployerDashboard";
 import Onboarding from "@/pages/freelancer/Onboarding";
 import Jobs from "@/pages/freelancer/Jobs";
 import FreelancerChats from "@/pages/freelancer/Chats";
 import FreelancerProfile from "@/pages/freelancer/FreelancerProfile";
+import { useAuth } from "@/context/AuthContext";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
+
+function ProfileRoute() {
+  const { user } = useAuth();
+  const role = user?.role || localStorage.getItem("workhop_auth_role") || "freelancer";
+  if (role === "employer") {
+    return <EmployerDashboard />;
+  }
+  return <FreelancerProfile />;
+}
 
 function App() {
   return (
@@ -30,7 +41,9 @@ function App() {
           <BrowserRouter>
             <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/profile" element={<FreelancerProfile />} />
+            <Route path="/profile" element={<ProfileRoute />} />
+            <Route path="/employer/dashboard" element={<EmployerDashboard />} />
+            <Route path="/employer/profile" element={<EmployerDashboard />} />
             <Route path="/settings" element={<Profile />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/legal" element={<Legal />} />

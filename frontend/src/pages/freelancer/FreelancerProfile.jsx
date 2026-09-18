@@ -6,14 +6,15 @@ import {
   MapPin, Star, ChevronDown, ChevronUp, X, User, DollarSign,
   Code2, Loader2, Menu, MessagesSquare, Map as MapIcon,
   LayoutGrid, Tag, LifeBuoy, FileText, Shield, ChevronRight,
-  LogOut, Wallet, ShieldCheck, Camera, Upload
+  LogOut, Wallet, ShieldCheck, Camera, Upload, Coins, Sparkles, History, ArrowUpRight, Building2
 } from "lucide-react";
 import { Shell } from "@/components/kit";
 import EditModal from "@/components/EditModal";
 import EscrowWalletModal from "@/components/EscrowWalletModal";
+import CreditsTopUpModal from "@/components/CreditsTopUpModal";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, getFreelancerId } from "@/lib/api";
-import { getFreelancerProfile, saveFreelancerProfile } from "@/lib/clientStore";
+import { getFreelancerProfile, saveFreelancerProfile, getCreditsWallet, getCreditTransactions } from "@/lib/clientStore";
 
 /* ═══════════ helpers ═══════════ */
 const uid = () => `id_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -58,6 +59,10 @@ export default function FreelancerProfile() {
   // Top-right Menu Drawer & Escrow Wallet states
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [txHistoryOpen, setTxHistoryOpen] = useState(false);
+  const [creditsWallet, setCreditsWallet] = useState(() => getCreditsWallet(freelancerId));
+  const [creditTxs, setCreditTxs] = useState(() => getCreditTransactions(freelancerId));
   const [proPhone, setProPhone] = useState(() => user?.phone || localStorage.getItem("workhop_pro_phone") || "");
   const [proSkill, setProSkill] = useState(() => user?.skill || localStorage.getItem("workhop_pro_skill") || "");
   const [proSaving, setProSaving] = useState(false);
@@ -90,6 +95,13 @@ export default function FreelancerProfile() {
   };
 
   const navMenuItems = [
+    {
+      icon: Building2,
+      label: "Employer Dashboard & Hiring Hub",
+      sub: "Manage gigs, applicant proposals & billing",
+      to: "/employer/dashboard",
+      testID: "profile-employer-dashboard",
+    },
     {
       icon: Briefcase,
       label: "Employer Site (Nearby Pros)",
@@ -319,14 +331,30 @@ export default function FreelancerProfile() {
               Back to Dashboard
             </button>
 
-            <button
-              onClick={() => setMenuDrawerOpen(true)}
-              data-testid="profile-top-menu-btn"
-              className="flex items-center gap-2 rounded-lg border border-[#ddd] dark:border-[#333] bg-white dark:bg-[#1a1a1a] px-3.5 py-1.5 text-xs font-bold text-ink dark:text-white hover:bg-gray-100 dark:hover:bg-[#252525] hover:border-[#E65A1E] transition shadow-sm active:translate-y-0.5"
-            >
-              <Menu size={16} className="text-[#E65A1E]" />
-              <span>MENU & SETTINGS</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                data-testid="profile-switch-employer-btn"
+                onClick={() => {
+                  localStorage.setItem("workhop_auth_role", "employer");
+                  nav("/employer/dashboard");
+                }}
+                className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#ddd] dark:border-[#333] bg-[#FFF3C4] px-3 py-1.5 text-xs font-black text-ink hover:bg-[#FFEAA0] transition shadow-xs"
+                title="Switch to Employer Dashboard"
+              >
+                <Building2 size={14} className="text-brand" />
+                <span>EMPLOYER DASHBOARD</span>
+              </button>
+
+              <button
+                onClick={() => setMenuDrawerOpen(true)}
+                data-testid="profile-top-menu-btn"
+                className="flex items-center gap-2 rounded-lg border border-[#ddd] dark:border-[#333] bg-white dark:bg-[#1a1a1a] px-3.5 py-1.5 text-xs font-bold text-ink dark:text-white hover:bg-gray-100 dark:hover:bg-[#252525] hover:border-[#E65A1E] transition shadow-sm active:translate-y-0.5"
+              >
+                <Menu size={16} className="text-[#E65A1E]" />
+                <span>MENU & SETTINGS</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -398,6 +426,76 @@ export default function FreelancerProfile() {
                     </p>
                     <p className="text-[10px] text-inkmuted dark:text-[#666] uppercase tracking-wider">Works</p>
                   </div>
+                </div>
+              </div>
+
+              {/* ═══════════ CONNECTS & CREDITS WALLET (UPWORK-STYLE) ═══════════ */}
+              <div
+                data-testid="credits-wallet-card"
+                className="border-2 border-ink bg-white dark:bg-[#141414] p-5 shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-[#FFF3C4] text-[#E65A1E]">
+                      <Coins size={18} />
+                    </span>
+                    <div>
+                      <p className="text-xs font-black uppercase text-ink dark:text-white">Connects & Credits</p>
+                      <p className="text-[10px] text-inkmuted dark:text-stone-400">Bidding & Proposal Wallet</p>
+                    </div>
+                  </div>
+                  {creditsWallet.subscription_status === "active" ? (
+                    <span className="border border-ink bg-ok px-2 py-0.5 text-[8px] font-black uppercase text-white shadow-[1px_1px_0px_#121212]">
+                      Pro Pass Active
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-inkmuted dark:text-stone-400">
+                      Standard
+                    </span>
+                  )}
+                </div>
+
+                {/* Big Balance Number */}
+                <div className="mt-4 flex items-baseline justify-between border-y-2 border-ink/20 py-3">
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400">
+                      AVAILABLE BALANCE
+                    </span>
+                    <p className="text-2xl font-black text-ink dark:text-white flex items-center gap-1.5" data-testid="profile-credits-balance">
+                      <Coins size={22} className="text-brand" /> {creditsWallet.balance} <span className="text-xs font-bold text-inkmuted">Credits</span>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    data-testid="view-credit-history-btn"
+                    onClick={() => {
+                      setCreditTxs(getCreditTransactions(freelancerId));
+                      setTxHistoryOpen(true);
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-black text-brand underline hover:opacity-80"
+                  >
+                    <History size={12} /> History
+                  </button>
+                </div>
+
+                {/* Quick Action Buttons */}
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    data-testid="profile-topup-btn"
+                    onClick={() => setCreditsModalOpen(true)}
+                    className="flex-1 flex items-center justify-center gap-1 border-2 border-ink bg-ink py-2 text-xs font-black text-white hover:bg-black transition shadow-[2px_2px_0px_#121212] active:translate-y-0.5"
+                  >
+                    <Plus size={13} /> TOP UP
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="profile-pro-pass-btn"
+                    onClick={() => setCreditsModalOpen(true)}
+                    className="flex-1 flex items-center justify-center gap-1 border-2 border-ink bg-brand py-2 text-xs font-black text-white hover:bg-brand/90 transition shadow-[2px_2px_0px_#121212] active:translate-y-0.5"
+                  >
+                    <Sparkles size={13} /> PRO PASS
+                  </button>
                 </div>
               </div>
 
@@ -1619,6 +1717,129 @@ export default function FreelancerProfile() {
 
       {/* Escrow Wallet Modal */}
       <EscrowWalletModal isOpen={walletOpen} onClose={() => setWalletOpen(false)} />
+
+      {/* Credits / Connects Top Up & Subscription Modal */}
+      <CreditsTopUpModal
+        isOpen={creditsModalOpen}
+        onClose={() => setCreditsModalOpen(false)}
+        freelancerId={freelancerId}
+        onWalletUpdated={(w) => {
+          setCreditsWallet(w);
+          setCreditTxs(getCreditTransactions(freelancerId));
+        }}
+      />
+
+      {/* Credit Transactions History Modal */}
+      {txHistoryOpen && (
+        <div
+          data-testid="credit-tx-history-backdrop"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setTxHistoryOpen(false);
+          }}
+        >
+          <div
+            data-testid="credit-tx-history-modal"
+            className="w-full max-w-lg border-2 border-ink bg-white p-6 shadow-[6px_6px_0px_#121212] dark:border-white dark:bg-[#141414] max-h-[85vh] flex flex-col"
+          >
+            <div className="flex items-center justify-between border-b-2 border-ink pb-4 dark:border-stone-700">
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-[#FFF3C4] text-[#E65A1E]">
+                  <History size={20} />
+                </span>
+                <div>
+                  <h3 className="text-base font-black uppercase text-ink dark:text-white">Credits Transaction History</h3>
+                  <p className="text-xs text-inkmuted dark:text-stone-400">Balance: <strong className="text-ink dark:text-white">{creditsWallet.balance} credits</strong></p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTxHistoryOpen(false)}
+                className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-white font-black hover:bg-stone-200 dark:bg-stone-800 dark:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4 space-y-3">
+              {creditTxs && creditTxs.length > 0 ? (
+                creditTxs.map((tx) => {
+                  const isPositive = tx.amount > 0;
+                  const typeLabel = {
+                    purchase: "Packs Purchase",
+                    subscription: "Monthly Subscription",
+                    spend: "Job Application",
+                    boost: "Proposal Boost",
+                  }[tx.type] || tx.type.toUpperCase();
+
+                  return (
+                    <div
+                      key={tx.id}
+                      className="border-2 border-ink/40 bg-stone-50 dark:bg-stone-900/60 p-3 flex items-center justify-between text-xs"
+                    >
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-1.5 py-0.5 text-[9px] font-black uppercase border border-ink ${
+                            tx.type === "boost"
+                              ? "bg-[#FFF3C4] text-ink"
+                              : tx.type === "subscription"
+                              ? "bg-brand text-white"
+                              : tx.type === "purchase"
+                              ? "bg-ok text-white"
+                              : "bg-stone-200 text-ink dark:bg-stone-800 dark:text-white"
+                          }`}>
+                            {typeLabel}
+                          </span>
+                          <span className="text-[10px] text-inkmuted dark:text-stone-400">
+                            {new Date(tx.created_at).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}
+                          </span>
+                        </div>
+                        <p className="mt-1 font-bold text-ink dark:text-white truncate">
+                          {tx.description || (tx.related_job_id ? `Job Ref: ${tx.related_job_id}` : "Account adjustment")}
+                        </p>
+                        <p className="text-[10px] text-inkmuted dark:text-stone-400">
+                          Balance after: {tx.balance_after} credits
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-sm font-black ${isPositive ? "text-ok" : "text-bad"}`}>
+                          {isPositive ? `+${tx.amount}` : tx.amount} credits
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 text-inkmuted dark:text-stone-400">
+                  <Coins size={32} className="mx-auto mb-2 opacity-40" />
+                  <p className="font-bold text-xs">No credit transactions yet</p>
+                  <p className="text-[11px]">Credits spent on applications or acquired will appear here.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t-2 border-ink pt-3 flex gap-2 dark:border-stone-700">
+              <button
+                type="button"
+                onClick={() => {
+                  setTxHistoryOpen(false);
+                  setCreditsModalOpen(true);
+                }}
+                className="flex-1 border-2 border-ink bg-brand py-2 text-xs font-black text-white hover:bg-brand/90 transition shadow-[2px_2px_0px_#121212]"
+              >
+                + TOP UP CREDITS
+              </button>
+              <button
+                type="button"
+                onClick={() => setTxHistoryOpen(false)}
+                className="border-2 border-ink bg-white dark:bg-stone-800 px-4 py-2 text-xs font-black text-ink dark:text-white hover:bg-stone-100"
+              >
+                CLOSE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }

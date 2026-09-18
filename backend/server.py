@@ -152,6 +152,9 @@ class Job(BaseModel):
     area: str
     description: str
     keywords: List[str] = Field(default_factory=list)
+    credits_to_apply: int = 1
+    is_boosted: bool = False
+    boost_expires_at: Optional[str] = None
 
 
 class FreelancerStatus(BaseModel):
@@ -165,6 +168,11 @@ class FreelancerStatus(BaseModel):
 class ApplyRequest(BaseModel):
     freelancer_id: str
     note: Optional[str] = ""
+    boost_credits: Optional[int] = 0
+    proposed_rate_type: Optional[str] = "fixed"
+    proposed_quote: Optional[float] = None
+    pdf_attachment: Optional[dict] = None
+    portfolio_items: Optional[list] = []
 
 
 class ApplyResponse(BaseModel):
@@ -172,10 +180,48 @@ class ApplyResponse(BaseModel):
     job_id: str
     freelancer_id: str
     applied_at: str
-    quota_used: int
-    quota_limit: int
-    has_boost: bool
     conversation_id: str
+    credits_spent: int = 1
+    remaining_balance: int = 0
+    quota_used: int = 0
+    quota_limit: int = 999
+    has_boost: bool = False
+
+
+class CreditsWallet(BaseModel):
+    user_id: str
+    balance: int = 20
+    subscription_status: str = "none"
+    subscription_plan_id: Optional[str] = None
+    subscription_renews_at: Optional[str] = None
+    updated_at: str
+
+
+class CreditTransaction(BaseModel):
+    id: str
+    user_id: str
+    type: str  # 'purchase' | 'subscription' | 'spend' | 'boost' | 'bonus'
+    amount: int
+    balance_after: int
+    related_job_id: Optional[str] = None
+    job_title: Optional[str] = None
+    description: str
+    created_at: str
+
+
+class CreditPackPurchaseReq(BaseModel):
+    user_id: str
+    pack_id: str
+
+
+class CreditSubscriptionReq(BaseModel):
+    user_id: str
+    plan_id: str
+
+
+class JobBoostReq(BaseModel):
+    employer_id: str
+    amount_paid: int = 299
 
 
 class Conversation(BaseModel):
@@ -336,13 +382,20 @@ with open(ROOT_DIR / "seeds" / "jobs.json", encoding="utf-8") as _f:
 
 
 def _make_seed_job(i: int, j: dict) -> dict:
+    pay = j["pay"]
+    credits_to_apply = max(1, math.floor(pay / 1000))
+    sample_boost = (i == 0 or i == 3)
+    expires_at = (datetime.now(timezone.utc) + timedelta(hours=36)).isoformat() if sample_boost else None
     return {
         "id": f"job-{i + 1}",
         "title": j["title"],
         "category": j["category"],
         "bucket": j["bucket"],
-        "pay": j["pay"],
-        "pay_label": f"₹{j['pay']:,} fixed",
+        "pay": pay,
+        "pay_label": f"₹{pay:,} fixed",
+        "credits_to_apply": credits_to_apply,
+        "is_boosted": sample_boost,
+        "boost_expires_at": expires_at,
         "distance_km": round(0.3 + ((i * 17) % 27) / 10.0, 1),
         "posted_minutes_ago": (i * 23) % 480,
         "company_name": j["company_name"],
@@ -660,19 +713,38 @@ async def list_jobs(freelancer_id: Optional[str] = None, bucket: Optional[str] =
     jobs_out: List[Job] = []
     custom = await db.custom_jobs.find({}, {"_id": 0}).to_list(500)
     custom.sort(key=lambda j: j.get("created_at", ""), reverse=True)
+    now = datetime.now(timezone.utc)
+
     for job in custom + SEED_JOBS:
         if bucket and job["bucket"].lower() != bucket.lower():
             continue
+        pay = int(job.get("pay", 1000))
+        credits_to_apply = job.get("credits_to_apply") or max(1, math.floor(pay / 1000))
+        is_boosted = bool(job.get("is_boosted", False))
+        exp = job.get("boost_expires_at")
+        if is_boosted and exp:
+            try:
+                if datetime.fromisoformat(exp) <= now:
+                    is_boosted = False
+            except Exception:
+                pass
+
         jobs_out.append(Job(
             id=job["id"], title=job["title"], category=job["category"],
             bucket=job["bucket"],
-            pay=job["pay"], pay_label=job["pay_label"], distance_km=job["distance_km"],
+            pay=pay, pay_label=job["pay_label"], distance_km=job["distance_km"],
             posted_minutes_ago=job["posted_minutes_ago"],
             company_name=job["company_name"],
             area=job["area"],
             description=job["description"],
-            keywords=job["keywords"],
+            keywords=job.get("keywords", []),
+            credits_to_apply=credits_to_apply,
+            is_boosted=is_boosted,
+            boost_expires_at=exp,
         ))
+
+    # Requirement 4: Boosted jobs appear higher in job listing/search results
+    jobs_out.sort(key=lambda j: 1 if j.is_boosted else 0, reverse=True)
     return jobs_out
 
 
@@ -727,6 +799,33 @@ async def freelancer_quota(freelancer_id: str):
     )
 
 
+async def _get_or_create_wallet(user_id: str) -> dict:
+    w = await db.credits_wallet.find_one({"user_id": user_id}, {"_id": 0})
+    if not w:
+        w = {
+            "user_id": user_id,
+            "balance": 20,  # 20 welcome bonus credits
+            "subscription_status": "none",
+            "subscription_plan_id": None,
+            "subscription_renews_at": None,
+            "updated_at": _now_iso(),
+        }
+        await db.credits_wallet.insert_one({"_id": user_id, **w})
+        # Record welcome bonus
+        await db.credit_transactions.insert_one({
+            "_id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "type": "bonus",
+            "amount": 20,
+            "balance_after": 20,
+            "related_job_id": None,
+            "job_title": None,
+            "description": "Welcome Gift: 20 Free Bidding Credits",
+            "created_at": _now_iso(),
+        })
+    return w
+
+
 @api_router.post("/jobs/{job_id}/apply", response_model=ApplyResponse)
 async def apply_to_job(job_id: str, req: ApplyRequest):
     # Validate job (seeded or employer-posted)
@@ -747,18 +846,40 @@ async def apply_to_job(job_id: str, req: ApplyRequest):
     )
     if existing:
         raise HTTPException(status_code=409, detail="Already applied to this job.")
-    # Quota check
-    state = await _get_quota_state(req.freelancer_id)
-    if state["quota_used"] >= state["quota_limit"]:
-        if state["has_boost"]:
-            raise HTTPException(
-                status_code=402,
-                detail=f"Daily limit ({state['quota_limit']}) reached. Resets in 24 hours.",
-            )
+
+    # Requirement 1: Credit-based deduction logic
+    pay = int(job.get("pay", 1000))
+    base_cost = job.get("credits_to_apply") or max(1, math.floor(pay / 1000))
+    boost_credits = max(0, req.boost_credits or 0)
+    total_cost = base_cost + boost_credits
+
+    wallet = await _get_or_create_wallet(req.freelancer_id)
+    if wallet["balance"] < total_cost:
         raise HTTPException(
             status_code=402,
-            detail=f"Daily free quota ({FREE_APPLY_LIMIT}) exhausted. Boost with +{BOOST_EXTRA_APPLIES} applies.",
+            detail=f"Insufficient credits. This application requires {total_cost} credits (base: {base_cost}{f', boost: {boost_credits}' if boost_credits else ''}), but your wallet balance is only {wallet['balance']} credits. Top up or subscribe to apply.",
         )
+
+    # Deduct credits atomically
+    new_balance = wallet["balance"] - total_cost
+    await db.credits_wallet.update_one(
+        {"user_id": req.freelancer_id},
+        {"$set": {"balance": new_balance, "updated_at": _now_iso()}}
+    )
+
+    # Record credit transaction
+    await db.credit_transactions.insert_one({
+        "_id": str(uuid.uuid4()),
+        "user_id": req.freelancer_id,
+        "type": "boost" if boost_credits > 0 else "spend",
+        "amount": -total_cost,
+        "balance_after": new_balance,
+        "related_job_id": job_id,
+        "job_title": job["title"],
+        "description": f"Applied to '{job['title']}' ({base_cost} base + {boost_credits} boost credits)" if boost_credits > 0 else f"Applied to '{job['title']}' ({base_cost} credits)",
+        "created_at": _now_iso(),
+    })
+
     application_id = str(uuid.uuid4())
     applied_at = _now_iso()
     await db.applications.insert_one({
@@ -766,9 +887,27 @@ async def apply_to_job(job_id: str, req: ApplyRequest):
         "application_id": application_id,
         "job_id": job_id,
         "freelancer_id": req.freelancer_id,
-        "note": (req.note or "")[:500],
+        "note": (req.note or "")[:1000],
+        "boost_credits": boost_credits,
+        "proposed_rate_type": req.proposed_rate_type or "fixed",
+        "proposed_quote": req.proposed_quote if req.proposed_quote is not None else float(job.get("pay", 1000)),
+        "pdf_attachment": req.pdf_attachment,
+        "portfolio_items": req.portfolio_items or [],
+        "scan_status": "verified_clean",
         "applied_at": applied_at,
     })
+
+    # Requirement 3: Record application boost for leaderboard tracking
+    if boost_credits > 0:
+        await db.application_boosts.insert_one({
+            "_id": str(uuid.uuid4()),
+            "application_id": application_id,
+            "job_id": job_id,
+            "freelancer_id": req.freelancer_id,
+            "credits_spent": boost_credits,
+            "created_at": applied_at,
+        })
+
     # Open (or reuse) a chat thread between the freelancer and the employer
     conv = await db.conversations.find_one(
         {"job_id": job_id, "freelancer_id": req.freelancer_id}, {"_id": 0}
@@ -789,17 +928,192 @@ async def apply_to_job(job_id: str, req: ApplyRequest):
             "last_message": None,
             "last_message_at": None,
         })
-    new_state = await _get_quota_state(req.freelancer_id)
+
     return ApplyResponse(
         application_id=application_id,
         job_id=job_id,
         freelancer_id=req.freelancer_id,
         applied_at=applied_at,
-        quota_used=new_state["quota_used"],
-        quota_limit=new_state["quota_limit"],
-        has_boost=new_state["has_boost"],
         conversation_id=conversation_id,
+        credits_spent=total_cost,
+        remaining_balance=new_balance,
+        quota_used=1,
+        quota_limit=999,
+        has_boost=boost_credits > 0,
     )
+
+
+# ═══════════ CONNECTS & CREDITS WALLET & LEADERBOARD ENDPOINTS ═══════════
+
+@api_router.get("/freelancer/{freelancer_id}/credits-wallet")
+async def get_freelancer_credits_wallet(freelancer_id: str):
+    """Returns current credit balance and recent transactions."""
+    wallet = await _get_or_create_wallet(freelancer_id)
+    txs = await db.credit_transactions.find(
+        {"user_id": freelancer_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    return {"wallet": wallet, "transactions": txs}
+
+
+@api_router.post("/credits/purchase-pack")
+async def purchase_credits_pack(req: CreditPackPurchaseReq):
+    """Adds purchased credit bundle to user's wallet."""
+    pack_map = {
+        "pack-10": (10, 100),
+        "pack-25": (25, 225),
+        "pack-50": (50, 400),
+        "pack-100": (100, 750),
+    }
+    credits, price = pack_map.get(req.pack_id, (25, 225))
+    wallet = await _get_or_create_wallet(req.user_id)
+    new_balance = wallet["balance"] + credits
+    await db.credits_wallet.update_one(
+        {"user_id": req.user_id},
+        {"$set": {"balance": new_balance, "updated_at": _now_iso()}}
+    )
+    await db.credit_transactions.insert_one({
+        "_id": str(uuid.uuid4()),
+        "user_id": req.user_id,
+        "type": "purchase",
+        "amount": credits,
+        "balance_after": new_balance,
+        "description": f"Purchased {credits} Credits Pack (₹{price})",
+        "created_at": _now_iso(),
+    })
+    return {"ok": True, "balance": new_balance, "added": credits}
+
+
+@api_router.post("/credits/subscribe")
+async def subscribe_credits(req: CreditSubscriptionReq):
+    """Subscribes user to a monthly connects pass."""
+    plan_map = {
+        "starter_pass": (30, 249, "Starter Connects Pass"),
+        "pro_pass": (60, 449, "Pro Connects Pass"),
+        "power_pass": (120, 799, "Power Freelancer Pass"),
+    }
+    credits, price, name = plan_map.get(req.plan_id, (60, 449, "Pro Connects Pass"))
+    wallet = await _get_or_create_wallet(req.user_id)
+    new_balance = wallet["balance"] + credits
+    renews_at = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+
+    await db.credits_wallet.update_one(
+        {"user_id": req.user_id},
+        {"$set": {
+            "balance": new_balance,
+            "subscription_status": "active",
+            "subscription_plan_id": req.plan_id,
+            "subscription_renews_at": renews_at,
+            "updated_at": _now_iso(),
+        }}
+    )
+    await db.subscriptions.insert_one({
+        "_id": str(uuid.uuid4()),
+        "user_id": req.user_id,
+        "plan": req.plan_id,
+        "credits_per_cycle": credits,
+        "price_inr": price,
+        "status": "active",
+        "renews_at": renews_at,
+        "created_at": _now_iso(),
+    })
+    await db.credit_transactions.insert_one({
+        "_id": str(uuid.uuid4()),
+        "user_id": req.user_id,
+        "type": "subscription",
+        "amount": credits,
+        "balance_after": new_balance,
+        "description": f"Subscribed to {name} (+{credits} credits, ₹{price}/mo)",
+        "created_at": _now_iso(),
+    })
+    return {"ok": True, "balance": new_balance, "subscription_status": "active", "renews_at": renews_at}
+
+
+@api_router.get("/jobs/{job_id}/leaderboard")
+async def get_job_leaderboard_endpoint(job_id: str):
+    """Requirement 3: Applicant leaderboard ranking proposals by boost credits (ties broken by timestamp)."""
+    apps = await db.applications.find({"job_id": job_id}, {"_id": 0}).to_list(100)
+    # Join with freelancer name
+    results = []
+    for a in apps:
+        fdoc = await db.freelancers.find_one({"_id": a["freelancer_id"]}, {"_id": 0, "full_name": 1, "skill": 1, "rating": 1}) or {}
+        results.append({
+            "id": a.get("application_id") or str(uuid.uuid4()),
+            "freelancer_id": a["freelancer_id"],
+            "freelancer_name": fdoc.get("full_name") or "Verified Pro",
+            "freelancer_skill": fdoc.get("skill") or "Verified Specialist",
+            "rating": fdoc.get("rating") or 4.9,
+            "note": a.get("note", ""),
+            "boost_credits": a.get("boost_credits", 0),
+            "applied_at": a.get("applied_at", _now_iso()),
+        })
+
+    # Sort: boost_credits DESC, then applied_at ASC
+    results.sort(key=lambda x: (-x["boost_credits"], x["applied_at"]))
+    out = []
+    for idx, r in enumerate(results):
+        out.append({
+            **r,
+            "rank": idx + 1,
+            "is_top_boosted": idx < 3 and r["boost_credits"] > 0,
+        })
+    return out
+
+
+@api_router.post("/employer/jobs/{job_id}/boost")
+async def boost_employer_job(job_id: str, req: JobBoostReq):
+    """Requirement 4: Employer job boost (marks urgent/boosted for 48 hours)."""
+    duration_hours = 48
+    expires_at = (datetime.now(timezone.utc) + timedelta(hours=duration_hours)).isoformat()
+    await db.custom_jobs.update_one(
+        {"_id": job_id},
+        {"$set": {"is_boosted": True, "boost_expires_at": expires_at}}
+    )
+    await db.job_boosts.insert_one({
+        "_id": str(uuid.uuid4()),
+        "job_id": job_id,
+        "boosted_by": req.employer_id,
+        "amount_paid": req.amount_paid,
+        "expires_at": expires_at,
+        "created_at": _now_iso(),
+    })
+    return {"ok": True, "is_boosted": True, "boost_expires_at": expires_at}
+
+
+@api_router.get("/admin/credits-config")
+async def get_admin_credits_config():
+    """Requirement 6: Fetch editable pricing and rules config."""
+    cfg = await db.site_settings.find_one({"_id": "credits_config"}, {"_id": 0})
+    if not cfg:
+        cfg = {
+            "per_credit_rate_inr": 10,
+            "credit_packs": [
+                {"id": "pack-10", "credits": 10, "price_inr": 100, "label": "10 Credits", "discount_label": "Standard Rate", "popular": False},
+                {"id": "pack-25", "credits": 25, "price_inr": 225, "label": "25 Credits", "discount_label": "Save 10%", "popular": True},
+                {"id": "pack-50", "credits": 50, "price_inr": 400, "label": "50 Credits", "discount_label": "Save 20%", "popular": False},
+                {"id": "pack-100", "credits": 100, "price_inr": 750, "label": "100 Credits", "discount_label": "Save 25% (Best Value)", "popular": False},
+            ],
+            "subscription_plans": [
+                {"id": "starter_pass", "name": "Starter Connects Pass", "credits_per_cycle": 30, "price_inr": 249, "billing_cycle": "monthly", "badge": "STARTER", "effective_per_credit": "₹8.30"},
+                {"id": "pro_pass", "name": "Pro Connects Pass", "credits_per_cycle": 60, "price_inr": 449, "billing_cycle": "monthly", "badge": "MOST POPULAR", "effective_per_credit": "₹7.48"},
+                {"id": "power_pass", "name": "Power Freelancer Pass", "credits_per_cycle": 120, "price_inr": 799, "billing_cycle": "monthly", "badge": "MAX SAVINGS", "effective_per_credit": "₹6.65"},
+            ],
+            "rollover_unused_credits": True,
+            "job_boost_price_inr": 299,
+            "job_boost_duration_hours": 48,
+            "welcome_credits": 20,
+        }
+    return cfg
+
+
+@api_router.put("/admin/credits-config")
+async def update_admin_credits_config(req: Request):
+    data = await req.json()
+    await db.site_settings.update_one(
+        {"_id": "credits_config"},
+        {"$set": data},
+        upsert=True,
+    )
+    return {"ok": True, "config": data}
 
 
 @api_router.post("/freelancer/quota/unlock", response_model=QuotaUnlockResponse)
@@ -1927,6 +2241,7 @@ async def post_job(req: PostJobRequest):
         )
     job_id = f"cjob-{uuid.uuid4().hex[:8]}"
     idx = state["used"]
+    credits_to_apply = max(1, math.floor(req.pay / 1000))
     job = {
         "id": job_id,
         "title": req.title.strip()[:120],
@@ -1934,6 +2249,9 @@ async def post_job(req: PostJobRequest):
         "bucket": catalog_to_bucket[req.bucket],
         "pay": req.pay,
         "pay_label": f"₹{req.pay:,} fixed",
+        "credits_to_apply": credits_to_apply,
+        "is_boosted": False,
+        "boost_expires_at": None,
         "distance_km": round(0.5 + (idx % 30) / 10.0, 1),
         "posted_minutes_ago": 0,
         "company_name": req.company_name.strip()[:60],

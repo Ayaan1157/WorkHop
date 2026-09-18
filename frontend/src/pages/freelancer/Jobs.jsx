@@ -4,7 +4,8 @@ import {
   Search, X, Grid3x3, Map as MapIcon, MessagesSquare, ShieldCheck, ShieldHalf,
   Zap, Rocket, SlidersHorizontal, MapPin, IndianRupee, Send, Lock, CheckCircle2,
   Loader2, Check, Heart, ArrowUpDown, Star, Sparkles, Filter, LocateFixed, Expand,
-  Users, Shield
+  Users, Shield, Coins, Trophy, Flame, FileText, AlertTriangle, Eye, EyeOff,
+  Plus, Minus, Trash2, Paperclip, UploadCloud
 } from "lucide-react";
 import {
   Shell, TopBar, IconBtn, CategoryTiles, EmptyBlock, Breadcrumbs,
@@ -12,6 +13,8 @@ import {
 } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
+import CreditsTopUpModal from "@/components/CreditsTopUpModal";
+import ApplicantLeaderboardModal from "@/components/ApplicantLeaderboardModal";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import {
@@ -25,7 +28,15 @@ import {
 } from "@/lib/locationAreas";
 import { JOB_CATEGORY_FILTERS } from "@/lib/catalogFilters";
 import { apiGet, apiPost, getFreelancerId } from "@/lib/api";
-import { getSavedJobIds, toggleSaveJob, ADMIN_EMAILS } from "@/lib/clientStore";
+import {
+  getSavedJobIds,
+  toggleSaveJob,
+  ADMIN_EMAILS,
+  getCreditsWallet,
+  getFreelancerProfile,
+  getJobLeaderboard
+} from "@/lib/clientStore";
+import { scanText, redactViolations, scanPdfFile } from "@/lib/contactScanner";
 import { useAuth } from "@/context/AuthContext";
 
 const BUDGETS = [
@@ -77,10 +88,30 @@ export default function Jobs() {
   const [activeJob, setActiveJob] = useState(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyNote, setApplyNote] = useState("");
+  const [boostCredits, setBoostCredits] = useState(0);
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState(null);
   const [appliedJustNow, setAppliedJustNow] = useState(null);
   const [lastConvId, setLastConvId] = useState(null);
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [leaderboardJob, setLeaderboardJob] = useState(null);
+  const [wallet, setWallet] = useState(() => getCreditsWallet(getFreelancerId()));
+
+  // Rate Quoting (Fixed vs Hourly)
+  const [proposedRateType, setProposedRateType] = useState("fixed"); // "fixed" | "hourly"
+  const [proposedQuote, setProposedQuote] = useState(1000);
+
+  // PDF Attachment & Scanner State
+  const [pdfAttachment, setPdfAttachment] = useState(null);
+  const [pdfScanning, setPdfScanning] = useState(false);
+  const [textViolations, setTextViolations] = useState([]);
+  const [pdfViolations, setPdfViolations] = useState([]);
+
+  // Portfolio Highlights
+  const [portfolioHighlights, setPortfolioHighlights] = useState([]);
+  const [newHighlightTitle, setNewHighlightTitle] = useState("");
+  const [newHighlightTag, setNewHighlightTag] = useState("");
+  const [showAddHighlight, setShowAddHighlight] = useState(false);
 
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [boostPreviewOpen, setBoostPreviewOpen] = useState(false);
@@ -216,14 +247,135 @@ export default function Jobs() {
   const openApplyFor = (job) => {
     if (!user) { localStorage.setItem("workhop_auth_intent", "freelancer"); nav("/"); return; }
     if (appliedSet.has(job.id)) return;
-    if (quotaExhausted) { setActiveJob(job); setPaywallOpen(true); return; }
     const fid = freelancerId || getFreelancerId();
     if (!freelancerId) setFid(fid);
-    setActiveJob(job); setApplyNote(""); setApplyError(null); setAppliedJustNow(null); setApplyOpen(true);
+    setWallet(getCreditsWallet(fid));
+    setBoostCredits(0);
+    setActiveJob(job);
+    setApplyNote("");
+    setApplyError(null);
+    setAppliedJustNow(null);
+
+    // Set proposal rate defaults
+    setProposedRateType(job.price_type === "hourly" ? "hourly" : "fixed");
+    setProposedQuote(job.pay || 1000);
+
+    // Reset attachments & scanners
+    setPdfAttachment(null);
+    setPdfScanning(false);
+    setTextViolations([]);
+    setPdfViolations([]);
+
+    // Load portfolio highlights
+    const profile = getFreelancerProfile(fid);
+    let items = (profile?.portfolio || []).map((p) => ({
+      id: p.id || Math.random().toString(),
+      title: p.title || "Portfolio Work Sample",
+      tag: p.tags?.[0] || p.category || "Design & Tech",
+      link: p.link || "",
+      visible: true,
+    }));
+    if (items.length === 0) {
+      items = [
+        { id: "ph-1", title: "Fintech Onboarding Flow (MVP)", tag: "Figma & React", link: "", visible: true },
+        { id: "ph-2", title: "Hyperlocal Dispatch System", tag: "Mobile Web & Maps", link: "", visible: true },
+        { id: "ph-3", title: "Neo-Brutalist Design System", tag: "Tailwind CSS", link: "", visible: false },
+      ];
+    }
+    setPortfolioHighlights(items);
+    setShowAddHighlight(false);
+    setNewHighlightTitle("");
+    setNewHighlightTag("");
+
+    setApplyOpen(true);
+  };
+
+  const handleNoteChange = (e) => {
+    const val = e.target.value;
+    setApplyNote(val);
+    const scanResult = scanText(val);
+    setTextViolations(scanResult.violations || []);
+    if (applyError && scanResult.violations.length === 0 && pdfViolations.length === 0) {
+      setApplyError(null);
+    }
+  };
+
+  const handleAutoRedactNote = () => {
+    const clean = redactViolations(applyNote);
+    setApplyNote(clean);
+    setTextViolations([]);
+    if (pdfViolations.length === 0) {
+      setApplyError(null);
+    }
+  };
+
+  const handlePdfUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      setApplyError("Please upload a valid PDF document (.pdf).");
+      return;
+    }
+    setPdfScanning(true);
+    try {
+      const res = await scanPdfFile(file);
+      setPdfAttachment({
+        fileName: res.fileName,
+        fileSize: res.fileSize,
+        dataUrl: res.dataUrl,
+      });
+      setPdfViolations(res.violations || []);
+    } catch (err) {
+      console.error("PDF scanning error:", err);
+    } finally {
+      setPdfScanning(false);
+    }
+  };
+
+  const handleRemovePdf = () => {
+    setPdfAttachment(null);
+    setPdfViolations([]);
+    if (textViolations.length === 0) {
+      setApplyError(null);
+    }
+  };
+
+  const handleAddHighlight = () => {
+    if (!newHighlightTitle.trim()) return;
+    setPortfolioHighlights((prev) => [
+      ...prev,
+      {
+        id: `custom-${Date.now()}`,
+        title: newHighlightTitle.trim(),
+        tag: newHighlightTag.trim() || "Work Sample",
+        visible: true,
+      },
+    ]);
+    setNewHighlightTitle("");
+    setNewHighlightTag("");
+    setShowAddHighlight(false);
   };
 
   const submitApply = async () => {
     if (!activeJob || !freelancerId) return;
+
+    // Contact scanner safety validation
+    if (textViolations.length > 0 || pdfViolations.length > 0) {
+      setApplyError("Direct contact details detected! WorkHop requires removing phone numbers, emails, handles, or links before submitting.");
+      return;
+    }
+
+    const baseCost = activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000));
+    const totalCost = baseCost + boostCredits;
+    const currentWallet = getCreditsWallet(freelancerId);
+
+    // Requirement 1: Block application if balance is insufficient
+    if (currentWallet.balance < totalCost) {
+      setApplyError(`Insufficient credits. This application requires ${totalCost} credits, but you only have ${currentWallet.balance} credits.`);
+      setCreditsModalOpen(true);
+      return;
+    }
+
     setApplying(true); setApplyError(null);
     const calculatedDist = calculateDistance(applicantArea, activeJob.area || "Bengaluru");
     try {
@@ -232,12 +384,22 @@ export default function Jobs() {
         note: applyNote,
         applicant_area: applicantArea,
         distance_km: calculatedDist,
+        boost_credits: boostCredits,
+        proposed_rate_type: proposedRateType,
+        proposed_quote: proposedQuote,
+        pdf_attachment: pdfAttachment,
+        portfolio_items: portfolioHighlights.filter((p) => p.visible),
       });
       setAppliedJustNow(activeJob.id);
       if (data.conversation_id) { setConvByJob((m) => ({ ...m, [activeJob.id]: data.conversation_id })); setLastConvId(data.conversation_id); }
-      setQuota((q) => q ? { ...q, quota_used: data.quota_used, quota_limit: data.quota_limit, has_boost: data.has_boost, applied_job_ids: [...(q.applied_job_ids || []), activeJob.id] } : q);
+      setWallet(getCreditsWallet(freelancerId));
+      load();
     } catch (e) {
-      if (e?.status === 402) { setApplyOpen(false); setTimeout(() => setPaywallOpen(true), 250); return; }
+      if (e?.status === 402 || e?.code === "INSUFFICIENT_CREDITS") {
+        setApplyError(e?.message || "Insufficient credits — top up or subscribe to apply.");
+        setCreditsModalOpen(true);
+        return;
+      }
       setApplyError(e?.message || "Failed to apply.");
     } finally { setApplying(false); }
   };
@@ -520,14 +682,18 @@ export default function Jobs() {
 
       {/* Unverified Banner */}
       {!isVerified && (
-        <div className="border-b-2 border-ink bg-ink" data-testid="unverified-banner">
+        <div className="border-b-2 border-ink bg-[#121212] dark:bg-[#161618]" data-testid="unverified-banner">
           <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 p-4 sm:px-8">
             <span className="flex h-10 w-10 items-center justify-center border-2 border-white bg-brand text-white">
               <Lock size={18} />
             </span>
             <div className="flex-1">
-              <p className="text-[13px] font-black text-white">{user ? "Browse freely — verify once to apply to all gigs" : "Browse freely — sign in to apply"}</p>
-              <p className="mt-0.5 text-[11px] leading-4 text-[#D6D6D6]">Profile & email verification unlocks direct chat and instant hiring.</p>
+              <p className="text-[13px] font-black !text-white text-white" style={{ color: "#FFFFFF" }}>
+                {user ? "Browse freely — verify once to apply to all gigs" : "Browse freely — sign in to apply"}
+              </p>
+              <p className="mt-0.5 text-[11px] leading-4 !text-white text-white font-medium" style={{ color: "#FFFFFF" }}>
+                Profile &amp; email verification unlocks direct chat and instant hiring.
+              </p>
             </div>
             <button
               data-testid="banner-verify-cta"
@@ -575,6 +741,7 @@ export default function Jobs() {
                 isSaved={savedJobIds.includes(job.id)}
                 onToggleSave={(e) => handleToggleSave(job.id, e)}
                 onApply={() => openApplyFor(job)}
+                onOpenLeaderboard={() => setLeaderboardJob(job)}
                 onMessage={() => {
                   const cid = convByJob[job.id];
                   cid ? nav(`/chat/${cid}?role=freelancer`) : nav("/freelancer/chats");
@@ -586,24 +753,126 @@ export default function Jobs() {
         )}
       </div>
 
-      {/* Apply Modal */}
+      {/* Comprehensive Upwork-Style Proposal Modal */}
       {applyOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setApplyOpen(false)}>
-          <div className="w-full max-w-xl border-2 border-ink bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in" onClick={() => setApplyOpen(false)}>
+          <div
+            className="w-full max-w-2xl max-h-[92vh] overflow-y-auto border-4 border-ink bg-white dark:bg-[#121212] p-4 sm:p-6 shadow-[8px_8px_0px_#121212] dark:shadow-[8px_8px_0px_#E65A1E]"
+            onClick={(e) => e.stopPropagation()}
+            data-testid="apply-modal"
+          >
+            {/* Header */}
             <div className="flex items-center justify-between border-b-2 border-ink pb-3">
-              <span className="text-[10px] font-black uppercase tracking-wider text-brand">SUBMIT GIG APPLICATION</span>
-              <button onClick={() => setApplyOpen(false)} className="text-ink hover:text-brand"><X size={18} /></button>
-            </div>
-            <h3 className="mt-3 text-xl font-black text-ink">{activeJob?.title}</h3>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span className="border border-ink bg-sand px-2 py-1 text-xs font-black text-ink">₹{activeJob?.pay_label} FIXED</span>
-              <span className="border border-ink bg-sand px-2 py-1 text-xs font-bold text-ink flex items-center gap-1">
-                <MapPin size={11} className="text-brand" /> Job Area: {activeJob?.area || "Bengaluru"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center border-2 border-ink bg-brand text-white shadow-[1px_1px_0px_#121212]">
+                  <Send size={14} />
+                </span>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-brand">SUBMIT GIG PROPOSAL</span>
+                  <p className="text-[11px] font-bold text-inkmuted">Hyperlocal Direct Bid &amp; Instant Hire</p>
+                </div>
+              </div>
+              <button onClick={() => setApplyOpen(false)} className="flex h-7 w-7 items-center justify-center border-2 border-ink bg-white text-ink hover:bg-sand transition">
+                <X size={16} />
+              </button>
             </div>
 
-            {/* APPLICANT AREA & LIVE REAL-TIME DISTANCE MATCH */}
-            <div className="my-3 border-2 border-ink bg-sand p-3">
+            {/* Job Summary Banner */}
+            <div className="mt-3 border-2 border-ink bg-sand p-3 shadow-[2px_2px_0px_#121212]">
+              <h3 className="text-base sm:text-lg font-black text-ink">{activeJob?.title}</h3>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-black text-ink">
+                  {activeJob?.price_type === "hourly" ? `₹${activeJob?.pay_label}/hr HOURLY` : `₹${activeJob?.pay_label} FIXED`}
+                </span>
+                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-bold text-ink flex items-center gap-1">
+                  <MapPin size={11} className="text-brand" /> Job Area: {activeJob?.area || "Bengaluru"}
+                </span>
+                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-bold text-ink flex items-center gap-1">
+                  <Coins size={11} className="text-brand" /> Base Apply: {activeJob?.credits_to_apply || Math.max(1, Math.floor((activeJob?.pay || 1000) / 1000))} Credits
+                </span>
+              </div>
+            </div>
+
+            {/* ═══════ 1. TERMS & RATE QUOTING (Upwork Terms Screen) ═══════ */}
+            <div className="mt-4 border-2 border-ink bg-white p-3.5 shadow-[2px_2px_0px_#121212]" data-testid="proposal-terms-section">
+              <div className="flex items-center justify-between border-b border-ink/20 pb-2">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-brand tracking-wider">TERMS &amp; RATE QUOTE</span>
+                  <h4 className="text-xs font-black text-ink">What is the rate you'd like to bid for this job?</h4>
+                </div>
+                {/* Fixed vs Hourly toggle */}
+                <div className="flex border border-ink bg-sand p-0.5 text-[10px] font-black">
+                  <button
+                    type="button"
+                    data-testid="rate-type-fixed"
+                    onClick={() => setProposedRateType("fixed")}
+                    className={`px-2 py-0.5 transition ${proposedRateType === "fixed" ? "bg-ink text-white" : "text-ink hover:bg-white"}`}
+                  >
+                    Fixed Price
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="rate-type-hourly"
+                    onClick={() => setProposedRateType("hourly")}
+                    className={`px-2 py-0.5 transition ${proposedRateType === "hourly" ? "bg-ink text-white" : "text-ink hover:bg-white"}`}
+                  >
+                    Hourly Rate
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-2.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="text-xs font-black text-ink">
+                      {proposedRateType === "fixed" ? "Your Project Quote" : "Your Hourly Rate"}
+                    </label>
+                    <p className="text-[10px] text-inkmuted">Total amount client will see on your proposal</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-2 text-xs font-black text-ink">₹</span>
+                      <input
+                        type="number"
+                        data-testid="proposed-quote-input"
+                        value={proposedQuote}
+                        onChange={(e) => setProposedQuote(Math.max(0, Number(e.target.value)))}
+                        className="wh-input h-9 w-32 border-2 border-ink bg-white pl-6 pr-2 text-xs font-black text-ink outline-none"
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-inkmuted">{proposedRateType === "fixed" ? "total" : "/hr"}</span>
+                    <button
+                      type="button"
+                      data-testid="match-employer-rate-btn"
+                      onClick={() => setProposedQuote(activeJob?.pay || 1000)}
+                      className="border border-ink bg-sand px-2 py-2 text-[9px] font-black uppercase text-ink hover:bg-brand hover:text-white transition"
+                      title="Match employer's budget"
+                    >
+                      Match Employer
+                    </button>
+                  </div>
+                </div>
+
+                {/* Platform fee breakdown */}
+                <div className="flex items-center justify-between border-t border-dashed border-ink/20 pt-2 text-xs">
+                  <div>
+                    <span className="font-bold text-ink">Freelancer Platform Fee: 0%</span>
+                    <span className="ml-1.5 rounded bg-[#E5F8EE] px-1.5 py-0.5 text-[9px] font-black text-[#00875A]">WORKHOP 0% ADVANTAGE</span>
+                  </div>
+                  <span className="font-bold text-inkmuted">-₹0.00</span>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-ink/20 pt-2 text-xs font-black">
+                  <span className="text-ink">You'll receive (100% of quote)</span>
+                  <span className="text-sm font-black text-[#00A86B]" data-testid="you-receive-amount">
+                    ₹{Number(proposedQuote || 0).toLocaleString("en-IN")}{proposedRateType === "hourly" ? " /hr" : ""}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ═══════ 2. APPLICANT AREA & HYPERLOCAL DISTANCE ═══════ */}
+            <div className="mt-3 border-2 border-ink bg-sand p-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase tracking-wider text-ink">
                   YOUR NEIGHBORHOOD / AREA (FOR SUITABILITY)
@@ -625,10 +894,10 @@ export default function Jobs() {
                   setSavedArea(e.target.value);
                 }}
                 placeholder="e.g. Indiranagar, Koramangala, HSR Layout"
-                className="wh-input mt-1.5 h-10 w-full border-2 border-ink bg-white px-3 text-xs font-bold text-ink outline-none"
+                className="wh-input mt-1.5 h-9 w-full border-2 border-ink bg-white px-3 text-xs font-bold text-ink outline-none"
               />
 
-              <div className="mt-2 flex flex-wrap gap-1">
+              <div className="mt-1.5 flex flex-wrap gap-1">
                 {BENGALURU_AREAS.slice(0, 8).map((a) => (
                   <button
                     key={a.name}
@@ -646,9 +915,8 @@ export default function Jobs() {
                 ))}
               </div>
 
-              {/* Real-time distance and suitability calculation */}
               {activeJob && (
-                <div className="mt-2.5 flex items-center justify-between border-t border-ink/20 pt-2 text-xs font-black">
+                <div className="mt-2 flex items-center justify-between border-t border-ink/20 pt-1.5 text-xs font-black">
                   <span className="flex items-center gap-1 text-ink">
                     <MapPin size={12} className="text-brand" />
                     <span>
@@ -671,17 +939,376 @@ export default function Jobs() {
               )}
             </div>
 
-            <p className="mt-2 text-[10px] font-black uppercase tracking-wider text-inkmuted">PITCH / COVER NOTE (OPTIONAL)</p>
-            <textarea
-              data-testid="apply-note-input"
-              value={applyNote}
-              onChange={(e) => setApplyNote(e.target.value)}
-              placeholder="Hi! I am based in this area and have the required experience. Can start immediately…"
-              maxLength={300}
-              className="wh-input mt-1 min-h-[75px] w-full border-2 border-ink bg-white p-2.5 text-xs text-ink font-semibold outline-none"
-            />
-            {applyError && <p data-testid="apply-error" className="mt-2 text-xs font-bold text-danger">{applyError}</p>}
-            
+            {/* ═══════ 3. COVER LETTER & PDF ATTACHMENT WITH CONTACT SCANNER ═══════ */}
+            <div className="mt-3 border-2 border-ink bg-white p-3.5 shadow-[2px_2px_0px_#121212]" data-testid="cover-letter-section">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-brand flex items-center gap-1">
+                  <FileText size={12} /> COVER LETTER &amp; WORK ATTACHMENTS
+                </span>
+                <span className="text-[10px] font-bold text-inkmuted">{applyNote.length}/500</span>
+              </div>
+              <p className="mt-0.5 text-[10px] text-inkmuted">
+                Introduce yourself and highlight relevant experience. Direct contact details (phone, email, links, handles) are automatically scanned and prohibited before contract formation.
+              </p>
+
+              <textarea
+                data-testid="apply-note-input"
+                value={applyNote}
+                onChange={handleNoteChange}
+                placeholder="Hi! I have extensive experience in this area and can deliver clean, high-performance work for this gig..."
+                maxLength={500}
+                className="wh-input mt-2 min-h-[75px] w-full border-2 border-ink bg-white p-2.5 text-xs text-ink font-semibold outline-none"
+              />
+
+              {/* PDF Attachment Upload Row */}
+              <div className="mt-2.5">
+                <span className="text-[10px] font-black uppercase text-ink tracking-wider">PDF ATTACHMENT (PROPOSAL / RESUME / PORTFOLIO)</span>
+                
+                {pdfAttachment ? (
+                  <div className="mt-1.5 flex items-center justify-between border-2 border-ink bg-sand p-2.5 shadow-[1px_1px_0px_#121212]" data-testid="pdf-attached-preview">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="flex h-7 w-7 items-center justify-center border border-ink bg-brand text-white shrink-0">
+                        <FileText size={14} />
+                      </span>
+                      <div className="min-w-0 truncate">
+                        <p className="text-xs font-black text-ink truncate">{pdfAttachment.fileName}</p>
+                        <p className="text-[9px] font-bold text-inkmuted">{pdfAttachment.fileSize} · Scanned for compliance</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemovePdf}
+                      data-testid="remove-pdf-btn"
+                      className="flex items-center gap-1 border border-ink bg-white px-2 py-1 text-[10px] font-black text-danger hover:bg-danger hover:text-white transition shrink-0"
+                    >
+                      <Trash2 size={12} /> REMOVE
+                    </button>
+                  </div>
+                ) : (
+                  <label className="mt-1.5 flex cursor-pointer items-center justify-center gap-2 border-2 border-dashed border-ink bg-sand/60 p-3 hover:bg-sand transition">
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      onChange={handlePdfUpload}
+                      className="hidden"
+                      data-testid="pdf-upload-input"
+                    />
+                    {pdfScanning ? (
+                      <div className="flex items-center gap-2 text-xs font-black text-ink">
+                        <Loader2 size={14} className="animate-spin text-brand" />
+                        <span>Scanning PDF for compliance...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs font-black text-ink">
+                        <UploadCloud size={16} className="text-brand" />
+                        <span>Upload Proposal / CV (.PDF) — Auto-scanned for privacy</span>
+                      </div>
+                    )}
+                  </label>
+                )}
+              </div>
+
+              {/* Contact Violations Alert Banner */}
+              {(textViolations.length > 0 || pdfViolations.length > 0) && (
+                <div className="mt-3 border-2 border-danger bg-[#FFEBEE] p-3 text-xs text-[#C62828] shadow-[2px_2px_0px_#E63946]" data-testid="contact-violations-alert">
+                  <div className="flex items-center gap-1.5 font-black text-xs">
+                    <AlertTriangle size={15} />
+                    <span>Prohibited Contact Details Detected ({textViolations.length + pdfViolations.length})</span>
+                  </div>
+                  <p className="mt-1 text-[10px] font-medium text-ink">
+                    WorkHop prohibits sharing direct phone numbers, email addresses, handles, or off-platform URLs before hire to ensure payment protection and verified contracts.
+                  </p>
+                  <ul className="mt-2 space-y-1 bg-white/80 p-2 border border-danger/40 text-[10px] font-mono">
+                    {[...textViolations, ...pdfViolations].map((v, i) => (
+                      <li key={i} className="flex items-center gap-1">
+                        <span className="font-bold uppercase text-[#C62828]">[{v.type}]</span> {v.match}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {textViolations.length > 0 && (
+                      <button
+                        type="button"
+                        data-testid="auto-redact-btn"
+                        onClick={handleAutoRedactNote}
+                        className="flex items-center gap-1 border border-ink bg-danger px-2.5 py-1 text-[10px] font-black text-white hover:bg-black transition shadow-[1px_1px_0px_#121212]"
+                      >
+                        <span>🧹 Auto-Redact Contact Details</span>
+                      </button>
+                    )}
+                    {pdfViolations.length > 0 && (
+                      <button
+                        type="button"
+                        data-testid="remove-violating-pdf-btn"
+                        onClick={handleRemovePdf}
+                        className="flex items-center gap-1 border border-ink bg-white px-2 py-1 text-[10px] font-bold text-ink hover:bg-sand transition"
+                      >
+                        <Trash2 size={11} /> Remove Flagged PDF
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Clean Status Check */}
+              {textViolations.length === 0 && pdfViolations.length === 0 && (applyNote.trim() || pdfAttachment) && (
+                <div className="mt-2 flex items-center gap-1.5 text-[10px] font-black text-[#00A86B]" data-testid="scan-clean-badge">
+                  <CheckCircle2 size={13} />
+                  <span>Verified Safe: No off-platform contact details detected.</span>
+                </div>
+              )}
+            </div>
+
+            {/* ═══════ 4. PORTFOLIO HIGHLIGHTS (CURATE & HIDE) ═══════ */}
+            <div className="mt-3 border-2 border-ink bg-sand p-3 shadow-[2px_2px_0px_#121212]" data-testid="portfolio-highlights-section">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-ink tracking-wider flex items-center gap-1.5">
+                  <Sparkles size={12} className="text-brand" />
+                  ATTACH PORTFOLIO HIGHLIGHTS (CURATE &amp; HIDE)
+                </span>
+                <span className="text-[10px] font-bold text-inkmuted">
+                  {portfolioHighlights.filter((p) => p.visible).length} included
+                </span>
+              </div>
+              <p className="mt-0.5 text-[10px] text-inkmuted">
+                Choose which highlights to attach. You can hide specific projects if you want only relevant samples shown for this gig.
+              </p>
+
+              <div className="mt-2 space-y-1.5">
+                {portfolioHighlights.map((ph, idx) => (
+                  <div
+                    key={ph.id || idx}
+                    className={`flex items-center justify-between border-2 border-ink p-2 transition ${
+                      ph.visible ? "bg-white shadow-[1px_1px_0px_#121212]" : "bg-white/50 opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`flex h-6 w-6 items-center justify-center border border-ink text-[10px] font-black shrink-0 ${ph.visible ? "bg-brand text-white" : "bg-sand text-inkmuted"}`}>
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0 truncate">
+                        <p className="text-xs font-black text-ink truncate">{ph.title}</p>
+                        <p className="text-[9px] font-semibold text-inkmuted">{ph.tag}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      data-testid={`toggle-highlight-${idx}`}
+                      onClick={() => {
+                        setPortfolioHighlights((prev) =>
+                          prev.map((item, i) => (i === idx ? { ...item, visible: !item.visible } : item))
+                        );
+                      }}
+                      className={`flex items-center gap-1 border border-ink px-2 py-1 text-[9px] font-black transition shrink-0 ${
+                        ph.visible
+                          ? "bg-[#E5F8EE] text-[#00875A] hover:bg-[#D4F4E4]"
+                          : "bg-sand text-inkmuted hover:bg-white"
+                      }`}
+                    >
+                      {ph.visible ? (
+                        <>
+                          <Eye size={11} /> ATTACHED
+                        </>
+                      ) : (
+                        <>
+                          <EyeOff size={11} /> HIDDEN
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Custom Highlight Inline */}
+              <div className="mt-2">
+                {showAddHighlight ? (
+                  <div className="border border-ink bg-white p-2">
+                    <p className="text-[10px] font-black uppercase text-ink">Add Work Sample Highlight</p>
+                    <div className="mt-1 flex flex-col sm:flex-row gap-1.5">
+                      <input
+                        placeholder="Project title (e.g. Fintech Mobile App)"
+                        value={newHighlightTitle}
+                        onChange={(e) => setNewHighlightTitle(e.target.value)}
+                        className="wh-input h-7 flex-1 border border-ink px-2 text-xs font-semibold text-ink outline-none"
+                      />
+                      <input
+                        placeholder="Tag (e.g. React / Figma)"
+                        value={newHighlightTag}
+                        onChange={(e) => setNewHighlightTag(e.target.value)}
+                        className="wh-input h-7 w-full sm:w-28 border border-ink px-2 text-xs font-semibold text-ink outline-none"
+                      />
+                    </div>
+                    <div className="mt-2 flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={handleAddHighlight}
+                        className="border border-ink bg-brand px-2 py-1 text-[10px] font-black text-white hover:bg-black transition"
+                      >
+                        Add Highlight
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddHighlight(false)}
+                        className="border border-ink bg-sand px-2 py-1 text-[10px] font-bold text-ink"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddHighlight(true)}
+                    className="flex items-center gap-1 text-[10px] font-black text-brand hover:underline"
+                  >
+                    <Plus size={11} /> Add custom work highlight
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ═══════ 5. UPWORK-STYLE PROPOSAL BOOSTING (LIVE BIDDING) ═══════ */}
+            {activeJob && (
+              <div className="mt-3 border-2 border-ink bg-[#FFF9E6] p-3 shadow-[2px_2px_0px_#121212]" data-testid="proposal-boost-section">
+                <div className="flex items-center justify-between border-b border-ink/20 pb-2">
+                  <div>
+                    <span className="flex items-center gap-1 text-[10px] font-black uppercase text-brand tracking-wider">
+                      <Rocket size={13} />
+                      BOOST YOUR PROPOSAL (OPTIONAL)
+                    </span>
+                    <p className="text-[10px] text-inkmuted">Place a bid to move your proposal to the top of the client's list.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLeaderboardJob(activeJob)}
+                    className="text-[10px] font-black text-brand underline hover:text-brand/80"
+                  >
+                    Full Standings →
+                  </button>
+                </div>
+
+                {/* Mini competitor bids table */}
+                <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
+                  {[
+                    { rank: "1st Place", bid: Math.max(10, modalLeaderboard.topBid || 10), medal: "🥇" },
+                    { rank: "2nd Place", bid: Math.max(6, Math.floor((modalLeaderboard.topBid || 10) * 0.7)), medal: "🥈" },
+                    { rank: "3rd Place", bid: Math.max(4, Math.floor((modalLeaderboard.topBid || 10) * 0.4)), medal: "🥉" },
+                    { rank: "4th Place", bid: 2, medal: "🎖️" },
+                  ].map((slot, i) => (
+                    <div key={i} className="border border-ink bg-white p-1.5">
+                      <span className="text-[9px] font-black text-inkmuted">{slot.medal} {slot.rank}</span>
+                      <p className="text-xs font-black text-ink">{slot.bid} Credits</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Recommendation banner */}
+                <div className="mt-2.5 flex items-center justify-between border border-ink bg-white p-2 text-xs">
+                  <span className="flex items-center gap-1 font-bold text-ink text-[11px]">
+                    <Flame size={13} className="text-brand" />
+                    Bid {Math.max(1, (modalLeaderboard.topBid || 10) + 1)} Credits or higher to take 1st place!
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setBoostCredits(Math.max(1, (modalLeaderboard.topBid || 10) + 1))}
+                    className="border border-ink bg-brand px-2 py-0.5 text-[9px] font-black text-white hover:bg-black transition"
+                  >
+                    BID FOR #1
+                  </button>
+                </div>
+
+                {/* Stepper counter */}
+                <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-xs font-black text-ink">Your Boost Bid:</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setBoostCredits((b) => Math.max(0, b - 1))}
+                      className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-white font-black text-ink hover:bg-sand transition"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <input
+                      type="number"
+                      value={boostCredits}
+                      onChange={(e) => setBoostCredits(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      className="wh-input h-8 w-16 border-2 border-ink bg-white text-center text-xs font-black text-ink outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setBoostCredits((b) => b + 1)}
+                      className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-white font-black text-ink hover:bg-sand transition"
+                    >
+                      <Plus size={14} />
+                    </button>
+                    <div className="ml-1 flex gap-1 flex-wrap">
+                      {[0, 2, 5, 8, 12].map((pts) => (
+                        <button
+                          key={pts}
+                          type="button"
+                          data-testid={`boost-option-${pts}`}
+                          onClick={() => setBoostCredits(pts)}
+                          className={`border border-ink px-2 py-1 text-[10px] font-black transition ${
+                            boostCredits === pts ? "bg-brand text-white" : "bg-white text-ink hover:bg-sand"
+                          }`}
+                        >
+                          {pts === 0 ? "Standard" : `+${pts}`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═══════ 6. CREDIT COST & WALLET BALANCE SUMMARY ═══════ */}
+            {activeJob && (
+              <div className="mt-3 flex items-center justify-between border-2 border-ink bg-sand p-3 shadow-[2px_2px_0px_#121212]">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-inkmuted tracking-wider">TOTAL REQUIRED</span>
+                  <p className="text-sm font-black text-ink flex items-center gap-1">
+                    <Coins size={15} className="text-brand" />
+                    {(activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits} Credits
+                    <span className="text-[10px] font-semibold text-inkmuted">
+                      ({activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))} base + {boostCredits} boost)
+                    </span>
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[10px] font-black uppercase text-inkmuted tracking-wider">YOUR BALANCE</span>
+                  <p className="text-sm font-black text-ink" data-testid="apply-current-balance">
+                    {wallet.balance} Credits
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {applyError && (
+              <p data-testid="apply-error" className="mt-2 text-xs font-bold text-danger">
+                {applyError}
+              </p>
+            )}
+
+            {/* Insufficient Credits Banner & CTA */}
+            {activeJob && wallet.balance < ((activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits) && (
+              <div className="mt-3 border-2 border-ink bg-[#FFEBEE] p-3 text-xs font-black text-[#C62828] shadow-[2px_2px_0px_#C62828]">
+                <p className="flex items-center gap-1.5">
+                  <Lock size={14} />
+                  Insufficient credits ({wallet.balance} available, {(activeJob.credits_to_apply || 1) + boostCredits} required).
+                </p>
+                <button
+                  type="button"
+                  data-testid="insufficient-credits-cta"
+                  onClick={() => setCreditsModalOpen(true)}
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 border-2 border-ink bg-brand py-2.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] transition hover:bg-black"
+                >
+                  <Coins size={14} /> TOP UP CREDITS OR SUBSCRIBE →
+                </button>
+              </div>
+            )}
+
             {appliedJustNow ? (
               <div className="mt-4">
                 <div data-testid="apply-success-flash" className="flex items-center justify-center gap-2 border-2 border-ink bg-ok p-4 text-white">
@@ -699,19 +1326,56 @@ export default function Jobs() {
                 )}
               </div>
             ) : (
-              <button
-                data-testid="apply-confirm-btn"
-                disabled={applying}
-                onClick={submitApply}
-                className="mt-4 flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-sm font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60"
-              >
-                {applying ? <Loader2 size={18} className="animate-spin" /> : <><Send size={16} /> SEND APPLICATION (1 APPLY)</>}
-              </button>
+              activeJob && wallet.balance >= ((activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits) && (
+                <button
+                  data-testid="apply-confirm-btn"
+                  disabled={applying || textViolations.length > 0 || pdfViolations.length > 0}
+                  onClick={submitApply}
+                  className={`mt-4 flex w-full items-center justify-center gap-2 border-2 border-ink py-3.5 text-sm font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60 ${
+                    textViolations.length > 0 || pdfViolations.length > 0 ? "bg-danger cursor-not-allowed" : "bg-brand hover:bg-brand/95"
+                  }`}
+                >
+                  {applying ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : textViolations.length > 0 || pdfViolations.length > 0 ? (
+                    <>
+                      <AlertTriangle size={16} />
+                      <span>RESOLVE CONTACT DETAILS TO SUBMIT</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      <span>
+                        SEND APPLICATION ({(activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits} CREDITS)
+                      </span>
+                    </>
+                  )}
+                </button>
+              )
             )}
             <p className="mt-2 text-center text-[11px] text-inkmuted">Employer sees your verified credentials immediately. 0% platform fee on earnings.</p>
           </div>
         </div>
       )}
+
+      {/* Credits Top-Up / Subscription Modal */}
+      <CreditsTopUpModal
+        open={creditsModalOpen}
+        onClose={() => setCreditsModalOpen(false)}
+        requiredCredits={activeJob ? (activeJob.credits_to_apply || 1) + boostCredits : null}
+        onUpdated={(w) => {
+          setWallet(w);
+          setApplyError(null);
+        }}
+      />
+
+      {/* Applicant Leaderboard Modal */}
+      <ApplicantLeaderboardModal
+        open={Boolean(leaderboardJob)}
+        onClose={() => setLeaderboardJob(null)}
+        job={leaderboardJob}
+        onOpenApply={(j) => openApplyFor(j)}
+      />
 
       {/* Paywall Modal */}
       {paywallOpen && (
@@ -780,7 +1444,8 @@ function FilterGroup({ label, options, value, onPick }) {
 }
 
 // Fiverr / Upwork modeled Gig Card
-function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress }) {
+function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress, onOpenLeaderboard }) {
+  const creditsCost = job.credits_to_apply || Math.max(1, Math.floor((job.pay || 1000) / 1000));
   return (
     <div
       data-testid={`job-card-${index}`}
@@ -790,8 +1455,24 @@ function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, o
         {/* Top Badges Row */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
+            {/* Urgent / Boosted Badge */}
+            {job.is_boosted && (
+              <span
+                data-testid={`urgent-badge-${index}`}
+                className="border border-ink bg-[#FF3B30] px-2 py-0.5 text-[9px] font-black text-white uppercase flex items-center gap-1 shadow-[1.5px_1.5px_0px_#121212] animate-pulse"
+              >
+                <Flame size={10} fill="currentColor" /> URGENT
+              </span>
+            )}
             <span className="border border-ink bg-brand px-2 py-0.5 text-[10px] font-black text-white uppercase">
               {job.category || "Gig"}
+            </span>
+            {/* Credit Cost Badge */}
+            <span
+              data-testid={`credit-cost-badge-${index}`}
+              className="border border-ink bg-[#FFF3C4] px-2 py-0.5 text-[10px] font-black text-ink flex items-center gap-1 shadow-[1px_1px_0px_#121212]"
+            >
+              <Coins size={10} className="text-brand" /> {creditsCost} {creditsCost === 1 ? "Credit" : "Credits"}
             </span>
             <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-0.5 text-[10px] font-bold text-ink">
               <MapPin size={10} className="text-brand" /> {job.distance_km ?? 0.5} km away
@@ -845,6 +1526,18 @@ function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, o
               <span>{job.area || "Bengaluru"}</span>
             </div>
           </div>
+
+          {/* Proposal Leaderboard Trigger */}
+          <button
+            type="button"
+            data-testid={`view-leaderboard-btn-${index}`}
+            onClick={onOpenLeaderboard}
+            className="flex items-center gap-1 border border-ink bg-sand hover:bg-white px-2 py-1 text-[9px] font-black uppercase text-ink shadow-[1px_1px_0px_#121212] transition"
+            title="View proposal bidding leaderboard"
+          >
+            <Trophy size={11} className="text-brand" />
+            <span>Leaderboard</span>
+          </button>
         </div>
       </div>
 
@@ -874,7 +1567,7 @@ function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, o
               className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
             >
               <Send size={13} />
-              <span>APPLY NOW</span>
+              <span>APPLY ({creditsCost} C)</span>
             </button>
           )}
         </div>

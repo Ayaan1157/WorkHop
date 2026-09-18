@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CheckCircle2, Loader2, LocateFixed, ShieldCheck, MapPin, Sparkles, AlertCircle
+  CheckCircle2, Loader2, LocateFixed, ShieldCheck, MapPin, Sparkles, AlertCircle, Coins, Zap
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import { CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
@@ -12,7 +12,7 @@ import { API, apiGet, apiPost, getEmployerId } from "@/lib/api";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import MarketPriceAdvisor from "@/components/MarketPriceAdvisor";
 import { sanitizeInput, checkSpamKeywords } from "@/lib/security";
-import { ADMIN_EMAILS } from "@/lib/clientStore";
+import { ADMIN_EMAILS, getCreditsConfig } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 
 export default function PostJob() {
@@ -31,6 +31,7 @@ export default function PostJob() {
   const [title, setTitle] = useState("");
   const [bucket, setBucket] = useState("Graphics & Design");
   const [pay, setPay] = useState("");
+  const [isBoosted, setIsBoosted] = useState(false);
   const [area, setArea] = useState("Koramangala");
   const [customCoords, setCustomCoords] = useState(null);
   const [description, setDescription] = useState("");
@@ -111,6 +112,7 @@ export default function PostJob() {
         area: cleanArea || "Bengaluru",
         lat: areaCoords.lat,
         lng: areaCoords.lng,
+        is_boosted: isBoosted,
       });
 
       if (data) {
@@ -119,9 +121,10 @@ export default function PostJob() {
         return;
       }
       if (!isAdmin && retryAfterPay) {
+        const costText = isBoosted ? "Job Post + Urgent Boost · ₹598" : "Single Post · ₹299";
         const pr = await startPayment(
-          { product: "plan", plan_id: "single-post", employer_id: eid },
-          "Single Post · ₹299"
+          { product: "plan", plan_id: isBoosted ? "single-post-boost" : "single-post", employer_id: eid },
+          costText
         );
         if (pr?.purchase) {
           await submit(false);
@@ -265,6 +268,20 @@ export default function PostJob() {
               onApplyRate={(suggestedRate) => setPay(suggestedRate)}
               className="mt-1"
             />
+
+            {/* Credit Cost Calculation Preview */}
+            <div
+              data-testid="postjob-credits-preview"
+              className="mt-2 flex items-center justify-between border-2 border-dashed border-ink/40 bg-sand/60 px-3 py-2 text-xs"
+            >
+              <div className="flex items-center gap-2 font-bold text-ink">
+                <Coins size={16} className="text-brand shrink-0" />
+                <span>Freelancer Connects Required:</span>
+              </div>
+              <span className="font-black text-ink bg-white px-2 py-0.5 border border-ink shadow-[1px_1px_0px_#121212]">
+                {Math.max(1, Math.floor((parseInt(pay, 10) || 0) / 1000))} Credits
+              </span>
+            </div>
           </div>
 
           {/* AREA SELECTION & REAL-TIME GEOLOCATION */}
@@ -333,6 +350,50 @@ export default function PostJob() {
             />
           </div>
 
+          {/* EMPLOYER JOB BOOST & URGENT HIGHLIGHT */}
+          <div
+            data-testid="employer-job-boost-card"
+            onClick={() => setIsBoosted(!isBoosted)}
+            className={`cursor-pointer border-2 border-ink p-4 transition shadow-[3px_3px_0px_#121212] ${
+              isBoosted ? "bg-[#FFF3C4] ring-2 ring-brand" : "bg-white hover:bg-stone-50"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center border-2 border-ink ${
+                  isBoosted ? "bg-brand text-white" : "bg-stone-100 text-ink"
+                }`}>
+                  <Zap size={20} className={isBoosted ? "fill-white" : ""} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-black uppercase text-ink">
+                      Boost Job &amp; Mark Urgent
+                    </p>
+                    <span className="border border-ink bg-brand px-1.5 py-0.2 text-[9px] font-black uppercase text-white shadow-[1px_1px_0px_#121212]">
+                      Featured 48H
+                    </span>
+                  </div>
+                  <p className="text-xs text-inkmuted mt-0.5">
+                    Pin this gig at the top of freelancer searches and neighborhood feeds with a glowing URGENT badge.
+                  </p>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={isBoosted}
+                    onChange={(e) => setIsBoosted(e.target.checked)}
+                    className="h-4 w-4 accent-brand cursor-pointer"
+                  />
+                  <span className="text-xs font-black text-ink">{isAdmin ? "FREE (Admin)" : "+₹299"}</span>
+                </div>
+                <p className="text-[10px] text-inkmuted font-bold">48 hrs active</p>
+              </div>
+            </div>
+          </div>
+
           {!!error && (
             <div className="flex items-center gap-2 border-2 border-[#C62828] bg-[#FFEBEE] p-3 text-xs font-bold text-[#C62828]">
               <AlertCircle size={15} />
@@ -359,8 +420,12 @@ export default function PostJob() {
           >
             {submitting ? (
               <Loader2 size={18} className="animate-spin" />
+            ) : isAdmin ? (
+              isBoosted ? "PUBLISH AS ADMIN (BOOSTED)" : "PUBLISH AS ADMIN"
             ) : credits && credits.remaining > 0 ? (
-              `PUBLISH JOB (${credits.remaining} CREDIT${credits.remaining === 1 ? "" : "S"} LEFT)`
+              isBoosted ? "PAY ₹299 (BOOST) & PUBLISH" : `PUBLISH JOB (${credits.remaining} POST CREDIT${credits.remaining === 1 ? "" : "S"} LEFT)`
+            ) : isBoosted ? (
+              "PAY ₹598 & PUBLISH (POST + BOOST)"
             ) : (
               "PAY ₹299 & PUBLISH"
             )}

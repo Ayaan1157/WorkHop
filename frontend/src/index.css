@@ -143,8 +143,7 @@ body {
 
 /* ═══════ RULE 1: TEXT ON WHITE OR LIGHT-COLORED BACKGROUNDS MUST BE BLACK ═══════ */
 /* Applies across the entire website in light mode or on un-inverted light badges */
-html:not(.dark) .bg-white,
-html:not(.dark) .bg-white *:not(.text-white):not([class~="text-white"]):not(.\!text-white):not([class~="!text-white"]):not(.bg-ink):not(.bg-black):not([class*="bg-[#121212]"]):not(.bg-brand):not([data-testid*="signup"]):not([data-testid*="signup"] *),
+html:not(.dark) .bg-white *:not(.text-white):not([class~="text-white"]):not(.\!text-white):not([class~="!text-white"]):not(.bg-ink):not(.bg-black):not([class*="bg-[#121212]"]):not(.bg-brand):not([data-testid*="signup"]):not([data-testid*="signup"] *):not([data-testid="unverified-banner"]):not([data-testid="unverified-banner"] *),
 html:not(.dark) .bg-sand,
 html:not(.dark) .bg-stone,
 html:not(.dark) [class*="bg-[#FFF3C4]"],
@@ -202,23 +201,52 @@ html:not(.dark) [class*="bg-blue-100"] * {
 
 /* ═══════ WHITE TEXT PRESERVATION (LIGHT & DARK MODES) ═══════ */
 /* Ensures text-white or dark/black buttons retain crisp white text even inside light wrappers */
-.text-white,
-.text-white *,
-.\!text-white,
-.\!text-white *,
-[class~="text-white"],
-[class~="text-white"] *,
-[class~="!text-white"],
-[class~="!text-white"] *,
-.bg-ink:not(.text-ink),
-.bg-ink:not(.text-ink) *,
-.bg-black:not(.text-ink),
-.bg-black:not(.text-ink) *,
-[class*="bg-[#121212]"]:not(.text-ink),
-[class*="bg-[#121212]"]:not(.text-ink) *,
-[data-testid="landing-signup-btn"],
-[data-testid="landing-signup-btn"] * {
+html .text-white,
+html .text-white *,
+html .\!text-white,
+html .\!text-white *,
+html [class~="text-white"],
+html [class~="text-white"] *,
+html [class~="!text-white"],
+html [class~="!text-white"] *,
+html .bg-ink:not(.text-ink),
+html .bg-ink:not(.text-ink) *,
+html .bg-black:not(.text-ink),
+html .bg-black:not(.text-ink) *,
+html [class*="bg-[#121212]"]:not(.text-ink),
+html [class*="bg-[#121212]"]:not(.text-ink) *,
+html button.bg-ink,
+html button.bg-ink *,
+html button.bg-black,
+html button.bg-black *,
+html button[class*="bg-ink"],
+html button[class*="bg-ink"] *,
+html button[class*="bg-black"],
+html button[class*="bg-black"] *,
+html [class*="bg-ink"] *:not(.text-ink):not(.text-brand):not(.text-ok),
+html [class*="bg-black"] *:not(.text-ink):not(.text-brand):not(.text-ok),
+html [data-testid="landing-signup-btn"],
+html [data-testid="landing-signup-btn"] *,
+html [data-testid*="plan-buy"],
+html [data-testid*="plan-buy"] *,
+html [data-testid="unverified-banner"],
+html [data-testid="unverified-banner"] *,
+html [data-testid="unverified-banner"] p,
+html .bg-white .bg-ink,
+html .bg-white .bg-ink *,
+html .bg-white [class*="bg-ink"],
+html .bg-white [class*="bg-ink"] *,
+html .bg-white button[class*="bg-ink"],
+html .bg-white button[class*="bg-ink"] * {
     color: #FFFFFF !important;
+}
+
+html .bg-white .bg-ink .text-brand,
+html .bg-white .bg-ink [class*="text-brand"],
+html .bg-white [class*="bg-ink"] .text-brand,
+html .bg-white [class*="bg-ink"] [class*="text-brand"] {
+    color: #E65A1E !important;
+    stroke: #E65A1E !important;
 }
 
 /* In dark mode, light pastel chips without dark:bg overrides keep dark text */

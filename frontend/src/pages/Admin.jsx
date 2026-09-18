@@ -5,7 +5,7 @@ import {
   RefreshCw, TrendingUp, DollarSign, Users, Briefcase, Plus, Trash2,
   ExternalLink, Check, X, Megaphone, Settings, Eye, Sliders, Radio,
   ArrowUpRight, Phone, Mail, Award, Clock, FileText, ChevronRight,
-  ShieldCheck, HelpCircle, Download, Zap
+  ShieldCheck, HelpCircle, Download, Zap, Coins, RotateCcw
 } from "lucide-react";
 import { TopBar, Spinner } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +16,7 @@ import { checkRateLimit, resetRateLimit } from "@/lib/security";
 
 const TABS = [
   { id: "OVERVIEW", label: "📊 OVERVIEW & STATS" },
+  { id: "CREDITS", label: "🪙 CREDITS & PRICING" },
   { id: "CONTROLS", label: "⚡ SITE CONTROLS" },
   { id: "GIGS", label: "💼 GIGS & MODERATION" },
   { id: "PROS", label: "🛠️ PROS & TALENT" },
@@ -874,6 +875,371 @@ function AuditLogsTab({ adminFetch }) {
   );
 }
 
+// 6. Connects & Credits Pricing Engine Tab
+function CreditsConfigTab({ adminFetch }) {
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState({ text: "", type: "" });
+
+  const loadConfig = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminFetch("/credits-config", "GET");
+      if (data) setConfig(data);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  }, [adminFetch]);
+
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
+
+  const handleSave = async () => {
+    if (!config) return;
+    setSaving(true);
+    setMsg({ text: "", type: "" });
+    try {
+      const updated = await adminFetch("/credits-config", "PUT", config);
+      if (updated) {
+        setConfig(updated);
+        setMsg({ text: "Credits pricing and bidding configuration saved successfully!", type: "success" });
+      }
+    } catch (e) {
+      setMsg({ text: e?.message || "Failed to save configuration.", type: "error" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updatePack = (index, field, value) => {
+    const updated = [...(config.credit_packs || [])];
+    updated[index] = { ...updated[index], [field]: value };
+    setConfig({ ...config, credit_packs: updated });
+  };
+
+  const updatePlan = (index, field, value) => {
+    const updated = [...(config.subscription_plans || [])];
+    updated[index] = { ...updated[index], [field]: value };
+    setConfig({ ...config, subscription_plans: updated });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (!config) {
+    return (
+      <div className="border-2 border-ink bg-white p-6 shadow-[4px_4px_0px_#121212]">
+        <p className="text-xs font-bold text-inkmuted">Could not load credits configuration.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6" data-testid="admin-credits-config">
+      {/* Header Banner */}
+      <div className="border-2 border-ink bg-[#FFF3C4] p-5 shadow-[4px_4px_0px_#121212] flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Coins size={22} className="text-brand" />
+            <h2 className="text-base font-black uppercase text-ink">
+              Connects &amp; Credits Bidding Engine Configuration
+            </h2>
+          </div>
+          <p className="text-xs text-inkmuted font-semibold mt-1">
+            Configure dynamic credit calculation formulas, top-up pack rates, subscription bundles, rollover policy, and employer urgent job boost pricing.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          data-testid="admin-save-credits-btn"
+          className="flex items-center gap-2 border-2 border-ink bg-brand px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:bg-brand/90 active:translate-y-0.5 disabled:opacity-50"
+        >
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+          <span>{saving ? "SAVING..." : "SAVE & APPLY CONFIG"}</span>
+        </button>
+      </div>
+
+      {msg.text && (
+        <div
+          className={`border-2 border-ink p-3 text-xs font-bold ${
+            msg.type === "success" ? "bg-[#E5F7E0] text-ok" : "bg-[#FFEBEE] text-bad"
+          }`}
+        >
+          {msg.text}
+        </div>
+      )}
+
+      {/* Grid: Conversion Rates & Formula Rules */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Card 1: Conversion Rate & Application Formula */}
+        <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212] flex flex-col gap-4">
+          <div className="flex items-center gap-2 border-b-2 border-ink/10 pb-2">
+            <Sliders size={16} className="text-brand" />
+            <h3 className="text-xs font-black uppercase text-ink">
+              Application Cost Formula &amp; Exchange Rate
+            </h3>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Base Rate (₹ Per Credit)
+            </label>
+            <input
+              type="number"
+              value={config.rupees_per_credit || 15}
+              onChange={(e) =>
+                setConfig({ ...config, rupees_per_credit: Number(e.target.value) || 15 })
+              }
+              className="border-2 border-ink bg-stone-50 px-3 py-2 text-sm font-bold text-ink outline-none"
+            />
+            <p className="text-[10px] text-inkmuted">Standard baseline value of 1 credit in INR.</p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Job Budget Divisor (Default: ₹1,000)
+            </label>
+            <input
+              type="number"
+              value={config.job_apply_budget_divisor || 1000}
+              onChange={(e) =>
+                setConfig({
+                  ...config,
+                  job_apply_budget_divisor: Math.max(100, Number(e.target.value) || 1000),
+                })
+              }
+              className="border-2 border-ink bg-stone-50 px-3 py-2 text-sm font-bold text-ink outline-none"
+            />
+            <p className="text-[10px] text-inkmuted">
+              Formula: credits_required = floor(job_budget / divisor). E.g. ₹5,000 / 1000 = 5 credits.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Minimum Credits to Apply
+            </label>
+            <input
+              type="number"
+              value={config.job_apply_min_credits || 1}
+              onChange={(e) =>
+                setConfig({ ...config, job_apply_min_credits: Math.max(1, Number(e.target.value) || 1) })
+              }
+              className="border-2 border-ink bg-stone-50 px-3 py-2 text-sm font-bold text-ink outline-none"
+            />
+            <p className="text-[10px] text-inkmuted">Floor applied to any job post regardless of low budget.</p>
+          </div>
+        </div>
+
+        {/* Card 2: Employer Job Boost Pricing & Rollover Decision Point */}
+        <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212] flex flex-col gap-4">
+          <div className="flex items-center gap-2 border-b-2 border-ink/10 pb-2">
+            <Zap size={16} className="text-brand" />
+            <h3 className="text-xs font-black uppercase text-ink">
+              Employer Urgent Job Boost &amp; Rollover Policy
+            </h3>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Job Urgent Boost Fee (₹)
+            </label>
+            <input
+              type="number"
+              value={config.employer_job_boost_price_inr || 299}
+              onChange={(e) =>
+                setConfig({ ...config, employer_job_boost_price_inr: Number(e.target.value) || 299 })
+              }
+              className="border-2 border-ink bg-stone-50 px-3 py-2 text-sm font-bold text-ink outline-none"
+            />
+            <p className="text-[10px] text-inkmuted">Amount paid by employer to mark job Urgent and pin to top.</p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Job Boost Duration (Hours)
+            </label>
+            <input
+              type="number"
+              value={config.employer_job_boost_duration_hours || 48}
+              onChange={(e) =>
+                setConfig({
+                  ...config,
+                  employer_job_boost_duration_hours: Number(e.target.value) || 48,
+                })
+              }
+              className="border-2 border-ink bg-stone-50 px-3 py-2 text-sm font-bold text-ink outline-none"
+            />
+            <p className="text-[10px] text-inkmuted">Time before urgent badge and top-pin automatically expire.</p>
+          </div>
+
+          {/* Decision point flag: Rollover policy */}
+          <div className="border-2 border-dashed border-ink/40 bg-sand/40 p-3 mt-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-black uppercase text-ink">
+                  Subscription Rollover Policy
+                </p>
+                <p className="text-[10px] text-inkmuted font-semibold">
+                  {config.rollover_unused_credits
+                    ? "Active: Unused monthly credits roll over to next billing month"
+                    : "Active: Unused monthly credits expire at end of 30-day billing cycle"}
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={Boolean(config.rollover_unused_credits)}
+                onChange={(e) =>
+                  setConfig({ ...config, rollover_unused_credits: e.target.checked })
+                }
+                className="h-5 w-5 accent-brand cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* One-Time Credit Packs Table */}
+      <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212]">
+        <div className="flex items-center justify-between border-b-2 border-ink/10 pb-3 mb-4">
+          <div>
+            <h3 className="text-xs font-black uppercase text-ink">
+              One-Time Freelancer Credit Top-Up Packs
+            </h3>
+            <p className="text-[10px] text-inkmuted">Fixed bundle packs sold on freelancer profile.</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b-2 border-ink bg-sand/50 text-[10px] font-black uppercase">
+                <th className="p-2.5">Pack ID</th>
+                <th className="p-2.5">Credits Count</th>
+                <th className="p-2.5">Price (₹)</th>
+                <th className="p-2.5">Effective Rate</th>
+                <th className="p-2.5">Badge / Discount Label</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(config.credit_packs || []).map((pack, idx) => (
+                <tr key={pack.id || idx} className="border-b border-ink/10 hover:bg-stone-50">
+                  <td className="p-2.5 font-mono font-bold text-inkmuted">{pack.id}</td>
+                  <td className="p-2.5">
+                    <input
+                      type="number"
+                      value={pack.credits}
+                      onChange={(e) => updatePack(idx, "credits", Number(e.target.value) || 0)}
+                      className="w-24 border border-ink px-2 py-1 font-bold text-ink"
+                    />
+                  </td>
+                  <td className="p-2.5">
+                    <input
+                      type="number"
+                      value={pack.price_inr}
+                      onChange={(e) => updatePack(idx, "price_inr", Number(e.target.value) || 0)}
+                      className="w-24 border border-ink px-2 py-1 font-bold text-ink"
+                    />
+                  </td>
+                  <td className="p-2.5 font-bold text-brand">
+                    ₹{pack.credits > 0 ? (pack.price_inr / pack.credits).toFixed(1) : 0}/credit
+                  </td>
+                  <td className="p-2.5">
+                    <input
+                      type="text"
+                      value={pack.discount_label || ""}
+                      onChange={(e) => updatePack(idx, "discount_label", e.target.value)}
+                      className="w-48 border border-ink px-2 py-1 text-xs text-ink"
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Monthly Subscription Plans Table */}
+      <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212]">
+        <div className="flex items-center justify-between border-b-2 border-ink/10 pb-3 mb-4">
+          <div>
+            <h3 className="text-xs font-black uppercase text-ink">
+              Monthly Credit Subscription Plans (Pro Pass)
+            </h3>
+            <p className="text-[10px] text-inkmuted">Recurring monthly credit bundles at discounted per-credit rates.</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b-2 border-ink bg-sand/50 text-[10px] font-black uppercase">
+                <th className="p-2.5">Plan Name</th>
+                <th className="p-2.5">Credits / Cycle</th>
+                <th className="p-2.5">Monthly Price (₹)</th>
+                <th className="p-2.5">Effective Rate</th>
+                <th className="p-2.5">Badge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(config.subscription_plans || []).map((plan, idx) => (
+                <tr key={plan.id || idx} className="border-b border-ink/10 hover:bg-stone-50">
+                  <td className="p-2.5">
+                    <input
+                      type="text"
+                      value={plan.name}
+                      onChange={(e) => updatePlan(idx, "name", e.target.value)}
+                      className="w-44 border border-ink px-2 py-1 font-bold text-ink"
+                    />
+                  </td>
+                  <td className="p-2.5">
+                    <input
+                      type="number"
+                      value={plan.credits_per_cycle}
+                      onChange={(e) => updatePlan(idx, "credits_per_cycle", Number(e.target.value) || 0)}
+                      className="w-24 border border-ink px-2 py-1 font-bold text-ink"
+                    />
+                  </td>
+                  <td className="p-2.5">
+                    <input
+                      type="number"
+                      value={plan.price_inr}
+                      onChange={(e) => updatePlan(idx, "price_inr", Number(e.target.value) || 0)}
+                      className="w-24 border border-ink px-2 py-1 font-bold text-ink"
+                    />
+                  </td>
+                  <td className="p-2.5 font-bold text-ok">
+                    ₹{plan.credits_per_cycle > 0 ? (plan.price_inr / plan.credits_per_cycle).toFixed(1) : 0}/credit
+                  </td>
+                  <td className="p-2.5">
+                    <input
+                      type="text"
+                      value={plan.badge || ""}
+                      onChange={(e) => updatePlan(idx, "badge", e.target.value)}
+                      className="w-36 border border-ink px-2 py-1 text-xs text-ink"
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------------- MAIN ADMIN COMPONENT ----------------
 
 export default function Admin() {
@@ -942,6 +1308,7 @@ export default function Admin() {
   const adminFetch = useCallback((path, method = "GET", body) => {
     if (method === "GET") return apiGet(`/admin${path}`, true);
     if (method === "POST") return apiPost(`/admin${path}`, body, true);
+    if (method === "PUT") return apiPut(`/admin${path}`, body, true);
     if (method === "PATCH") return apiPatch(`/admin${path}`, body, true);
     if (method === "DELETE") return apiGet(`/admin${path}`, true); // or appropriate delete method
   }, []);
@@ -1223,6 +1590,7 @@ export default function Admin() {
         )}
 
         {tab === "OVERVIEW" && <OverviewTab overview={overview} data={rows} onSelectTab={(newTab) => setTab(newTab)} />}
+        {tab === "CREDITS" && <CreditsConfigTab adminFetch={adminFetch} />}
         {tab === "CONTROLS" && <SiteControlsTab adminFetch={adminFetch} />}
         {tab === "GIGS" && <GigsModerationTab adminFetch={adminFetch} />}
         {tab === "ESCROW" && <EscrowDisputesTab adminFetch={adminFetch} />}

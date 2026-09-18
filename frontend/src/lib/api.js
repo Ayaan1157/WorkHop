@@ -23,6 +23,14 @@ import {
   getEscrowOrders,
   resolveEscrowOrder,
   ADMIN_EMAILS,
+  getCreditsWallet,
+  getCreditTransactions,
+  purchaseCreditPack,
+  subscribeToCredits,
+  boostJob,
+  getJobLeaderboard,
+  getCreditsConfig,
+  saveCreditsConfig,
 } from "./clientStore";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
@@ -69,7 +77,47 @@ function mockRouter(path, method = "GET", body = null) {
   if (cleanPath.includes("/apply") && method === "POST") {
     const parts = cleanPath.split("/");
     const jobId = parts[2];
-    return applyToJob(jobId, body?.freelancer_id, body?.note, body?.applicant_area, body?.distance_km);
+    return applyToJob(
+      jobId,
+      body?.freelancer_id,
+      body?.note,
+      body?.applicant_area,
+      body?.distance_km,
+      body?.boost_credits,
+      body
+    );
+  }
+  if (cleanPath.includes("/leaderboard") || (cleanPath.includes("/applications") && method === "GET")) {
+    const parts = cleanPath.split("/");
+    const jobId = parts[2];
+    return getJobLeaderboard(jobId);
+  }
+  if (cleanPath.includes("/boost") && method === "POST") {
+    const parts = cleanPath.split("/");
+    const jobId = parts[3] || parts[2];
+    return boostJob(jobId, body?.employer_id, body?.amount_paid);
+  }
+
+  // 2.5 Credits & Connects Wallet
+  if (cleanPath.includes("/credits-wallet")) {
+    const parts = cleanPath.split("/");
+    const uid = parts[2] === "credits-wallet" ? (parts[1] || getFreelancerId()) : (parts[2] || getFreelancerId());
+    return {
+      wallet: getCreditsWallet(uid),
+      transactions: getCreditTransactions(uid),
+    };
+  }
+  if (cleanPath === "/credits/purchase-pack" && method === "POST") {
+    return purchaseCreditPack(body?.user_id || getFreelancerId(), body?.pack_id);
+  }
+  if (cleanPath === "/credits/subscribe" && method === "POST") {
+    return subscribeToCredits(body?.user_id || getFreelancerId(), body?.plan_id);
+  }
+  if (cleanPath === "/admin/credits-config") {
+    if (method === "PUT" || method === "POST") {
+      return saveCreditsConfig(body);
+    }
+    return getCreditsConfig();
   }
 
   // 3. Catalog & Map

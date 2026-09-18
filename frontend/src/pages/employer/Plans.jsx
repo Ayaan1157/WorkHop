@@ -366,7 +366,7 @@ function PlanCard({ plan, onBuy, enterprise }) {
     >
       <div>
         <div className="flex items-center justify-between gap-2">
-          <p className={`text-base font-black ${enterprise ? "text-white" : "text-ink"}`}>
+          <p className={`text-base font-black ${enterprise ? "!text-white text-white" : "text-ink"}`} style={enterprise ? { color: "#FFFFFF" } : undefined}>
             {plan.name}
           </p>
           {plan.badge && (
@@ -387,15 +387,17 @@ function PlanCard({ plan, onBuy, enterprise }) {
         <div className="mt-3 flex items-baseline gap-1.5 border-b border-ink/20 pb-3">
           <span
             className={`text-3xl font-black tracking-tight ${
-              enterprise ? "text-brand" : "text-ink"
+              enterprise ? "!text-white text-white" : "text-ink"
             }`}
+            style={enterprise ? { color: "#FFFFFF" } : undefined}
           >
             {plan.price_label}
           </span>
           <span
             className={`text-xs font-bold ${
-              enterprise ? "text-[#BDBDBD]" : "text-inkmuted"
+              enterprise ? "!text-stone-300 text-stone-300" : "text-inkmuted"
             }`}
+            style={enterprise ? { color: "#D6D6D6" } : undefined}
           >
             / {plan.unit}
           </span>
@@ -406,12 +408,14 @@ function PlanCard({ plan, onBuy, enterprise }) {
             <div key={f} className="flex items-start gap-2">
               <Check
                 size={14}
-                className={`mt-0.5 shrink-0 ${enterprise ? "text-brand" : "text-ok"}`}
+                className={`mt-0.5 shrink-0 ${enterprise ? "!text-brand text-brand" : "text-ok"}`}
+                style={enterprise ? { color: "#E65A1E" } : undefined}
               />
               <span
                 className={`text-xs font-semibold leading-4 ${
-                  enterprise ? "text-[#D6D6D6]" : "text-ink"
+                  enterprise ? "!text-white text-white" : "text-ink"
                 }`}
+                style={enterprise ? { color: "#FFFFFF" } : undefined}
               >
                 {f}
               </span>
@@ -423,14 +427,16 @@ function PlanCard({ plan, onBuy, enterprise }) {
       <button
         data-testid={`plan-buy-${plan.plan_id}`}
         onClick={onBuy}
-        className={`mt-2 flex w-full items-center justify-center gap-2 border-2 py-3 text-xs font-black tracking-wider text-white transition active:translate-y-0.5 ${
+        className={`mt-2 flex w-full items-center justify-center gap-2 border-2 py-3 text-xs font-black tracking-wider !text-white text-white transition active:translate-y-0.5 ${
           enterprise
             ? "border-brand bg-brand hover:bg-brand/90"
             : "border-ink bg-ink hover:bg-brand"
         }`}
       >
-        <span>Buy {plan.price_label}</span>
-        <ArrowRight size={14} />
+        <span className="!text-white text-white font-black" style={{ color: "#FFFFFF" }}>
+          Buy {plan.price_label}
+        </span>
+        <ArrowRight size={14} className="!text-white text-white shrink-0" style={{ color: "#FFFFFF" }} />
       </button>
     </div>
   );

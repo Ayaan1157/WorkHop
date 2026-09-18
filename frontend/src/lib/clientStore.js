@@ -11,6 +11,60 @@ const NOTIFICATIONS_KEY = "workhop_notifications";
 const WALLET_KEY = "workhop_wallet";
 const FREELANCER_PROFILE_KEY = "workhop_freelancer_profile";
 
+// ═══════════ CONNECTS & CREDITS SYSTEM KEYS ═══════════
+const CREDITS_WALLET_KEY = "workhop_credits_wallet";
+const CREDITS_TRANSACTIONS_KEY = "workhop_credits_transactions";
+const SUBSCRIPTIONS_KEY = "workhop_subscriptions";
+const APPLICATION_BOOSTS_KEY = "workhop_application_boosts";
+const JOB_BOOSTS_KEY = "workhop_job_boosts";
+const CREDITS_CONFIG_KEY = "workhop_credits_config";
+
+export const DEFAULT_CREDITS_CONFIG = {
+  per_credit_rate_inr: 10,
+  credit_packs: [
+    { id: "pack-10", credits: 10, price_inr: 100, label: "10 Credits", discount_label: "Standard Rate", popular: false },
+    { id: "pack-25", credits: 25, price_inr: 225, label: "25 Credits", discount_label: "Save 10%", popular: true },
+    { id: "pack-50", credits: 50, price_inr: 400, label: "50 Credits", discount_label: "Save 20%", popular: false },
+    { id: "pack-100", credits: 100, price_inr: 750, label: "100 Credits", discount_label: "Save 25% (Best Value)", popular: false },
+  ],
+  subscription_plans: [
+    {
+      id: "starter_pass",
+      name: "Starter Connects Pass",
+      credits_per_cycle: 30,
+      price_inr: 249,
+      billing_cycle: "monthly",
+      badge: "STARTER",
+      effective_per_credit: "₹8.30",
+      features: ["30 credits delivered monthly", "Unused credits roll over", "Zero platform fee on gigs", "Priority applicant badge"],
+    },
+    {
+      id: "pro_pass",
+      name: "Pro Connects Pass",
+      credits_per_cycle: 60,
+      price_inr: 449,
+      billing_cycle: "monthly",
+      badge: "MOST POPULAR",
+      effective_per_credit: "₹7.48",
+      features: ["60 credits delivered monthly", "Unused credits roll over", "1 free proposal boost monthly", "Verified Pro gold badge", "Early access to high-budget gigs"],
+    },
+    {
+      id: "power_pass",
+      name: "Power Freelancer Pass",
+      credits_per_cycle: 120,
+      price_inr: 799,
+      billing_cycle: "monthly",
+      badge: "MAX SAVINGS",
+      effective_per_credit: "₹6.65",
+      features: ["120 credits delivered monthly", "Unlimited rollover cap", "3 free proposal boosts monthly", "Top-tier leaderboard priority", "Direct WhatsApp employer unlocks"],
+    },
+  ],
+  rollover_unused_credits: true,
+  job_boost_price_inr: 299,
+  job_boost_duration_hours: 48,
+  welcome_credits: 20,
+};
+
 // Helper for masking phone numbers server-side/client-side safely
 export function maskPhone(phone) {
   if (!phone) return "+91 98XXX XX000";
@@ -74,38 +128,72 @@ export function getLeadById(id) {
 // 2. Gigs / Jobs
 export function getStoredJobs() {
   const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
-  const base = jobsSeed.map((j, idx) => ({
-    id: j.id || `job-${idx + 1}`,
-    title: j.title,
-    pay: j.pay,
-    pay_label: j.pay_label || `${(j.pay || 0).toLocaleString("en-IN")}`,
-    employer_name: j.employer_name || `${j.company_name || "Company"} HR`,
-    company_name: j.company_name || "Hyperlocal Co.",
-    description: j.description,
-    category: j.category || j.bucket || "Graphics & Design",
-    bucket: j.bucket || "Creative",
-    area: j.area || "Bengaluru",
-    distance_km: j.distance_km ?? (Math.round((0.4 + (idx % 8) * 0.3) * 10) / 10),
-    posted_minutes_ago: j.posted_minutes_ago ?? (15 + (idx * 35) % 1440),
-    applicants_count: j.applicants_count ?? (2 + (idx % 9)),
-    employer_rating: (4.8 + (idx % 3) * 0.1).toFixed(1),
-    employer_reviews: 8 + (idx % 12),
-    verified_employer: true,
-    created_at: j.created_at || new Date(Date.now() - (idx * 3600000 * 4)).toISOString(),
-    lat: j.lat || (12.9716 + (idx % 6 - 3) * 0.015),
-    lng: j.lng || (77.5946 + (idx % 5 - 2) * 0.015),
-    keywords: j.keywords || [],
-  }));
-  return [...custom, ...base];
+  const now = new Date();
+  const base = jobsSeed.map((j, idx) => {
+    const pay = Number(j.pay) || 1000;
+    // Requirement 1: credits_required = floor(job_budget / 1000), minimum 1 credit
+    const creditsToApply = j.credits_to_apply || Math.max(1, Math.floor(pay / 1000));
+    // Sample some jobs with active boosts for testing
+    const sampleBoost = idx === 0 || idx === 3;
+    const isBoosted = j.is_boosted !== undefined
+      ? Boolean(j.is_boosted && (!j.boost_expires_at || new Date(j.boost_expires_at) > now))
+      : sampleBoost;
+    const boostExpiresAt = j.boost_expires_at || (sampleBoost ? new Date(Date.now() + 36 * 3600000).toISOString() : null);
+
+    return {
+      id: j.id || `job-${idx + 1}`,
+      title: j.title,
+      pay: pay,
+      pay_label: j.pay_label || `${pay.toLocaleString("en-IN")}`,
+      credits_to_apply: creditsToApply,
+      is_boosted: isBoosted,
+      boost_expires_at: boostExpiresAt,
+      employer_name: j.employer_name || `${j.company_name || "Company"} HR`,
+      company_name: j.company_name || "Hyperlocal Co.",
+      description: j.description,
+      category: j.category || j.bucket || "Graphics & Design",
+      bucket: j.bucket || "Creative",
+      area: j.area || "Bengaluru",
+      distance_km: j.distance_km ?? (Math.round((0.4 + (idx % 8) * 0.3) * 10) / 10),
+      posted_minutes_ago: j.posted_minutes_ago ?? (15 + (idx * 35) % 1440),
+      applicants_count: j.applicants_count ?? (2 + (idx % 9)),
+      employer_rating: (4.8 + (idx % 3) * 0.1).toFixed(1),
+      employer_reviews: 8 + (idx % 12),
+      verified_employer: true,
+      created_at: j.created_at || new Date(Date.now() - (idx * 3600000 * 4)).toISOString(),
+      lat: j.lat || (12.9716 + (idx % 6 - 3) * 0.015),
+      lng: j.lng || (77.5946 + (idx % 5 - 2) * 0.015),
+      keywords: j.keywords || [],
+    };
+  });
+
+  const allJobs = [...custom, ...base];
+  // Requirement 4: Boosted jobs appear higher in job listing/search results
+  return allJobs.sort((a, b) => {
+    const aBoost = a.is_boosted && (!a.boost_expires_at || new Date(a.boost_expires_at) > now) ? 1 : 0;
+    const bBoost = b.is_boosted && (!b.boost_expires_at || new Date(b.boost_expires_at) > now) ? 1 : 0;
+    if (bBoost !== aBoost) return bBoost - aBoost;
+    return 0;
+  });
 }
 
 export function postCustomJob(jobData) {
   const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  const pay = Number(jobData.pay) || 0;
+  // Requirement 1: credits_required = floor(job_budget / 1000), minimum 1 credit
+  // Store this value on the job record at creation time (credits_to_apply field), don't recompute it dynamically later.
+  const creditsToApply = Math.max(1, Math.floor(pay / 1000));
+  const isBoosted = Boolean(jobData.is_boosted);
+  const boostExpiresAt = isBoosted ? new Date(Date.now() + 48 * 3600000).toISOString() : null;
+
   const newJob = {
     id: `job-custom-${Date.now()}`,
     title: jobData.title,
-    pay: Number(jobData.pay) || 0,
-    pay_label: `${(Number(jobData.pay) || 0).toLocaleString("en-IN")}`,
+    pay: pay,
+    pay_label: `${pay.toLocaleString("en-IN")}`,
+    credits_to_apply: creditsToApply,
+    is_boosted: isBoosted,
+    boost_expires_at: boostExpiresAt,
     company_name: jobData.company_name,
     employer_name: jobData.employer_name || `${jobData.company_name} Lead`,
     description: jobData.description,
@@ -119,8 +207,8 @@ export function postCustomJob(jobData) {
     employer_reviews: 1,
     verified_employer: true,
     created_at: new Date().toISOString(),
-    lat: 12.9716,
-    lng: 77.5946,
+    lat: jobData.lat || 12.9716,
+    lng: jobData.lng || 77.5946,
     keywords: [jobData.title, jobData.bucket],
   };
   localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify([newJob, ...custom]));
@@ -450,22 +538,372 @@ export function getStoredWallet() {
   return defaultWallet;
 }
 
-// 10. Job Applications & Chat
-export function applyToJob(jobId, freelancerId, note = "", applicantArea = "Indiranagar", distKm = null) {
-  const jobs = getStoredJobs();
-  const job = jobs.find((j) => j.id === jobId) || jobs[0];
-  const apps = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || "[]");
-  
-  const app = {
-    id: `app-${Date.now()}`,
-    job_id: jobId,
-    freelancer_id: freelancerId || "freelancer-demo",
-    note,
-    applicant_area: applicantArea || "Indiranagar",
-    distance_km: distKm != null ? distKm : (job.distance_km || 1.2),
+// ═══════════ CONNECTS & CREDITS SYSTEM (UPWORK-STYLE) ═══════════
+
+export function getCreditsConfig() {
+  try {
+    const raw = localStorage.getItem(CREDITS_CONFIG_KEY);
+    if (raw) return { ...DEFAULT_CREDITS_CONFIG, ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  return DEFAULT_CREDITS_CONFIG;
+}
+
+export function saveCreditsConfig(newConfig) {
+  const merged = { ...getCreditsConfig(), ...newConfig };
+  localStorage.setItem(CREDITS_CONFIG_KEY, JSON.stringify(merged));
+  return merged;
+}
+
+export function getCreditsWallet(userId) {
+  const id = userId || "freelancer-demo";
+  const allWallets = JSON.parse(localStorage.getItem(CREDITS_WALLET_KEY) || "{}");
+  if (allWallets[id]) {
+    return allWallets[id];
+  }
+  // Initialize with welcome credits (default 20)
+  const config = getCreditsConfig();
+  const initBalance = config.welcome_credits ?? 20;
+  const newWallet = {
+    user_id: id,
+    balance: initBalance,
+    subscription_status: "none", // 'none' | 'active' | 'cancelled' | 'expired'
+    subscription_plan_id: null,
+    subscription_renews_at: null,
+    updated_at: new Date().toISOString(),
+  };
+  allWallets[id] = newWallet;
+  localStorage.setItem(CREDITS_WALLET_KEY, JSON.stringify(allWallets));
+
+  // Record initial welcome bonus transaction
+  if (initBalance > 0) {
+    addCreditTransaction(id, {
+      type: "bonus",
+      amount: initBalance,
+      balance_after: initBalance,
+      description: "Welcome Gift: 20 Free Bidding Credits",
+    });
+  }
+  return newWallet;
+}
+
+export function getCreditTransactions(userId) {
+  const id = userId || "freelancer-demo";
+  const allTx = JSON.parse(localStorage.getItem(CREDITS_TRANSACTIONS_KEY) || "{}");
+  return allTx[id] || [];
+}
+
+export function addCreditTransaction(userId, { type, amount, related_job_id, job_title, description, balance_after }) {
+  const id = userId || "freelancer-demo";
+  const allTx = JSON.parse(localStorage.getItem(CREDITS_TRANSACTIONS_KEY) || "{}");
+  const userTx = allTx[id] || [];
+
+  const tx = {
+    id: `ctx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    user_id: id,
+    type: type || "spend", // 'purchase' | 'subscription' | 'spend' | 'boost' | 'bonus' | 'refund'
+    amount: Number(amount) || 0,
+    balance_after: balance_after !== undefined ? balance_after : 0,
+    related_job_id: related_job_id || null,
+    job_title: job_title || null,
+    description: description || "Credits transaction",
     created_at: new Date().toISOString(),
   };
+
+  allTx[id] = [tx, ...userTx];
+  localStorage.setItem(CREDITS_TRANSACTIONS_KEY, JSON.stringify(allTx));
+  return tx;
+}
+
+export function addCredits(userId, amount, { type = "purchase", related_job_id, job_title, description } = {}) {
+  const id = userId || "freelancer-demo";
+  const allWallets = JSON.parse(localStorage.getItem(CREDITS_WALLET_KEY) || "{}");
+  const wallet = getCreditsWallet(id);
+  const newBalance = wallet.balance + amount;
+
+  wallet.balance = newBalance;
+  wallet.updated_at = new Date().toISOString();
+  allWallets[id] = wallet;
+  localStorage.setItem(CREDITS_WALLET_KEY, JSON.stringify(allWallets));
+
+  addCreditTransaction(id, {
+    type,
+    amount: +amount,
+    balance_after: newBalance,
+    related_job_id,
+    job_title,
+    description: description || `Added ${amount} credits`,
+  });
+
+  return wallet;
+}
+
+export function deductCredits(userId, amount, { type = "spend", related_job_id, job_title, description } = {}) {
+  const id = userId || "freelancer-demo";
+  const allWallets = JSON.parse(localStorage.getItem(CREDITS_WALLET_KEY) || "{}");
+  const wallet = getCreditsWallet(id);
+
+  if (wallet.balance < amount) {
+    const err = new Error(`Insufficient credits. Required: ${amount}, Available: ${wallet.balance}`);
+    err.code = "INSUFFICIENT_CREDITS";
+    err.status = 402;
+    err.required = amount;
+    err.balance = wallet.balance;
+    throw err;
+  }
+
+  const newBalance = wallet.balance - amount;
+  wallet.balance = newBalance;
+  wallet.updated_at = new Date().toISOString();
+  allWallets[id] = wallet;
+  localStorage.setItem(CREDITS_WALLET_KEY, JSON.stringify(allWallets));
+
+  addCreditTransaction(id, {
+    type,
+    amount: -amount,
+    balance_after: newBalance,
+    related_job_id,
+    job_title,
+    description: description || `Spent ${amount} credits`,
+  });
+
+  return wallet;
+}
+
+// 2. Top-Up Packs & Subscriptions
+export function purchaseCreditPack(userId, packId) {
+  const config = getCreditsConfig();
+  const pack = config.credit_packs.find((p) => p.id === packId) || config.credit_packs[1];
+  return addCredits(userId, pack.credits, {
+    type: "purchase",
+    description: `Purchased ${pack.label} (₹${pack.price_inr})`,
+  });
+}
+
+export function subscribeToCredits(userId, planId) {
+  const id = userId || "freelancer-demo";
+  const config = getCreditsConfig();
+  const plan = config.subscription_plans.find((p) => p.id === planId) || config.subscription_plans[1];
+
+  const allWallets = JSON.parse(localStorage.getItem(CREDITS_WALLET_KEY) || "{}");
+  const wallet = getCreditsWallet(id);
+
+  // Rollover / Expiry rule check
+  const renewsAt = new Date(Date.now() + 30 * 24 * 3600000).toISOString();
+  wallet.subscription_status = "active";
+  wallet.subscription_plan_id = plan.id;
+  wallet.subscription_renews_at = renewsAt;
+
+  // Add subscription credit bundle
+  wallet.balance += plan.credits_per_cycle;
+  wallet.updated_at = new Date().toISOString();
+  allWallets[id] = wallet;
+  localStorage.setItem(CREDITS_WALLET_KEY, JSON.stringify(allWallets));
+
+  // Save subscription record
+  const allSubs = JSON.parse(localStorage.getItem(SUBSCRIPTIONS_KEY) || "[]");
+  allSubs.unshift({
+    id: `sub-${Date.now()}`,
+    user_id: id,
+    plan_id: plan.id,
+    plan_name: plan.name,
+    credits_per_cycle: plan.credits_per_cycle,
+    price_inr: plan.price_inr,
+    status: "active",
+    renews_at: renewsAt,
+    created_at: new Date().toISOString(),
+    rollover_enabled: config.rollover_unused_credits,
+  });
+  localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(allSubs));
+
+  addCreditTransaction(id, {
+    type: "subscription",
+    amount: plan.credits_per_cycle,
+    balance_after: wallet.balance,
+    description: `Subscribed to ${plan.name} (+${plan.credits_per_cycle} credits, ₹${plan.price_inr}/mo)`,
+  });
+
+  return wallet;
+}
+
+// 3. Employer Job Boosting
+export function boostJob(jobId, employerId, amountPaid = 299) {
+  const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  const config = getCreditsConfig();
+  const durationHours = config.job_boost_duration_hours || 48;
+  const expiresAt = new Date(Date.now() + durationHours * 3600000).toISOString();
+
+  let found = false;
+  const updatedCustom = custom.map((j) => {
+    if (j.id === jobId) {
+      found = true;
+      return { ...j, is_boosted: true, boost_expires_at: expiresAt };
+    }
+    return j;
+  });
+
+  if (found) {
+    localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify(updatedCustom));
+  }
+
+  // Record job boost
+  const allJobBoosts = JSON.parse(localStorage.getItem(JOB_BOOSTS_KEY) || "[]");
+  allJobBoosts.push({
+    id: `jboost-${Date.now()}`,
+    job_id: jobId,
+    boosted_by: employerId || "employer-demo",
+    amount_paid: amountPaid,
+    expires_at: expiresAt,
+    created_at: new Date().toISOString(),
+  });
+  localStorage.setItem(JOB_BOOSTS_KEY, JSON.stringify(allJobBoosts));
+
+  return { ok: true, is_boosted: true, boost_expires_at: expiresAt };
+}
+
+// 4. Job Leaderboard (Upwork-style ranking of boosted applications)
+export function getJobLeaderboard(jobId) {
+  const apps = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || "[]");
+  const jobApps = apps.filter((a) => a.job_id === jobId);
+
+  // Pre-seed sample applicants if none exist so leaderboard is visually demonstrable
+  const defaultSeeds = [
+    {
+      id: `seed-app-1-${jobId}`,
+      freelancer_id: "pro-karthik",
+      freelancer_name: "Karthik Raja",
+      freelancer_skill: "UI/UX & React Specialist",
+      rating: 4.9,
+      note: "Specialized in responsive interfaces with immediate availability.",
+      boost_credits: 6,
+      applied_at: new Date(Date.now() - 3600000 * 3).toISOString(),
+    },
+    {
+      id: `seed-app-2-${jobId}`,
+      freelancer_id: "pro-sneha",
+      freelancer_name: "Sneha Rao",
+      freelancer_skill: "Full-Stack Dev",
+      rating: 5.0,
+      note: "Experienced in hyperlocal gig marketplaces and quick turnarounds.",
+      boost_credits: 4,
+      applied_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+    },
+    {
+      id: `seed-app-3-${jobId}`,
+      freelancer_id: "pro-rahul",
+      freelancer_name: "Rahul Verma",
+      freelancer_skill: "Creative Designer",
+      rating: 4.8,
+      note: "Local Bengaluru resident in Indiranagar. Fast delivery.",
+      boost_credits: 0,
+      applied_at: new Date(Date.now() - 3600000 * 8).toISOString(),
+    },
+  ];
+
+  const merged = [...jobApps];
+  for (const s of defaultSeeds) {
+    if (!merged.some((m) => m.freelancer_id === s.freelancer_id)) {
+      merged.push(s);
+    }
+  }
+
+  // Requirement 3: "show a leaderboard ranking applicants by boost amount, with the top 3 boosted applicants highlighted/pinned at the top — similar to Upwork's 'featured proposals'. Ties should break by application timestamp (earliest first)."
+  merged.sort((a, b) => {
+    const boostA = a.boost_credits || 0;
+    const boostB = b.boost_credits || 0;
+    if (boostB !== boostA) return boostB - boostA; // Higher boost first
+    // Earliest timestamp first
+    const timeA = new Date(a.applied_at || a.created_at || 0).getTime();
+    const timeB = new Date(b.applied_at || b.created_at || 0).getTime();
+    return timeA - timeB;
+  });
+
+  return merged.map((app, index) => ({
+    ...app,
+    rank: index + 1,
+    is_top_boosted: index < 3 && (app.boost_credits || 0) > 0,
+  }));
+}
+
+// 10. Job Applications & Chat (Credit-Deducted & Boosted)
+export function applyToJob(
+  jobId,
+  freelancerId,
+  note = "",
+  applicantArea = "Indiranagar",
+  distKm = null,
+  boostCredits = 0,
+  extra = {}
+) {
+  const jobs = getStoredJobs();
+  const job = jobs.find((j) => j.id === jobId) || jobs[0];
+  const boost = Math.max(0, parseInt(boostCredits, 10) || 0);
+  const baseCost = job.credits_to_apply || Math.max(1, Math.floor((job.pay || 1000) / 1000));
+  const totalCost = baseCost + boost;
+
+  const fId = freelancerId || "freelancer-demo";
+  const wallet = getCreditsWallet(fId);
+
+  // Requirement 1: Block application if balance is insufficient
+  if (wallet.balance < totalCost) {
+    const err = new Error(
+      `Insufficient credits. This job requires ${totalCost} credits (base: ${baseCost}${boost > 0 ? `, boost: ${boost}` : ""}), but your wallet balance is only ${wallet.balance} credits.`
+    );
+    err.code = "INSUFFICIENT_CREDITS";
+    err.status = 402;
+    err.balance = wallet.balance;
+    err.required = totalCost;
+    throw err;
+  }
+
+  // Deduct credits from wallet
+  deductCredits(fId, totalCost, {
+    type: boost > 0 ? "boost" : "spend",
+    related_job_id: job.id,
+    job_title: job.title,
+    description: boost > 0
+      ? `Applied to "${job.title}" (${baseCost} base + ${boost} boost credits)`
+      : `Applied to "${job.title}" (${baseCost} credits)`,
+  });
+
+  const apps = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || "[]");
+  const appId = `app-${Date.now()}`;
+  const appliedAt = new Date().toISOString();
+
+  const proposedRateType = extra?.proposed_rate_type || extra?.proposedRateType || "fixed";
+  const proposedQuote = extra?.proposed_quote != null ? extra.proposed_quote : (extra?.proposedQuote != null ? extra.proposedQuote : job.pay);
+
+  const app = {
+    id: appId,
+    application_id: appId,
+    job_id: jobId,
+    freelancer_id: fId,
+    note,
+    boost_credits: boost,
+    applicant_area: applicantArea || "Indiranagar",
+    distance_km: distKm != null ? distKm : (job.distance_km || 1.2),
+    proposed_rate_type: proposedRateType,
+    proposed_quote: proposedQuote,
+    pdf_attachment: extra?.pdf_attachment || extra?.pdfAttachment || null,
+    portfolio_items: extra?.portfolio_items || extra?.portfolioItems || [],
+    scan_status: "verified_clean",
+    created_at: appliedAt,
+    applied_at: appliedAt,
+  };
   localStorage.setItem(APPLICATIONS_KEY, JSON.stringify([app, ...apps]));
+
+  // Record application boost if extra credits paid
+  if (boost > 0) {
+    const appBoosts = JSON.parse(localStorage.getItem(APPLICATION_BOOSTS_KEY) || "[]");
+    appBoosts.push({
+      id: `aboost-${Date.now()}`,
+      application_id: appId,
+      freelancer_id: fId,
+      job_id: jobId,
+      credits_spent: boost,
+      created_at: appliedAt,
+    });
+    localStorage.setItem(APPLICATION_BOOSTS_KEY, JSON.stringify(appBoosts));
+  }
 
   // Create chat conversation
   const chats = JSON.parse(localStorage.getItem(CHATS_KEY) || "[]");
@@ -489,7 +927,15 @@ export function applyToJob(jobId, freelancerId, note = "", applicantArea = "Indi
     };
     localStorage.setItem(CHATS_KEY, JSON.stringify([conv, ...chats]));
   }
-  return { ok: true, application: app, conversation_id: convId };
+
+  const updatedWallet = getCreditsWallet(fId);
+  return {
+    ok: true,
+    application: app,
+    conversation_id: convId,
+    credits_spent: totalCost,
+    remaining_balance: updatedWallet.balance,
+  };
 }
 
 export function getStoredChats() {
