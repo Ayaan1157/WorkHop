@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build && cd .. && node -e \"const fs=require('fs'); fs.cpSync('frontend/build', 'build', {recursive:true});\"",
+  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "frontend/build",
   "headers": [
     {
