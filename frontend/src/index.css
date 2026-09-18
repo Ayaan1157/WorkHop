@@ -144,7 +144,7 @@ body {
 /* ═══════ RULE 1: TEXT ON WHITE OR LIGHT-COLORED BACKGROUNDS MUST BE BLACK ═══════ */
 /* Applies across the entire website in light mode or on un-inverted light badges */
 html:not(.dark) .bg-white,
-html:not(.dark) .bg-white *,
+html:not(.dark) .bg-white *:not(.text-white):not([class~="text-white"]):not(.\!text-white):not([class~="!text-white"]):not(.bg-ink):not(.bg-black):not([class*="bg-[#121212]"]):not(.bg-brand):not([data-testid*="signup"]):not([data-testid*="signup"] *),
 html:not(.dark) .bg-sand,
 html:not(.dark) .bg-stone,
 html:not(.dark) [class*="bg-[#FFF3C4]"],
@@ -198,6 +198,27 @@ html:not(.dark) [class*="bg-red-100"] *,
 html:not(.dark) [class*="bg-blue-100"],
 html:not(.dark) [class*="bg-blue-100"] * {
     color: #121212 !important;
+}
+
+/* ═══════ WHITE TEXT PRESERVATION (LIGHT & DARK MODES) ═══════ */
+/* Ensures text-white or dark/black buttons retain crisp white text even inside light wrappers */
+.text-white,
+.text-white *,
+.\!text-white,
+.\!text-white *,
+[class~="text-white"],
+[class~="text-white"] *,
+[class~="!text-white"],
+[class~="!text-white"] *,
+.bg-ink:not(.text-ink),
+.bg-ink:not(.text-ink) *,
+.bg-black:not(.text-ink),
+.bg-black:not(.text-ink) *,
+[class*="bg-[#121212]"]:not(.text-ink),
+[class*="bg-[#121212]"]:not(.text-ink) *,
+[data-testid="landing-signup-btn"],
+[data-testid="landing-signup-btn"] * {
+    color: #FFFFFF !important;
 }
 
 /* In dark mode, light pastel chips without dark:bg overrides keep dark text */

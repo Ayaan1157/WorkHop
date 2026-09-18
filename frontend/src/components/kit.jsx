@@ -255,7 +255,7 @@ export function GlobalNav() {
                   setAuthMode("signin");
                   setAuthOpen(true);
                 }}
-                className="hidden sm:flex border-2 border-ink bg-ink px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                className="hidden sm:flex border-2 border-ink bg-ink px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-black tracking-wider !text-white text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
               >
                 SIGN IN
               </button>

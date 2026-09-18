@@ -416,7 +416,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
             }}
             className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
               mode === "signup"
-                ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
+                ? "bg-brand text-white !text-white shadow-[2px_2px_0px_#121212]"
                 : "bg-transparent text-ink hover:bg-white"
             }`}
           >

@@ -501,7 +501,7 @@ export default function Landing() {
                   }}
                   className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
                     authMode === "signup"
-                      ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
+                      ? "bg-brand text-white !text-white shadow-[2px_2px_0px_#121212]"
                       : "bg-transparent text-ink hover:bg-white"
                   }`}
                 >
@@ -998,9 +998,12 @@ export default function Landing() {
                     setAuthModalMode("signup");
                     setAuthModalOpen(true);
                   }}
-                  className="border-2 border-ink dark:border-white bg-[#121212] px-3.5 py-2 text-xs font-black tracking-wider text-white hover:bg-black transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E]"
+                  className="border-2 border-ink dark:border-white bg-[#121212] px-3.5 py-2 text-xs font-black tracking-wider !text-white hover:bg-black transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E]"
+                  style={{ color: "#FFFFFF" }}
                 >
-                  SIGN UP
+                  <span className="!text-white font-black" style={{ color: "#FFFFFF" }}>
+                    SIGN UP
+                  </span>
                 </button>
               </div>
             )}
