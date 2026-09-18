@@ -1,9 +1,25 @@
 {
-  "framework": "create-react-app",
-  "installCommand": "cd frontend && npm install --legacy-peer-deps",
-  "buildCommand": "cd frontend && npm run build",
+  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build && cd .. && node -e \"const fs=require('fs'); fs.cpSync('frontend/build', 'build', {recursive:true});\"",
   "outputDirectory": "frontend/build",
   "headers": [
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [

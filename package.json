@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "install": "cd frontend && npm install --legacy-peer-deps",
-    "build": "cd frontend && npm install --legacy-peer-deps && npm run build",
+    "build": "cd frontend && npm install --legacy-peer-deps && npm run build && cd .. && node -e \"const fs=require('fs'); fs.cpSync('frontend/build', 'build', {recursive:true});\"",
     "start": "cd frontend && npm start"
   }
 }
