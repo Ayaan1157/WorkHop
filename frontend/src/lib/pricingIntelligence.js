@@ -15,6 +15,9 @@ const CATEGORY_BENCHMARKS = {
       { terms: ["3d", "render", "autocad", "sketchup", "interior", "architectural"], rec: 18000, min: 8000, max: 40000, desc: "3D Visualization & Architectural CAD" },
       { terms: ["illustration", "character", "digital art", "icon set"], rec: 9000, min: 4000, max: 20000, desc: "Custom Digital Illustrations" },
       { terms: ["photo", "product photoshoot", "photography", "catalog shoot"], rec: 12000, min: 6000, max: 25000, desc: "Product & Catalog Photography" },
+      { terms: ["artist", "painting", "sketch", "fine art", "portrait"], rec: 12000, min: 5000, max: 25000, desc: "Custom Artwork & Fine Art" },
+      { terms: ["mural", "mural artist", "wall art", "graffiti"], rec: 20000, min: 8000, max: 45000, desc: "Wall Mural & Commercial Graffiti Art" },
+      { terms: ["model making", "physical model", "scale model", "architectural model", "prototype model"], rec: 22000, min: 9000, max: 50000, desc: "Architectural & Physical Model Making" },
     ],
   },
   "Programming & Tech": {

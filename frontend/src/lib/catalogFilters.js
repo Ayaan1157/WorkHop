@@ -18,6 +18,9 @@ export const DISCIPLINES_CATALOG = [
       "Merch & Apparel Graphics",
       "Signage, Banners & Environmental Graphics",
       "Architectural and interior design floor plan",
+      "Artist",
+      "Mural Artist",
+      "Model Making",
     ],
   },
   {
@@ -232,7 +235,8 @@ export const JOB_CATEGORY_FILTERS = [
     cats: [
       "Graphics & Design", "Graphic Design", "Brand Identity", "Illustration", "UI/UX Design", "Packaging", "Interior Design", "Fashion Design", "Landscape Design", "3D Visualization", "AutoCAD", "Product Photography", "Creative",
       "Logo & Visual Identity Design", "Brand Style Guides & Visual Systems", "Packaging, Label & Box Design", "Menu, Flyer & Print Collateral Design", "Social Media Posts, Stories & Banners", "Vector Illustration & Icon Design", "Pitch Deck & Investor Presentation Design", "UI/UX Interface Design (Figma)", "3D Architectural Rendering & Interior Visualization", "Merch & Apparel Graphics", "Signage, Banners & Environmental Graphics", "Architectural and interior design floor plan",
-      "Wall Mural & Graffiti Concept Design", "Custom Acrylic & Neon Signboard Design"
+      "Wall Mural & Graffiti Concept Design", "Custom Acrylic & Neon Signboard Design",
+      "Artist", "Mural Artist", "Model Making", "Fine Artist", "Wall Mural Artist", "Architectural Model Making"
     ],
   },
   {
@@ -313,7 +317,8 @@ export const LEAD_CATEGORY_FILTERS = [
     cats: [
       "Brand & Logo Designer", "Graphic Designer", "Illustrator / Digital Artist", "UI/UX Designer", "Packaging & Label Designer", "Interior Designer", "Fashion Designer", "Landscape Designer", "Architectural 3D Visualizer / SketchUp Modeler", "AutoCAD Draftsman", "Product Photographer",
       "Logo & Visual Identity Design", "Brand Style Guides & Visual Systems", "Packaging, Label & Box Design", "Menu, Flyer & Print Collateral Design", "Social Media Posts, Stories & Banners", "Vector Illustration & Icon Design", "Pitch Deck & Investor Presentation Design", "UI/UX Interface Design (Figma)", "3D Architectural Rendering & Interior Visualization", "Merch & Apparel Graphics", "Signage, Banners & Environmental Graphics", "Architectural and interior design floor plan",
-      "Wall Mural & Graffiti Concept Design", "Custom Acrylic & Neon Signboard Design"
+      "Wall Mural & Graffiti Concept Design", "Custom Acrylic & Neon Signboard Design",
+      "Artist", "Mural Artist", "Model Making", "Fine Artist", "Wall Mural Artist", "Architectural Model Making"
     ],
   },
   {

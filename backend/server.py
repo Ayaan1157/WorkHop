@@ -2350,6 +2350,9 @@ CATALOG = [
         "Merch & Apparel Graphics",
         "Signage, Banners & Environmental Graphics",
         "Architectural and interior design floor plan",
+        "Artist",
+        "Mural Artist",
+        "Model Making",
     ]},
     {"category": "Tech & Code", "icon": "code-slash", "subcategories": [
         "No-Code Website Building (Framer, Webflow, Softr)",
