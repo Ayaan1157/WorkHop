@@ -97,6 +97,14 @@ export default function Jobs() {
   const [leaderboardJob, setLeaderboardJob] = useState(null);
   const [wallet, setWallet] = useState(() => getCreditsWallet(getFreelancerId()));
 
+  // Live Bidding Leaderboard & Top Bid computation for the active gig proposal modal
+  const modalLeaderboard = useMemo(() => {
+    if (!activeJob?.id) return { list: [], topBid: 10 };
+    const list = getJobLeaderboard(activeJob.id) || [];
+    const highestBid = list.length > 0 ? Math.max(...list.map((item) => Number(item.boost_credits) || 0), 0) : 0;
+    return { list, topBid: highestBid > 0 ? highestBid : 10 };
+  }, [activeJob]);
+
   // Rate Quoting (Fixed vs Hourly)
   const [proposedRateType, setProposedRateType] = useState("fixed"); // "fixed" | "hourly"
   const [proposedQuote, setProposedQuote] = useState(1000);
@@ -357,7 +365,8 @@ export default function Jobs() {
   };
 
   const submitApply = async () => {
-    if (!activeJob || !freelancerId) return;
+    const fid = freelancerId || getFreelancerId();
+    if (!activeJob || !fid) return;
 
     // Contact scanner safety validation
     if (textViolations.length > 0 || pdfViolations.length > 0) {
@@ -367,7 +376,7 @@ export default function Jobs() {
 
     const baseCost = activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000));
     const totalCost = baseCost + boostCredits;
-    const currentWallet = getCreditsWallet(freelancerId);
+    const currentWallet = getCreditsWallet(fid);
 
     // Requirement 1: Block application if balance is insufficient
     if (currentWallet.balance < totalCost) {
@@ -380,7 +389,7 @@ export default function Jobs() {
     const calculatedDist = calculateDistance(applicantArea, activeJob.area || "Bengaluru");
     try {
       const data = await apiPost(`/jobs/${activeJob.id}/apply`, {
-        freelancer_id: freelancerId,
+        freelancer_id: fid,
         note: applyNote,
         applicant_area: applicantArea,
         distance_km: calculatedDist,
@@ -392,7 +401,7 @@ export default function Jobs() {
       });
       setAppliedJustNow(activeJob.id);
       if (data.conversation_id) { setConvByJob((m) => ({ ...m, [activeJob.id]: data.conversation_id })); setLastConvId(data.conversation_id); }
-      setWallet(getCreditsWallet(freelancerId));
+      setWallet(getCreditsWallet(fid));
       load();
     } catch (e) {
       if (e?.status === 402 || e?.code === "INSUFFICIENT_CREDITS") {
@@ -1191,9 +1200,9 @@ export default function Jobs() {
                 {/* Mini competitor bids table */}
                 <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
                   {[
-                    { rank: "1st Place", bid: Math.max(10, modalLeaderboard.topBid || 10), medal: "🥇" },
-                    { rank: "2nd Place", bid: Math.max(6, Math.floor((modalLeaderboard.topBid || 10) * 0.7)), medal: "🥈" },
-                    { rank: "3rd Place", bid: Math.max(4, Math.floor((modalLeaderboard.topBid || 10) * 0.4)), medal: "🥉" },
+                    { rank: "1st Place", bid: Math.max(10, modalLeaderboard?.topBid || 10), medal: "🥇" },
+                    { rank: "2nd Place", bid: Math.max(6, Math.floor((modalLeaderboard?.topBid || 10) * 0.7)), medal: "🥈" },
+                    { rank: "3rd Place", bid: Math.max(4, Math.floor((modalLeaderboard?.topBid || 10) * 0.4)), medal: "🥉" },
                     { rank: "4th Place", bid: 2, medal: "🎖️" },
                   ].map((slot, i) => (
                     <div key={i} className="border border-ink bg-white p-1.5">
@@ -1207,11 +1216,11 @@ export default function Jobs() {
                 <div className="mt-2.5 flex items-center justify-between border border-ink bg-white p-2 text-xs">
                   <span className="flex items-center gap-1 font-bold text-ink text-[11px]">
                     <Flame size={13} className="text-brand" />
-                    Bid {Math.max(1, (modalLeaderboard.topBid || 10) + 1)} Credits or higher to take 1st place!
+                    Bid {Math.max(1, (modalLeaderboard?.topBid || 10) + 1)} Credits or higher to take 1st place!
                   </span>
                   <button
                     type="button"
-                    onClick={() => setBoostCredits(Math.max(1, (modalLeaderboard.topBid || 10) + 1))}
+                    onClick={() => setBoostCredits(Math.max(1, (modalLeaderboard?.topBid || 10) + 1))}
                     className="border border-ink bg-brand px-2 py-0.5 text-[9px] font-black text-white hover:bg-black transition"
                   >
                     BID FOR #1
