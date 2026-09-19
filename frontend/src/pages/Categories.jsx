@@ -53,20 +53,18 @@ export default function Categories() {
                     </div>
                     {expanded ? <ChevronUp size={18} className="text-ink dark:text-white" /> : <ChevronDown size={18} className="text-ink dark:text-white" />}
                   </button>
-                  {expanded && (
-                    <div className="flex flex-wrap gap-2 border-t border-ink/20 p-3.5 bg-sand">
-                      {c.subcategories.map((s) => (
-                        <button
-                          key={s}
-                          data-testid={`sub-${s.toLowerCase().replace(/[^a-z]+/g, "-")}`}
-                          onClick={() => goSearch(s)}
-                          className="flex items-center gap-1.5 border-[1.5px] border-ink bg-white px-2.5 py-1.5 text-xs font-bold text-ink hover:bg-brand hover:text-white transition"
-                        >
-                          {s} <ArrowRight size={11} />
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <div className={`flex-wrap gap-2 border-t border-ink/20 p-3.5 bg-sand ${expanded ? "flex" : "hidden"}`}>
+                    {c.subcategories.map((s) => (
+                      <button
+                        key={s}
+                        data-testid={`sub-${s.toLowerCase().replace(/[^a-z]+/g, "-")}`}
+                        onClick={() => goSearch(s)}
+                        className="flex items-center gap-1.5 border-[1.5px] border-ink bg-white px-2.5 py-1.5 text-xs font-bold text-ink hover:bg-brand hover:text-white transition"
+                      >
+                        {s} <ArrowRight size={11} />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               );
             })}

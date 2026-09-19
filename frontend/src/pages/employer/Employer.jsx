@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search, X, Star, MapPin, IndianRupee, Clock, CheckCheck, Lock, LockOpen,
@@ -145,6 +145,31 @@ export default function Employer() {
     }
   };
 
+  const mapSection = useMemo(() => {
+    if (!showMap) return null;
+    return (
+      <div className="relative isolate h-[160px] sm:h-[280px] w-full bg-sand/20" data-testid="employer-map">
+        <GoogleMap pins={mapPins} zoom={13} userLocation={coords} height="100%" radiusKm={2} />
+        <button
+          data-testid="leads-near-me-btn"
+          onClick={requestLocation}
+          className={`absolute bottom-3 left-3 z-[400] flex items-center gap-1.5 border-2 border-ink px-2.5 py-1 text-xs font-black shadow-[2px_2px_0px_#121212] transition active:translate-y-0.5 ${
+            coords ? "bg-brand text-white" : "bg-white text-ink hover:bg-sand"
+          }`}
+        >
+          {locStatus === "locating" ? (
+            <Loader2 size={13} className="animate-spin" />
+          ) : (
+            <LocateFixed size={13} className={coords ? "text-white" : "text-brand"} />
+          )}
+          <span className="text-[10px] font-black tracking-wider">
+            {coords ? "GPS ACTIVE" : "NEAR ME"}
+          </span>
+        </button>
+      </div>
+    );
+  }, [showMap, mapPins, coords, locStatus, requestLocation]);
+
   return (
     <Shell>
       <TopBar
@@ -218,27 +243,7 @@ export default function Employer() {
           </div>
 
           {/* Collapsible Map Body with proper proportions */}
-          {showMap && (
-            <div className="relative isolate h-[160px] sm:h-[280px] w-full bg-sand/20" data-testid="employer-map">
-              <GoogleMap pins={mapPins} zoom={13} userLocation={coords} height="100%" radiusKm={2} />
-              <button
-                data-testid="leads-near-me-btn"
-                onClick={requestLocation}
-                className={`absolute bottom-3 left-3 z-[400] flex items-center gap-1.5 border-2 border-ink px-2.5 py-1 text-xs font-black shadow-[2px_2px_0px_#121212] transition active:translate-y-0.5 ${
-                  coords ? "bg-brand text-white" : "bg-white text-ink hover:bg-sand"
-                }`}
-              >
-                {locStatus === "locating" ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <LocateFixed size={13} className={coords ? "text-white" : "text-brand"} />
-                )}
-                <span className="text-[10px] font-black tracking-wider">
-                  {coords ? "GPS ACTIVE" : "NEAR ME"}
-                </span>
-              </button>
-            </div>
-          )}
+          {mapSection}
         </div>
       </div>
 
@@ -328,8 +333,7 @@ export default function Employer() {
           </div>
 
           {/* EXPANDABLE FILTER DRAWER */}
-          {filtersDrawerOpen && (
-            <div className="flex flex-col gap-3 border-2 border-ink bg-sand dark:bg-[#1c1c1c] p-4 mt-2 animate-in fade-in duration-150 shadow-[2px_2px_0px_#121212]">
+          <div className={`flex-col gap-3 border-2 border-ink bg-sand dark:bg-[#1c1c1c] p-4 mt-2 shadow-[2px_2px_0px_#121212] ${filtersDrawerOpen ? "flex" : "hidden"}`}>
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-black uppercase tracking-wider text-ink dark:text-white">QUICK FILTERS</span>
                 <button
@@ -388,9 +392,8 @@ export default function Employer() {
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
 
       <CategoryTiles selected={catFilter} onSelect={setCatFilter} testIDPrefix="lead-cat-tile" />
 
@@ -584,7 +587,7 @@ export default function Employer() {
   );
 }
 
-function LeadCard({ lead, unlocked, index, isSaved, onToggleSave, onClick }) {
+const LeadCard = memo(function LeadCard({ lead, unlocked, index, isSaved, onToggleSave, onClick }) {
   return (
     <div
       data-testid={`lead-card-${index}`}
@@ -681,7 +684,7 @@ function LeadCard({ lead, unlocked, index, isSaved, onToggleSave, onClick }) {
       </div>
     </div>
   );
-}
+});
 
 const Stat = ({ icon, children }) => (
   <span className="flex items-center gap-1 border border-ink/30 bg-sand px-2 py-0.5 text-[10px] font-extrabold text-ink">

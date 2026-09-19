@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useState, useMemo } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   Search, X, Grid3x3, Map as MapIcon, MessagesSquare, ShieldCheck, ShieldHalf,
@@ -437,6 +437,61 @@ export default function Jobs() {
     finally { setUnlocking(false); }
   };
 
+  const gigCardsGrid = useMemo(() => {
+    if (loading) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <JobCardSkeleton />
+          <JobCardSkeleton />
+          <JobCardSkeleton />
+          <JobCardSkeleton />
+          <JobCardSkeleton />
+          <JobCardSkeleton />
+        </div>
+      );
+    }
+    if (filtered.length === 0) {
+      return (
+        <EmptyBlock
+          testID="empty-state"
+          icon={<Search size={28} className="text-ink" />}
+          title={viewTab === "saved" ? "No saved gigs yet" : term ? `No matches for "${search.trim()}"` : "No gigs match your active filters"}
+          sub={viewTab === "saved" ? "Click the heart icon on any gig card to bookmark it for later." : "Try resetting your filters or searching for another keyword."}
+          action={
+            viewTab === "saved" ? (
+              <button onClick={() => setViewTab("all")} className="border-2 border-ink bg-ink px-4 py-2 text-xs font-black text-white">
+                BROWSE ALL GIGS
+              </button>
+            ) : null
+          }
+        />
+      );
+    }
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {filtered.map((job, idx) => (
+          <FiverrGigCard
+            key={job.id}
+            job={job}
+            index={idx}
+            verified={isVerified}
+            applied={appliedSet.has(job.id)}
+            isSaved={savedJobIds.includes(job.id)}
+            onToggleSave={(e) => handleToggleSave(job.id, e)}
+            onApply={() => openApplyFor(job)}
+            onOpenLeaderboard={() => setLeaderboardJob(job)}
+            onMessage={() => {
+              const cid = convByJob[job.id];
+              cid ? nav(`/chat/${cid}?role=freelancer`) : nav("/freelancer/chats");
+            }}
+            onVerifyPress={gotoVerify}
+          />
+        ))}
+      </div>
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, filtered, isVerified, appliedSet, savedJobIds, convByJob, viewTab, term, search, nav]);
+
   return (
     <Shell>
       <TopBar
@@ -663,9 +718,11 @@ export default function Jobs() {
       </div>
 
       {/* Multi-Facet Filter Drawer */}
-      {filtersOpen && (
-        <div className="border-b-2 border-ink bg-sand" data-testid="jobs-filters-panel">
-          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 p-4 sm:px-8">
+      <div
+        className={`border-b-2 border-ink bg-sand ${filtersOpen ? "block" : "hidden"}`}
+        data-testid="jobs-filters-panel"
+      >
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 p-4 sm:px-8">
             {/* Category Filter */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -774,7 +831,6 @@ export default function Jobs() {
             </div>
           </div>
         </div>
-      )}
 
       {/* Unverified Banner */}
       {!isVerified && (
@@ -804,49 +860,7 @@ export default function Jobs() {
 
       {/* Gig Cards Grid */}
       <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-8 pb-24">
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            <JobCardSkeleton />
-            <JobCardSkeleton />
-            <JobCardSkeleton />
-            <JobCardSkeleton />
-          </div>
-        ) : filtered.length === 0 ? (
-          <EmptyBlock
-            testID="empty-state"
-            icon={<Search size={28} className="text-ink" />}
-            title={viewTab === "saved" ? "No saved gigs yet" : term ? `No matches for "${search.trim()}"` : "No gigs match your active filters"}
-            sub={viewTab === "saved" ? "Click the heart icon on any gig card to bookmark it for later." : "Try resetting your filters or searching for another keyword."}
-            action={
-              viewTab === "saved" ? (
-                <button onClick={() => setViewTab("all")} className="border-2 border-ink bg-ink px-4 py-2 text-xs font-black text-white">
-                  BROWSE ALL GIGS
-                </button>
-              ) : null
-            }
-          />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered.map((job, idx) => (
-              <FiverrGigCard
-                key={job.id}
-                job={job}
-                index={idx}
-                verified={isVerified}
-                applied={appliedSet.has(job.id)}
-                isSaved={savedJobIds.includes(job.id)}
-                onToggleSave={(e) => handleToggleSave(job.id, e)}
-                onApply={() => openApplyFor(job)}
-                onOpenLeaderboard={() => setLeaderboardJob(job)}
-                onMessage={() => {
-                  const cid = convByJob[job.id];
-                  cid ? nav(`/chat/${cid}?role=freelancer`) : nav("/freelancer/chats");
-                }}
-                onVerifyPress={gotoVerify}
-              />
-            ))}
-          </div>
-        )}
+        {gigCardsGrid}
       </div>
 
       {/* Comprehensive Upwork-Style Proposal Modal */}
@@ -1574,7 +1588,7 @@ function FilterGroup({ label, options, value, onPick }) {
 }
 
 // Fiverr / Upwork modeled Gig Card
-function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress, onOpenLeaderboard }) {
+const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress, onOpenLeaderboard }) {
   const [descExpanded, setDescExpanded] = useState(false);
   const creditsCost = job.credits_to_apply || Math.max(1, Math.floor((job.pay || 1000) / 1000));
   return (
@@ -1720,4 +1734,4 @@ function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, o
       </div>
     </div>
   );
-}
+});
