@@ -125,6 +125,7 @@ export default function Jobs() {
   const [boostPreviewOpen, setBoostPreviewOpen] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [showMap, setShowMap] = useState(true);
+  const [radarRadius, setRadarRadius] = useState(5);
   const [boostCoupon, setBoostCoupon] = useState(null);
   const { startPayment } = useRazorpay();
   const { coords: liveCoords, status: locStatus, requestLocation } = useUserLocation();
@@ -573,7 +574,8 @@ export default function Jobs() {
                 zoom={13}
                 userLocation={liveCoords}
                 height="100%"
-                radiusKm={5}
+                radiusKm={radarRadius}
+                onRadiusChange={setRadarRadius}
                 onSelectPin={(pin) => {
                   const target = filtered.find((j) => j.id === pin.id);
                   if (target) {

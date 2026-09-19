@@ -525,7 +525,8 @@ export default function LiveMap() {
                 pins={activePins}
                 center={userLocation}
                 userLocation={userLocation}
-                radiusKm={radiusKm < 25 ? radiusKm : null}
+                radiusKm={radiusKm}
+                onRadiusChange={(newRad) => setRadiusKm(newRad)}
                 selectedPinId={selectedPinId}
                 onSelectPin={handleSelectPin}
                 height="470px"

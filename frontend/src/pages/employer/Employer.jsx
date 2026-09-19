@@ -43,6 +43,7 @@ export default function Employer() {
   const [coupon, setCoupon] = useState(null);
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
   const [showMap, setShowMap] = useState(true);
+  const [radarRadius, setRadarRadius] = useState(2);
   const { startPayment } = useRazorpay();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
 
@@ -149,7 +150,14 @@ export default function Employer() {
     if (!showMap) return null;
     return (
       <div className="relative isolate h-[160px] sm:h-[280px] w-full bg-sand/20" data-testid="employer-map">
-        <GoogleMap pins={mapPins} zoom={13} userLocation={coords} height="100%" radiusKm={2} />
+        <GoogleMap
+          pins={mapPins}
+          zoom={13}
+          userLocation={coords}
+          height="100%"
+          radiusKm={radarRadius}
+          onRadiusChange={setRadarRadius}
+        />
         <button
           data-testid="leads-near-me-btn"
           onClick={requestLocation}
@@ -168,7 +176,7 @@ export default function Employer() {
         </button>
       </div>
     );
-  }, [showMap, mapPins, coords, locStatus, requestLocation]);
+  }, [showMap, mapPins, coords, locStatus, requestLocation, radarRadius]);
 
   return (
     <Shell>

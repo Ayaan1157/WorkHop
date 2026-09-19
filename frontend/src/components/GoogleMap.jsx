@@ -1,7 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Layers, LocateFixed, Sparkles, Navigation, Briefcase, User, Building2 } from "lucide-react";
+import {
+  Layers,
+  LocateFixed,
+  Sparkles,
+  Navigation,
+  Briefcase,
+  User,
+  Building2,
+  Minus,
+  Plus,
+  ChevronDown,
+  Check,
+} from "lucide-react";
 
 // Google Maps Raster Tiles & Fallbacks
 const MAP_LAYERS = {
@@ -35,12 +47,16 @@ const MAP_LAYERS = {
   },
 };
 
+// Google Maps Radar Radius Steps (km)
+export const RADAR_STEPS = [1, 2, 3, 5, 8, 10, 15, 20, 25];
+
 export default function GoogleMap({
   pins = [],
   center = { lat: 12.9716, lng: 77.5946 },
   zoom = 13,
   userLocation = null,
   radiusKm = 5,
+  onRadiusChange = null,
   selectedPinId = null,
   onSelectPin = null,
   height = "460px",
@@ -52,9 +68,56 @@ export default function GoogleMap({
   const markerLayerRef = useRef(null);
   const radiusLayerRef = useRef(null);
   const markersByIdRef = useRef({});
+  const radarControlRef = useRef(null);
 
   const [activeLayerType, setActiveLayerType] = useState("google_road");
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
+  const [currentRadius, setCurrentRadius] = useState(radiusKm || 2);
+  const [radarMenuOpen, setRadarMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (radiusKm !== undefined && radiusKm !== null) {
+      setCurrentRadius(radiusKm);
+    }
+  }, [radiusKm]);
+
+  // Close radar dropdown on outside clicks
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (radarControlRef.current && !radarControlRef.current.contains(e.target)) {
+        setRadarMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  const updateRadius = (newRad) => {
+    setCurrentRadius(newRad);
+    if (onRadiusChange) {
+      onRadiusChange(newRad);
+    }
+  };
+
+  const handleDecreaseRadius = (e) => {
+    if (e) e.stopPropagation();
+    const smaller = RADAR_STEPS.filter((r) => r < currentRadius);
+    if (smaller.length > 0) {
+      updateRadius(smaller[smaller.length - 1]);
+    }
+  };
+
+  const handleIncreaseRadius = (e) => {
+    if (e) e.stopPropagation();
+    const larger = RADAR_STEPS.filter((r) => r > currentRadius);
+    if (larger.length > 0) {
+      updateRadius(larger[0]);
+    }
+  };
 
   // Initialize Map
   useEffect(() => {
@@ -154,9 +217,9 @@ export default function GoogleMap({
     layer.clearLayers();
 
     const loc = userLocation || center;
-    if (loc && radiusKm && radiusKm > 0) {
+    if (loc && currentRadius && currentRadius > 0) {
       L.circle([loc.lat, loc.lng], {
-        radius: radiusKm * 1000,
+        radius: currentRadius * 1000,
         color: "#E65A1E",
         weight: 2,
         opacity: 0.7,
@@ -165,7 +228,7 @@ export default function GoogleMap({
         fillOpacity: 0.08,
       }).addTo(layer);
     }
-  }, [userLocation, center, radiusKm]);
+  }, [userLocation, center, currentRadius]);
 
   // Draw Interactive Markers
   useEffect(() => {
@@ -202,7 +265,7 @@ export default function GoogleMap({
           <div style="font-family:Archivo,sans-serif;padding:4px;min-width:140px;text-align:center;">
             <span style="display:inline-block;background:#2563EB;color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:2px;letter-spacing:0.1em;">YOU ARE HERE</span>
             <p style="font-size:12px;font-weight:800;margin-top:4px;color:#121212;">Your Current Location</p>
-            <p style="font-size:10px;color:#6B6B6B;">Scanning nearby within ${radiusKm || 5}km</p>
+            <p style="font-size:10px;color:#6B6B6B;">Scanning nearby within ${currentRadius || 5}km</p>
           </div>
         `);
       markersByIdRef.current["user"] = userMarker;
@@ -339,7 +402,7 @@ export default function GoogleMap({
 
       markersByIdRef.current[p.id] = marker;
     });
-  }, [pins, userLocation, selectedPinId, onSelectPin, radiusKm]);
+  }, [pins, userLocation, selectedPinId, onSelectPin, currentRadius]);
 
   // Recenter on user
   const handleRecenter = () => {
@@ -416,11 +479,87 @@ export default function GoogleMap({
         </button>
       </div>
 
-      {/* Bottom Floating Status Chip */}
-      <div className="pointer-events-none absolute bottom-3 right-3 z-[300] hidden sm:flex items-center gap-1.5 border border-ink/40 bg-white/95 dark:bg-[#1a1a1a]/95 px-2 py-0.5 text-[9px] font-black text-ink dark:text-white shadow-sm backdrop-blur-sm">
-        <span className="text-brand">⚡ WORKHOP RADAR</span>
-        <span>·</span>
-        <span>{radiusKm ? `${radiusKm}km Radius` : "Bengaluru"}</span>
+      {/* Bottom Floating Interactive Radar Stepper & Range Dropdown */}
+      <div
+        ref={radarControlRef}
+        data-testid="map-radar-control"
+        className="absolute bottom-3 right-3 z-[400] flex items-center border-2 border-ink bg-white/95 dark:bg-[#1a1a1a]/95 text-ink dark:text-white shadow-[2px_2px_0px_#121212] select-none backdrop-blur-sm"
+      >
+        {/* Decrease (-) Button */}
+        <button
+          type="button"
+          onClick={handleDecreaseRadius}
+          disabled={currentRadius <= RADAR_STEPS[0]}
+          data-testid="map-radar-decrease"
+          className="flex h-7 w-7 items-center justify-center text-ink dark:text-white hover:bg-brand hover:text-white transition disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-ink dark:disabled:hover:text-white disabled:cursor-not-allowed border-r border-ink/20 dark:border-white/20 active:translate-y-0.5"
+          title="Decrease Radar (-)"
+        >
+          <Minus size={13} strokeWidth={3} />
+        </button>
+
+        {/* Center Label & Dropdown Trigger */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setRadarMenuOpen((prev) => !prev)}
+            data-testid="map-radar-menu-trigger"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black text-ink dark:text-white hover:bg-sand/60 dark:hover:bg-neutral-800 transition"
+            title="Click to pick radius preset"
+          >
+            <span className="text-brand">⚡ WORKHOP RADAR</span>
+            <span className="text-ink/40 dark:text-white/40">·</span>
+            <span className="underline decoration-brand decoration-2 underline-offset-2">
+              {currentRadius ? `${currentRadius}km Radius` : "Bengaluru"}
+            </span>
+            <ChevronDown
+              size={11}
+              className={`text-ink/60 dark:text-white/60 transition-transform duration-200 ${
+                radarMenuOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {/* Preset Dropdown Popup */}
+          {radarMenuOpen && (
+            <div className="absolute bottom-full right-0 mb-1.5 w-36 border-2 border-ink bg-white dark:bg-[#1e1e1e] p-1 shadow-[3px_3px_0px_#121212] z-[500] animate-in fade-in duration-150">
+              <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-inkmuted border-b border-ink/10 dark:border-white/10 mb-1">
+                Radar Range
+              </div>
+              <div className="max-h-48 overflow-y-auto space-y-0.5">
+                {RADAR_STEPS.map((step) => (
+                  <button
+                    key={step}
+                    type="button"
+                    onClick={() => {
+                      updateRadius(step);
+                      setRadarMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2 py-1 text-[10px] font-extrabold text-left transition ${
+                      currentRadius === step
+                        ? "bg-brand text-white font-black"
+                        : "text-ink dark:text-white hover:bg-sand dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    <span>{step} km Radius</span>
+                    {currentRadius === step && <Check size={11} strokeWidth={3} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Increase (+) Button */}
+        <button
+          type="button"
+          onClick={handleIncreaseRadius}
+          disabled={currentRadius >= RADAR_STEPS[RADAR_STEPS.length - 1]}
+          data-testid="map-radar-increase"
+          className="flex h-7 w-7 items-center justify-center text-ink dark:text-white hover:bg-brand hover:text-white transition disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-ink dark:disabled:hover:text-white disabled:cursor-not-allowed border-l border-ink/20 dark:border-white/20 active:translate-y-0.5"
+          title="Increase Radar (+)"
+        >
+          <Plus size={13} strokeWidth={3} />
+        </button>
       </div>
     </div>
   );
