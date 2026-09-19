@@ -786,20 +786,56 @@ export default function Jobs() {
               </button>
             </div>
 
-            {/* Job Summary Banner */}
-            <div className="mt-3 border-2 border-ink bg-sand p-3 shadow-[2px_2px_0px_#121212]">
-              <h3 className="text-base sm:text-lg font-black text-ink">{activeJob?.title}</h3>
+            {/* Job Summary Banner & Full Description */}
+            <div className="mt-3 border-2 border-ink bg-sand p-3.5 shadow-[2px_2px_0px_#121212]" data-testid="apply-modal-job-summary">
+              <div className="flex flex-wrap items-center justify-between gap-1 border-b border-ink/20 pb-2 mb-2.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-brand">
+                  {activeJob?.category || "GIG OPPORTUNITY"} {activeJob?.company_name ? `· ${activeJob.company_name}` : ""}
+                </span>
+                {activeJob?.employer_name && (
+                  <span className="text-[10px] font-bold text-ink">
+                    Posted by: <span className="font-black">{activeJob.employer_name}</span>
+                  </span>
+                )}
+              </div>
+
+              <h3 className="text-base sm:text-lg font-black text-ink leading-snug">{activeJob?.title}</h3>
+
               <div className="mt-2 flex flex-wrap gap-2">
-                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-black text-ink">
+                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-black text-ink shadow-[1px_1px_0px_#121212]">
                   {activeJob?.price_type === "hourly" ? `₹${activeJob?.pay_label}/hr HOURLY` : `₹${activeJob?.pay_label} FIXED`}
                 </span>
-                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-bold text-ink flex items-center gap-1">
+                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-bold text-ink flex items-center gap-1 shadow-[1px_1px_0px_#121212]">
                   <MapPin size={11} className="text-brand" /> Job Area: {activeJob?.area || "Bengaluru"}
                 </span>
-                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-bold text-ink flex items-center gap-1">
+                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-bold text-ink flex items-center gap-1 shadow-[1px_1px_0px_#121212]">
                   <Coins size={11} className="text-brand" /> Base Apply: {activeJob?.credits_to_apply || Math.max(1, Math.floor((activeJob?.pay || 1000) / 1000))} Credits
                 </span>
               </div>
+
+              {/* Full Job Description Box */}
+              {activeJob?.description && (
+                <div className="mt-3 border-t-2 border-ink/20 pt-2.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-ink block mb-1.5 flex items-center gap-1">
+                    <FileText size={12} className="text-brand" /> FULL JOB DESCRIPTION &amp; SCOPE:
+                  </span>
+                  <div className="border-2 border-ink bg-white p-3 shadow-[2px_2px_0px_#121212]">
+                    <p className="text-xs sm:text-sm font-semibold text-ink leading-relaxed whitespace-pre-line" data-testid="apply-modal-job-description">
+                      {activeJob.description}
+                    </p>
+                    {activeJob?.keywords && activeJob.keywords.length > 0 && (
+                      <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-ink/15 pt-2">
+                        <span className="text-[9px] font-black uppercase text-ink mr-1">Required Skills:</span>
+                        {activeJob.keywords.map((kw, i) => (
+                          <span key={i} className="border border-ink bg-sand px-1.5 py-0.5 text-[10px] font-bold text-ink shadow-[0.5px_0.5px_0px_#121212]">
+                            #{kw}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* ═══════ 1. TERMS & RATE QUOTING (Upwork Terms Screen) ═══════ */}
@@ -1454,6 +1490,7 @@ function FilterGroup({ label, options, value, onPick }) {
 
 // Fiverr / Upwork modeled Gig Card
 function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress, onOpenLeaderboard }) {
+  const [descExpanded, setDescExpanded] = useState(false);
   const creditsCost = job.credits_to_apply || Math.max(1, Math.floor((job.pay || 1000) / 1000));
   return (
     <div
@@ -1513,10 +1550,25 @@ function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, o
           {job.title}
         </h3>
 
-        {/* Description Snippet */}
-        <p className="mt-2 line-clamp-2 text-xs leading-5 text-inkmuted">
-          {job.description}
-        </p>
+        {/* Description Snippet & Full Toggle */}
+        <div className="mt-2">
+          <p className={`text-xs leading-5 text-inkmuted ${descExpanded ? "whitespace-pre-line text-ink font-medium" : "line-clamp-2"}`}>
+            {job.description}
+          </p>
+          {job.description && job.description.length > 70 && (
+            <button
+              type="button"
+              data-testid={`expand-desc-btn-${index}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setDescExpanded(!descExpanded);
+              }}
+              className="mt-1 text-[10px] font-black text-brand hover:underline block"
+            >
+              {descExpanded ? "Show less ↑" : "Read full description ↓"}
+            </button>
+          )}
+        </div>
 
         {/* Employer Info & Rating */}
         <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2.5">
