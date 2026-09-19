@@ -128,7 +128,7 @@ function mockRouter(path, method = "GET", body = null) {
     return getStoredMapPins();
   }
 
-  // 4. Plans & Pricing (Job Credits + Branding)
+  // 4. Plans & Pricing (Job Hops + Branding)
   if (cleanPath === "/plans") {
     return [
       {
@@ -137,11 +137,12 @@ function mockRouter(path, method = "GET", body = null) {
         name: "Single Post",
         price: 299,
         price_label: "₹299",
-        unit: "1 job credit",
+        unit: "1 Hop",
+        hops: 1,
         credits: 1,
         duration_days: null,
         badge: null,
-        features: ["1 job listing on the live feed", "5km radius candidate matching", "Applicant inbox with direct WhatsApp/Call"],
+        features: ["1 job listing on the live feed (1 Hop)", "5km radius candidate matching", "Applicant inbox with direct WhatsApp/Call"],
       },
       {
         plan_id: "starter-bundle",
@@ -149,11 +150,12 @@ function mockRouter(path, method = "GET", body = null) {
         name: "Starter Bundle",
         price: 999,
         price_label: "₹999",
-        unit: "5 job credits",
+        unit: "5 Hops",
+        hops: 5,
         credits: 5,
         duration_days: null,
         badge: "SAVE 33%",
-        features: ["5 job post credits (₹200/post)", "Use anytime — no expiry", "Verified candidate SMS alerts", "Applicant inbox included"],
+        features: ["5 job post Hops (₹200/Hop)", "Use anytime — no expiry", "Verified candidate SMS alerts", "Applicant inbox included"],
       },
       {
         plan_id: "growth-bundle",
@@ -161,11 +163,25 @@ function mockRouter(path, method = "GET", body = null) {
         name: "Growth Pack",
         price: 1999,
         price_label: "₹1,999",
-        unit: "12 job credits",
+        unit: "12 Hops",
+        hops: 12,
         credits: 12,
         duration_days: null,
         badge: "BEST VALUE · SAVE 45%",
-        features: ["12 job post credits (₹166/post)", "Use anytime — no expiry", "Priority applicant matching", "Direct contact unlock on 3 leads"],
+        features: ["12 job post Hops (₹166/Hop)", "Use anytime — no expiry", "Priority applicant matching", "Direct contact unlock on 3 leads"],
+      },
+      {
+        plan_id: "scale-bundle",
+        section: "postings",
+        name: "Scale Pack",
+        price: 3799,
+        price_label: "₹3,799",
+        unit: "25 Hops",
+        hops: 25,
+        credits: 25,
+        duration_days: null,
+        badge: "PRO · SAVE 50%",
+        features: ["25 job post Hops (₹152/Hop)", "Use anytime — no expiry", "Priority applicant matching", "Featured employer badge on feed"],
       },
       {
         plan_id: "premium-boost",
@@ -174,6 +190,7 @@ function mockRouter(path, method = "GET", body = null) {
         price: 299,
         price_label: "₹299",
         unit: "per post add-on",
+        hops: 0,
         credits: 0,
         duration_days: null,
         badge: "ADD-ON",
@@ -218,7 +235,7 @@ function mockRouter(path, method = "GET", body = null) {
     return [
       {
         plan_id: "starter-bundle",
-        plan_name: "Starter Bundle (5 Job Credits)",
+        plan_name: "Starter Bundle (5 Job Hops)",
         price: 999,
         expires_at: null,
         status: "active",

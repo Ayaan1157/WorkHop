@@ -577,6 +577,37 @@ export function getCreditsWallet(userId) {
   return newWallet;
 }
 
+export const EMPLOYER_HOPS_KEY = "workhop_employer_hops";
+
+export function getEmployerHops(employerId = "employer-demo") {
+  try {
+    const raw = localStorage.getItem(EMPLOYER_HOPS_KEY);
+    const map = raw ? JSON.parse(raw) : {};
+    if (map[employerId] !== undefined) {
+      return Number(map[employerId]);
+    }
+    map[employerId] = 5; // Default 5 Hops active
+    localStorage.setItem(EMPLOYER_HOPS_KEY, JSON.stringify(map));
+    return 5;
+  } catch {
+    return 5;
+  }
+}
+
+export function addEmployerHops(employerId = "employer-demo", count = 5) {
+  try {
+    const raw = localStorage.getItem(EMPLOYER_HOPS_KEY);
+    const map = raw ? JSON.parse(raw) : {};
+    const current = map[employerId] !== undefined ? Number(map[employerId]) : 5;
+    const next = current + Number(count);
+    map[employerId] = next;
+    localStorage.setItem(EMPLOYER_HOPS_KEY, JSON.stringify(map));
+    return next;
+  } catch {
+    return 5 + Number(count);
+  }
+}
+
 export function getCreditTransactions(userId) {
   const id = userId || "freelancer-demo";
   const allTx = JSON.parse(localStorage.getItem(CREDITS_TRANSACTIONS_KEY) || "{}");
