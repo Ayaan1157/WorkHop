@@ -117,6 +117,13 @@ const CATEGORY_BENCHMARKS = {
   },
 };
 
+CATEGORY_BENCHMARKS["Tech & Code"] = CATEGORY_BENCHMARKS["Programming & Tech"];
+CATEGORY_BENCHMARKS["Marketing"] = CATEGORY_BENCHMARKS["Digital Marketing"];
+CATEGORY_BENCHMARKS["Writing"] = CATEGORY_BENCHMARKS["Writing & Translation"];
+CATEGORY_BENCHMARKS["Video"] = CATEGORY_BENCHMARKS["Video & Animation"];
+CATEGORY_BENCHMARKS["Hyperlocal Specialized (Bangalore Focus)"] = CATEGORY_BENCHMARKS["Graphics & Design"];
+CATEGORY_BENCHMARKS["Hyperlocal Specialized"] = CATEGORY_BENCHMARKS["Graphics & Design"];
+
 /**
  * Intelligent Market Price Estimation Algorithm for Indian Gig Economy
  * Evaluates category, title keywords, description scope, and location demand.

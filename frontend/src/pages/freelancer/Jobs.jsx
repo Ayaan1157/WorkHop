@@ -181,8 +181,18 @@ export default function Jobs() {
 
   const isVerified = isAdmin || !!status?.is_verified;
   const term = search.trim().toLowerCase();
-  const activeFilter = JOB_CATEGORY_FILTERS.find((f) => f.key === catFilter);
-  const inCat = (j) => catFilter === "ALL" || !activeFilter || activeFilter.cats.includes(j.category);
+  const activeFilter = JOB_CATEGORY_FILTERS.find((f) => f.key === catFilter || f.cats.includes(catFilter));
+  const inCat = (j) => {
+    if (catFilter === "ALL" || !activeFilter) return true;
+    const cat = (j.category || "").toLowerCase();
+    const bkt = (j.bucket || "").toLowerCase();
+    const filterKey = activeFilter.key.toLowerCase();
+    if (cat === filterKey || bkt === filterKey) return true;
+    return activeFilter.cats.some((c) => {
+      const cl = c.toLowerCase();
+      return cl === cat || cl === bkt || (cat && cat.includes(cl)) || (bkt && bkt.includes(cl));
+    });
+  };
 
   const passes = (j) => {
     if (viewTab === "saved" && !savedJobIds.includes(j.id)) return false;
@@ -690,6 +700,32 @@ export default function Jobs() {
                   );
                 })}
               </div>
+              {catFilter !== "ALL" && activeFilter && activeFilter.cats.length > 1 && (
+                <div className="mt-2 pt-2 border-t border-dashed border-ink/20">
+                  <p className="mb-1 text-[10px] font-bold text-inkmuted uppercase tracking-wider">
+                    SPECIALIZED SUB-DISCIPLINES (TAP TO FILTER):
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                    {activeFilter.cats.filter((c) => c !== catFilter && c !== activeFilter.key).map((sub) => {
+                      const isSubActive = search.toLowerCase() === sub.toLowerCase();
+                      return (
+                        <button
+                          key={sub}
+                          type="button"
+                          onClick={() => setSearch(isSubActive ? "" : sub)}
+                          className={`border border-ink/40 px-2 py-0.5 text-[10px] font-bold transition ${
+                            isSubActive
+                              ? "bg-brand text-white border-ink shadow-[1px_1px_0px_#121212]"
+                              : "bg-sand/60 text-ink dark:bg-[#202020] dark:text-stone-300 hover:bg-sand"
+                          }`}
+                        >
+                          {sub}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-ink/20 pt-3">

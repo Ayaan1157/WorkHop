@@ -3,16 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 import { Shell, TopBar, Spinner, CatIcon } from "@/components/kit";
 import { CATEGORY_VISUALS } from "@/lib/catalogFilters";
+import { getStoredCatalog } from "@/lib/clientStore";
 import { apiGet } from "@/lib/api";
 
 export default function Categories() {
   const nav = useNavigate();
-  const [catalog, setCatalog] = useState([]);
+  const [catalog, setCatalog] = useState(() => getStoredCatalog());
   const [open, setOpen] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    apiGet("/catalog").then(setCatalog).catch(() => {}).finally(() => setLoading(false));
+    apiGet("/catalog")
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCatalog(data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const goSearch = (term) => nav(`/freelancer/jobs?q=${encodeURIComponent(term)}`);

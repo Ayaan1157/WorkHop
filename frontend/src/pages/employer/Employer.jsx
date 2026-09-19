@@ -66,11 +66,23 @@ export default function Employer() {
   };
 
   const term = search.trim().toLowerCase();
-  const activeFilter = LEAD_CATEGORY_FILTERS.find((f) => f.key === catFilter);
+  const activeFilter = LEAD_CATEGORY_FILTERS.find((f) => f.key === catFilter || f.cats.includes(catFilter));
 
   const base = leads.filter((l) => {
     if (onlySaved && !savedPros.includes(String(l.id))) return false;
-    if (catFilter !== "ALL" && activeFilter && !activeFilter.cats.includes(l.skill) && l.category !== catFilter) return false;
+    if (catFilter !== "ALL" && activeFilter) {
+      const proCat = (l.category || l.bucket || "").toLowerCase();
+      const proSkill = (l.skill || "").toLowerCase();
+      const filterKey = activeFilter.key.toLowerCase();
+      const inThisCat =
+        proCat === filterKey ||
+        proSkill === filterKey ||
+        activeFilter.cats.some((c) => {
+          const cl = c.toLowerCase();
+          return cl === proSkill || cl === proCat || proSkill.includes(cl) || proCat.includes(cl);
+        });
+      if (!inThisCat) return false;
+    }
     if (minRating && (l.rating || 0) < minRating) return false;
     if (!term) return true;
     return (

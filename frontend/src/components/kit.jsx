@@ -7,7 +7,7 @@ import {
   Sun, Moon, Menu, X, Home, Shield, FileText, ArrowRight
 } from "lucide-react";
 import { apiGet } from "@/lib/api";
-import { CATEGORY_VISUALS, CATEGORY_SHORT_LABELS } from "@/lib/catalogFilters";
+import { CATEGORY_VISUALS, CATEGORY_SHORT_LABELS, CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import NotificationBell from "@/components/NotificationBell";
@@ -27,7 +27,7 @@ import SiteFooter from "@/components/SiteFooter";
 const ICONS = {
   grid: Grid3x3, palette: Palette, code: Code2, megaphone: Megaphone,
   pen: PenLine, video: Video, sparkles: Sparkles, music: Music,
-  briefcase: Briefcase, users: Users,
+  briefcase: Briefcase, users: Users, "map-pin": MapPin, mapPin: MapPin, location: MapPin,
 };
 
 export function CatIcon({ name, className = "", ...props }) {
@@ -576,11 +576,11 @@ export function Shell({ children, className = "" }) {
 
 // Horizontal scrollable 9-category filters
 export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" }) {
-  const [cats, setCats] = useState(["ALL"]);
+  const [cats, setCats] = useState(["ALL", ...CATALOG_CATEGORY_NAMES]);
   useEffect(() => {
     apiGet("/catalog")
       .then((d) => {
-        if (Array.isArray(d)) setCats(["ALL", ...d.map((c) => c.category)]);
+        if (Array.isArray(d) && d.length > 0) setCats(["ALL", ...d.map((c) => c.category)]);
       })
       .catch(() => {});
   }, []);

@@ -4,7 +4,7 @@ import {
   CheckCircle2, Loader2, LocateFixed, ShieldCheck, MapPin, Sparkles, AlertCircle, Coins, Zap
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
-import { CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
+import { CATALOG_CATEGORY_NAMES, DISCIPLINES_CATALOG } from "@/lib/catalogFilters";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { BENGALURU_AREAS, findNearestArea, getAreaCoordinates } from "@/lib/locationAreas";
@@ -238,6 +238,29 @@ export default function PostJob() {
                 </button>
               ))}
             </div>
+            {(() => {
+              const catObj = DISCIPLINES_CATALOG.find((d) => d.category === bucket);
+              if (!catObj || !catObj.subcategories.length) return null;
+              return (
+                <div className="mt-2 flex flex-col gap-1 rounded border border-ink/30 bg-sand/40 dark:bg-[#202020] p-2.5">
+                  <span className="text-[10px] font-black tracking-wider text-inkmuted dark:text-stone-400">
+                    BANGALORE SUB-DISCIPLINES (TAP TO PREFILL TITLE):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+                    {catObj.subcategories.map((sub) => (
+                      <button
+                        key={sub}
+                        type="button"
+                        onClick={() => setTitle(sub)}
+                        className="border border-ink/40 bg-white dark:bg-[#181818] px-2 py-1 text-[11px] font-bold text-ink dark:text-stone-200 hover:bg-brand hover:text-white transition shadow-[1px_1px_0px_#121212]"
+                      >
+                        + {sub}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           <div className="flex flex-col gap-1.5">

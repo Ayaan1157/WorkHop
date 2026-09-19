@@ -1,5 +1,6 @@
 import leadsSeed from "@/data/leads.json";
 import jobsSeed from "@/data/jobs.json";
+import { DISCIPLINES_CATALOG } from "@/lib/catalogFilters";
 
 const CUSTOM_JOBS_KEY = "workhop_custom_jobs";
 const USER_KEY = "workhop_user_data";
@@ -249,22 +250,12 @@ export function toggleSavePro(id) {
 // 4. Catalog
 export function getStoredCatalog() {
   const jobs = getStoredJobs();
-  const categories = [
-    { category: "Graphics & Design", subcategories: ["Logo Design", "Brand Identity", "Packaging", "Flyers & Brochures", "UI/UX Design"] },
-    { category: "Programming & Tech", subcategories: ["Web Development", "React / Next.js", "Flutter & Mobile Apps", "Shopify Setup", "Bug Fixing"] },
-    { category: "Digital Marketing", subcategories: ["Instagram Reels & Ads", "Google SEO", "Influencer Outreach", "Local Business Ads"] },
-    { category: "Writing & Translation", subcategories: ["Content Writing", "Copywriting", "Translations", "Scriptwriting"] },
-    { category: "Video & Animation", subcategories: ["Video Editing", "Reels & Shorts", "Motion Graphics", "Product Demos"] },
-    { category: "AI Services", subcategories: ["ChatGPT / LLM Prompts", "AI Image Generation", "AI Automation Workflows"] },
-    { category: "Music & Audio", subcategories: ["Voice Over", "Audio Mixing", "Podcast Editing", "Sound Design"] },
-    { category: "Business", subcategories: ["Pitch Decks", "Financial Modeling", "Market Research", "GST & Legal Filings"] },
-    { category: "Consulting", subcategories: ["Startup Strategy", "Career Coaching", "Design Consulting", "Tech Architecture"] },
-  ];
-
-  return categories.map((c) => ({
+  return DISCIPLINES_CATALOG.map((c) => ({
     category: c.category,
+    icon: c.icon,
+    bg: c.bg,
     subcategories: c.subcategories,
-    count: jobs.filter((j) => (j.category || "").toLowerCase().includes(c.category.toLowerCase()) || (j.bucket || "").toLowerCase().includes(c.category.toLowerCase())).length || 5,
+    count: jobs.filter((j) => (j.category || "").toLowerCase().includes(c.category.toLowerCase()) || (j.bucket || "").toLowerCase().includes(c.category.toLowerCase())).length || c.subcategories.length,
   }));
 }
 
