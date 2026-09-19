@@ -194,13 +194,13 @@ export default function Plans() {
           )}
 
           {/* CATEGORY TABS */}
-          <div className="flex border-b-2 border-ink bg-sand mb-6 overflow-x-auto">
+          <div className="flex border-b-2 border-ink bg-sand dark:bg-[#1a1a1e] mb-6 overflow-x-auto">
             <button
               onClick={() => setActiveTab("all")}
               className={`border-r-2 border-ink px-4 py-3 text-xs font-black tracking-wide whitespace-nowrap transition ${
                 activeTab === "all"
-                  ? "bg-white text-ink border-b-2 border-b-white -mb-[2px]"
-                  : "text-inkmuted hover:text-ink hover:bg-sand/80"
+                  ? "bg-white text-ink dark:bg-[#161618] dark:text-white border-b-2 border-b-white dark:border-b-[#161618] -mb-[2px]"
+                  : "text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white hover:bg-sand/80 dark:hover:bg-[#25252a]"
               }`}
             >
               ALL PLANS ({plans.length})
@@ -209,8 +209,8 @@ export default function Plans() {
               onClick={() => setActiveTab("postings")}
               className={`border-r-2 border-ink px-4 py-3 text-xs font-black tracking-wide whitespace-nowrap flex items-center gap-1.5 transition ${
                 activeTab === "postings"
-                  ? "bg-white text-ink border-b-2 border-b-white -mb-[2px]"
-                  : "text-inkmuted hover:text-ink hover:bg-sand/80"
+                  ? "bg-white text-ink dark:bg-[#161618] dark:text-white border-b-2 border-b-white dark:border-b-[#161618] -mb-[2px]"
+                  : "text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white hover:bg-sand/80 dark:hover:bg-[#25252a]"
               }`}
             >
               <Coins size={14} className="text-brand" />
@@ -220,11 +220,11 @@ export default function Plans() {
               onClick={() => setActiveTab("branding")}
               className={`border-r-2 border-ink px-4 py-3 text-xs font-black tracking-wide whitespace-nowrap flex items-center gap-1.5 transition ${
                 activeTab === "branding"
-                  ? "bg-white text-ink border-b-2 border-b-white -mb-[2px]"
-                  : "text-inkmuted hover:text-ink hover:bg-sand/80"
+                  ? "bg-white text-ink dark:bg-[#161618] dark:text-white border-b-2 border-b-white dark:border-b-[#161618] -mb-[2px]"
+                  : "text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white hover:bg-sand/80 dark:hover:bg-[#25252a]"
               }`}
             >
-              <Building2 size={14} className="text-ink" />
+              <Building2 size={14} className="text-ink dark:text-zinc-300" />
               EMPLOYER BRANDING &amp; ADS ({brandingPlans.length})
             </button>
           </div>
@@ -239,7 +239,7 @@ export default function Plans() {
               />
 
               {/* UPWORK-STYLE BUY HOPS CONTAINER */}
-              <div className="mt-4 border-2 border-ink bg-white p-5 sm:p-7 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
+              <div className="mt-4 border-2 border-ink bg-white dark:bg-[#161618] p-5 sm:p-7 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
                 {/* UPWORK HEADER: AVAILABLE BALANCE */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-ink/15 gap-4">
                   <div>
@@ -247,16 +247,16 @@ export default function Plans() {
                       <span className="flex h-7 w-7 items-center justify-center border border-ink bg-[#FFF3C4] text-brand">
                         <Coins size={15} />
                       </span>
-                      <h3 className="text-lg font-black tracking-tight text-ink uppercase">
+                      <h3 className="text-lg font-black tracking-tight text-ink dark:text-white uppercase">
                         Buy Hops
                       </h3>
                     </div>
-                    <p className="text-xs text-inkmuted font-medium mt-1">
+                    <p className="text-xs text-inkmuted dark:text-zinc-300 font-medium mt-1">
                       Hops are used to post verified gigs and broadcast requirements to skilled talent in your 5km radius.
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 bg-sand/60 border border-ink/30 px-4 py-2.5 shrink-0">
-                    <span className="text-[11px] font-bold text-inkmuted uppercase tracking-wider">
+                  <div className="flex items-center gap-3 bg-sand/60 dark:bg-[#222226] border border-ink/30 px-4 py-2.5 shrink-0">
+                    <span className="text-[11px] font-bold text-inkmuted dark:text-zinc-300 uppercase tracking-wider">
                       Your available balance:
                     </span>
                     <span className="text-base font-black text-brand">
@@ -268,10 +268,10 @@ export default function Plans() {
                 {/* UPWORK SELECTOR SECTION */}
                 <div className="mt-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                    <label className="text-xs font-black uppercase tracking-wider text-ink">
+                    <label className="text-xs font-black uppercase tracking-wider text-ink dark:text-white">
                       Select the number of Hops to buy
                     </label>
-                    <span className="text-[11px] text-inkmuted font-medium">
+                    <span className="text-[11px] text-inkmuted dark:text-zinc-300 font-medium">
                       1 Hop = ₹299 (Save up to 50% on larger bundles)
                     </span>
                   </div>
@@ -288,8 +288,8 @@ export default function Plans() {
                           onClick={() => setSelectedBundleId(b.plan_id)}
                           className={`cursor-pointer border-2 p-4 transition text-left relative flex flex-col justify-between ${
                             isSelected
-                              ? "border-brand bg-brand/5 shadow-[0_4px_16px_-2px_rgba(230,90,30,0.15)] ring-2 ring-brand"
-                              : "border-ink/30 bg-white hover:border-ink hover:bg-sand/30"
+                              ? "border-brand bg-brand/5 dark:bg-brand/10 shadow-[0_4px_16px_-2px_rgba(230,90,30,0.15)] ring-2 ring-brand"
+                              : "border-ink/30 bg-white dark:bg-[#1e1e22] hover:border-ink hover:bg-sand/30 dark:hover:bg-[#25252a]"
                           }`}
                         >
                           {b.badge && (
@@ -305,7 +305,7 @@ export default function Plans() {
                           )}
                           <div>
                             <div className="flex items-center justify-between">
-                              <span className="text-base font-black text-ink">
+                              <span className="text-base font-black text-ink dark:text-white">
                                 {hopCount} {hopCount === 1 ? "Hop" : "Hops"}
                               </span>
                               <div
@@ -317,12 +317,12 @@ export default function Plans() {
                               </div>
                             </div>
                             <div className="mt-2 flex items-baseline gap-1">
-                              <span className="text-2xl font-black text-ink">{b.price_label}</span>
-                              <span className="text-[11px] text-inkmuted font-bold">
+                              <span className="text-2xl font-black text-ink dark:text-white">{b.price_label}</span>
+                              <span className="text-[11px] text-inkmuted dark:text-zinc-300 font-bold">
                                 (₹{unitRate}/hop)
                               </span>
                             </div>
-                            <p className="text-[11px] text-inkmuted mt-1 leading-snug">
+                            <p className="text-[11px] text-inkmuted dark:text-zinc-400 mt-1 leading-snug">
                               {b.name} · Instant wallet credit
                             </p>
                           </div>
@@ -333,33 +333,33 @@ export default function Plans() {
 
                   {/* UPWORK ORDER SUMMARY / RECEIPT BOX */}
                   {selectedUpworkBundle && (
-                    <div className="mt-6 border-2 border-ink/20 bg-sand/40 p-4 sm:p-5">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-inkmuted mb-3">
+                    <div className="mt-6 border-2 border-ink/20 bg-sand/40 dark:bg-[#202024] p-4 sm:p-5">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-inkmuted dark:text-zinc-300 mb-3">
                         Order Summary
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b border-ink/15 text-xs">
                         <div>
-                          <p className="text-inkmuted font-semibold">Hops to add:</p>
-                          <p className="text-sm font-black text-ink mt-0.5">
+                          <p className="text-inkmuted dark:text-zinc-300 font-semibold">Hops to add:</p>
+                          <p className="text-sm font-black text-ink dark:text-white mt-0.5">
                             +{selectedUpworkBundle.hops || selectedUpworkBundle.credits || 1} Hops
                           </p>
                         </div>
                         <div>
-                          <p className="text-inkmuted font-semibold">Your new Hop balance will be:</p>
+                          <p className="text-inkmuted dark:text-zinc-300 font-semibold">Your new Hop balance will be:</p>
                           <p className="text-sm font-black text-brand mt-0.5">
                             {currentHopCount + (selectedUpworkBundle.hops || selectedUpworkBundle.credits || 1)} Hops
                           </p>
                         </div>
                         <div>
-                          <p className="text-inkmuted font-semibold">Your account will be charged:</p>
-                          <p className="text-base font-black text-ink mt-0.5">
+                          <p className="text-inkmuted dark:text-zinc-300 font-semibold">Your account will be charged:</p>
+                          <p className="text-base font-black text-ink dark:text-white mt-0.5">
                             {selectedUpworkBundle.price_label}
                           </p>
                         </div>
                       </div>
 
                       <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 text-xs text-inkmuted font-semibold">
+                        <div className="flex items-center gap-2 text-xs text-inkmuted dark:text-zinc-300 font-semibold">
                           <ShieldCheck size={16} className="text-ok shrink-0" />
                           <span>
                             These Hops never expire as long as your account remains open. Hops roll over each month.
@@ -428,7 +428,7 @@ export default function Plans() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="w-full max-w-lg border-2 border-ink bg-white p-6 shadow-2xl"
+            className="w-full max-w-lg border-2 border-ink bg-white dark:bg-[#161618] p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {paySuccess ? (
@@ -437,8 +437,8 @@ export default function Plans() {
                 className="flex flex-col items-center gap-3 py-8 text-center animate-in fade-in"
               >
                 <CheckCircle2 size={56} className="text-ok" />
-                <p className="text-2xl font-black text-ink">Payment successful!</p>
-                <p className="text-xs text-inkmuted max-w-xs font-semibold">
+                <p className="text-2xl font-black text-ink dark:text-white">Payment successful!</p>
+                <p className="text-xs text-inkmuted dark:text-zinc-300 max-w-xs font-semibold">
                   {selected.name} is now active on your account.{" "}
                   {(selected.hops || selected.credits) ? (
                     <span className="text-brand font-black">
@@ -455,42 +455,42 @@ export default function Plans() {
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-extrabold tracking-[0.15em] text-inkmuted uppercase">
+                  <p className="text-[10px] font-extrabold tracking-[0.15em] text-inkmuted dark:text-zinc-400 uppercase">
                     WORKHOP × RAZORPAY CHECKOUT
                   </p>
                   {(selected.hops || selected.credits) > 0 && (
-                    <span className="flex items-center gap-1 border border-ink/30 bg-sand px-2 py-0.5 text-[10px] font-black text-brand">
+                    <span className="flex items-center gap-1 border border-ink/30 bg-sand dark:bg-[#242428] px-2 py-0.5 text-[10px] font-black text-brand">
                       <Coins size={12} />
                       +{selected.hops || selected.credits} HOPS
                     </span>
                   )}
                 </div>
 
-                <p className="text-3xl sm:text-4xl font-black tracking-tight text-ink mt-1">
+                <p className="text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white mt-1">
                   Pay {finalLabel}
                 </p>
-                <p className="text-xs text-inkmuted font-bold mt-1">
+                <p className="text-xs text-inkmuted dark:text-zinc-300 font-bold mt-1">
                   {selected.name} · {selected.unit}
                 </p>
 
                 {/* UPWORK BALANCE MATH */}
                 {(selected.hops || selected.credits) > 0 && (
-                  <div className="mt-3 flex items-center justify-between border border-ink/20 bg-sand/50 p-2.5 text-xs">
-                    <span className="text-inkmuted font-semibold">
-                      Current balance: <strong className="text-ink">{currentHopCount} Hops</strong>
+                  <div className="mt-3 flex items-center justify-between border border-ink/20 bg-sand/50 dark:bg-[#202024] p-2.5 text-xs">
+                    <span className="text-inkmuted dark:text-zinc-300 font-semibold">
+                      Current balance: <strong className="text-ink dark:text-white">{currentHopCount} Hops</strong>
                     </span>
-                    <ArrowRight size={13} className="text-inkmuted" />
+                    <ArrowRight size={13} className="text-inkmuted dark:text-zinc-400" />
                     <span className="text-brand font-black">
                       New balance: {currentHopCount + (selected.hops || selected.credits)} Hops
                     </span>
                   </div>
                 )}
 
-                <div className="my-4 border-2 border-ink bg-sand p-3.5">
-                  <p className="text-[10px] font-extrabold tracking-wide text-inkmuted uppercase">
+                <div className="my-4 border-2 border-ink bg-sand dark:bg-[#202024] p-3.5">
+                  <p className="text-[10px] font-extrabold tracking-wide text-inkmuted dark:text-zinc-300 uppercase">
                     INCLUDED IN THIS PLAN
                   </p>
-                  <div className="mt-2 flex flex-col gap-1 text-xs font-bold text-ink">
+                  <div className="mt-2 flex flex-col gap-1 text-xs font-bold text-ink dark:text-zinc-200">
                     {(selected.features || []).map((f) => (
                       <div key={f} className="flex items-center gap-1.5">
                         <Check size={13} className="text-ok shrink-0" />
@@ -514,7 +514,7 @@ export default function Plans() {
                   data-testid="plan-pay-confirm-btn"
                   onClick={handlePay}
                   disabled={paying}
-                  className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-4 text-sm font-black text-white disabled:opacity-60 hover:bg-brand transition active:translate-y-0.5 shadow-sm"
+                  className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-4 text-sm font-black text-white disabled:opacity-60 hover:bg-brand/90 transition active:translate-y-0.5 shadow-sm"
                 >
                   {paying ? (
                     <>
@@ -524,7 +524,7 @@ export default function Plans() {
                     `Pay ${finalLabel} with Razorpay`
                   )}
                 </button>
-                <p className="mt-2 text-center text-[11px] text-inkmuted">
+                <p className="mt-2 text-center text-[11px] text-inkmuted dark:text-zinc-400">
                   🔒 Razorpay Test Mode · Test Card: 4111 1111 1111 1111
                 </p>
               </>
@@ -540,14 +540,14 @@ const Section = ({ tag, title, sub, dark }) => (
   <div className="mt-2 flex items-center gap-3">
     <span
       className={`flex h-8 w-8 items-center justify-center border-2 border-ink text-sm font-black text-white ${
-        dark ? "bg-ink" : "bg-brand"
+        dark ? "bg-ink dark:bg-zinc-800" : "bg-brand"
       }`}
     >
       {tag}
     </span>
     <div>
-      <p className="text-base font-black text-ink">{title}</p>
-      <p className="text-[11px] text-inkmuted font-semibold">{sub}</p>
+      <p className="text-base font-black text-ink dark:text-white">{title}</p>
+      <p className="text-[11px] text-inkmuted dark:text-zinc-300 font-semibold">{sub}</p>
     </div>
   </div>
 );
@@ -558,12 +558,12 @@ function PlanCard({ plan, onBuy, enterprise }) {
     <div
       data-testid={`plan-card-${plan.plan_id}`}
       className={`flex flex-col justify-between border-2 border-ink p-5 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] transition hover:border-brand ${
-        enterprise ? "bg-ink text-white" : "bg-white text-ink"
+        enterprise ? "bg-ink text-white dark:bg-[#1a1a1e] dark:text-white" : "bg-white text-ink dark:bg-[#161618] dark:text-white"
       }`}
     >
       <div>
         <div className="flex items-center justify-between gap-2">
-          <p className={`text-base font-black ${enterprise ? "!text-white text-white" : "text-ink"}`} style={enterprise ? { color: "#FFFFFF" } : undefined}>
+          <p className="text-base font-black text-ink dark:text-white">
             {plan.name}
           </p>
           {plan.badge && (
@@ -582,20 +582,10 @@ function PlanCard({ plan, onBuy, enterprise }) {
         </div>
 
         <div className="mt-3 flex items-baseline gap-1.5 border-b border-ink/20 pb-3">
-          <span
-            className={`text-3xl font-black tracking-tight ${
-              enterprise ? "!text-white text-white" : "text-ink"
-            }`}
-            style={enterprise ? { color: "#FFFFFF" } : undefined}
-          >
+          <span className="text-3xl font-black tracking-tight text-ink dark:text-white">
             {plan.price_label}
           </span>
-          <span
-            className={`text-xs font-bold ${
-              enterprise ? "!text-stone-300 text-stone-300" : "text-inkmuted"
-            }`}
-            style={enterprise ? { color: "#D6D6D6" } : undefined}
-          >
+          <span className="text-xs font-bold text-inkmuted dark:text-zinc-300">
             / {plan.unit}
           </span>
         </div>
@@ -605,15 +595,9 @@ function PlanCard({ plan, onBuy, enterprise }) {
             <div key={f} className="flex items-start gap-2">
               <Check
                 size={14}
-                className={`mt-0.5 shrink-0 ${enterprise ? "!text-brand text-brand" : "text-ok"}`}
-                style={enterprise ? { color: "#E65A1E" } : undefined}
+                className="mt-0.5 shrink-0 text-brand dark:text-brand"
               />
-              <span
-                className={`text-xs font-semibold leading-4 ${
-                  enterprise ? "!text-white text-white" : "text-ink"
-                }`}
-                style={enterprise ? { color: "#FFFFFF" } : undefined}
-              >
+              <span className="text-xs font-semibold leading-4 text-ink dark:text-zinc-200">
                 {f}
               </span>
             </div>
@@ -624,16 +608,12 @@ function PlanCard({ plan, onBuy, enterprise }) {
       <button
         data-testid={`plan-buy-${plan.plan_id}`}
         onClick={onBuy}
-        className={`mt-2 flex w-full items-center justify-center gap-2 border-2 py-3 text-xs font-black tracking-wider !text-white text-white transition active:translate-y-0.5 ${
-          enterprise
-            ? "border-brand bg-brand hover:bg-brand/90"
-            : "border-ink bg-ink hover:bg-brand hover:border-brand"
-        }`}
+        className="mt-2 flex w-full items-center justify-center gap-2 border-2 py-3 text-xs font-black tracking-wider text-white transition active:translate-y-0.5 border-ink bg-brand hover:bg-brand/90 shadow-sm"
       >
-        <span className="!text-white text-white font-black" style={{ color: "#FFFFFF" }}>
+        <span className="text-white font-black">
           {hopCount > 0 ? `Buy ${hopCount} ${hopCount === 1 ? "Hop" : "Hops"} · ${plan.price_label}` : `Buy ${plan.price_label}`}
         </span>
-        <ArrowRight size={14} className="!text-white text-white shrink-0" style={{ color: "#FFFFFF" }} />
+        <ArrowRight size={14} className="text-white shrink-0" />
       </button>
     </div>
   );

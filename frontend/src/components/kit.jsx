@@ -551,7 +551,7 @@ export function TopBar({ title, sub, right, onBack, backTestID = "topbar-back-bt
             {title}
           </h1>
           {sub && (
-            <p className="truncate text-[10px] sm:text-[11px] font-semibold text-inkmuted dark:text-stone-400">
+            <p className="truncate text-[10px] sm:text-[11px] font-semibold text-inkmuted dark:text-zinc-300">
               {sub}
             </p>
           )}
@@ -565,7 +565,7 @@ export function TopBar({ title, sub, right, onBack, backTestID = "topbar-back-bt
 // Shell component (Full width responsive container with bottom nav and footer)
 export function Shell({ children, className = "" }) {
   return (
-    <div className={`min-h-screen w-full bg-white dark:bg-[#0f0f10] text-ink dark:text-white flex flex-col ${className}`}>
+    <div className={`min-h-screen w-full bg-[#F8F7F4] dark:bg-[#0f0f10] text-ink dark:text-white flex flex-col ${className}`}>
       <GlobalNav />
       <main className="w-full flex-1">{children}</main>
       <SiteFooter />

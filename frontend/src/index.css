@@ -127,126 +127,135 @@ body {
     border-color: var(--color-border-ink);
 }
 
-/* ═══════ Dark mode global surfaces ═══════ */
-.dark body,
-.dark .bg-white {
-    background-color: var(--color-surface) !important;
+/* ═══════ PAIRED COLOR TOKENS & SITE-WIDE HIGH-CONTRAST SYSTEM ═══════ */
+
+/* ── 1. Light Mode General Surfaces (Solid Black Text #111111 on Light) ── */
+html:not(.dark) {
+    --color-surface: #F8F7F4;
+    --color-surface-elevated: #FFFFFF;
+    --color-sand: #EFECE6;
+    --color-stone: #E5E2DA;
+    --color-ink: #111111;
+    --color-inkmuted: #555555;
+    --color-border-ink: #303030;
+    --color-brand: #E65A1E;
+    --color-ok: #00A86B;
+    --color-danger: #E63946;
 }
 
-.dark .min-h-screen.bg-white,
-.dark .bg-white.text-ink {
-    background-color: var(--color-surface) !important;
-}
-
-/* Cards & elevated surfaces in dark mode */
-.dark .border-2.border-ink.bg-white,
-.dark .border-ink.bg-white,
-.dark [class~="bg-white"][class*="border"]:not([class*="dark:bg-"]) {
-    background-color: var(--color-surface-elevated) !important;
-}
-
-.dark .border-2.border-ink {
-    border-color: #333 !important;
-}
-
-.dark .border-b-2.border-ink {
-    border-color: #2a2a2a !important;
-}
-
-/* ═══════ CRITICAL: SOLID BLACK TEXT ON ALL LIGHT-COLORED SURFACES ═══════ */
-/* In both Light Mode and Dark Mode, ANY element on a white, sand, stone, or pastel/light background MUST have solid #121212 black text */
-.bg-white,
-.bg-white :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not([class~="bg-ink"] *):not([class~="bg-black"] *):not([class~="bg-brand"] *):not([class~="bg-[#121212]"] *):not([class~="bg-[#1a1a1a]"] *):not([class~="bg-[#222]"] *):not([class~="bg-[#2a2a2a]"] *):not(button.bg-ink *):not(button.bg-black *):not(button.bg-brand *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-.bg-sand,
-.bg-sand :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not([class~="bg-ink"] *):not([class~="bg-black"] *):not([class~="bg-brand"] *):not([class~="bg-[#121212]"] *):not([class~="bg-[#1a1a1a]"] *):not([class~="bg-[#222]"] *):not([class~="bg-[#2a2a2a]"] *):not(button.bg-ink *):not(button.bg-black *):not(button.bg-brand *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-.bg-stone,
-.bg-stone :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not([class~="bg-ink"] *):not([class~="bg-black"] *):not([class~="bg-brand"] *):not([class~="bg-[#121212]"] *):not([class~="bg-[#1a1a1a]"] *):not([class~="bg-[#222]"] *):not([class~="bg-[#2a2a2a]"] *):not(button.bg-ink *):not(button.bg-black *):not(button.bg-brand *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-white"],
-[class~="bg-white"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not([class~="bg-ink"] *):not([class~="bg-black"] *):not([class~="bg-brand"] *):not([class~="bg-[#121212]"] *):not([class~="bg-[#1a1a1a]"] *):not([class~="bg-[#222]"] *):not([class~="bg-[#2a2a2a]"] *):not(button.bg-ink *):not(button.bg-black *):not(button.bg-brand *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-sand"],
-[class~="bg-sand"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not([class~="bg-ink"] *):not([class~="bg-black"] *):not([class~="bg-brand"] *):not([class~="bg-[#121212]"] *):not([class~="bg-[#1a1a1a]"] *):not([class~="bg-[#222]"] *):not([class~="bg-[#2a2a2a]"] *):not(button.bg-ink *):not(button.bg-black *):not(button.bg-brand *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-stone"],
-[class~="bg-stone"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not([class~="bg-ink"] *):not([class~="bg-black"] *):not([class~="bg-brand"] *):not([class~="bg-[#121212]"] *):not([class~="bg-[#1a1a1a]"] *):not([class~="bg-[#222]"] *):not([class~="bg-[#2a2a2a]"] *):not(button.bg-ink *):not(button.bg-black *):not(button.bg-brand *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FFF3C4]"],
-[class*="bg-[#FFF3C4]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FFEAA0]"],
-[class*="bg-[#FFEAA0]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#E5F8EE]"],
-[class*="bg-[#E5F8EE]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#D8F3DC]"],
-[class*="bg-[#D8F3DC]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FEF3C7]"],
-[class*="bg-[#FEF3C7]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FFEBEE]"],
-[class*="bg-[#FFEBEE]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FFF8E7]"],
-[class*="bg-[#FFF8E7]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FFF3D6]"],
-[class*="bg-[#FFF3D6]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FFE8D6]"],
-[class*="bg-[#FFE8D6]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FFF3E9]"],
-[class*="bg-[#FFF3E9]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FFF9E6]"],
-[class*="bg-[#FFF9E6]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#E8F5E9]"],
-[class*="bg-[#E8F5E9]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#F3E5F5]"],
-[class*="bg-[#F3E5F5]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#E0F7FA]"],
-[class*="bg-[#E0F7FA]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FCE4EC]"],
-[class*="bg-[#FCE4EC]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#FFF8E1]"],
-[class*="bg-[#FFF8E1]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#EFEBE9]"],
-[class*="bg-[#EFEBE9]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#f0f0f0]"],
-[class*="bg-[#f0f0f0]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#f7f7f7]"],
-[class*="bg-[#f7f7f7]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#fafafa]"],
-[class*="bg-[#fafafa]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#ffffff]"],
-[class*="bg-[#ffffff]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-[#fff]"],
-[class*="bg-[#fff]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-amber-100"],
-[class*="bg-amber-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-yellow-100"],
-[class*="bg-yellow-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-emerald-100"],
-[class*="bg-emerald-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-green-100"],
-[class*="bg-green-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-orange-100"],
-[class*="bg-orange-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-red-100"],
-[class*="bg-red-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-blue-100"],
-[class*="bg-blue-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-stone-100"],
-[class*="bg-stone-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-zinc-100"],
-[class*="bg-zinc-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-gray-100"],
-[class*="bg-gray-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-neutral-100"],
-[class*="bg-neutral-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class*="bg-slate-100"],
-[class*="bg-slate-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+/* Light mode defaults: solid black text */
 html:not(.dark) body,
-html:not(.dark) body :is(h1, h2, h3, h4, h5, h6, p, span, label, a, li, strong, b, small, em):not([class~="bg-ink"] *):not([class~="bg-black"] *):not([class~="bg-brand"] *):not([class~="bg-[#121212]"] *):not([class~="bg-[#141414]"] *):not([class~="bg-[#161618]"] *):not([class~="bg-[#18181b]"] *):not([class~="bg-[#1a1a1a]"] *):not([class~="bg-[#1b1b1b]"] *):not([class~="bg-[#1c1c1c]"] *):not([class~="bg-[#1e1e1e]"] *):not([class~="bg-[#0f0f10]"] *):not([class~="bg-[#222]"] *):not([class~="bg-[#252525]"] *):not([class~="bg-[#282012]"] *):not([class~="bg-[#2a2a2a]"] *):not([class~="bg-[#333]"] *):not([class~="bg-zinc-800"] *):not([class~="bg-zinc-900"] *):not([class~="bg-zinc-950"] *):not([class~="bg-neutral-800"] *):not([class~="bg-neutral-900"] *):not([class~="bg-gray-800"] *):not([class~="bg-gray-900"] *):not([class~="bg-stone-800"] *):not([class~="bg-stone-900"] *):not([data-testid="unverified-banner"] *):not(button[class~="bg-ink"] *):not(button[class~="bg-black"] *):not(button[class~="bg-brand"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-html:not(.dark) .text-ink,
-html:not(.dark) .text-black,
-html:not(.dark) .text-inkmuted,
-html:not(.dark) [class~="text-ink"],
-html:not(.dark) [class~="text-black"] {
-    color: #121212 !important;
+html:not(.dark) [class*="text-ink"],
+html:not(.dark) .text-ink {
+    color: #111111;
 }
 
-/* ═══════ DARK BACKGROUNDS: CRISP WHITE TEXT ═══════ */
-/* Any element sitting on an explicitly dark background gets solid white text */
+html:not(.dark) [class*="text-inkmuted"],
+html:not(.dark) .text-inkmuted {
+    color: #555555;
+}
+
+/* ── 2. Dark Mode General Surfaces (Crisp White Text #FFFFFF on Dark) ── */
+html.dark {
+    --color-surface: #0f0f10;
+    --color-surface-elevated: #161618;
+    --color-sand: #1c1c1f;
+    --color-stone: #26262a;
+    --color-ink: #FFFFFF;
+    --color-inkmuted: #A1A1AA;
+    --color-border-ink: #383838;
+    --color-brand: #F06B2E;
+    --color-ok: #00C97B;
+    --color-danger: #FF4D5A;
+}
+
+/* Dark mode body and standard text */
+html.dark body,
+html.dark [class*="text-ink"],
+html.dark .text-ink {
+    color: #FFFFFF;
+}
+
+html.dark [class*="text-inkmuted"],
+html.dark .text-inkmuted {
+    color: #A1A1AA;
+}
+
+/* In dark mode, cards and elevated surfaces turn dark */
+html.dark .bg-white,
+html.dark [class~="bg-white"]:not([class*="bg-[#FFF3C4]"]):not([class*="bg-[#E5F8EE]"]):not([class*="bg-[#FFEAA0]"]):not([class*="bg-amber"]):not([class*="bg-emerald"]):not([class*="bg-green"]):not([class*="bg-yellow"]) {
+    background-color: var(--color-surface-elevated) !important;
+    color: #FFFFFF;
+}
+
+html.dark .bg-sand,
+html.dark [class~="bg-sand"] {
+    background-color: var(--color-sand) !important;
+    color: #FFFFFF;
+}
+
+html.dark .bg-stone,
+html.dark [class~="bg-stone"] {
+    background-color: var(--color-stone) !important;
+    color: #FFFFFF;
+}
+
+/* In dark mode: ensure headings, titles, labels, links, prices inside dark surfaces are crisp white */
+html.dark .bg-white :is(h1, h2, h3, h4, h5, h6, strong, b):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *),
+html.dark [class~="bg-white"] :is(h1, h2, h3, h4, h5, h6, strong, b):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *),
+html.dark .bg-sand :is(h1, h2, h3, h4, h5, h6, strong, b):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *),
+html.dark [class~="bg-sand"] :is(h1, h2, h3, h4, h5, h6, strong, b):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *),
+html.dark [class*="bg-[#1"] :is(h1, h2, h3, h4, h5, h6, strong, b):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *),
+html.dark [class*="bg-[#2"] :is(h1, h2, h3, h4, h5, h6, strong, b):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *) {
+    color: #FFFFFF !important;
+}
+
+html.dark .bg-white :is(p, span, label, li, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *):not(button.bg-brand *):not(button.bg-ok *):not(button.bg-ink *),
+html.dark [class~="bg-white"] :is(p, span, label, li, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *):not(button.bg-brand *):not(button.bg-ok *):not(button.bg-ink *),
+html.dark .bg-sand :is(p, span, label, li, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *):not(button.bg-brand *):not(button.bg-ok *):not(button.bg-ink *),
+html.dark [class~="bg-sand"] :is(p, span, label, li, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *):not(button.bg-brand *):not(button.bg-ok *):not(button.bg-ink *),
+html.dark [class*="bg-[#1"] :is(p, span, label, li, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *):not(button.bg-brand *):not(button.bg-ok *):not(button.bg-ink *),
+html.dark [class*="bg-[#2"] :is(p, span, label, li, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-amber"] *):not([class*="bg-emerald"] *):not(button.bg-brand *):not(button.bg-ok *):not(button.bg-ink *) {
+    color: #D4D4D8;
+}
+
+/* ── 3. CRITICAL: EXPLICIT LIGHT & PASTEL SURFACES ALWAYS GET SOLID BLACK TEXT (#111111) ── */
+/* In BOTH Light and Dark mode, anything sitting on cream, mint, yellow, soft pastel, or white badge surfaces MUST have solid black text */
+[class*="bg-[#FFF3C4]"],
+[class*="bg-[#FFF3C4]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-[#FFEAA0]"],
+[class*="bg-[#FFEAA0]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-[#E5F8EE]"],
+[class*="bg-[#E5F8EE]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-[#D8F3DC]"],
+[class*="bg-[#D8F3DC]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-[#FEF3C7]"],
+[class*="bg-[#FEF3C7]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-[#FFEBEE]"],
+[class*="bg-[#FFEBEE]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-[#FFF8E7]"],
+[class*="bg-[#FFF8E7]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-[#E8F5E9]"],
+[class*="bg-[#E8F5E9]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-[#E0F7FA]"],
+[class*="bg-[#E0F7FA]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-[#F3E5F5]"],
+[class*="bg-[#F3E5F5]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-[#FCE4EC]"],
+[class*="bg-[#FCE4EC]"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-amber-100"],
+[class*="bg-amber-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-yellow-100"],
+[class*="bg-yellow-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-emerald-100"],
+[class*="bg-emerald-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
+[class*="bg-green-100"],
+[class*="bg-green-100"] :is(h1, h2, h3, h4, h5, h6, p, span, label, strong, b, small):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]) {
+    color: #111111 !important;
+}
+
+/* ── 4. BUTTONS & BADGES CONTRAST RULE ── */
+/* Dark & Brand buttons: ALWAYS solid white text #FFFFFF in both modes */
 button.bg-ink,
 button.bg-ink *,
 button.bg-black,
@@ -259,130 +268,76 @@ button[class~="bg-black"],
 button[class~="bg-black"] *,
 button[class~="bg-brand"],
 button[class~="bg-brand"] *,
-[class~="bg-ink"],
-[class~="bg-ink"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#D8F3DC]"] *):not([class*="bg-[#FEF3C7]"] *):not([class*="bg-[#FFEBEE]"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-black"],
-[class~="bg-black"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#D8F3DC]"] *):not([class*="bg-[#FEF3C7]"] *):not([class*="bg-[#FFEBEE]"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-brand"],
-[class~="bg-brand"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#D8F3DC]"] *):not([class*="bg-[#FEF3C7]"] *):not([class*="bg-[#FFEBEE]"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#121212]"],
-[class~="bg-[#121212]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#D8F3DC]"] *):not([class*="bg-[#FEF3C7]"] *):not([class*="bg-[#FFEBEE]"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#141414]"],
-[class~="bg-[#141414]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#161618]"],
-[class~="bg-[#161618]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#18181b]"],
-[class~="bg-[#18181b]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#1a1a1a]"],
-[class~="bg-[#1a1a1a]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#1b1b1b]"],
-[class~="bg-[#1b1b1b]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#1c1c1c]"],
-[class~="bg-[#1c1c1c]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#1e1e1e]"],
-[class~="bg-[#1e1e1e]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#0f0f10]"],
-[class~="bg-[#0f0f10]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#222]"],
-[class~="bg-[#222]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#252525]"],
-[class~="bg-[#252525]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#282012]"],
-[class~="bg-[#282012]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#2a2a2a]"],
-[class~="bg-[#2a2a2a]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-[#333]"],
-[class~="bg-[#333]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-[class~="bg-zinc-800"],
-[class~="bg-zinc-800"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em),
-[class~="bg-zinc-900"],
-[class~="bg-zinc-900"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em),
-[class~="bg-neutral-800"],
-[class~="bg-neutral-800"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em),
-[class~="bg-neutral-900"],
-[class~="bg-neutral-900"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em),
-[class~="bg-gray-800"],
-[class~="bg-gray-800"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em),
-[class~="bg-gray-900"],
-[class~="bg-gray-900"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em),
-[class~="bg-stone-800"],
-[class~="bg-stone-800"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em),
-[class~="bg-stone-900"],
-[class~="bg-stone-900"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em),
-[data-testid="unverified-banner"],
-[data-testid="unverified-banner"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em),
-.dark [class*="dark:bg-[#121212]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#D8F3DC]"] *):not([class*="bg-[#FEF3C7]"] *):not([class*="bg-[#FFEBEE]"] *):not([class~="bg-white"] *):not([class~="bg-sand"] *):not([class~="bg-stone"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-.dark [class*="dark:bg-[#1a1a1a]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#D8F3DC]"] *):not([class*="bg-[#FEF3C7]"] *):not([class*="bg-[#FFEBEE]"] *):not([class~="bg-white"] *):not([class~="bg-sand"] *):not([class~="bg-stone"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-.dark [class*="dark:bg-[#222]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#D8F3DC]"] *):not([class*="bg-[#FEF3C7]"] *):not([class*="bg-[#FFEBEE]"] *):not([class~="bg-white"] *):not([class~="bg-sand"] *):not([class~="bg-stone"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-.dark [class*="dark:bg-[#251710]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#D8F3DC]"] *):not([class*="bg-[#FEF3C7]"] *):not([class*="bg-[#FFEBEE]"] *):not([class~="bg-white"] *):not([class~="bg-sand"] *):not([class~="bg-stone"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-.dark [class*="dark:bg-[#2a2a2a]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#D8F3DC]"] *):not([class*="bg-[#FEF3C7]"] *):not([class*="bg-[#FFEBEE]"] *):not([class~="bg-white"] *):not([class~="bg-sand"] *):not([class~="bg-stone"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]),
-.dark [class*="dark:bg-[#0f0f10]"] :is(p, span, h1, h2, h3, h4, h5, h6, label, a, li, strong, b, small, em):not([class*="bg-[#FFF3C4]"] *):not([class*="bg-[#FFEAA0]"] *):not([class*="bg-[#E5F8EE]"] *):not([class*="bg-[#D8F3DC]"] *):not([class*="bg-[#FEF3C7]"] *):not([class*="bg-[#FFEBEE]"] *):not([class~="bg-white"] *):not([class~="bg-sand"] *):not([class~="bg-stone"] *):not(.text-brand):not([class*="text-brand"]):not(.text-ok):not([class*="text-ok"]):not(.text-danger):not([class*="text-danger"]) {
+a.bg-ink,
+a.bg-ink *,
+a.bg-brand,
+a.bg-brand * {
     color: #FFFFFF !important;
 }
 
-/* ═══════ BRAND & STATUS ACCENT COLOR PRESERVATION ═══════ */
-.text-brand,
-[class*="text-brand"],
-[class*="text-brand"] * {
-    color: #E65A1E !important;
+/* Ensure bg-ink buttons stay solid dark in both modes, NEVER light grey */
+.bg-ink,
+button.bg-ink,
+button[class~="bg-ink"],
+[class~="bg-ink"] {
+    background-color: #121212 !important;
+}
+html.dark .bg-ink,
+html.dark button.bg-ink,
+html.dark button[class~="bg-ink"],
+html.dark [class~="bg-ink"] {
+    background-color: #202024 !important;
 }
 
-.text-ok,
-[class*="text-ok"],
-[class*="text-ok"] * {
-    color: #00A86B !important;
-}
-
-.text-danger,
-[class*="text-danger"],
-[class*="text-danger"] * {
-    color: #E63946 !important;
-}
-
-/* ═══════ CATEGORY LOGOS & ICONS: ALWAYS SOLID BLACK ON PASTEL BACKGROUNDS ═══════ */
-.cat-icon,
-svg.cat-icon,
-[data-testid*="cat-"] span[style*="background"] svg,
-[data-testid*="cat-tile"] span[style*="background"] svg {
-    color: #121212 !important;
-    stroke: #121212 !important;
-}
-
-/* Active tile with orange background uses white icon */
-[data-testid*="cat-tile"] span[style*="#E65A1E"] svg {
+/* Dark mode inputs */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark textarea,
+html.dark select,
+html.dark .wh-input {
+    background-color: #1a1a1e !important;
     color: #FFFFFF !important;
-    stroke: #FFFFFF !important;
+    border-color: #383838 !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #71717A !important;
 }
 
-.dark .bg-ink:not([class*="dark:bg-white"]) * {
-    color: #FFFFFF;
+/* Light mode inputs */
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) textarea,
+html:not(.dark) select,
+html:not(.dark) .wh-input {
+    background-color: #FFFFFF !important;
+    color: #111111 !important;
+    border-color: #303030 !important;
+}
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+    color: #71717A !important;
 }
 
-.dark .bg-ink:not([class*="dark:bg-white"]) .text-brand,
-.dark .bg-ink:not([class*="dark:bg-white"]).text-brand {
-    color: #E65A1E !important;
-}
-
-.dark .bg-ink:not([class*="dark:bg-white"]) .text-ok,
-.dark .bg-ink:not([class*="dark:bg-white"]).text-ok {
-    color: #00A86B !important;
-}
-
-/* High contrast for select options across platforms */
+/* Select options */
 select option {
     background-color: #ffffff;
-    color: #121212 !important;
+    color: #111111 !important;
 }
-
-.dark select option {
+html.dark select option {
     background-color: #1a1a1a;
     color: #ffffff !important;
 }
 
-/* Inputs */
-.dark .wh-input {
-    background-color: #1a1a1a !important;
-    color: var(--color-ink) !important;
+/* Category icons on pastel backgrounds: ALWAYS solid black */
+.cat-icon,
+svg.cat-icon,
+[data-testid*="cat-"] span[style*="background"] svg,
+[data-testid*="cat-tile"] span[style*="background"] svg {
+    color: #111111 !important;
+    stroke: #111111 !important;
+}
+[data-testid*="cat-tile"] span[style*="#E65A1E"] svg {
+    color: #FFFFFF !important;
+    stroke: #FFFFFF !important;
 }
 
 /* ═══════ Soft Ambient Elevation (Stripe / Apple style) ═══════ */
