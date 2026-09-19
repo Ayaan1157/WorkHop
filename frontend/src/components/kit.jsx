@@ -133,7 +133,7 @@ export function GlobalNav() {
   );
   const userRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
   const isEmployer = Boolean(user && (isAdmin || userRole?.includes("employ") || userRole?.includes("client")));
-  const isFreelancer = Boolean(user && (isAdmin || !userRole?.includes("employ") && !userRole?.includes("client")));
+  const isFreelancer = Boolean(user && !isAdmin && (user.role === "freelancer" || userRole?.includes("freelancer") || (!userRole?.includes("employ") && !userRole?.includes("client"))));
 
   const allLinks = [
     { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users, forRole: "employer" },
@@ -148,7 +148,7 @@ export function GlobalNav() {
     if (!user) return true; // Show both if not signed in
     if (isAdmin) return true; // Admin gets access to both sides and everything!
     if (link.forRole === "employer") return isEmployer;
-    if (link.forRole === "freelancer") return isFreelancer;
+    if (link.forRole === "freelancer") return isFreelancer || isAdmin;
     return true;
   });
 
@@ -218,15 +218,17 @@ export function GlobalNav() {
               {isDark ? <Sun size={15} className="text-brand" /> : <Moon size={15} className="text-ink" />}
             </button>
 
-            {/* Post Job Button (Desktop/Tablet) */}
-            <button
-              data-testid="nav-post-job-btn"
-              onClick={() => nav("/employer/post-job")}
-              className="hidden sm:flex items-center gap-1.5 border-2 border-ink bg-brand px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
-            >
-              <PlusCircle size={14} />
-              <span>POST JOB</span>
-            </button>
+            {/* Post Job Button (Desktop/Tablet) - Hidden for logged-in Freelancers */}
+            {!isFreelancer && (
+              <button
+                data-testid="nav-post-job-btn"
+                onClick={() => nav("/employer/post-job")}
+                className="hidden sm:flex items-center gap-1.5 border-2 border-ink bg-brand px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+              >
+                <PlusCircle size={14} />
+                <span>POST JOB</span>
+              </button>
+            )}
 
             {/* User Account or Sign In Button (Desktop) */}
             {user ? (
