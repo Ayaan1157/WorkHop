@@ -1598,15 +1598,15 @@ function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, o
             <span className="border border-ink bg-brand px-2 py-0.5 text-[10px] font-black text-white uppercase">
               {job.category || "Gig"}
             </span>
+            <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-0.5 text-[10px] font-bold text-ink">
+              <MapPin size={10} className="text-brand" /> {job.distance_km ?? 0.5} km away
+            </span>
             {/* Credit Cost Badge */}
             <span
               data-testid={`credit-cost-badge-${index}`}
               className="border border-ink bg-[#FFF3C4] px-2 py-0.5 text-[10px] font-black text-ink flex items-center gap-1 shadow-[1px_1px_0px_#121212]"
             >
-              <Coins size={10} className="text-brand" /> {creditsCost} {creditsCost === 1 ? "Hop" : "Hops"}
-            </span>
-            <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-0.5 text-[10px] font-bold text-ink">
-              <MapPin size={10} className="text-brand" /> {job.distance_km ?? 0.5} km away
+              <Coins size={10} className="text-brand" /> {creditsCost} {creditsCost === 1 ? "HOP" : "HOPS"}
             </span>
           </div>
 
