@@ -380,7 +380,7 @@ export default function Jobs() {
 
     // Requirement 1: Block application if balance is insufficient
     if (currentWallet.balance < totalCost) {
-      setApplyError(`Insufficient credits. This application requires ${totalCost} credits, but you only have ${currentWallet.balance} credits.`);
+      setApplyError(`Insufficient Hops. This application requires ${totalCost} Hops, but you only have ${currentWallet.balance} Hops.`);
       setCreditsModalOpen(true);
       return;
     }
@@ -405,7 +405,7 @@ export default function Jobs() {
       load();
     } catch (e) {
       if (e?.status === 402 || e?.code === "INSUFFICIENT_CREDITS") {
-        setApplyError(e?.message || "Insufficient credits — top up or subscribe to apply.");
+        setApplyError(e?.message || "Insufficient Hops — top up or subscribe to apply.");
         setCreditsModalOpen(true);
         return;
       }
@@ -809,7 +809,7 @@ export default function Jobs() {
                   <MapPin size={11} className="text-brand" /> Job Area: {activeJob?.area || "Bengaluru"}
                 </span>
                 <span className="border border-ink bg-white px-2 py-0.5 text-xs font-bold text-ink flex items-center gap-1 shadow-[1px_1px_0px_#121212]">
-                  <Coins size={11} className="text-brand" /> Base Apply: {activeJob?.credits_to_apply || Math.max(1, Math.floor((activeJob?.pay || 1000) / 1000))} Credits
+                  <Coins size={11} className="text-brand" /> Base Apply: {activeJob?.credits_to_apply || Math.max(1, Math.floor((activeJob?.pay || 1000) / 1000))} Hops
                 </span>
               </div>
 
@@ -1243,7 +1243,7 @@ export default function Jobs() {
                   ].map((slot, i) => (
                     <div key={i} className="border border-ink bg-white p-1.5">
                       <span className="text-[9px] font-black text-inkmuted">{slot.medal} {slot.rank}</span>
-                      <p className="text-xs font-black text-ink">{slot.bid} Credits</p>
+                      <p className="text-xs font-black text-ink">{slot.bid} Hops</p>
                     </div>
                   ))}
                 </div>
@@ -1252,7 +1252,7 @@ export default function Jobs() {
                 <div className="mt-2.5 flex items-center justify-between border border-ink bg-white p-2 text-xs">
                   <span className="flex items-center gap-1 font-bold text-ink text-[11px]">
                     <Flame size={13} className="text-brand" />
-                    Bid {Math.max(1, (modalLeaderboard?.topBid || 10) + 1)} Credits or higher to take 1st place!
+                    Bid {Math.max(1, (modalLeaderboard?.topBid || 10) + 1)} Hops or higher to take 1st place!
                   </span>
                   <button
                     type="button"
@@ -1307,14 +1307,14 @@ export default function Jobs() {
               </div>
             )}
 
-            {/* ═══════ 6. CREDIT COST & WALLET BALANCE SUMMARY ═══════ */}
+            {/* ═══════ 6. HOPS COST & WALLET BALANCE SUMMARY ═══════ */}
             {activeJob && (
               <div className="mt-3 flex items-center justify-between border-2 border-ink bg-sand p-3 shadow-[2px_2px_0px_#121212]">
                 <div>
                   <span className="text-[10px] font-black uppercase text-inkmuted tracking-wider">TOTAL REQUIRED</span>
                   <p className="text-sm font-black text-ink flex items-center gap-1">
                     <Coins size={15} className="text-brand" />
-                    {(activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits} Credits
+                    {(activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits} Hops
                     <span className="text-[10px] font-semibold text-inkmuted">
                       ({activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))} base + {boostCredits} boost)
                     </span>
@@ -1324,7 +1324,7 @@ export default function Jobs() {
                 <div className="text-right">
                   <span className="text-[10px] font-black uppercase text-inkmuted tracking-wider">YOUR BALANCE</span>
                   <p className="text-sm font-black text-ink" data-testid="apply-current-balance">
-                    {wallet.balance} Credits
+                    {wallet.balance} Hops
                   </p>
                 </div>
               </div>
@@ -1336,12 +1336,12 @@ export default function Jobs() {
               </p>
             )}
 
-            {/* Insufficient Credits Banner & CTA */}
+            {/* Insufficient Hops Banner & CTA */}
             {activeJob && wallet.balance < ((activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits) && (
               <div className="mt-3 border-2 border-ink bg-[#FFEBEE] p-3 text-xs font-black text-[#C62828] shadow-[2px_2px_0px_#C62828]">
                 <p className="flex items-center gap-1.5">
                   <Lock size={14} />
-                  Insufficient credits ({wallet.balance} available, {(activeJob.credits_to_apply || 1) + boostCredits} required).
+                  Insufficient Hops ({wallet.balance} available, {(activeJob.credits_to_apply || 1) + boostCredits} required).
                 </p>
                 <button
                   type="button"
@@ -1349,7 +1349,7 @@ export default function Jobs() {
                   onClick={() => setCreditsModalOpen(true)}
                   className="mt-2 flex w-full items-center justify-center gap-1.5 border-2 border-ink bg-brand py-2.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] transition hover:bg-black"
                 >
-                  <Coins size={14} /> TOP UP CREDITS OR SUBSCRIBE →
+                  <Coins size={14} /> TOP UP HOPS OR SUBSCRIBE →
                 </button>
               </div>
             )}
@@ -1516,7 +1516,7 @@ function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, o
               data-testid={`credit-cost-badge-${index}`}
               className="border border-ink bg-[#FFF3C4] px-2 py-0.5 text-[10px] font-black text-ink flex items-center gap-1 shadow-[1px_1px_0px_#121212]"
             >
-              <Coins size={10} className="text-brand" /> {creditsCost} {creditsCost === 1 ? "Credit" : "Credits"}
+              <Coins size={10} className="text-brand" /> {creditsCost} {creditsCost === 1 ? "Hop" : "Hops"}
             </span>
             <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-0.5 text-[10px] font-bold text-ink">
               <MapPin size={10} className="text-brand" /> {job.distance_km ?? 0.5} km away

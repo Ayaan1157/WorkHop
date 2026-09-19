@@ -276,10 +276,10 @@ export default function PostJob() {
             >
               <div className="flex items-center gap-2 font-bold text-ink">
                 <Coins size={16} className="text-brand shrink-0" />
-                <span>Freelancer Connects Required:</span>
+                <span>Freelancer Hops Required:</span>
               </div>
               <span className="font-black text-ink bg-white px-2 py-0.5 border border-ink shadow-[1px_1px_0px_#121212]">
-                {Math.max(1, Math.floor((parseInt(pay, 10) || 0) / 1000))} Credits
+                {Math.max(1, Math.floor((parseInt(pay, 10) || 0) / 1000))} Hops
               </span>
             </div>
           </div>

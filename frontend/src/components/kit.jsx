@@ -198,10 +198,10 @@ export function GlobalNav() {
               <Link
                 to="/employer/plans"
                 className="hidden md:flex items-center gap-1 border-2 border-ink bg-sand dark:bg-[#222] px-2.5 py-1 text-[11px] font-black text-ink dark:text-white hover:bg-stone transition"
-                title="Your active credits"
+                title="Your active Hops"
               >
                 <Coins size={14} className="text-brand" />
-                <span>5 CREDITS</span>
+                <span>5 HOPS</span>
               </Link>
             )}
 

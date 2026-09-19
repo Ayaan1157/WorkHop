@@ -22,31 +22,31 @@ const CREDITS_CONFIG_KEY = "workhop_credits_config";
 export const DEFAULT_CREDITS_CONFIG = {
   per_credit_rate_inr: 10,
   credit_packs: [
-    { id: "pack-10", credits: 10, price_inr: 100, label: "10 Credits", discount_label: "Standard Rate", popular: false },
-    { id: "pack-25", credits: 25, price_inr: 225, label: "25 Credits", discount_label: "Save 10%", popular: true },
-    { id: "pack-50", credits: 50, price_inr: 400, label: "50 Credits", discount_label: "Save 20%", popular: false },
-    { id: "pack-100", credits: 100, price_inr: 750, label: "100 Credits", discount_label: "Save 25% (Best Value)", popular: false },
+    { id: "pack-10", credits: 10, price_inr: 100, label: "10 Hops", discount_label: "Standard Rate", popular: false },
+    { id: "pack-25", credits: 25, price_inr: 225, label: "25 Hops", discount_label: "Save 10%", popular: true },
+    { id: "pack-50", credits: 50, price_inr: 400, label: "50 Hops", discount_label: "Save 20%", popular: false },
+    { id: "pack-100", credits: 100, price_inr: 750, label: "100 Hops", discount_label: "Save 25% (Best Value)", popular: false },
   ],
   subscription_plans: [
     {
       id: "starter_pass",
-      name: "Starter Connects Pass",
+      name: "Starter Hops Pass",
       credits_per_cycle: 30,
       price_inr: 249,
       billing_cycle: "monthly",
       badge: "STARTER",
       effective_per_credit: "₹8.30",
-      features: ["30 credits delivered monthly", "Unused credits roll over", "Zero platform fee on gigs", "Priority applicant badge"],
+      features: ["30 Hops delivered monthly", "Unused Hops roll over", "Zero platform fee on gigs", "Priority applicant badge"],
     },
     {
       id: "pro_pass",
-      name: "Pro Connects Pass",
+      name: "Pro Hops Pass",
       credits_per_cycle: 60,
       price_inr: 449,
       billing_cycle: "monthly",
       badge: "MOST POPULAR",
       effective_per_credit: "₹7.48",
-      features: ["60 credits delivered monthly", "Unused credits roll over", "1 free proposal boost monthly", "Verified Pro gold badge", "Early access to high-budget gigs"],
+      features: ["60 Hops delivered monthly", "Unused Hops roll over", "1 free proposal boost monthly", "Verified Pro gold badge", "Early access to high-budget gigs"],
     },
     {
       id: "power_pass",
@@ -56,7 +56,7 @@ export const DEFAULT_CREDITS_CONFIG = {
       billing_cycle: "monthly",
       badge: "MAX SAVINGS",
       effective_per_credit: "₹6.65",
-      features: ["120 credits delivered monthly", "Unlimited rollover cap", "3 free proposal boosts monthly", "Top-tier leaderboard priority", "Direct WhatsApp employer unlocks"],
+      features: ["120 Hops delivered monthly", "Unlimited rollover cap", "3 free proposal boosts monthly", "Top-tier leaderboard priority", "Direct WhatsApp employer unlocks"],
     },
   ],
   rollover_unused_credits: true,
@@ -580,7 +580,7 @@ export function getCreditsWallet(userId) {
       type: "bonus",
       amount: initBalance,
       balance_after: initBalance,
-      description: "Welcome Gift: 20 Free Bidding Credits",
+      description: "Welcome Gift: 20 Free Bidding Hops",
     });
   }
   return newWallet;
@@ -605,7 +605,7 @@ export function addCreditTransaction(userId, { type, amount, related_job_id, job
     balance_after: balance_after !== undefined ? balance_after : 0,
     related_job_id: related_job_id || null,
     job_title: job_title || null,
-    description: description || "Credits transaction",
+    description: description || "Hops transaction",
     created_at: new Date().toISOString(),
   };
 
@@ -631,7 +631,7 @@ export function addCredits(userId, amount, { type = "purchase", related_job_id, 
     balance_after: newBalance,
     related_job_id,
     job_title,
-    description: description || `Added ${amount} credits`,
+    description: description || `Added ${amount} Hops`,
   });
 
   return wallet;
@@ -663,7 +663,7 @@ export function deductCredits(userId, amount, { type = "spend", related_job_id, 
     balance_after: newBalance,
     related_job_id,
     job_title,
-    description: description || `Spent ${amount} credits`,
+    description: description || `Spent ${amount} Hops`,
   });
 
   return wallet;

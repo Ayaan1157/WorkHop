@@ -437,7 +437,7 @@ export default function EmployerDashboard() {
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
-                          <Coins size={12} className="text-brand" /> Requires {j.credits_to_apply || 5} Connects
+                          <Coins size={12} className="text-brand" /> Requires {j.credits_to_apply || 5} Hops
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1 font-bold text-ok">
@@ -518,7 +518,7 @@ export default function EmployerDashboard() {
                           <p className="font-bold text-ink dark:text-white truncate">{c.freelancer_name || "Verified Pro"}</p>
                           {isBoosted && (
                             <span className="border border-ink bg-amber-500 text-white px-1 py-0.2 text-[8px] font-black">
-                              ★ +{c.boost_credits} Bid
+                              ★ +{c.boost_credits} Hops Bid
                             </span>
                           )}
                           <span className="text-[8px] font-black text-white px-1 py-0.2 border border-ink" style={{ backgroundColor: suit.color }}>

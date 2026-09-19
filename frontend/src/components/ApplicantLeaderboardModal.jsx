@@ -57,7 +57,7 @@ export default function ApplicantLeaderboardModal({ open, onClose, job, onOpenAp
             <Sparkles size={13} /> HOW PROPOSAL BOOSTING WORKS
           </div>
           <p className="mt-1 text-[11px] leading-relaxed">
-            Applicants bid extra credits to rank higher on the employer's dashboard. The <strong>top 3 boosted proposals</strong> are highlighted as <strong>Featured Proposals</strong>. Ties are broken strictly by application timestamp (earliest submitted proposal wins).
+            Applicants bid extra Hops to rank higher on the employer's dashboard. The <strong>top 3 boosted proposals</strong> are highlighted as <strong>Featured Proposals</strong>. Ties are broken strictly by application timestamp (earliest submitted proposal wins).
           </p>
         </div>
 

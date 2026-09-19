@@ -39,7 +39,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
       const updated = purchaseCreditPack(freelancerId, packId);
       setWallet({ ...updated });
       const pack = config.credit_packs.find((p) => p.id === packId);
-      setSuccessMsg(`✓ Successfully added ${pack?.credits || 25} credits to your wallet!`);
+      setSuccessMsg(`✓ Successfully added ${pack?.credits || 25} Hops to your wallet!`);
       if (onUpdated) onUpdated(updated);
     } catch (err) {
       alert("Failed to purchase pack. Please try again.");
@@ -56,7 +56,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
       const updated = subscribeToCredits(freelancerId, planId);
       setWallet({ ...updated });
       const plan = config.subscription_plans.find((p) => p.id === planId);
-      setSuccessMsg(`✓ Welcome to ${plan?.name || "Pro"}! +${plan?.credits_per_cycle} credits added.`);
+      setSuccessMsg(`✓ Welcome to ${plan?.name || "Pro"}! +${plan?.credits_per_cycle} Hops added.`);
       if (onUpdated) onUpdated(updated);
     } catch (err) {
       alert("Failed to activate subscription. Please try again.");
@@ -91,7 +91,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
           </div>
           <div>
             <h3 className="text-lg font-black uppercase tracking-wide text-ink dark:text-white">
-              Connects & Bidding Credits
+              Connects & Bidding Hops
             </h3>
             <p className="text-xs text-inkmuted dark:text-stone-400">
               Apply to local gigs, unlock employer direct chats, and boost proposals
@@ -107,7 +107,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
           >
             <Info size={16} className="shrink-0" />
             <span>
-              This gig requires <strong>{requiredCredits} credits</strong>. Your current balance is <strong>{wallet.balance} credits</strong>. Top up below to apply immediately.
+              This gig requires <strong>{requiredCredits} Hops</strong>. Your current balance is <strong>{wallet.balance} Hops</strong>. Top up below to apply immediately.
             </span>
           </div>
         )}
@@ -119,7 +119,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
               Current Balance:
             </span>
             <span className="flex items-center gap-1 text-base font-black text-ink dark:text-white" data-testid="modal-current-balance">
-              <Coins size={16} className="text-brand" /> {wallet.balance} Credits
+              <Coins size={16} className="text-brand" /> {wallet.balance} Hops
             </span>
           </div>
           {wallet.subscription_status === "active" ? (
@@ -176,7 +176,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
         {tab === "packs" && (
           <div className="mt-4 flex flex-col gap-2.5">
             <span className="text-[10px] font-black uppercase text-inkmuted dark:text-stone-400 tracking-wider">
-              Select a Credit Pack (Credits Never Expire)
+              Select a Hop Pack (Hops Never Expire)
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {config.credit_packs.map((pack) => {
@@ -200,7 +200,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
                     )}
                     <div>
                       <p className="text-sm font-black text-ink dark:text-white flex items-center gap-1">
-                        <Coins size={14} className="text-brand" /> {pack.credits} Credits
+                        <Coins size={14} className="text-brand" /> {pack.credits} Hops
                       </p>
                       <p className="text-[10px] font-bold text-inkmuted dark:text-stone-400 mt-0.5">
                         {pack.discount_label}
@@ -211,7 +211,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
                         ₹{pack.price_inr}
                       </span>
                       <span className="text-[10px] font-bold text-inkmuted dark:text-stone-400">
-                        ₹{(pack.price_inr / pack.credits).toFixed(1)}/ea
+                        ₹{(pack.price_inr / pack.credits).toFixed(1)}/hop
                       </span>
                     </div>
                   </button>
@@ -282,7 +282,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
                     </div>
 
                     <p className="mt-1 text-[11px] font-bold text-brand">
-                      {plan.credits_per_cycle} credits/month ({plan.effective_per_credit} per credit)
+                      {plan.credits_per_cycle} Hops/month ({plan.effective_per_credit} per Hop)
                     </p>
 
                     <div className="mt-2 grid grid-cols-2 gap-1 text-[10px] font-semibold text-ink dark:text-stone-300">
@@ -300,7 +300,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
 
             <div className="mt-2 rounded border border-ink/30 bg-sand dark:bg-[#1e1e1e] p-2 text-[10px] text-inkmuted dark:text-stone-400">
               <p>
-                <strong>Renewal & Rollover Policy:</strong> Subscriptions renew automatically every 30 days. Unused subscription credits roll over to the following month (up to 2x monthly allocation). Cancel anytime from settings with zero penalty.
+                <strong>Renewal & Rollover Policy:</strong> Subscriptions renew automatically every 30 days. Unused subscription Hops roll over to the following month (up to 2x monthly allocation). Cancel anytime from settings with zero penalty.
               </p>
             </div>
 

@@ -95,7 +95,7 @@ export default function Inbox() {
                       )}
                       {isBoosted && (
                         <span className="border border-ink bg-amber-500 px-1.5 py-0.2 text-[8px] font-black text-white flex items-center gap-0.5">
-                          <Coins size={9} /> +{c.boost_credits} Credits Bid
+                          <Coins size={9} /> +{c.boost_credits} Hops Bid
                         </span>
                       )}
                       <span
