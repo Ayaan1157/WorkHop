@@ -224,6 +224,13 @@ export default function Employer() {
         }
       />
 
+      {/* Category Icons Strip Placed Directly Above Map */}
+      <CategoryTiles
+        selected={catFilter}
+        onSelect={(cat) => setCatFilter(cat)}
+        testIDPrefix="lead-cat-tile"
+      />
+
       {/* PROPORTIONAL & AESTHETIC RADAR MAP CARD */}
       <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 pt-3">
         <div className="border-2 border-ink bg-white dark:bg-[#121212] shadow-[3px_3px_0px_#121212]">

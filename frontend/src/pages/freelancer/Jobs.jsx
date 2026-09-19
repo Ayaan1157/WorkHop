@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import {
   Shell, TopBar, IconBtn, EmptyBlock, Breadcrumbs,
-  ProfileProgressBar, BoostPreviewModal, JobCardSkeleton
+  ProfileProgressBar, BoostPreviewModal, JobCardSkeleton, CategoryTiles
 } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
@@ -535,6 +535,13 @@ export default function Jobs() {
           </div>
         </div>
       </div>
+
+      {/* Category Icons Strip Placed Directly Above Map */}
+      <CategoryTiles
+        selected={catFilter}
+        onSelect={(cat) => setCatFilter(cat)}
+        testIDPrefix="job-cat-tile"
+      />
 
       {/* PROPORTIONAL & AESTHETIC LIVE GIG RADAR MAP CARD */}
       <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 pt-3">
