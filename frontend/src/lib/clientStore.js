@@ -1240,3 +1240,105 @@ export function resolveEscrowOrder(orderId, action) {
   return { ok: true, orderId, action };
 }
 
+// 16. Admin Coupons Store
+const STORED_COUPONS_KEY = "workhop_admin_coupons";
+
+const SEED_COUPONS = [
+  {
+    code: "WELCOME50",
+    discount_type: "percent",
+    value: 50,
+    applies_to: "all",
+    active: true,
+    max_uses: 100,
+    used_count: 45,
+    description: "50% off on onboarding, unlocks & plans",
+    created_at: new Date(Date.now() - 86400000 * 14).toISOString(),
+    expires_at: null,
+  },
+  {
+    code: "FLAT100",
+    discount_type: "flat",
+    value: 100,
+    applies_to: "plan",
+    active: true,
+    max_uses: 50,
+    used_count: 12,
+    description: "₹100 flat off on employer credit plans",
+    created_at: new Date(Date.now() - 86400000 * 7).toISOString(),
+    expires_at: null,
+  },
+];
+
+export function getStoredCoupons() {
+  const raw = localStorage.getItem(STORED_COUPONS_KEY);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch { /* ignore */ }
+  }
+  localStorage.setItem(STORED_COUPONS_KEY, JSON.stringify(SEED_COUPONS));
+  return SEED_COUPONS;
+}
+
+export function saveStoredCoupon(coupon) {
+  const code = (coupon.code || "").trim().toUpperCase();
+  if (!code) throw new Error("Coupon code is required.");
+  const coupons = getStoredCoupons();
+  const exists = coupons.find((c) => c.code.toUpperCase() === code);
+  if (exists) {
+    throw new Error(`A coupon with code "${code}" already exists.`);
+  }
+  const newCoupon = {
+    code,
+    discount_type: coupon.discount_type || "percent",
+    value: Number(coupon.value) || 10,
+    applies_to: coupon.applies_to || "all",
+    active: coupon.active !== false,
+    max_uses: Number(coupon.max_uses) || 0,
+    used_count: 0,
+    description: coupon.description || (coupon.discount_type === "percent" ? `${coupon.value}% off` : `₹${coupon.value} off`),
+    created_at: new Date().toISOString(),
+    expires_at: coupon.expires_in_days ? Date.now() / 1000 + coupon.expires_in_days * 86400 : null,
+  };
+  const updated = [newCoupon, ...coupons];
+  localStorage.setItem(STORED_COUPONS_KEY, JSON.stringify(updated));
+  addAdminLog("COUPON_CREATED", `Created coupon code ${code} (${newCoupon.description})`, code);
+  return newCoupon;
+}
+
+export function updateStoredCoupon(code, updates) {
+  const targetCode = (code || "").trim().toUpperCase();
+  const coupons = getStoredCoupons();
+  let found = false;
+  const updated = coupons.map((c) => {
+    if (c.code.toUpperCase() === targetCode) {
+      found = true;
+      return {
+        ...c,
+        ...updates,
+        code: targetCode,
+        value: updates.value !== undefined ? Number(updates.value) : c.value,
+        max_uses: updates.max_uses !== undefined ? Number(updates.max_uses) : c.max_uses,
+        expires_at: updates.expires_in_days ? Date.now() / 1000 + updates.expires_in_days * 86400 : (updates.expires_at !== undefined ? updates.expires_at : c.expires_at),
+      };
+    }
+    return c;
+  });
+  if (!found) throw new Error("Coupon not found.");
+  localStorage.setItem(STORED_COUPONS_KEY, JSON.stringify(updated));
+  addAdminLog("COUPON_UPDATED", `Updated coupon settings for ${targetCode}`, targetCode);
+  return updated.find((c) => c.code.toUpperCase() === targetCode);
+}
+
+export function deleteStoredCoupon(code) {
+  const targetCode = (code || "").trim().toUpperCase();
+  const coupons = getStoredCoupons();
+  const filtered = coupons.filter((c) => c.code.toUpperCase() !== targetCode);
+  localStorage.setItem(STORED_COUPONS_KEY, JSON.stringify(filtered));
+  addAdminLog("COUPON_DELETED", `Permanently removed coupon code ${targetCode}`, targetCode);
+  return { ok: true, code: targetCode };
+}
+
+

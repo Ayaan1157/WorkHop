@@ -1778,7 +1778,13 @@ class AdminCouponCreate(BaseModel):
 
 
 class AdminCouponPatch(BaseModel):
-    active: bool
+    active: Optional[bool] = None
+    discount_type: Optional[str] = None
+    value: Optional[int] = None
+    applies_to: Optional[str] = None
+    max_uses: Optional[int] = None
+    expires_in_days: Optional[int] = None
+    description: Optional[str] = None
 
 
 @api_router.get("/admin/overview")
@@ -1997,12 +2003,66 @@ async def admin_create_coupon(req: AdminCouponCreate, request: Request):
 @api_router.patch("/admin/coupons/{code}")
 async def admin_patch_coupon(code: str, req: AdminCouponPatch, request: Request):
     await _require_admin(request)
-    result = await db.coupons.update_one(
-        {"_id": code.strip().upper()}, {"$set": {"active": req.active}}
-    )
-    if result.matched_count == 0:
+    c_id = code.strip().upper()
+    existing = await db.coupons.find_one({"_id": c_id})
+    if not existing:
         raise HTTPException(status_code=404, detail="Coupon not found.")
-    return {"ok": True, "code": code.strip().upper(), "active": req.active}
+
+    updates = {}
+    if req.active is not None:
+        updates["active"] = bool(req.active)
+    if req.discount_type is not None:
+        if req.discount_type not in ("percent", "flat"):
+            raise HTTPException(status_code=400, detail="discount_type must be percent or flat.")
+        updates["discount_type"] = req.discount_type
+    if req.value is not None:
+        d_type = req.discount_type or existing.get("discount_type", "percent")
+        if d_type == "percent" and not (1 <= req.value <= 100):
+            raise HTTPException(status_code=400, detail="Percent must be between 1 and 100.")
+        if d_type == "flat" and req.value < 1:
+            raise HTTPException(status_code=400, detail="Flat discount must be at least ₹1.")
+        updates["value"] = req.value
+    if req.applies_to is not None:
+        valid_products = ("all", "employer_unlock", "freelancer_onboarding", "quota_boost", "plan")
+        if req.applies_to not in valid_products:
+            raise HTTPException(status_code=400, detail="Invalid applies_to.")
+        updates["applies_to"] = req.applies_to
+    if req.max_uses is not None:
+        updates["max_uses"] = max(0, req.max_uses)
+    if req.description is not None:
+        updates["description"] = req.description
+    if req.expires_in_days is not None:
+        if req.expires_in_days > 0:
+            updates["expires_at"] = time.time() + req.expires_in_days * 86400
+        else:
+            updates["expires_at"] = None
+
+    if updates:
+        await db.coupons.update_one({"_id": c_id}, {"$set": updates})
+
+    updated = await db.coupons.find_one({"_id": c_id})
+    return {
+        "ok": True,
+        "code": c_id,
+        "active": updated.get("active", True),
+        "discount_type": updated.get("discount_type"),
+        "value": updated.get("value"),
+        "applies_to": updated.get("applies_to"),
+        "max_uses": updated.get("max_uses", 0),
+        "used_count": updated.get("used_count", 0),
+        "expires_at": updated.get("expires_at"),
+        "description": updated.get("description", ""),
+    }
+
+
+@api_router.delete("/admin/coupons/{code}")
+async def admin_delete_coupon(code: str, request: Request):
+    await _require_admin(request)
+    c_id = code.strip().upper()
+    result = await db.coupons.delete_one({"_id": c_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Coupon not found.")
+    return {"ok": True, "code": c_id, "deleted": True}
 
 
 # ============== In-app Chat (freelancer ↔ employer) ==============

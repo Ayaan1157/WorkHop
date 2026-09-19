@@ -31,6 +31,10 @@ import {
   getJobLeaderboard,
   getCreditsConfig,
   saveCreditsConfig,
+  getStoredCoupons,
+  saveStoredCoupon,
+  updateStoredCoupon,
+  deleteStoredCoupon,
 } from "./clientStore";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
@@ -387,11 +391,19 @@ function mockRouter(path, method = "GET", body = null) {
       { complaint_id: "cmp_1", user_email: "anita.j@ledgerlite.com", message: "Need clarification on milestone escrow release time.", status: "resolved", created_at: "Yesterday" },
     ];
   }
-  if (cleanPath === "/admin/coupons") {
-    return [
-      { code: "WELCOME50", discount_percent: 50, active: true, uses: 45, max_uses: 100 },
-      { code: "FLAT100", discount_rupees: 100, active: true, uses: 12, max_uses: 50 },
-    ];
+  if (cleanPath === "/admin/coupons" && method === "GET") {
+    return getStoredCoupons();
+  }
+  if (cleanPath === "/admin/coupons" && method === "POST") {
+    return saveStoredCoupon(body);
+  }
+  if (cleanPath.startsWith("/admin/coupons/") && method === "PATCH") {
+    const code = cleanPath.split("/")[3];
+    return updateStoredCoupon(code, body);
+  }
+  if (cleanPath.startsWith("/admin/coupons/") && method === "DELETE") {
+    const code = cleanPath.split("/")[3];
+    return deleteStoredCoupon(code);
   }
 
   // 6. Freelancer Profile / Status / Quota
@@ -500,6 +512,8 @@ export const apiPut = (path, body, auth = false) =>
   request(path, { method: "PUT", body, auth });
 export const apiPatch = (path, body, auth = false) =>
   request(path, { method: "PATCH", body, auth });
+export const apiDelete = (path, auth = false) =>
+  request(path, { method: "DELETE", auth });
 
 // Local id helpers (mirror the mobile AsyncStorage keys)
 export function getEmployerId() {
