@@ -4,7 +4,7 @@ import {
   Search, X, Star, MapPin, IndianRupee, Clock, CheckCheck, Lock, LockOpen,
   PlusCircle, ArrowRight, MessagesSquare, Tag, LocateFixed, CheckCircle2,
   Loader2, Expand, Heart, SlidersHorizontal, ShieldCheck, Sparkles, ArrowUpDown,
-  Map as MapIcon, Shield, Briefcase
+  Map as MapIcon, Shield, Briefcase, Flame
 } from "lucide-react";
 import { Shell, TopBar, IconBtn, CategoryTiles } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
@@ -207,10 +207,10 @@ export default function Employer() {
             )}
             <button
               onClick={() => setBoostModalOpen(true)}
-              className="hidden sm:flex items-center gap-1 border-2 border-ink bg-[#FFF3C4] px-2.5 py-1 text-[10px] font-black text-black hover:bg-[#FFEAA0]"
-              title="Preview listing boost"
+              className="hidden sm:flex items-center gap-1 border-2 border-ink bg-[#FFEBEA] px-2.5 py-1 text-[10px] font-black text-[#C62828] hover:bg-[#FFD7D5] transition shadow-[1.5px_1.5px_0px_#121212]"
+              title="Make your gig urgent & boost to top"
             >
-              <Sparkles size={13} className="text-brand" /> BOOST
+              <Flame size={13} className="text-[#FF3B30] fill-[#FF3B30]" /> URGENT BOOST
             </button>
             <IconBtn testID="employer-map-btn" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "Show Map"}>
               <MapIcon size={18} className={showMap ? "text-brand" : "text-ink"} />
@@ -600,7 +600,14 @@ export default function Employer() {
       )}
 
       {/* BOOST PREVIEW MODAL */}
-      <BoostPreviewModal isOpen={boostModalOpen} onClose={() => setBoostModalOpen(false)} />
+      <BoostPreviewModal
+        isOpen={boostModalOpen}
+        onClose={() => setBoostModalOpen(false)}
+        onConfirmBoost={() => {
+          setBoostModalOpen(false);
+          nav("/employer/post-job", { state: { boost: true } });
+        }}
+      />
     </Shell>
   );
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
-  CheckCircle2, Loader2, LocateFixed, ShieldCheck, MapPin, Sparkles, AlertCircle, Coins, Zap
+  CheckCircle2, Loader2, LocateFixed, ShieldCheck, MapPin, Sparkles, AlertCircle, Coins, Zap, Flame
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import { CATALOG_CATEGORY_NAMES, DISCIPLINES_CATALOG } from "@/lib/catalogFilters";
@@ -31,7 +31,8 @@ export default function PostJob() {
   const [title, setTitle] = useState("");
   const [bucket, setBucket] = useState("Graphics & Design");
   const [pay, setPay] = useState("");
-  const [isBoosted, setIsBoosted] = useState(false);
+  const location = useLocation();
+  const [isBoosted, setIsBoosted] = useState(() => Boolean(location.state?.boost));
   const [area, setArea] = useState("Koramangala");
   const [customCoords, setCustomCoords] = useState(null);
   const [description, setDescription] = useState("");
@@ -378,23 +379,23 @@ export default function PostJob() {
             data-testid="employer-job-boost-card"
             onClick={() => setIsBoosted(!isBoosted)}
             className={`cursor-pointer border-2 border-ink p-4 transition shadow-[3px_3px_0px_#121212] ${
-              isBoosted ? "bg-[#FFF3C4] ring-2 ring-brand" : "bg-white hover:bg-stone-50"
+              isBoosted ? "bg-[#FFF5F5] ring-2 ring-[#FF3B30] shadow-[3px_3px_0px_#FF3B30]" : "bg-white hover:bg-stone-50"
             }`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
                 <div className={`flex h-9 w-9 shrink-0 items-center justify-center border-2 border-ink ${
-                  isBoosted ? "bg-brand text-white" : "bg-stone-100 text-ink"
+                  isBoosted ? "bg-[#FF3B30] text-white" : "bg-[#FFEBEA] text-[#FF3B30]"
                 }`}>
-                  <Zap size={20} className={isBoosted ? "fill-white" : ""} />
+                  <Flame size={20} className={isBoosted ? "fill-white text-white" : "fill-[#FF3B30] text-[#FF3B30]"} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-xs font-black uppercase text-ink">
                       Boost Job &amp; Mark Urgent
                     </p>
-                    <span className="border border-ink bg-brand px-1.5 py-0.2 text-[9px] font-black uppercase text-white shadow-[1px_1px_0px_#121212]">
-                      Featured 48H
+                    <span className="border border-ink bg-[#FF3B30] px-1.5 py-0.2 text-[9px] font-black uppercase text-white shadow-[1px_1px_0px_#121212] flex items-center gap-1">
+                      <Flame size={9} fill="white" /> URGENT · 48H
                     </span>
                   </div>
                   <p className="text-xs text-inkmuted mt-0.5">
@@ -408,7 +409,7 @@ export default function PostJob() {
                     type="checkbox"
                     checked={isBoosted}
                     onChange={(e) => setIsBoosted(e.target.checked)}
-                    className="h-4 w-4 accent-brand cursor-pointer"
+                    className="h-4 w-4 accent-[#FF3B30] cursor-pointer"
                   />
                   <span className="text-xs font-black text-ink">{isAdmin ? "FREE (Admin)" : "+₹299"}</span>
                 </div>

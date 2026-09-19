@@ -4,7 +4,7 @@ import {
   Briefcase, Users, PlusCircle, MailOpen, MapPin, Sparkles, Building2,
   Phone, Mail, CheckCircle2, ChevronRight, Coins, Trophy, Zap, Clock,
   ArrowUpRight, Pencil, X, Search, ShieldCheck, Star, Trash2, Check,
-  ExternalLink, Eye, ArrowRightLeft, Globe
+  ExternalLink, Eye, ArrowRightLeft, Globe, Flame
 } from "lucide-react";
 import { Shell, TopBar, Spinner, EmptyBlock } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
@@ -418,8 +418,8 @@ export default function EmployerDashboard() {
                           {j.bucket || j.category || "Creative"}
                         </span>
                         {j.is_boosted && (
-                          <span className="border border-ink bg-[#FFF3C4] px-2 py-0.5 text-[9px] font-black uppercase text-[#92400E] flex items-center gap-1 shadow-[1px_1px_0px_#121212]">
-                            <Zap size={11} className="fill-brand text-brand" /> URGENT · 48H BOOST
+                          <span className="border border-ink bg-[#FF3B30] px-2 py-0.5 text-[9px] font-black uppercase text-white flex items-center gap-1 shadow-[1.5px_1.5px_0px_#121212] animate-pulse">
+                            <Flame size={10} fill="currentColor" /> URGENT
                           </span>
                         )}
                         <span className="text-[11px] font-bold text-inkmuted dark:text-stone-400">
@@ -461,10 +461,10 @@ export default function EmployerDashboard() {
                         <button
                           type="button"
                           onClick={() => handleBoostJob(j.id)}
-                          className="flex-1 sm:flex-initial flex items-center justify-center gap-1 border-2 border-ink bg-white dark:bg-stone-800 px-3 py-2 text-xs font-black uppercase text-ink dark:text-white hover:bg-sand transition"
-                          title="Boost job to top of feed"
+                          className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 border-2 border-ink bg-[#FFEBEA] hover:bg-[#FFD7D5] dark:bg-stone-800 px-3 py-2 text-xs font-black uppercase text-[#C62828] dark:text-red-400 transition shadow-[1.5px_1.5px_0px_#121212]"
+                          title="Make this gig urgent & pin to top"
                         >
-                          <Zap size={13} className="text-brand" /> BOOST
+                          <Flame size={13} className="text-[#FF3B30] fill-[#FF3B30]" /> MAKE URGENT
                         </button>
                       )}
 
