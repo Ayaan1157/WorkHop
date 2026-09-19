@@ -69,6 +69,10 @@ export default function GoogleMap({
   const radiusLayerRef = useRef(null);
   const markersByIdRef = useRef({});
   const radarControlRef = useRef(null);
+  const circleRef = useRef(null);
+  const userMarkerRef = useRef(null);
+  const lastCenterRef = useRef(null);
+  const isInteractingRef = useRef(false);
 
   const [activeLayerType, setActiveLayerType] = useState("google_road");
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
@@ -119,7 +123,19 @@ export default function GoogleMap({
     }
   };
 
-  // Initialize Map
+  // Helper to build high-performance tile layers with large offscreen buffer
+  const createTileLayer = (cfg) =>
+    L.tileLayer(cfg.url, {
+      subdomains: cfg.subdomains,
+      maxZoom: cfg.maxZoom,
+      keepBuffer: 12,
+      updateWhenIdle: false,
+      updateWhenZooming: true,
+      tileSize: 256,
+      crossOrigin: true,
+    });
+
+  // Initialize Map with hardware-accelerated canvas and tuned inertia
   useEffect(() => {
     if (mapRef.current || !elRef.current) return;
 
@@ -129,17 +145,36 @@ export default function GoogleMap({
       attributionControl: false,
       center: [initialCenter.lat, initialCenter.lng],
       zoom: userLocation ? 14 : zoom,
+      preferCanvas: true,
+      zoomAnimation: true,
+      fadeAnimation: true,
+      markerZoomAnimation: true,
+      inertia: true,
+      inertiaDeceleration: 3400,
+      inertiaMaxSpeed: 2400,
+      easeLinearity: 0.15,
+      zoomSnap: 1,
+      zoomDelta: 1,
+      wheelDebounceTime: 40,
+      wheelPxPerZoomLevel: 100,
     });
 
-    // Custom Top-Right Zoom Control
+    // Track active interactions so external prop syncs never interrupt dragging
+    map.on("movestart dragstart zoomstart", () => {
+      isInteractingRef.current = true;
+      setRadarMenuOpen(false);
+      setLayerMenuOpen(false);
+    });
+    map.on("moveend dragend zoomend", () => {
+      isInteractingRef.current = false;
+    });
+
+    // Custom Bottom-Right Zoom Control
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    // Add Tile Layer
+    // Add Optimized Tile Layer
     const cfg = MAP_LAYERS[activeLayerType] || MAP_LAYERS.google_road;
-    const tileLayer = L.tileLayer(cfg.url, {
-      subdomains: cfg.subdomains,
-      maxZoom: cfg.maxZoom,
-    }).addTo(map);
+    const tileLayer = createTileLayer(cfg).addTo(map);
 
     tileLayerRef.current = tileLayer;
     radiusLayerRef.current = L.layerGroup().addTo(map);
@@ -149,19 +184,21 @@ export default function GoogleMap({
     return () => {
       map.remove();
       mapRef.current = null;
+      circleRef.current = null;
+      userMarkerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Ensure map recalculates tile bounds when viewport changes or container mounts
+  // Ensure map recalculates tile bounds without layout thrashing
   useEffect(() => {
     const handleResize = () => {
       if (mapRef.current) {
-        mapRef.current.invalidateSize();
+        mapRef.current.invalidateSize({ debounceMoveend: true });
       }
     };
     window.addEventListener("resize", handleResize);
-    const timer = setTimeout(handleResize, 200);
+    const timer = setTimeout(handleResize, 150);
     return () => {
       window.removeEventListener("resize", handleResize);
       clearTimeout(timer);
@@ -178,47 +215,71 @@ export default function GoogleMap({
     if (tileLayerRef.current) {
       mapRef.current.removeLayer(tileLayerRef.current);
     }
-    const newTileLayer = L.tileLayer(cfg.url, {
-      subdomains: cfg.subdomains,
-      maxZoom: cfg.maxZoom,
-    }).addTo(mapRef.current);
+    const newTileLayer = createTileLayer(cfg).addTo(mapRef.current);
 
-    // Keep markers on top
     if (radiusLayerRef.current) radiusLayerRef.current.bringToBack();
     tileLayerRef.current = newTileLayer;
   };
 
-  // Update Center / User Location
+  // Update Center / User Location ONLY when coordinates genuinely move (avoids hitching on re-render)
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || isInteractingRef.current) return;
     const target = userLocation || center;
-    if (target?.lat && target?.lng) {
-      mapRef.current.flyTo([target.lat, target.lng], userLocation ? 14 : zoom, {
-        duration: 1.2,
-      });
-    }
-  }, [center, userLocation, zoom]);
+    if (!target?.lat || !target?.lng) return;
 
-  // Handle selectedPinId pan & popup
+    const targetZoom = userLocation ? 14 : zoom;
+    const prev = lastCenterRef.current;
+    if (
+      prev &&
+      Math.abs(prev.lat - target.lat) < 0.0001 &&
+      Math.abs(prev.lng - target.lng) < 0.0001 &&
+      prev.zoom === targetZoom
+    ) {
+      return;
+    }
+
+    lastCenterRef.current = {
+      lat: target.lat,
+      lng: target.lng,
+      zoom: targetZoom,
+    };
+
+    mapRef.current.panTo([target.lat, target.lng], {
+      animate: true,
+      duration: 0.45,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [center?.lat, center?.lng, userLocation?.lat, userLocation?.lng, zoom]);
+
+  // Handle selectedPinId pan & popup smoothly
   useEffect(() => {
     if (!selectedPinId || !mapRef.current) return;
     const marker = markersByIdRef.current[selectedPinId];
     if (marker) {
       const latLng = marker.getLatLng();
-      mapRef.current.flyTo(latLng, 15, { duration: 0.8 });
+      mapRef.current.panTo(latLng, { animate: true, duration: 0.45 });
       marker.openPopup();
     }
   }, [selectedPinId]);
 
-  // Draw Proximity Radius Circle around User
+  // Draw or resize Proximity Radius Circle smoothly without rebuilding canvas layers
   useEffect(() => {
     const layer = radiusLayerRef.current;
     if (!layer) return;
-    layer.clearLayers();
 
     const loc = userLocation || center;
-    if (loc && currentRadius && currentRadius > 0) {
-      L.circle([loc.lat, loc.lng], {
+    if (!loc || !currentRadius || currentRadius <= 0) {
+      layer.clearLayers();
+      circleRef.current = null;
+      return;
+    }
+
+    if (circleRef.current) {
+      circleRef.current.setLatLng([loc.lat, loc.lng]);
+      circleRef.current.setRadius(currentRadius * 1000);
+    } else {
+      layer.clearLayers();
+      circleRef.current = L.circle([loc.lat, loc.lng], {
         radius: currentRadius * 1000,
         color: "#E65A1E",
         weight: 2,
@@ -228,7 +289,24 @@ export default function GoogleMap({
         fillOpacity: 0.08,
       }).addTo(layer);
     }
-  }, [userLocation, center, currentRadius]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLocation?.lat, userLocation?.lng, center?.lat, center?.lng, currentRadius]);
+
+  // Update user popup text dynamically without tearing down pin markers
+  useEffect(() => {
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setPopupContent(`
+        <div style="font-family:Archivo,sans-serif;padding:4px;min-width:140px;text-align:center;">
+          <span style="display:inline-block;background:#2563EB;color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:2px;letter-spacing:0.1em;">YOU ARE HERE</span>
+          <p style="font-size:12px;font-weight:800;margin-top:4px;color:#121212;">Your Current Location</p>
+          <p style="font-size:10px;color:#6B6B6B;">Scanning nearby within ${currentRadius || 5}km</p>
+        </div>
+      `);
+    }
+  }, [currentRadius]);
+
+  // Memoize pins footprint so markers only re-draw when pins genuinely change
+  const pinsSig = pins.map((p) => `${p.id}_${p.lat}_${p.lng}`).join("|");
 
   // Draw Interactive Markers
   useEffect(() => {
@@ -236,6 +314,7 @@ export default function GoogleMap({
     if (!layer) return;
     layer.clearLayers();
     markersByIdRef.current = {};
+    userMarkerRef.current = null;
 
     const escapeHtml = (str) =>
       String(str || "")
@@ -246,12 +325,12 @@ export default function GoogleMap({
         .replace(/'/g, "&#039;");
 
     // 1. User Marker (Glowing Radar Pulse)
-    if (userLocation) {
+    if (userLocation?.lat && userLocation?.lng) {
       const userIcon = L.divIcon({
         className: "custom-user-marker",
         html: `
           <div style="position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
-            <div style="position:absolute;width:28px;height:28px;border-radius:50%;background:#3B82F6;opacity:0.35;animation:ping 1.8s cubic-bezier(0,0,0.2,1) infinite;"></div>
+            <div style="position:absolute;width:28px;height:28px;border-radius:50%;background:#3B82F6;opacity:0.35;animation:ping 1.8s cubic-bezier(0,0,0.2,1) infinite;will-change:transform,opacity;pointer-events:none;"></div>
             <div style="width:16px;height:16px;border-radius:50%;background:#2563EB;border:3px solid #FFFFFF;box-shadow:0 2px 6px rgba(0,0,0,0.4);position:relative;z-index:2;"></div>
           </div>
         `,
@@ -268,6 +347,7 @@ export default function GoogleMap({
             <p style="font-size:10px;color:#6B6B6B;">Scanning nearby within ${currentRadius || 5}km</p>
           </div>
         `);
+      userMarkerRef.current = userMarker;
       markersByIdRef.current["user"] = userMarker;
     }
 
@@ -285,9 +365,8 @@ export default function GoogleMap({
 
       let pinHtml = "";
       if (isCandidate) {
-        // Freelancer Pin
         pinHtml = `
-          <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};transition:transform 0.2s;">
+          <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};">
             <div style="display:flex;align-items:center;gap:3px;background:#E65A1E;color:#FFFFFF;border:2px solid #121212;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px #121212;white-space:nowrap;">
               <span>👤</span>
               <span>${titleEsc.split(" ")[0]}</span>
@@ -296,9 +375,8 @@ export default function GoogleMap({
           </div>
         `;
       } else if (isJob) {
-        // Job Posting Pin
         pinHtml = `
-          <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};transition:transform 0.2s;">
+          <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};">
             <div style="display:flex;align-items:center;gap:3px;background:#059669;color:#FFFFFF;border:2px solid #121212;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px #121212;white-space:nowrap;">
               <span>💼</span>
               <span>${payStr || titleEsc.slice(0, 12)}</span>
@@ -307,9 +385,8 @@ export default function GoogleMap({
           </div>
         `;
       } else {
-        // Employer / Company Pin
         pinHtml = `
-          <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};transition:transform 0.2s;">
+          <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};">
             <div style="display:flex;align-items:center;gap:3px;background:#121212;color:#FFFFFF;border:2px solid #FFFFFF;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px rgba(0,0,0,0.5);white-space:nowrap;">
               <span>🏢</span>
               <span>${titleEsc.slice(0, 14)}</span>
@@ -326,7 +403,6 @@ export default function GoogleMap({
         iconAnchor: [40, 26],
       });
 
-      // Rich Actionable Popup
       let popupContent = "";
       if (isCandidate) {
         popupContent = `
@@ -402,7 +478,8 @@ export default function GoogleMap({
 
       markersByIdRef.current[p.id] = marker;
     });
-  }, [pins, userLocation, selectedPinId, onSelectPin, currentRadius]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pinsSig, userLocation?.lat, userLocation?.lng, selectedPinId, onSelectPin]);
 
   // Recenter on user
   const handleRecenter = () => {

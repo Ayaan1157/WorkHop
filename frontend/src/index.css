@@ -395,9 +395,32 @@ select option {
     height: 100%;
     background: #eaeaea;
     z-index: 0;
+    contain: layout size;
+    touch-action: pan-x pan-y;
+    -webkit-tap-highlight-color: transparent;
 }
 .dark .leaflet-container {
     background: #1a1a1a;
+}
+
+/* GPU Accelerated Leaflet Layer Rendering for 60fps Smooth Panning */
+.leaflet-tile-container,
+.leaflet-marker-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane {
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+    backface-visibility: hidden;
+}
+.leaflet-tile {
+    will-change: transform, opacity;
+}
+.custom-map-pin {
+    will-change: transform;
+}
+.custom-user-marker {
+    will-change: transform;
+    pointer-events: none;
 }
 ::selection {
     background: var(--color-brand);

@@ -94,37 +94,41 @@ export default function Employer() {
     );
   });
 
-  const withDist = base.map((l, idx) => {
+  const sorted = useMemo(() => {
     const center = coords || { lat: 12.9352, lng: 77.6245 };
-    const org = getProximityCoordinates(center.lat, center.lng, l.distance_km || (0.3 + (idx % 15) * 0.25), l.id || idx);
-    const dist = distanceKm(center, org);
-    return {
-      ...l,
-      lat: org.lat,
-      lng: org.lng,
-      distance_km: Math.round(dist * 10) / 10,
-    };
-  });
+    const withDist = base.map((l, idx) => {
+      const org = getProximityCoordinates(center.lat, center.lng, l.distance_km || (0.3 + (idx % 15) * 0.25), l.id || idx);
+      const dist = distanceKm(center, org);
+      return {
+        ...l,
+        lat: org.lat,
+        lng: org.lng,
+        distance_km: Math.round(dist * 10) / 10,
+      };
+    });
 
-  const distFiltered = maxDistance ? withDist.filter((l) => (l.distance_km || 0) <= maxDistance) : withDist;
+    const distFiltered = maxDistance ? withDist.filter((l) => (l.distance_km || 0) <= maxDistance) : withDist;
 
-  const sorted = [...distFiltered].sort((a, b) => {
-    if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
-    if (sortBy === "jobs") return (b.jobs_done || 0) - (a.jobs_done || 0);
-    if (sortBy === "rate") return (a.rate_hr || 0) - (b.rate_hr || 0);
-    return (a.distance_km || 0) - (b.distance_km || 0);
-  });
+    return [...distFiltered].sort((a, b) => {
+      if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
+      if (sortBy === "jobs") return (b.jobs_done || 0) - (a.jobs_done || 0);
+      if (sortBy === "rate") return (a.rate_hr || 0) - (b.rate_hr || 0);
+      return (a.distance_km || 0) - (b.distance_km || 0);
+    });
+  }, [base, coords, maxDistance, sortBy]);
 
-  const mapPins = sorted
-    .filter((l) => l.lat && l.lng)
-    .map((l) => ({
-      id: l.id,
-      kind: "candidate",
-      title: l.name,
-      subtitle: `${l.skill} · ${l.distance_km} km away`,
-      lat: l.lat,
-      lng: l.lng,
-    }));
+  const mapPins = useMemo(() => {
+    return sorted
+      .filter((l) => l.lat && l.lng)
+      .map((l) => ({
+        id: l.id,
+        kind: "candidate",
+        title: l.name,
+        subtitle: `${l.skill} · ${l.distance_km} km away`,
+        lat: l.lat,
+        lng: l.lng,
+      }));
+  }, [sorted]);
 
   const handlePay = async () => {
     setPaying(true);
