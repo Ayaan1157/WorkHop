@@ -21,6 +21,7 @@ export { default as BoostPreviewModal } from "@/components/BoostPreviewModal";
 export { default as AuthModal } from "@/components/AuthModal";
 export { default as RecaptchaWidget } from "@/components/RecaptchaWidget";
 export { default as SiteFooter } from "@/components/SiteFooter";
+export { default as FloatingChatWidget } from "@/components/FloatingChatWidget";
 export * from "@/components/Skeletons";
 import SiteFooter from "@/components/SiteFooter";
 

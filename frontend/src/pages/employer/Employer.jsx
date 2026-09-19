@@ -11,6 +11,7 @@ import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
 import { ProCardSkeleton } from "@/components/Skeletons";
 import BoostPreviewModal from "@/components/BoostPreviewModal";
+import FloatingChatWidget from "@/components/FloatingChatWidget";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
 import { LEAD_CATEGORY_FILTERS } from "@/lib/catalogFilters";
@@ -214,9 +215,6 @@ export default function Employer() {
             </button>
             <IconBtn testID="employer-map-btn" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "Show Map"}>
               <MapIcon size={18} className={showMap ? "text-brand" : "text-ink"} />
-            </IconBtn>
-            <IconBtn testID="employer-inbox-btn" onClick={() => nav("/employer/inbox")}>
-              <MessagesSquare size={18} className="text-ink" />
             </IconBtn>
             <IconBtn testID="employer-plans-btn" onClick={() => nav("/employer/plans")}>
               <Tag size={18} className="text-brand" />
@@ -608,6 +606,8 @@ export default function Employer() {
           nav("/employer/post-job", { state: { boost: true } });
         }}
       />
+      {/* FLOATING CIRCULAR CHAT WIDGET (Bottom Right) */}
+      <FloatingChatWidget role="employer" />
     </Shell>
   );
 }

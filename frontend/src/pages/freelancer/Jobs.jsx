@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import {
   Shell, TopBar, IconBtn, EmptyBlock, Breadcrumbs,
-  ProfileProgressBar, BoostPreviewModal, JobCardSkeleton, CategoryTiles
+  ProfileProgressBar, BoostPreviewModal, JobCardSkeleton, CategoryTiles,
+  FloatingChatWidget
 } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
@@ -518,7 +519,6 @@ export default function Jobs() {
             )}
             <IconBtn testID="jobs-categories-btn" onClick={() => nav("/categories")} title="Categories"><Grid3x3 size={17} /></IconBtn>
             <IconBtn testID="jobs-map-btn" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "Show Map"}><MapIcon size={18} className={showMap ? "text-brand" : ""} /></IconBtn>
-            <IconBtn testID="jobs-chats-btn" onClick={() => nav("/freelancer/chats")} title="My Chats"><MessagesSquare size={18} className="text-brand" /></IconBtn>
             <span data-testid="verify-status-badge" className={`hidden xs:flex items-center gap-1 border-2 border-ink px-2.5 py-1.5 text-[10px] font-black tracking-wide text-white ${isVerified ? "bg-ok" : "bg-ink"}`}>
               {isVerified ? <ShieldCheck size={14} /> : <ShieldHalf size={14} />}{isAdmin ? "ADMIN VERIFIED" : (isVerified ? "VERIFIED PRO" : "UNVERIFIED")}
             </span>
@@ -1572,6 +1572,8 @@ export default function Jobs() {
         onClose={() => setBoostPreviewOpen(false)}
         onConfirmBoost={() => { setBoostPreviewOpen(false); setPaywallOpen(true); }}
       />
+      {/* FLOATING CIRCULAR CHAT WIDGET (Bottom Right) */}
+      <FloatingChatWidget role="freelancer" />
     </Shell>
   );
 }
