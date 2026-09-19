@@ -527,7 +527,7 @@ export default function Jobs() {
       />
 
       {/* Upwork-style Profile Progress Bar & Guidance */}
-      <div className="border-b-2 border-ink bg-white dark:bg-[#161618]">
+      <div className="bg-white dark:bg-[#161618]">
         <div className="mx-auto w-full max-w-[1600px] px-4 py-3 sm:px-8">
           <Breadcrumbs items={[{ label: "Find Gigs", to: "/freelancer/jobs" }, { label: catFilter === "ALL" ? "All Categories" : catFilter }]} />
           <div className="mt-3">
@@ -541,6 +541,7 @@ export default function Jobs() {
         selected={catFilter}
         onSelect={(cat) => setCatFilter(cat)}
         testIDPrefix="job-cat-tile"
+        className="dark:bg-[#161618]"
       />
 
       {/* PROPORTIONAL & AESTHETIC LIVE GIG RADAR MAP CARD */}

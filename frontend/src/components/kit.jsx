@@ -531,10 +531,10 @@ export function MobileBottomNav() {
 }
 
 // Sticky page header bar with optional back button + right slot
-export function TopBar({ title, sub, right, onBack, backTestID = "topbar-back-btn" }) {
+export function TopBar({ title, sub, right, onBack, backTestID = "topbar-back-btn", borderBottom = true }) {
   const nav = useNavigate();
   return (
-    <div className="sticky top-0 z-20 w-full border-b-2 border-ink bg-white dark:bg-[#121212]">
+    <div className={`sticky top-0 z-20 w-full bg-white dark:bg-[#121212] ${borderBottom ? "border-b-2 border-ink" : ""}`}>
       <div className="mx-auto flex w-full max-w-[1600px] items-center gap-2.5 sm:gap-4 px-3 py-2 sm:py-2.5 sm:px-8">
         {onBack !== false && (
           <button
@@ -575,7 +575,7 @@ export function Shell({ children, className = "" }) {
 }
 
 // Horizontal scrollable 9-category filters
-export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" }) {
+export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile", className = "" }) {
   const [cats, setCats] = useState(["ALL", ...CATALOG_CATEGORY_NAMES]);
   useEffect(() => {
     apiGet("/catalog")
@@ -585,7 +585,7 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile" })
       .catch(() => {});
   }, []);
   return (
-    <div className="w-full border-b-2 border-ink bg-white dark:bg-[#121212]">
+    <div className={`w-full bg-white dark:bg-[#121212] ${className}`}>
       <div className="wh-scroll mx-auto flex w-full max-w-[1600px] gap-3 overflow-x-auto px-4 py-3 sm:px-8">
         {cats.map((key) => {
           const v = CATEGORY_VISUALS[key] || CATEGORY_VISUALS.ALL;

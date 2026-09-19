@@ -185,6 +185,7 @@ export default function Employer() {
   return (
     <Shell>
       <TopBar
+        borderBottom={false}
         title="NEARBY EXPERTS"
         sub="Bengaluru · live map"
         backTestID="employer-back-btn"
@@ -322,7 +323,7 @@ export default function Employer() {
                   !onlySaved ? "bg-ink text-white dark:bg-[#2a2a2a] dark:!text-white" : "bg-white dark:bg-[#222] text-ink dark:!text-white hover:bg-sand"
                 }`}
               >
-                ALL PROS ({distFiltered.length})
+                ALL PROS ({sorted.length})
               </button>
               <button
                 onClick={() => setOnlySaved(true)}
@@ -413,8 +414,6 @@ export default function Employer() {
             </div>
           </div>
         </div>
-
-      <CategoryTiles selected={catFilter} onSelect={setCatFilter} testIDPrefix="lead-cat-tile" />
 
       {/* PRO LISTINGS */}
       <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 py-2 pb-16 flex flex-col gap-4">
