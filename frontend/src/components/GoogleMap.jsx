@@ -367,7 +367,7 @@ export default function GoogleMap({
       if (isCandidate) {
         pinHtml = `
           <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};">
-            <div style="display:flex;align-items:center;gap:3px;background:#E65A1E;color:#FFFFFF;border:2px solid #121212;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px #121212;white-space:nowrap;">
+            <div style="display:flex;align-items:center;gap:3px;background:#E65A1E;color:#FFFFFF;border:2px solid #121212;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:0 4px 14px rgba(0,0,0,0.18);white-space:nowrap;">
               <span>👤</span>
               <span>${titleEsc.split(" ")[0]}</span>
             </div>
@@ -377,7 +377,7 @@ export default function GoogleMap({
       } else if (isJob) {
         pinHtml = `
           <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};">
-            <div style="display:flex;align-items:center;gap:3px;background:#059669;color:#FFFFFF;border:2px solid #121212;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px #121212;white-space:nowrap;">
+            <div style="display:flex;align-items:center;gap:3px;background:#059669;color:#FFFFFF;border:2px solid #121212;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:0 4px 14px rgba(0,0,0,0.18);white-space:nowrap;">
               <span>💼</span>
               <span>${payStr || titleEsc.slice(0, 12)}</span>
             </div>
@@ -387,7 +387,7 @@ export default function GoogleMap({
       } else {
         pinHtml = `
           <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:${isSelected ? "scale(1.15)" : "scale(1)"};">
-            <div style="display:flex;align-items:center;gap:3px;background:#121212;color:#FFFFFF;border:2px solid #FFFFFF;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:2px 2px 0px rgba(0,0,0,0.5);white-space:nowrap;">
+            <div style="display:flex;align-items:center;gap:3px;background:#121212;color:#FFFFFF;border:2px solid #FFFFFF;padding:2px 6px;border-radius:12px;font-family:Archivo,sans-serif;font-weight:900;font-size:10px;box-shadow:0 4px 14px rgba(0,0,0,0.25);white-space:nowrap;">
               <span>🏢</span>
               <span>${titleEsc.slice(0, 14)}</span>
             </div>
@@ -424,7 +424,7 @@ export default function GoogleMap({
                 : ""
             }
             <div style="display:flex;gap:4px;margin-top:6px;">
-              <a href="/pro/${p.id}" style="display:block;width:100%;text-align:center;background:#E65A1E;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:1.5px 1.5px 0px #121212;letter-spacing:0.05em;">
+              <a href="/pro/${p.id}" style="display:block;width:100%;text-align:center;background:#E65A1E;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:0 2px 8px rgba(0,0,0,0.15);letter-spacing:0.05em;">
                 VIEW PROFILE & CHAT →
               </a>
             </div>
@@ -442,7 +442,7 @@ export default function GoogleMap({
             <p style="font-size:13px;font-weight:900;color:#121212;margin:2px 0;">${titleEsc}</p>
             <p style="font-size:11px;color:#555;margin:0 0 6px 0;">🏢 ${p.company_name || subEsc}</p>
             <div style="display:flex;gap:4px;margin-top:6px;">
-              <a href="/freelancer/jobs" style="display:block;width:100%;text-align:center;background:#059669;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:1.5px 1.5px 0px #121212;letter-spacing:0.05em;">
+              <a href="/freelancer/jobs" style="display:block;width:100%;text-align:center;background:#059669;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:0 2px 8px rgba(0,0,0,0.15);letter-spacing:0.05em;">
                 VIEW GIG & APPLY →
               </a>
             </div>
@@ -460,7 +460,7 @@ export default function GoogleMap({
             <p style="font-size:13px;font-weight:900;color:#121212;margin:2px 0;">${titleEsc}</p>
             <p style="font-size:11px;color:#555;margin:0 0 6px 0;">${subEsc}</p>
             <div style="display:flex;gap:4px;margin-top:6px;">
-              <a href="/employer" style="display:block;width:100%;text-align:center;background:#121212;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:1.5px 1.5px 0px #121212;letter-spacing:0.05em;">
+              <a href="/employer" style="display:block;width:100%;text-align:center;background:#121212;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:0 2px 8px rgba(0,0,0,0.15);letter-spacing:0.05em;">
                 VIEW OPEN GIGS →
               </a>
             </div>
