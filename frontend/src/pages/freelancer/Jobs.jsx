@@ -1390,9 +1390,7 @@ export default function Jobs() {
                   ) : (
                     <>
                       <Send size={16} />
-                      <span>
-                        SEND APPLICATION ({(activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits} CREDITS)
-                      </span>
+                      <span>APPLY</span>
                     </>
                   )}
                 </button>
@@ -1628,7 +1626,7 @@ function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, o
               className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
             >
               <Send size={13} />
-              <span>APPLY ({creditsCost} C)</span>
+              <span>APPLY</span>
             </button>
           )}
         </div>

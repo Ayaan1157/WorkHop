@@ -198,7 +198,7 @@ export default function ApplicantLeaderboardModal({ open, onClose, job, onOpenAp
               className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3 text-xs font-black tracking-wider text-white shadow-[3px_3px_0px_#121212] transition hover:bg-brand/95 hover:translate-x-0.5 hover:translate-y-0.5"
             >
               <Rocket size={15} />
-              <span>APPLY & OUTBID FOR TOP SPOT</span>
+              <span>APPLY</span>
             </button>
           )}
         </div>
