@@ -8,7 +8,7 @@ import {
   Plus, Minus, Trash2, Paperclip, UploadCloud
 } from "lucide-react";
 import {
-  Shell, TopBar, IconBtn, CategoryTiles, EmptyBlock, Breadcrumbs,
+  Shell, TopBar, IconBtn, EmptyBlock, Breadcrumbs,
   ProfileProgressBar, BoostPreviewModal, JobCardSkeleton
 } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
@@ -245,7 +245,7 @@ export default function Jobs() {
   const quotaLimit = quota?.quota_limit ?? 3;
   const hasBoost = !!quota?.has_boost;
   const quotaExhausted = isAdmin ? false : (quotaUsed >= quotaLimit);
-  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const activeFilterCount = Object.values(filters).filter(Boolean).length + (catFilter !== "ALL" ? 1 : 0);
 
   const gotoVerify = () => {
     if (!user) { localStorage.setItem("workhop_auth_intent", "freelancer"); nav("/"); return; }
@@ -602,6 +602,21 @@ export default function Jobs() {
             )}
           </div>
 
+          {catFilter !== "ALL" && (
+            <div className="flex items-center gap-1.5 border-2 border-ink bg-[#FFF3C4] px-2.5 py-1 text-xs font-black text-ink shadow-[1.5px_1.5px_0px_#121212]">
+              <span>Category: {activeFilter?.label || catFilter}</span>
+              <button
+                type="button"
+                data-testid="clear-active-cat-btn"
+                onClick={() => setCatFilter("ALL")}
+                className="flex h-4 w-4 items-center justify-center border border-ink bg-white hover:bg-sand transition"
+                title="Clear category filter"
+              >
+                <X size={10} />
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
             {/* Sorting Dropdown */}
             <div className="flex-1 sm:flex-none flex items-center justify-between gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 py-2 shadow-[1.5px_1.5px_0px_#121212]">
@@ -641,7 +656,43 @@ export default function Jobs() {
       {filtersOpen && (
         <div className="border-b-2 border-ink bg-sand" data-testid="jobs-filters-panel">
           <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 p-4 sm:px-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Category Filter */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[10px] font-black tracking-wider text-inkmuted uppercase">GIG CATEGORY</p>
+                {catFilter !== "ALL" && (
+                  <button
+                    type="button"
+                    onClick={() => setCatFilter("ALL")}
+                    className="text-[10px] font-black text-brand underline"
+                  >
+                    Reset Category
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {JOB_CATEGORY_FILTERS.map((cat) => {
+                  const isSelected = catFilter === cat.key;
+                  return (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      data-testid={`filter-cat-${cat.key.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                      onClick={() => setCatFilter(cat.key)}
+                      className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black transition ${
+                        isSelected
+                          ? "bg-ink text-white dark:bg-white dark:text-black shadow-[1.5px_1.5px_0px_#121212]"
+                          : "bg-white text-ink hover:bg-sand"
+                      }`}
+                    >
+                      {cat.key === "ALL" ? "ALL CATEGORIES" : cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-ink/20 pt-3">
               <FilterGroup label="BUDGET (GIG PAY)" options={BUDGETS} value={filters.budget} onPick={(v) => setFilters((p) => ({ ...p, budget: v }))} />
               <FilterGroup label="LOCATION RADIUS" options={DISTS} value={filters.dist} onPick={(v) => setFilters((p) => ({ ...p, dist: v }))} />
               <div>
@@ -676,7 +727,10 @@ export default function Jobs() {
                 <span className="text-xs font-bold text-ink">Verified Employers Only</span>
               </label>
               <button
-                onClick={() => setFilters({ budget: null, dist: null, minRating: null, verifiedOnly: false })}
+                onClick={() => {
+                  setFilters({ budget: null, dist: null, minRating: null, verifiedOnly: false });
+                  setCatFilter("ALL");
+                }}
                 className="text-xs font-black text-brand underline"
               >
                 RESET ALL FILTERS
@@ -685,9 +739,6 @@ export default function Jobs() {
           </div>
         </div>
       )}
-
-      {/* Category Tiles */}
-      <CategoryTiles selected={catFilter} onSelect={setCatFilter} testIDPrefix="jobs-cat-tile" />
 
       {/* Unverified Banner */}
       {!isVerified && (
