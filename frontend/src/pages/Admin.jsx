@@ -16,7 +16,6 @@ import RecaptchaWidget from "@/components/RecaptchaWidget";
 import { checkRateLimit, resetRateLimit } from "@/lib/security";
 
 const TABS = [
-  { id: "OVERVIEW", label: "📊 OVERVIEW & STATS" },
   { id: "CREDITS", label: "🪙 CREDITS & PRICING" },
   { id: "CONTROLS", label: "⚡ SITE CONTROLS" },
   { id: "GIGS", label: "💼 GIGS & MODERATION" },
@@ -31,7 +30,6 @@ const TABS = [
 const PRODUCT_LABELS = {
   all: "All purchases",
   employer_unlock: "Lead unlock ₹199",
-  freelancer_onboarding: "Onboarding ₹99",
   quota_boost: "Applies boost ₹149",
   plan: "Employer plans",
 };
@@ -95,118 +93,7 @@ function StatTile({ label, value, sub, accent, icon: Icon }) {
 
 // ---------------- SUB-COMPONENTS FOR EACH TAB ----------------
 
-// 1. Overview & Activity Tab
-function OverviewTab({ overview, data, onSelectTab }) {
-  const zones = [
-    { name: "Koramangala & HSR", activeGigs: 68, activePros: 42, revenue: "₹64,200", growth: "+18%" },
-    { name: "Indiranagar & Domlur", activeGigs: 54, activePros: 31, revenue: "₹48,900", growth: "+12%" },
-    { name: "Whitefield & Marathahalli", activeGigs: 42, activePros: 22, revenue: "₹36,400", growth: "+15%" },
-    { name: "Jayanagar & JP Nagar", activeGigs: 38, activePros: 19, revenue: "₹35,000", growth: "+9%" },
-  ];
 
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Quick Action Command Center Bar */}
-      <div className="border-2 border-ink bg-[#FFF3E9] p-4 shadow-[4px_4px_0px_#121212]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-brand text-white">
-              <Zap size={18} />
-            </span>
-            <div>
-              <p className="text-xs font-black uppercase tracking-wide text-ink">Administrative Quick Actions</p>
-              <p className="text-[11px] text-inkmuted">Instant shortcuts to update site broadcast, review pros, or resolve escrow</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => onSelectTab("CONTROLS")}
-              className="border-2 border-ink bg-white px-3 py-1.5 text-[11px] font-black tracking-wider text-ink hover:bg-sand"
-            >
-              📢 BROADCAST BANNER
-            </button>
-            <button
-              onClick={() => onSelectTab("GIGS")}
-              className="border-2 border-ink bg-brand px-3 py-1.5 text-[11px] font-black tracking-wider text-white hover:opacity-95"
-            >
-              ➕ POST FEATURED GIG
-            </button>
-            <button
-              onClick={() => onSelectTab("ESCROW")}
-              className="border-2 border-ink bg-ink px-3 py-1.5 text-[11px] font-black tracking-wider text-white hover:bg-black"
-            >
-              ⚖️ ESCROW DISPUTES
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Bengaluru Zone Performance Grid */}
-      <div>
-        <p className="text-xs font-black uppercase tracking-wider text-inkmuted mb-2">
-          📍 BENGALURU ZONE ACTIVITY & GIG DENSITY
-        </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {zones.map((z) => (
-            <div key={z.name} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-ink">{z.name}</span>
-                <span className="text-[10px] font-extrabold text-ok">{z.growth}</span>
-              </div>
-              <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2 text-xs">
-                <span className="text-inkmuted">Active Gigs:</span>
-                <span className="font-black text-ink">{z.activeGigs}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs mt-1">
-                <span className="text-inkmuted">Verified Pros:</span>
-                <span className="font-black text-brand">{z.activePros}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs mt-1">
-                <span className="text-inkmuted">Gross Volume:</span>
-                <span className="font-black text-ink">{z.revenue}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Platform Health & Escrow Security Status */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
-          <p className="text-xs font-black uppercase tracking-wider text-inkmuted">🛡️ ESCROW & FINANCIAL SECURITY</p>
-          <div className="mt-3 flex items-center justify-between border-b border-ink/10 pb-2">
-            <span className="text-xs font-bold text-ink">Active Milestone Funds Held</span>
-            <span className="text-sm font-black text-ok">₹53,500.00</span>
-          </div>
-          <div className="mt-2 flex items-center justify-between border-b border-ink/10 pb-2">
-            <span className="text-xs font-bold text-ink">Pending Disputed Orders</span>
-            <span className="text-xs font-black text-brand">1 Order Requiring Admin Review</span>
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-xs font-bold text-ink">Average Milestone Payout Time</span>
-            <span className="text-xs font-black text-ink">Same Day (1.4 hours)</span>
-          </div>
-        </div>
-
-        <div className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
-          <p className="text-xs font-black uppercase tracking-wider text-inkmuted">⚡ SYSTEM INTEGRITY & UPTIME</p>
-          <div className="mt-3 flex items-center justify-between border-b border-ink/10 pb-2">
-            <span className="text-xs font-bold text-ink">API Response Latency</span>
-            <span className="text-xs font-black text-ok">18ms (Optimal)</span>
-          </div>
-          <div className="mt-2 flex items-center justify-between border-b border-ink/10 pb-2">
-            <span className="text-xs font-bold text-ink">Database Replication</span>
-            <span className="text-xs font-black text-ok">MongoDB Live (Healthy)</span>
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-xs font-bold text-ink">Email & SMS Delivery Ingress</span>
-            <span className="text-xs font-black text-ok">Online (100% Sent)</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // 2. Site Controls & Broadcast Banner Tab
 function SiteControlsTab({ adminFetch }) {
@@ -359,53 +246,6 @@ function SiteControlsTab({ adminFetch }) {
         </div>
       </div>
 
-      {/* Pricing & Fee Customizer */}
-      <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212]">
-        <div className="flex items-center gap-2 border-b-2 border-ink/10 pb-3 mb-4">
-          <DollarSign size={18} className="text-brand" />
-          <h3 className="text-sm font-black tracking-wider uppercase text-ink">
-            Platform Pricing &amp; Fee Customizer
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-              Freelancer Onboarding Fee (₹)
-            </label>
-            <input
-              type="number"
-              value={settings.onboarding_fee || 99}
-              onChange={(e) => setSettings({ ...settings, onboarding_fee: Number(e.target.value) })}
-              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-sm font-black text-ink focus:border-brand outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-              Employer Lead Unlock Fee (₹)
-            </label>
-            <input
-              type="number"
-              value={settings.lead_unlock_fee || 199}
-              onChange={(e) => setSettings({ ...settings, lead_unlock_fee: Number(e.target.value) })}
-              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-sm font-black text-ink focus:border-brand outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-              Apply Quota Boost Pack (₹)
-            </label>
-            <input
-              type="number"
-              value={settings.quota_boost_fee || 149}
-              onChange={(e) => setSettings({ ...settings, quota_boost_fee: Number(e.target.value) })}
-              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-sm font-black text-ink focus:border-brand outline-none"
-            />
-          </div>
-        </div>
-      </div>
 
       {/* Maintenance Mode & Safety */}
       <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212]">
@@ -1469,9 +1309,8 @@ function CouponsTab({ adminFetch }) {
                   onChange={(e) => setForm({ ...form, applies_to: e.target.value })}
                   className="mt-1 w-full border-2 border-ink bg-white p-2.5 text-xs font-bold text-ink outline-none"
                 >
-                  <option value="all">All purchases (Unlocks, Plans, Boosts, Onboarding)</option>
+                  <option value="all">All purchases (Unlocks, Plans, Boosts)</option>
                   <option value="employer_unlock">Lead Unlock (₹199 only)</option>
-                  <option value="freelancer_onboarding">Freelancer Verification Onboarding (₹99 only)</option>
                   <option value="quota_boost">Freelancer Applies Quota Boost (₹149 only)</option>
                   <option value="plan">Employer Credit Plans / Hops Packages only</option>
                 </select>
@@ -1989,7 +1828,7 @@ function CreditsConfigTab({ adminFetch }) {
 export default function Admin() {
   const nav = useNavigate();
   const { user, loading: authLoading, adminLogin, logout } = useAuth();
-  const [tab, setTab] = useState("OVERVIEW");
+  const [tab, setTab] = useState("CREDITS");
   const [overview, setOverview] = useState(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2333,7 +2172,6 @@ export default function Admin() {
           </p>
         )}
 
-        {tab === "OVERVIEW" && <OverviewTab overview={overview} data={rows} onSelectTab={(newTab) => setTab(newTab)} />}
         {tab === "CREDITS" && <CreditsConfigTab adminFetch={adminFetch} />}
         {tab === "CONTROLS" && <SiteControlsTab adminFetch={adminFetch} />}
         {tab === "GIGS" && <GigsModerationTab adminFetch={adminFetch} />}
