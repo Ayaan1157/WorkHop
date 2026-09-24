@@ -23,6 +23,7 @@ import FreelancerProfile from "@/pages/freelancer/FreelancerProfile";
 import { useAuth } from "@/context/AuthContext";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ScrollToTop from "@/components/ScrollToTop";
 
 function ProfileRoute() {
   const { user } = useAuth();
@@ -39,6 +40,7 @@ function App() {
       <AuthProvider>
         <ErrorBoundary>
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/profile" element={<ProfileRoute />} />

@@ -675,7 +675,10 @@ export default function LiveMap() {
                             <span>Show on Map</span>
                           </button>
                           <button
-                            onClick={() => nav(`/pro/${pro.id}`)}
+                            onClick={() => {
+                              window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                              nav(`/pro/${pro.id}`);
+                            }}
                             className="flex items-center justify-center gap-1 border border-ink bg-brand py-1.5 text-[11px] font-black text-white shadow-[1.5px_1.5px_0px_#121212] hover:opacity-90 transition"
                           >
                             <span>Chat &amp; Hire</span>

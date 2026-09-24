@@ -36,6 +36,7 @@ export default function Pro() {
   const { startPayment } = useRazorpay();
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     apiGet(`/pros/${id}`)
       .then((d) => {
         if (d) {
@@ -44,7 +45,10 @@ export default function Pro() {
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      });
     if (isAdmin || localStorage.getItem("workhop_employer_unlocked") === "1") setUnlocked(true);
   }, [id, isAdmin]);
 

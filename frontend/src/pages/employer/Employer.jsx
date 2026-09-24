@@ -455,7 +455,10 @@ export default function Employer() {
                   index={i}
                   isSaved={savedPros.includes(String(l.id))}
                   onToggleSave={(e) => handleToggleSave(l.id, e)}
-                  onClick={() => nav(`/pro/${l.id}`)}
+                  onClick={() => {
+                    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                    nav(`/pro/${l.id}`);
+                  }}
                 />
               ))}
             </div>
@@ -519,7 +522,10 @@ export default function Employer() {
                   index={i + 2}
                   isSaved={savedPros.includes(String(l.id))}
                   onToggleSave={(e) => handleToggleSave(l.id, e)}
-                  onClick={() => nav(`/pro/${l.id}`)}
+                  onClick={() => {
+                    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                    nav(`/pro/${l.id}`);
+                  }}
                 />
               ))}
             </div>

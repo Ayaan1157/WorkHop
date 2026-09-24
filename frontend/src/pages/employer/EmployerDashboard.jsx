@@ -552,7 +552,10 @@ export default function EmployerDashboard() {
               {savedPros.map((pro) => (
                 <div
                   key={pro.id}
-                  onClick={() => nav(`/pro/${pro.id}`)}
+                  onClick={() => {
+                    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                    nav(`/pro/${pro.id}`);
+                  }}
                   className="cursor-pointer border border-ink/40 p-3 hover:bg-sand/40 dark:hover:bg-stone-800/60 transition flex items-center justify-between text-xs"
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -574,6 +577,7 @@ export default function EmployerDashboard() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
                       nav(`/pro/${pro.id}`);
                     }}
                     className="border border-ink bg-sand px-2 py-1 text-[10px] font-black uppercase text-ink hover:bg-white"
