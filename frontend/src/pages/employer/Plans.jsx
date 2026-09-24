@@ -4,7 +4,7 @@ import {
   CheckCircle2, ArrowRight, Check, Loader2, Sparkles,
   PlusCircle, ShieldCheck, Zap, Flame
 } from "lucide-react";
-import { Shell, TopBar, Spinner, IconBtn } from "@/components/kit";
+import { Shell, TopBar, Spinner } from "@/components/kit";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { apiGet, getEmployerId } from "@/lib/api";
@@ -94,11 +94,6 @@ export default function Plans() {
         title="PLANS &amp; PRICING"
         sub="Free Job Posting · Optional Urgent 48h Boosts"
         backTestID="plans-back-btn"
-        right={
-          <IconBtn onClick={() => nav("/employer/post-job")} title="Post a Job">
-            <PlusCircle size={18} className="text-brand" />
-          </IconBtn>
-        }
       />
 
       {loading ? (
