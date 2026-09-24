@@ -80,8 +80,8 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        {/* Main Grid: 2 columns on mobile, 3 columns on tablet & desktop */}
-        <div className="grid grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-8 sm:gap-y-10 sm:grid-cols-3 pt-8 sm:pt-12">
+        {/* Main Grid: 2 columns on mobile, 4 columns on tablet & desktop */}
+        <div className="grid grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-8 sm:gap-y-10 sm:grid-cols-2 lg:grid-cols-4 pt-8 sm:pt-12">
           
           {/* Column 1: For Employers (Business) */}
           <div className="flex flex-col gap-3">
@@ -96,7 +96,7 @@ export default function SiteFooter() {
               </li>
               <li>
                 <Link to="/employer/post-job" className="hover:text-white transition">
-                  Post a Local Gig
+                  Post a Local Gig (Free)
                 </Link>
               </li>
               <li>
@@ -158,11 +158,56 @@ export default function SiteFooter() {
                   Portfolio Showcase
                 </Link>
               </li>
+              <li>
+                <Link to="/categories" className="hover:text-white transition">
+                  Skill Taxonomy Directory
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Column 3: Platform & Compliance (Trust & Legal) */}
-          <div className="flex flex-col gap-3 col-span-2 sm:col-span-1">
+          {/* Column 3: Guides & Blog (SEO) */}
+          <div className="flex flex-col gap-3">
+            <h4 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+              <span>Guides &amp; Blog</span>
+              <span className="px-1.5 py-0.2 bg-brand text-[9px] font-black text-white rounded-none">SEO</span>
+            </h4>
+            <ul className="flex flex-col gap-2 text-xs sm:text-sm text-stone-400">
+              <li>
+                <Link to="/blog" className="text-brand font-bold hover:text-white transition">
+                  WorkHop Blog &amp; Insights →
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog/hyperlocal-freelance-network-bangalore" className="hover:text-white transition">
+                  5km Hyperlocal Network
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog/why-job-posting-is-free" className="hover:text-white transition">
+                  Why Job Posting is 100% Free
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog/bangalore-freelance-pricing-guide" className="hover:text-white transition">
+                  Bangalore Rate Card 2026
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog/direct-whatsapp-hiring-bangalore" className="hover:text-white transition">
+                  Direct WhatsApp Hiring
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog/how-to-rank-on-workhop-radar" className="hover:text-white transition">
+                  Rank #1 on 5km Radar
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: Platform & Compliance (Trust & Legal) */}
+          <div className="flex flex-col gap-3">
             <h4 className="text-sm font-black uppercase tracking-wider text-white">
               Trust &amp; Legal
             </h4>
@@ -188,8 +233,18 @@ export default function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link to="/blog/escrow-protection-and-trust-guide" className="hover:text-white transition">
+                  Escrow Protection Guide
+                </Link>
+              </li>
+              <li>
                 <Link to="/support" className="hover:text-white transition">
                   Help Desk &amp; Grievance Redressal
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog" className="text-stone-300 font-bold hover:text-white transition">
+                  WorkHop Blog &amp; Articles
                 </Link>
               </li>
             </ul>

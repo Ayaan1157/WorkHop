@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, memo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { BLOG_POSTS } from "@/data/blogPosts";
 import {
   Search, X, Star, MapPin, IndianRupee, Clock, CheckCheck, Lock, LockOpen,
   PlusCircle, ArrowRight, MessagesSquare, Tag, LocateFixed, CheckCircle2,
@@ -566,6 +567,60 @@ export default function Employer() {
                 Explore Pro Employer Plans · Unlimited Lead Unlocks · Dedicated Account Manager · Custom Boosts
               </p>
             </button>
+
+            {/* LATEST FROM THE BLOG / HIRING PLAYBOOKS SECTION */}
+            <div className="mt-8 pt-8 border-t-2 border-ink">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="border border-ink bg-brand text-white px-2 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                      WORKHOP INSIGHTS
+                    </span>
+                    <h3 className="text-base sm:text-lg font-black text-ink dark:text-white uppercase tracking-tight">
+                      Hiring Playbooks &amp; Local Market Guides
+                    </h3>
+                  </div>
+                  <p className="text-xs text-inkmuted font-semibold mt-0.5">
+                    Insights on 5km radius freelancing, rate cards, and direct WhatsApp recruiting in Bangalore.
+                  </p>
+                </div>
+                <Link
+                  to="/blog"
+                  className="flex items-center gap-1 text-xs font-black text-brand hover:underline"
+                >
+                  VIEW ALL GUIDES ({BLOG_POSTS.length}) →
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {BLOG_POSTS.slice(0, 3).map((post) => (
+                  <Link
+                    key={post.id}
+                    to={`/blog/${post.slug}`}
+                    className="flex flex-col justify-between border-2 border-ink bg-white dark:bg-[#161618] p-4 shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:border-brand group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-2">
+                        <span className={`border px-1.5 py-0.5 text-[9px] font-black uppercase ${post.categoryColor}`}>
+                          {post.category}
+                        </span>
+                        <span className="text-[10px] font-bold text-inkmuted">{post.readTime}</span>
+                      </div>
+                      <h4 className="text-sm font-black text-ink dark:text-white group-hover:text-brand transition leading-snug line-clamp-2">
+                        {post.title}
+                      </h4>
+                      <p className="text-xs text-inkmuted dark:text-stone-300 font-medium mt-1.5 line-clamp-2">
+                        {post.summary}
+                      </p>
+                    </div>
+                    <div className="mt-4 pt-2.5 border-t border-ink/10 flex items-center justify-between text-[11px] font-black text-brand">
+                      <span>READ PLAYBOOK</span>
+                      <ArrowRight size={12} />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </div>

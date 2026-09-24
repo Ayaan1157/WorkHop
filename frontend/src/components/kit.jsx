@@ -4,7 +4,7 @@ import {
   ChevronLeft, Loader2, Grid3x3, Palette, Code2, Megaphone,
   PenLine, Video, Sparkles, Music, Briefcase, Users,
   MapPin, PlusCircle, UserCircle2, LogOut, Search, Compass, Tag, HelpCircle, Coins,
-  Sun, Moon, Menu, X, Home, Shield, FileText, ArrowRight
+  Sun, Moon, Menu, X, Home, Shield, FileText, ArrowRight, BookOpen
 } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { CATEGORY_VISUALS, CATEGORY_SHORT_LABELS, CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
@@ -409,6 +409,14 @@ export function GlobalNav() {
               >
                 <UserCircle2 size={15} className="text-brand" />
                 <span>My Profile &amp; Gigs</span>
+              </Link>
+              <Link
+                to="/blog"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 text-ink dark:text-stone-300 hover:text-brand"
+              >
+                <BookOpen size={15} className="text-brand" />
+                <span>Blog &amp; SEO Guides</span>
               </Link>
               <Link
                 to="/support"

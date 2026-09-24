@@ -7,6 +7,7 @@ import Profile from "@/pages/Profile";
 import Categories from "@/pages/Categories";
 import Legal from "@/pages/Legal";
 import Support from "@/pages/Support";
+import Blog from "@/pages/Blog";
 import LiveMap from "@/pages/LiveMap";
 import Admin from "@/pages/Admin";
 import Chat from "@/pages/Chat";
@@ -48,6 +49,8 @@ function App() {
             <Route path="/employer/profile" element={<EmployerDashboard />} />
             <Route path="/settings" element={<Profile />} />
             <Route path="/categories" element={<Categories />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<Blog />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="/support" element={<Support />} />
             <Route path="/map" element={<LiveMap />} />
