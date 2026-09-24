@@ -502,25 +502,36 @@ export default function Jobs() {
         onBack={() => nav("/")}
         backTestID="jobs-back-btn"
         right={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {isAdmin && (
               <button
                 onClick={() => nav("/employer")}
-                className="hidden sm:flex items-center gap-1 border-2 border-ink bg-white px-2 py-1 text-[10px] font-black text-ink hover:bg-sand transition"
+                className="hidden sm:inline-flex h-9 items-center gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 text-xs font-black tracking-wider text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5"
                 title="Switch to Employer (Explore Pros)"
               >
-                <Users size={12} className="text-brand" /> PROS VIEW
+                <Users size={14} className="text-brand shrink-0" />
+                <span>PROS VIEW</span>
               </button>
             )}
             {isAdmin && (
               <IconBtn testID="jobs-admin-btn" onClick={() => nav("/admin")} title="Admin Dashboard">
-                <Shield size={18} className="text-brand" />
+                <Shield size={16} className="text-brand shrink-0" />
               </IconBtn>
             )}
-            <IconBtn testID="jobs-categories-btn" onClick={() => nav("/categories")} title="Categories"><Grid3x3 size={17} /></IconBtn>
-            <IconBtn testID="jobs-map-btn" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "Show Map"}><MapIcon size={18} className={showMap ? "text-brand" : ""} /></IconBtn>
-            <span data-testid="verify-status-badge" className={`hidden xs:flex items-center gap-1 border-2 border-ink px-2.5 py-1.5 text-[10px] font-black tracking-wide text-white ${isVerified ? "bg-ok" : "bg-ink"}`}>
-              {isVerified ? <ShieldCheck size={14} /> : <ShieldHalf size={14} />}{isAdmin ? "ADMIN VERIFIED" : (isVerified ? "VERIFIED PRO" : "UNVERIFIED")}
+            <IconBtn testID="jobs-categories-btn" onClick={() => nav("/categories")} title="Categories">
+              <Grid3x3 size={16} />
+            </IconBtn>
+            <IconBtn testID="jobs-map-btn" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "Show Map"}>
+              <MapIcon size={16} className={showMap ? "text-brand" : ""} />
+            </IconBtn>
+            <span
+              data-testid="verify-status-badge"
+              className={`hidden xs:inline-flex h-9 items-center gap-1.5 border-2 border-ink px-3 text-xs font-black tracking-wider text-white shadow-[1.5px_1.5px_0px_#121212] ${
+                isVerified ? "bg-ok" : "bg-ink"
+              }`}
+            >
+              {isVerified ? <ShieldCheck size={14} /> : <ShieldHalf size={14} />}
+              <span>{isAdmin ? "ADMIN VERIFIED" : (isVerified ? "VERIFIED PRO" : "UNVERIFIED")}</span>
             </span>
           </div>
         }
@@ -694,8 +705,8 @@ export default function Jobs() {
 
           <div className="flex items-center gap-2">
             {/* Sorting Dropdown */}
-            <div className="flex-1 sm:flex-none flex items-center justify-between gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 py-2 shadow-[1.5px_1.5px_0px_#121212]">
-              <ArrowUpDown size={14} className="text-inkmuted" />
+            <div className="flex-1 sm:flex-none flex h-10 sm:h-11 items-center justify-between gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 shadow-[1.5px_1.5px_0px_#121212]">
+              <ArrowUpDown size={14} className="text-inkmuted shrink-0" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -711,7 +722,7 @@ export default function Jobs() {
             <button
               data-testid="jobs-filter-btn"
               onClick={() => setFiltersOpen((v) => !v)}
-              className={`flex h-10 sm:h-11 items-center gap-2 border-2 border-ink px-3 sm:px-4 transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
+              className={`flex h-10 sm:h-11 items-center gap-2 border-2 border-ink px-3 sm:px-4 text-xs font-black tracking-wider transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
                 activeFilterCount > 0 ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand"
               }`}
             >

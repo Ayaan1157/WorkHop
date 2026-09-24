@@ -191,33 +191,35 @@ export default function Employer() {
         sub="Bengaluru · live map"
         backTestID="employer-back-btn"
         right={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {isAdmin && (
               <button
                 onClick={() => nav("/freelancer/jobs")}
-                className="hidden sm:flex items-center gap-1 border-2 border-ink bg-white px-2 py-1 text-[10px] font-black text-ink hover:bg-sand transition"
+                className="hidden sm:inline-flex h-9 items-center gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 text-xs font-black tracking-wider text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5"
                 title="Switch to Freelancer Gigs"
               >
-                <Briefcase size={12} className="text-brand" /> GIGS VIEW
+                <Briefcase size={14} className="text-brand shrink-0" />
+                <span>GIGS VIEW</span>
               </button>
             )}
             {isAdmin && (
               <IconBtn testID="employer-admin-btn" onClick={() => nav("/admin")} title="Admin Dashboard">
-                <Shield size={18} className="text-brand" />
+                <Shield size={16} className="text-brand shrink-0" />
               </IconBtn>
             )}
             <button
               onClick={() => setBoostModalOpen(true)}
-              className="hidden sm:flex items-center gap-1 border-2 border-ink bg-[#FFEBEA] px-2.5 py-1 text-[10px] font-black text-[#C62828] hover:bg-[#FFD7D5] transition shadow-[1.5px_1.5px_0px_#121212]"
+              className="hidden sm:inline-flex h-9 items-center gap-1.5 border-2 border-ink bg-[#FFEBEA] dark:bg-[#2a1414] px-3 text-xs font-black tracking-wider text-[#C62828] dark:text-[#ff6b6b] hover:bg-[#FFD7D5] shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5"
               title="Make your gig urgent & boost to top"
             >
-              <Flame size={13} className="text-[#FF3B30] fill-[#FF3B30]" /> URGENT BOOST
+              <Flame size={14} className="text-[#FF3B30] fill-[#FF3B30] shrink-0" />
+              <span>URGENT BOOST</span>
             </button>
             <IconBtn testID="employer-map-btn" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "Show Map"}>
-              <MapIcon size={18} className={showMap ? "text-brand" : "text-ink"} />
+              <MapIcon size={16} className={showMap ? "text-brand" : "text-ink dark:text-white"} />
             </IconBtn>
-            <IconBtn testID="employer-plans-btn" onClick={() => nav("/employer/plans")}>
-              <Tag size={18} className="text-brand" />
+            <IconBtn testID="employer-plans-btn" onClick={() => nav("/employer/plans")} title="View Plans">
+              <Tag size={16} className="text-brand" />
             </IconBtn>
           </div>
         }
@@ -317,7 +319,7 @@ export default function Employer() {
             <div className="flex gap-2">
               <button
                 onClick={() => setOnlySaved(false)}
-                className={`border-2 border-ink px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-black transition ${
+                className={`flex h-9 items-center border-2 border-ink px-3 text-xs font-black transition ${
                   !onlySaved ? "bg-ink text-white dark:bg-[#2a2a2a] dark:!text-white" : "bg-white dark:bg-[#222] text-ink dark:!text-white hover:bg-sand"
                 }`}
               >
@@ -325,7 +327,7 @@ export default function Employer() {
               </button>
               <button
                 onClick={() => setOnlySaved(true)}
-                className={`flex items-center gap-1.5 border-2 border-ink px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-black transition ${
+                className={`flex h-9 items-center gap-1.5 border-2 border-ink px-3 text-xs font-black transition ${
                   onlySaved ? "bg-brand text-white" : "bg-white dark:bg-[#222] text-ink dark:!text-white hover:bg-sand"
                 }`}
               >
@@ -335,12 +337,12 @@ export default function Employer() {
             </div>
 
             {/* SORT DROPDOWN */}
-            <div className="flex items-center gap-1 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-2.5 sm:px-3 py-1.5 shadow-[1px_1px_0px_#121212]">
-              <ArrowUpDown size={12} className="text-inkmuted" />
+            <div className="flex h-9 items-center gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 shadow-[1.5px_1.5px_0px_#121212]">
+              <ArrowUpDown size={13} className="text-inkmuted shrink-0" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-transparent text-[10px] sm:text-[11px] font-black text-ink dark:text-white outline-none cursor-pointer"
+                className="bg-transparent text-xs font-black text-ink dark:text-white outline-none cursor-pointer"
               >
                 <option value="distance" className="text-black">Nearest First</option>
                 <option value="rating" className="text-black">Top Rated</option>

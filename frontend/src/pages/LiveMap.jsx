@@ -312,7 +312,7 @@ export default function LiveMap() {
                   setViewMode("employer");
                   setSelectedPinId(null);
                 }}
-                className={`flex items-center justify-center gap-1 sm:gap-2 border-2 border-ink px-2.5 sm:px-4 py-2 text-[11px] sm:text-xs font-black transition ${
+                className={`flex h-10 items-center justify-center gap-1.5 sm:gap-2 border-2 border-ink px-3 sm:px-4 text-[11px] sm:text-xs font-black transition ${
                   viewMode === "employer"
                     ? "bg-brand text-white shadow-[2px_2px_0px_#121212] -translate-y-0.5"
                     : "bg-sand dark:bg-[#1f1f1f] text-ink dark:text-white hover:bg-stone/20"
@@ -331,7 +331,7 @@ export default function LiveMap() {
                   setViewMode("freelancer");
                   setSelectedPinId(null);
                 }}
-                className={`flex items-center justify-center gap-1 sm:gap-2 border-2 border-ink px-2.5 sm:px-4 py-2 text-[11px] sm:text-xs font-black transition ${
+                className={`flex h-10 items-center justify-center gap-1.5 sm:gap-2 border-2 border-ink px-3 sm:px-4 text-[11px] sm:text-xs font-black transition ${
                   viewMode === "freelancer"
                     ? "bg-[#059669] text-white shadow-[2px_2px_0px_#121212] -translate-y-0.5"
                     : "bg-sand dark:bg-[#1f1f1f] text-ink dark:text-white hover:bg-stone/20"
@@ -348,7 +348,7 @@ export default function LiveMap() {
           {/* Quick Context Pill */}
           <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
             <span
-              className={`w-full sm:w-auto text-center border-2 border-ink px-3 py-1 text-[10px] sm:text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#121212] ${
+              className={`flex h-10 items-center justify-center w-full sm:w-auto text-center border-2 border-ink px-3.5 text-[11px] sm:text-xs font-black uppercase shadow-[1.5px_1.5px_0px_#121212] ${
                 viewMode === "employer"
                   ? "bg-[#FFF3E9] text-brand dark:bg-[#251710] dark:!text-white"
                   : "bg-[#E6F4EA] text-[#059669] dark:bg-[#11291E] dark:!text-white"
@@ -370,18 +370,18 @@ export default function LiveMap() {
           <div className="flex items-center justify-between sm:justify-start gap-3 flex-wrap">
             {/* Location Area Picker */}
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-brand text-white shrink-0 shadow-[1.5px_1.5px_0px_#121212]">
+              <span className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-brand text-white shrink-0 shadow-[1.5px_1.5px_0px_#121212]">
                 <MapPin size={15} />
               </span>
-              <div className="flex flex-col">
-                <span className="text-[9px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400">
+              <div className="flex flex-col justify-center h-9">
+                <span className="text-[9px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400 leading-none mb-0.5">
                   Active Area
                 </span>
                 <select
                   data-testid="map-area-select"
                   value={selectedArea}
                   onChange={(e) => handleAreaChange(e.target.value)}
-                  className="cursor-pointer border-b-2 border-ink bg-transparent text-xs font-black text-ink dark:text-white outline-none"
+                  className="cursor-pointer border-b-2 border-ink bg-transparent text-xs font-black text-ink dark:text-white outline-none leading-none"
                 >
                   {BENGALURU_AREAS.map((a) => (
                     <option key={a.name} value={a.name} className="text-black">
@@ -404,7 +404,7 @@ export default function LiveMap() {
                   key={r.km}
                   data-testid={`radius-pill-${r.km}`}
                   onClick={() => setRadiusKm(r.km)}
-                  className={`border-2 border-ink px-2.5 py-1 text-[10px] sm:text-[11px] font-black whitespace-nowrap transition ${
+                  className={`flex h-9 items-center justify-center border-2 border-ink px-3 text-xs font-black whitespace-nowrap transition ${
                     radiusKm === r.km
                       ? "bg-brand text-white shadow-[1.5px_1.5px_0px_#121212]"
                       : "bg-white dark:bg-[#222] text-ink dark:text-white hover:bg-stone/20"
@@ -417,8 +417,8 @@ export default function LiveMap() {
           </div>
 
           {/* Search Box */}
-          <div className="relative flex items-center w-full sm:w-auto min-w-[200px] sm:min-w-[240px]">
-            <Search size={14} className="absolute left-2.5 text-inkmuted" />
+          <div className="relative flex items-center w-full sm:w-auto min-w-[200px] sm:min-w-[260px]">
+            <Search size={14} className="absolute left-2.5 text-inkmuted pointer-events-none" />
             <input
               type="text"
               placeholder={
@@ -428,7 +428,7 @@ export default function LiveMap() {
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full border-2 border-ink bg-white dark:bg-[#1a1a1a] py-1.5 pl-8 pr-3 text-xs font-bold text-ink dark:text-white outline-none focus:border-brand"
+              className="flex h-9 w-full items-center border-2 border-ink bg-white dark:bg-[#1a1a1a] pl-8 pr-3 text-xs font-bold text-ink dark:text-white outline-none focus:border-brand shadow-[1.5px_1.5px_0px_#121212]"
             />
           </div>
         </div>
@@ -442,9 +442,9 @@ export default function LiveMap() {
             <button
               key={cat}
               onClick={() => setCatFilter(cat)}
-              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 border-2 border-ink transition uppercase whitespace-nowrap ${
+              className={`flex h-8 items-center justify-center px-3 border-2 border-ink transition uppercase whitespace-nowrap text-xs font-black ${
                 catFilter === cat
-                  ? "bg-ink text-white dark:bg-brand dark:!text-white font-black shadow-[1.5px_1.5px_0px_#E65A1E]"
+                  ? "bg-ink text-white dark:bg-brand dark:!text-white shadow-[1.5px_1.5px_0px_#E65A1E]"
                   : "bg-sand/60 dark:bg-[#222] text-ink dark:!text-white hover:bg-sand"
               }`}
             >

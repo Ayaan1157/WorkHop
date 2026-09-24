@@ -41,12 +41,15 @@ export function Spinner({ className = "" }) {
 }
 
 export function IconBtn({ onClick, children, testID, className = "", active = false, title = "" }) {
+  const hasCustomSize = className.includes("h-") && className.includes("w-");
   return (
     <button
       data-testid={testID}
       onClick={onClick}
       title={title}
-      className={`flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink transition-transform active:translate-y-0.5 ${active ? "bg-brand" : "bg-white hover:bg-sand"} ${className}`}
+      className={`flex ${hasCustomSize ? "" : "h-9 w-9"} shrink-0 items-center justify-center border-2 border-ink shadow-[1.5px_1.5px_0px_#121212] transition-transform active:translate-y-0.5 ${
+        active ? "bg-brand text-white" : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525]"
+      } ${className}`}
     >
       {children}
     </button>
