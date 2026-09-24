@@ -76,7 +76,7 @@ function mockRouter(path, method = "GET", body = null) {
   if (cleanPath.includes("/post-credits")) {
     const u = getStoredUser();
     const isAdmin = Boolean(u?.is_admin || u?.role === "admin" || (u?.email && ADMIN_EMAILS.includes(u.email.trim().toLowerCase())));
-    return { remaining: isAdmin ? 9999 : 5, total: isAdmin ? 9999 : 5, is_admin: isAdmin };
+    return { remaining: 9999, total: 9999, is_admin: isAdmin, is_free: true };
   }
   if (cleanPath.includes("/apply") && method === "POST") {
     const parts = cleanPath.split("/");
@@ -132,73 +132,62 @@ function mockRouter(path, method = "GET", body = null) {
     return getStoredMapPins();
   }
 
-  // 4. Plans & Pricing (Job Hops + Branding)
+  // 4. Plans & Pricing (Job Posting is 100% Free + Optional Boosts & Branding)
   if (cleanPath === "/plans") {
     return [
       {
-        plan_id: "single-post",
+        plan_id: "free-post",
         section: "postings",
-        name: "Single Post",
-        price: 299,
-        price_label: "₹299",
-        unit: "1 Hop",
-        hops: 1,
-        credits: 1,
+        name: "Standard Gig Post",
+        price: 0,
+        price_label: "₹0",
+        unit: "Free Forever",
+        hops: 999,
+        credits: 999,
+        is_free: true,
         duration_days: null,
-        badge: null,
-        features: ["1 job listing on the live feed (1 Hop)", "5km radius candidate matching", "Applicant inbox with direct WhatsApp/Call"],
+        badge: "100% FREE",
+        features: [
+          "Unlimited job listings on Bangalore live feed",
+          "5km radius candidate matching",
+          "Applicant inbox with direct WhatsApp/Call",
+          "Zero platform fees or post credit deductions",
+        ],
       },
       {
-        plan_id: "starter-bundle",
-        section: "postings",
-        name: "Starter Bundle",
-        price: 999,
-        price_label: "₹999",
-        unit: "5 Hops",
-        hops: 5,
-        credits: 5,
-        duration_days: null,
-        badge: "SAVE 33%",
-        features: ["5 job post Hops (₹200/Hop)", "Use anytime — no expiry", "Verified candidate SMS alerts", "Applicant inbox included"],
-      },
-      {
-        plan_id: "growth-bundle",
-        section: "postings",
-        name: "Growth Pack",
-        price: 1999,
-        price_label: "₹1,999",
-        unit: "12 Hops",
-        hops: 12,
-        credits: 12,
-        duration_days: null,
-        badge: "BEST VALUE · SAVE 45%",
-        features: ["12 job post Hops (₹166/Hop)", "Use anytime — no expiry", "Priority applicant matching", "Direct contact unlock on 3 leads"],
-      },
-      {
-        plan_id: "scale-bundle",
-        section: "postings",
-        name: "Scale Pack",
-        price: 3799,
-        price_label: "₹3,799",
-        unit: "25 Hops",
-        hops: 25,
-        credits: 25,
-        duration_days: null,
-        badge: "PRO · SAVE 50%",
-        features: ["25 job post Hops (₹152/Hop)", "Use anytime — no expiry", "Priority applicant matching", "Featured employer badge on feed"],
-      },
-      {
-        plan_id: "premium-boost",
-        section: "postings",
-        name: "Premium Listing Boost",
-        price: 299,
-        price_label: "₹299",
+        plan_id: "urgent-boost",
+        section: "add-ons",
+        name: "Urgent 48h Gig Boost",
+        price: 399,
+        price_label: "₹399",
         unit: "per post add-on",
         hops: 0,
         credits: 0,
+        duration_days: 2,
+        badge: "POPULAR BOOST",
+        features: [
+          "Featured & pinned at top of Bangalore jobs feed",
+          "Bright red urgent badge with glowing pulse",
+          "3× more views & candidate applications",
+          "Active for 48 hours",
+        ],
+      },
+      {
+        plan_id: "lead-unlock",
+        section: "add-ons",
+        name: "Pro Candidate Unlock",
+        price: 199,
+        price_label: "₹199",
+        unit: "per candidate",
+        hops: 0,
+        credits: 0,
         duration_days: null,
-        badge: "ADD-ON",
-        features: ["Featured at top of jobs feed", "Golden border with highlighted badge", "3× more freelancer views & applications"],
+        badge: "TALENT UNLOCK",
+        features: [
+          "Direct unmasked phone & WhatsApp contact",
+          "Instant outreach to matched talent",
+          "Verified portfolio & credentials access",
+        ],
       },
       {
         plan_id: "brand-spotlight",
@@ -238,9 +227,9 @@ function mockRouter(path, method = "GET", body = null) {
   if (cleanPath.includes("/plans")) {
     return [
       {
-        plan_id: "starter-bundle",
-        plan_name: "Starter Bundle (5 Job Hops)",
-        price: 999,
+        plan_id: "free-post",
+        plan_name: "Standard Gig Post (100% Free Unlimited)",
+        price: 0,
         expires_at: null,
         status: "active",
       },

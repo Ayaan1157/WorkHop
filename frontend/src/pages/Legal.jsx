@@ -185,7 +185,7 @@ export default function Legal() {
             <PolicyCard
               num="3.2"
               title="Platform Fees & Commercial Schedule"
-              desc="Our official fee structure: (a) Freelancer Onboarding & Verification Fee: ₹99 (one-time fee for verification badge & live profile hosting); (b) Employer Single Job Post: ₹299 per post; (c) Starter Job Post Bundle: ₹999 (5 job credits); (d) Growth Pack: ₹1,999 (12 job credits); (e) Daily Quota Boost: ₹149 (+5 extra applications); (f) Lead Contact Unlock: ₹199 per candidate unlock."
+              desc="Our official fee structure: (a) Freelancer Onboarding & Verification Fee: ₹99 (one-time fee for verification badge & live profile hosting); (b) Employer Standard Job Posting: ₹0 (100% Free Unlimited Job Posts); (c) Optional Urgent Job Boost: ₹399 (48h top-of-feed pinned placement); (d) Daily Quota Boost: ₹149 (+5 extra applications); (e) Lead Contact Unlock: ₹199 per candidate unlock."
             />
 
             <PolicyCard

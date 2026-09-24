@@ -12,7 +12,7 @@ const FAQS = [
   { q: "How do I get verified as a Pro?", a: "Complete the 4-step wizard: pay the one-time ₹99 fee, verify your email with an OTP, add portfolio links and upload work samples." },
   { q: "Why can't I see employer phone numbers?", a: "For safety, employer contact details stay private. Apply to a gig and chat in-app — employers share contacts in chat when ready." },
   { q: "How many gigs can I apply to per day?", a: "3 free applications every 24 hours. Need more? The ₹149 Boost adds 5 extra applies for the day (max 8 total)." },
-  { q: "How do employer job posts work?", a: "Buy a Single Post (₹299) or Starter Bundle (5 posts, ₹999), then publish from the Post a Job form. Your gig goes live instantly." },
+  { q: "How do employer job posts work?", a: "Job posting is 100% free on WorkHop! Simply fill out the Post a Job form with your gig requirements, budget, and neighborhood. Your gig goes live instantly on the 5km radius feed with zero posting fees." },
   { q: "How do refunds work?", a: "Payments are processed by Razorpay. For billing issues, raise a complaint below and we'll resolve within 48 hours." },
 ];
 

@@ -61,7 +61,7 @@ export const DEFAULT_CREDITS_CONFIG = {
     },
   ],
   rollover_unused_credits: true,
-  job_boost_price_inr: 299,
+  job_boost_price_inr: 399,
   job_boost_duration_hours: 48,
   welcome_credits: 20,
 };
@@ -748,7 +748,7 @@ export function subscribeToCredits(userId, planId) {
 }
 
 // 3. Employer Job Boosting
-export function boostJob(jobId, employerId, amountPaid = 299) {
+export function boostJob(jobId, employerId, amountPaid = 399) {
   const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
   const config = getCreditsConfig();
   const durationHours = config.job_boost_duration_hours || 48;

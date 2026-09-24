@@ -274,7 +274,7 @@ export default function Employer() {
           onClick={() => nav("/employer/post-job")}
           className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 px-6 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-y-0.5 hover:bg-brand/95"
         >
-          <PlusCircle size={16} /> POST A JOB · FROM ₹299
+          <PlusCircle size={16} /> POST A GIG · 100% FREE
         </button>
       </div>
 

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CheckCircle2, ArrowRight, Check, Tag, Loader2, Sparkles, Coins,
-  PlusCircle, ShieldCheck, Zap, Building2, Layers, ArrowUpRight, HelpCircle
+  CheckCircle2, ArrowRight, Check, Loader2, Sparkles,
+  PlusCircle, ShieldCheck, Zap, Building2, Flame
 } from "lucide-react";
 import { Shell, TopBar, Spinner, IconBtn } from "@/components/kit";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { apiGet, getEmployerId } from "@/lib/api";
-import { ADMIN_EMAILS, getEmployerHops, addEmployerHops } from "@/lib/clientStore";
+import { ADMIN_EMAILS } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Plans() {
@@ -27,8 +27,6 @@ export default function Plans() {
   const [paySuccess, setPaySuccess] = useState(false);
   const [coupon, setCoupon] = useState(null);
   const [activeTab, setActiveTab] = useState("all"); // 'all' | 'postings' | 'branding'
-  const [employerHops, setEmployerHops] = useState(() => getEmployerHops(getEmployerId()));
-  const [selectedBundleId, setSelectedBundleId] = useState("starter-bundle");
   const { startPayment } = useRazorpay();
 
   const loadPurchases = useCallback(async () => {
@@ -50,6 +48,10 @@ export default function Plans() {
   }, [loadPurchases]);
 
   const open = (plan) => {
+    if (plan.price === 0 || plan.is_free) {
+      nav("/employer/post-job");
+      return;
+    }
     setSelected(plan);
     setCoupon(null);
     setPaySuccess(false);
@@ -70,11 +72,6 @@ export default function Plans() {
       );
       if (data?.purchase || data?.ok !== false) {
         setPaySuccess(true);
-        const hopsToAdd = selected.hops ?? selected.credits ?? 0;
-        if (hopsToAdd > 0) {
-          const next = addEmployerHops(getEmployerId(), hopsToAdd);
-          setEmployerHops(next);
-        }
         await loadPurchases();
         setTimeout(() => setSelected(null), 1400);
       }
@@ -85,11 +82,8 @@ export default function Plans() {
     }
   };
 
-  const postingPlans = plans.filter((p) => p.section === "postings" || !p.section);
+  const postingPlans = plans.filter((p) => p.section === "postings" || p.section === "add-ons");
   const brandingPlans = plans.filter((p) => p.section === "branding");
-
-  const hopBundles = postingPlans.filter((p) => (p.hops || p.credits) > 0);
-  const selectedUpworkBundle = hopBundles.find((b) => b.plan_id === selectedBundleId) || hopBundles[1] || hopBundles[0];
 
   const visiblePlans =
     activeTab === "postings"
@@ -103,13 +97,11 @@ export default function Plans() {
       ? `₹${Number(coupon.final_amount).toLocaleString("en-IN")}`
       : selected?.price_label;
 
-  const currentHopCount = isAdmin ? 9999 : employerHops;
-
   return (
     <Shell>
       <TopBar
         title="PLANS &amp; PRICING"
-        sub="Buy job post Hops &amp; employer branding"
+        sub="Free Job Posting · Optional Boosts &amp; Employer Branding"
         backTestID="plans-back-btn"
         right={
           <IconBtn onClick={() => nav("/employer/post-job")} title="Post a Job">
@@ -124,36 +116,37 @@ export default function Plans() {
         </div>
       ) : (
         <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-8 pb-20">
-          {/* HOPS OVERVIEW BANNER */}
-          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-2 border-ink bg-[#FFF3C4] p-4 sm:p-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
-            <div className="flex items-start gap-3.5">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center border-2 border-ink bg-brand text-white shadow-sm">
-                <Coins size={24} />
+          {/* 100% FREE JOB POSTING HERO BANNER */}
+          <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 border-2 border-ink bg-[#E5F8EE] p-5 sm:p-7 shadow-[4px_4px_0px_#121212]">
+            <div className="flex items-start gap-4">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center border-2 border-ink bg-ok text-white shadow-[2px_2px_0px_#121212]">
+                <Zap size={24} />
               </span>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-brand">
-                    {isAdmin ? "ADMIN MASTER ACCOUNT" : "EMPLOYER ACCOUNT"}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-ok">
+                    WORKHOP EMPLOYER PRIVILEGE
                   </span>
-                  <span className={`px-2.5 py-0.5 text-[10px] font-black tracking-wide border border-ink ${isAdmin ? "bg-brand text-white" : "bg-ink text-white"}`}>
-                    {isAdmin ? "ALL UNLOCKED (9999 HOPS)" : `${employerHops} HOPS ACTIVE`}
+                  <span className="px-2.5 py-0.5 text-[10px] font-black tracking-wide border border-ink bg-ink text-white">
+                    100% FREE JOB POSTING
+                  </span>
+                  <span className="px-2 py-0.5 text-[9px] font-black tracking-wide border border-ink bg-[#FFF3C4] text-ink">
+                    NO CREDITS · ZERO FEES
                   </span>
                 </div>
-                <h2 className="text-xl font-black text-ink mt-0.5">
-                  {isAdmin ? "Full Platform Plans & Hops Unlocked" : "Need More Job Post Hops?"}
+                <h2 className="text-xl sm:text-2xl font-black text-ink mt-1">
+                  Job Posting is 100% Free on WorkHop!
                 </h2>
-                <p className="text-xs text-inkmuted font-semibold mt-1">
-                  {isAdmin
-                    ? "As an administrator, you have unrestricted access to all posting plans, candidate unlocks, and employer branding."
-                    : "1 Hop = 1 Live Job Post in your 5km radius for 30 days. Hops never expire and roll over."}
+                <p className="text-xs text-inkmuted font-semibold mt-1 max-w-2xl leading-relaxed">
+                  Post unlimited gigs with zero platform posting fees. Your requirement goes live instantly across your 5km radius in Bangalore with direct WhatsApp and phone connections to verified talent.
                 </p>
               </div>
             </div>
             <button
               onClick={() => nav("/employer/post-job")}
-              className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2.5 text-xs font-black text-white hover:bg-brand/95 transition active:translate-y-0.5 shrink-0 shadow-sm"
+              className="flex items-center gap-2 border-2 border-ink bg-brand px-6 py-3.5 text-xs font-black tracking-wider uppercase text-white hover:bg-brand/95 transition active:translate-y-0.5 shrink-0 shadow-[2px_2px_0px_#121212]"
             >
-              <PlusCircle size={14} /> POST JOB NOW
+              <PlusCircle size={15} /> POST A GIG (FREE)
             </button>
           </div>
 
@@ -161,7 +154,7 @@ export default function Plans() {
           {purchases.length > 0 && (
             <div className="mb-6 flex flex-col gap-2" data-testid="active-plans">
               <p className="text-[10px] font-extrabold tracking-[0.15em] text-inkmuted">
-                YOUR ACTIVE PLANS
+                YOUR ACTIVE SERVICES
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {purchases.map((p) => (
@@ -173,7 +166,7 @@ export default function Plans() {
                     <CheckCircle2 size={20} className="text-ok shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-black text-ink truncate">
-                        {p.plan_name || p.name || "Job Hops Pack"}
+                        {p.plan_name || p.name || "Active Service"}
                       </p>
                       <p className="text-[11px] text-inkmuted font-semibold">
                         {p.expires_at
@@ -181,11 +174,11 @@ export default function Plans() {
                               day: "numeric",
                               month: "short",
                             })}`
-                          : "Active — Lifetime Hops (No Expiry)"}
+                          : "Active — Lifetime Access"}
                       </p>
                     </div>
                     <span className="text-sm font-black text-ink shrink-0">
-                      ₹{Number(p.price || 0).toLocaleString("en-IN")}
+                      {p.price ? `₹${Number(p.price).toLocaleString("en-IN")}` : "FREE"}
                     </span>
                   </div>
                 ))}
@@ -203,7 +196,7 @@ export default function Plans() {
                   : "text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white hover:bg-sand/80 dark:hover:bg-[#25252a]"
               }`}
             >
-              ALL PLANS ({plans.length})
+              ALL SERVICES ({plans.length})
             </button>
             <button
               onClick={() => setActiveTab("postings")}
@@ -213,8 +206,8 @@ export default function Plans() {
                   : "text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white hover:bg-sand/80 dark:hover:bg-[#25252a]"
               }`}
             >
-              <Coins size={14} className="text-brand" />
-              JOB HOPS &amp; POSTING PLANS ({postingPlans.length})
+              <Zap size={14} className="text-ok" />
+              FREE POSTING &amp; BOOSTS ({postingPlans.length})
             </button>
             <button
               onClick={() => setActiveTab("branding")}
@@ -229,171 +222,24 @@ export default function Plans() {
             </button>
           </div>
 
-          {/* SECTION A: UPWORK-STYLE BUY HOPS EXPERIENCE */}
+          {/* SECTION A: FREE POSTING & OPTIONAL BOOSTS */}
           {(activeTab === "all" || activeTab === "postings") && (
             <div className="mb-10">
               <Section
                 tag="A"
-                title="Job Postings &amp; Hop Bundles"
-                sub="Purchase Hops to publish gigs on the 5km live feed"
+                title="Job Posting &amp; Performance Boosts"
+                sub="Post unlimited gigs for free, or add 48-hour urgent pinned placement"
               />
 
-              {/* UPWORK-STYLE BUY HOPS CONTAINER */}
-              <div className="mt-4 border-2 border-ink bg-white dark:bg-[#161618] p-5 sm:p-7 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
-                {/* UPWORK HEADER: AVAILABLE BALANCE */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-ink/15 gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center border border-ink bg-[#FFF3C4] text-brand">
-                        <Coins size={15} />
-                      </span>
-                      <h3 className="text-lg font-black tracking-tight text-ink dark:text-white uppercase">
-                        Buy Hops
-                      </h3>
-                    </div>
-                    <p className="text-xs text-inkmuted dark:text-zinc-300 font-medium mt-1">
-                      Hops are used to post verified gigs and broadcast requirements to skilled talent in your 5km radius.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 bg-sand/60 dark:bg-[#222226] border border-ink/30 px-4 py-2.5 shrink-0">
-                    <span className="text-[11px] font-bold text-inkmuted dark:text-zinc-300 uppercase tracking-wider">
-                      Your available balance:
-                    </span>
-                    <span className="text-base font-black text-brand">
-                      {currentHopCount} Hops
-                    </span>
-                  </div>
-                </div>
-
-                {/* UPWORK SELECTOR SECTION */}
-                <div className="mt-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                    <label className="text-xs font-black uppercase tracking-wider text-ink dark:text-white">
-                      Select the number of Hops to buy
-                    </label>
-                    <span className="text-[11px] text-inkmuted dark:text-zinc-300 font-medium">
-                      1 Hop = ₹299 (Save up to 50% on larger bundles)
-                    </span>
-                  </div>
-
-                  {/* BUNDLE TILES SELECTOR */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {hopBundles.map((b) => {
-                      const isSelected = selectedUpworkBundle?.plan_id === b.plan_id;
-                      const hopCount = b.hops || b.credits || 1;
-                      const unitRate = Math.round(b.price / hopCount);
-                      return (
-                        <div
-                          key={b.plan_id}
-                          onClick={() => setSelectedBundleId(b.plan_id)}
-                          className={`cursor-pointer border-2 p-4 transition text-left relative flex flex-col justify-between ${
-                            isSelected
-                              ? "border-brand bg-brand/5 dark:bg-brand/10 shadow-[0_4px_16px_-2px_rgba(230,90,30,0.15)] ring-2 ring-brand"
-                              : "border-ink/30 bg-white dark:bg-[#1e1e22] hover:border-ink hover:bg-sand/30 dark:hover:bg-[#25252a]"
-                          }`}
-                        >
-                          {b.badge && (
-                            <span
-                              className={`absolute -top-2.5 right-3 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider border ${
-                                b.badge.includes("BEST")
-                                  ? "bg-ok text-white border-ok"
-                                  : "bg-brand text-white border-brand"
-                              }`}
-                            >
-                              {b.badge}
-                            </span>
-                          )}
-                          <div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-base font-black text-ink dark:text-white">
-                                {hopCount} {hopCount === 1 ? "Hop" : "Hops"}
-                              </span>
-                              <div
-                                className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
-                                  isSelected ? "border-brand bg-brand text-white" : "border-ink/40"
-                                }`}
-                              >
-                                {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
-                              </div>
-                            </div>
-                            <div className="mt-2 flex items-baseline gap-1">
-                              <span className="text-2xl font-black text-ink dark:text-white">{b.price_label}</span>
-                              <span className="text-[11px] text-inkmuted dark:text-zinc-300 font-bold">
-                                (₹{unitRate}/hop)
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-inkmuted dark:text-zinc-400 mt-1 leading-snug">
-                              {b.name} · Instant wallet credit
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* UPWORK ORDER SUMMARY / RECEIPT BOX */}
-                  {selectedUpworkBundle && (
-                    <div className="mt-6 border-2 border-ink/20 bg-sand/40 dark:bg-[#202024] p-4 sm:p-5">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-inkmuted dark:text-zinc-300 mb-3">
-                        Order Summary
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b border-ink/15 text-xs">
-                        <div>
-                          <p className="text-inkmuted dark:text-zinc-300 font-semibold">Hops to add:</p>
-                          <p className="text-sm font-black text-ink dark:text-white mt-0.5">
-                            +{selectedUpworkBundle.hops || selectedUpworkBundle.credits || 1} Hops
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-inkmuted dark:text-zinc-300 font-semibold">Your new Hop balance will be:</p>
-                          <p className="text-sm font-black text-brand mt-0.5">
-                            {currentHopCount + (selectedUpworkBundle.hops || selectedUpworkBundle.credits || 1)} Hops
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-inkmuted dark:text-zinc-300 font-semibold">Your account will be charged:</p>
-                          <p className="text-base font-black text-ink dark:text-white mt-0.5">
-                            {selectedUpworkBundle.price_label}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 text-xs text-inkmuted dark:text-zinc-300 font-semibold">
-                          <ShieldCheck size={16} className="text-ok shrink-0" />
-                          <span>
-                            These Hops never expire as long as your account remains open. Hops roll over each month.
-                          </span>
-                        </div>
-                        <button
-                          data-testid="upwork-buy-hops-btn"
-                          onClick={() => open(selectedUpworkBundle)}
-                          className="w-full sm:w-auto flex items-center justify-center gap-2 border-2 border-ink bg-brand px-6 py-3 text-xs font-black text-white hover:bg-brand/90 transition active:translate-y-0.5 shadow-sm shrink-0"
-                        >
-                          <span>Buy {selectedUpworkBundle.hops || selectedUpworkBundle.credits || 1} Hops · {selectedUpworkBundle.price_label}</span>
-                          <ArrowRight size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* ALL POSTING PLANS & ADD-ONS DETAILED CARDS */}
-              <div className="mt-8">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[11px] font-black tracking-wider text-inkmuted uppercase">
-                    All Job Posting Plans &amp; Add-ons
-                  </p>
-                  <span className="text-[11px] text-inkmuted font-semibold">
-                    Compare features &amp; inclusions
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {postingPlans.map((p) => (
-                    <PlanCard key={p.plan_id} plan={p} onBuy={() => open(p)} />
-                  ))}
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                {postingPlans.map((p) => (
+                  <PlanCard
+                    key={p.plan_id}
+                    plan={p}
+                    onBuy={() => open(p)}
+                    onFreePost={() => nav("/employer/post-job")}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -407,16 +253,22 @@ export default function Plans() {
                 title="Employer Branding &amp; Classified Ads"
                 sub="Enterprise visibility, logo placement, and priority matching"
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                 {brandingPlans.map((p) => (
-                  <PlanCard key={p.plan_id} plan={p} onBuy={() => open(p)} enterprise />
+                  <PlanCard
+                    key={p.plan_id}
+                    plan={p}
+                    onBuy={() => open(p)}
+                    onFreePost={() => nav("/employer/post-job")}
+                    enterprise
+                  />
                 ))}
               </div>
             </div>
           )}
 
           <p className="mt-8 text-center text-xs text-inkmuted font-semibold">
-            🔒 Payments secured via Razorpay Test Mode · UPI, Cards &amp; Netbanking
+            🔒 Optional add-on payments secured via Razorpay · UPI, Cards &amp; Netbanking
           </p>
         </div>
       )}
@@ -439,18 +291,8 @@ export default function Plans() {
                 <CheckCircle2 size={56} className="text-ok" />
                 <p className="text-2xl font-black text-ink dark:text-white">Payment successful!</p>
                 <p className="text-xs text-inkmuted dark:text-zinc-300 max-w-xs font-semibold">
-                  {selected.name} is now active on your account.{" "}
-                  {(selected.hops || selected.credits) ? (
-                    <span className="text-brand font-black">
-                      +{selected.hops || selected.credits} Hops added to your wallet.
-                    </span>
-                  ) : (
-                    "Add-on is now active on your employer profile."
-                  )}
+                  {selected.name} is now active on your employer account.
                 </p>
-                <div className="mt-2 border border-ok/40 bg-ok/10 px-4 py-2 text-xs font-bold text-ok">
-                  Your updated balance: {isAdmin ? 9999 : employerHops} Hops
-                </div>
               </div>
             ) : (
               <>
@@ -458,12 +300,9 @@ export default function Plans() {
                   <p className="text-[10px] font-extrabold tracking-[0.15em] text-inkmuted dark:text-zinc-400 uppercase">
                     WORKHOP × RAZORPAY CHECKOUT
                   </p>
-                  {(selected.hops || selected.credits) > 0 && (
-                    <span className="flex items-center gap-1 border border-ink/30 bg-sand dark:bg-[#242428] px-2 py-0.5 text-[10px] font-black text-brand">
-                      <Coins size={12} />
-                      +{selected.hops || selected.credits} HOPS
-                    </span>
-                  )}
+                  <span className="border border-ink/30 bg-sand dark:bg-[#242428] px-2 py-0.5 text-[10px] font-black text-brand uppercase">
+                    OPTIONAL ADD-ON
+                  </span>
                 </div>
 
                 <p className="text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white mt-1">
@@ -472,19 +311,6 @@ export default function Plans() {
                 <p className="text-xs text-inkmuted dark:text-zinc-300 font-bold mt-1">
                   {selected.name} · {selected.unit}
                 </p>
-
-                {/* UPWORK BALANCE MATH */}
-                {(selected.hops || selected.credits) > 0 && (
-                  <div className="mt-3 flex items-center justify-between border border-ink/20 bg-sand/50 dark:bg-[#202024] p-2.5 text-xs">
-                    <span className="text-inkmuted dark:text-zinc-300 font-semibold">
-                      Current balance: <strong className="text-ink dark:text-white">{currentHopCount} Hops</strong>
-                    </span>
-                    <ArrowRight size={13} className="text-inkmuted dark:text-zinc-400" />
-                    <span className="text-brand font-black">
-                      New balance: {currentHopCount + (selected.hops || selected.credits)} Hops
-                    </span>
-                  </div>
-                )}
 
                 <div className="my-4 border-2 border-ink bg-sand dark:bg-[#202024] p-3.5">
                   <p className="text-[10px] font-extrabold tracking-wide text-inkmuted dark:text-zinc-300 uppercase">
@@ -552,13 +378,17 @@ const Section = ({ tag, title, sub, dark }) => (
   </div>
 );
 
-function PlanCard({ plan, onBuy, enterprise }) {
-  const hopCount = plan.hops || plan.credits || 0;
+function PlanCard({ plan, onBuy, onFreePost, enterprise }) {
+  const isFree = plan.price === 0 || plan.is_free;
   return (
     <div
       data-testid={`plan-card-${plan.plan_id}`}
-      className={`flex flex-col justify-between border-2 border-ink p-5 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] transition hover:border-brand ${
-        enterprise ? "bg-ink text-white dark:bg-[#1a1a1e] dark:text-white" : "bg-white text-ink dark:bg-[#161618] dark:text-white"
+      className={`flex flex-col justify-between border-2 border-ink p-5 shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 ${
+        isFree
+          ? "border-ok bg-[#F0FDF4] dark:bg-[#132219] text-ink dark:text-white ring-2 ring-ok/30"
+          : enterprise
+          ? "bg-ink text-white dark:bg-[#1a1a1e] dark:text-white"
+          : "bg-white text-ink dark:bg-[#161618] dark:text-white"
       }`}
     >
       <div>
@@ -569,7 +399,7 @@ function PlanCard({ plan, onBuy, enterprise }) {
           {plan.badge && (
             <span
               className={`border px-2 py-0.5 text-[9px] font-black tracking-wider ${
-                plan.badge.includes("BEST")
+                isFree || plan.badge.includes("FREE")
                   ? "bg-ok text-white border-ok"
                   : enterprise
                   ? "bg-brand text-white border-brand"
@@ -595,7 +425,7 @@ function PlanCard({ plan, onBuy, enterprise }) {
             <div key={f} className="flex items-start gap-2">
               <Check
                 size={14}
-                className="mt-0.5 shrink-0 text-brand dark:text-brand"
+                className={`mt-0.5 shrink-0 ${isFree ? "text-ok" : "text-brand dark:text-brand"}`}
               />
               <span className="text-xs font-semibold leading-4 text-ink dark:text-zinc-200">
                 {f}
@@ -605,16 +435,27 @@ function PlanCard({ plan, onBuy, enterprise }) {
         </div>
       </div>
 
-      <button
-        data-testid={`plan-buy-${plan.plan_id}`}
-        onClick={onBuy}
-        className="mt-2 flex w-full items-center justify-center gap-2 border-2 py-3 text-xs font-black tracking-wider text-white transition active:translate-y-0.5 border-ink bg-brand hover:bg-brand/90 shadow-sm"
-      >
-        <span className="text-white font-black">
-          {hopCount > 0 ? `Buy ${hopCount} ${hopCount === 1 ? "Hop" : "Hops"} · ${plan.price_label}` : `Buy ${plan.price_label}`}
-        </span>
-        <ArrowRight size={14} className="text-white shrink-0" />
-      </button>
+      {isFree ? (
+        <button
+          data-testid={`plan-buy-${plan.plan_id}`}
+          onClick={onFreePost}
+          className="mt-2 flex w-full items-center justify-center gap-2 border-2 py-3 text-xs font-black tracking-wider text-white transition active:translate-y-0.5 border-ink bg-ok hover:bg-ok/90 shadow-[2px_2px_0px_#121212]"
+        >
+          <PlusCircle size={14} className="text-white shrink-0" />
+          <span className="text-white font-black">POST A GIG (100% FREE)</span>
+        </button>
+      ) : (
+        <button
+          data-testid={`plan-buy-${plan.plan_id}`}
+          onClick={onBuy}
+          className="mt-2 flex w-full items-center justify-center gap-2 border-2 py-3 text-xs font-black tracking-wider text-white transition active:translate-y-0.5 border-ink bg-brand hover:bg-brand/90 shadow-[2px_2px_0px_#121212]"
+        >
+          <span className="text-white font-black">
+            {`Buy ${plan.name} · ${plan.price_label}`}
+          </span>
+          <ArrowRight size={14} className="text-white shrink-0" />
+        </button>
+      )}
     </div>
   );
 }

@@ -83,15 +83,15 @@ export default function EmployerDashboard() {
         setChats(getStoredChats());
       }
 
-      // 3. Post Credits
+      // 3. Post Credits (100% Free Unlimited Job Posts)
       if (isAdmin) {
-        setCredits({ remaining: 9999, total: 9999 });
+        setCredits({ remaining: 9999, total: 9999, is_free: true });
       } else {
         try {
           const c = await apiGet(`/employer/${employerId}/post-credits`);
-          if (c) setCredits(c);
+          if (c) setCredits({ ...c, is_free: true });
         } catch {
-          setCredits({ remaining: 5, total: 5 });
+          setCredits({ remaining: 9999, total: 9999, is_free: true });
         }
       }
 
@@ -307,18 +307,18 @@ export default function EmployerDashboard() {
             <p className="text-[10px] font-bold text-inkmuted dark:text-stone-400 mt-0.5">Verified candidate proposals</p>
           </div>
 
-          <div className="border-2 border-ink bg-[#FFF3C4] p-4 shadow-[3px_3px_0px_#121212]">
+          <div className="border-2 border-ink bg-[#E5F8EE] p-4 shadow-[3px_3px_0px_#121212]">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-ink">POST CREDITS REMAINING</span>
-              <Coins size={16} className="text-brand" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-ok">JOB POSTINGS</span>
+              <Zap size={16} className="text-ok" />
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-ink mt-2" data-testid="metric-post-credits">
-              {credits.remaining} <span className="text-xs font-bold text-inkmuted">Credits</span>
+            <p className="text-2xl sm:text-3xl font-black text-ink dark:text-ink mt-2" data-testid="metric-post-credits">
+              FREE <span className="text-xs font-bold text-ok">Unlimited</span>
             </p>
             <div className="mt-1 flex items-center justify-between">
-              <span className="text-[10px] font-bold text-inkmuted">₹299/post value</span>
-              <Link to="/employer/plans" className="text-[10px] font-black uppercase text-brand underline">
-                + TOP UP
+              <span className="text-[10px] font-bold text-inkmuted dark:text-stone-400">Zero posting fees</span>
+              <Link to="/employer/post-job" className="text-[10px] font-black uppercase text-brand underline">
+                + POST A GIG
               </Link>
             </div>
           </div>
@@ -383,8 +383,8 @@ export default function EmployerDashboard() {
             className="flex items-center justify-between border-2 border-ink bg-white dark:bg-[#141414] p-4 text-left shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 active:translate-y-0.5"
           >
             <div>
-              <p className="text-xs font-black uppercase tracking-wide text-ink dark:text-white">Plans &amp; Bundles</p>
-              <p className="text-[10px] text-inkmuted dark:text-stone-400 font-bold mt-0.5">Save up to 45% on posts</p>
+              <p className="text-xs font-black uppercase tracking-wide text-ink dark:text-white">Plans &amp; Add-ons</p>
+              <p className="text-[10px] text-inkmuted dark:text-stone-400 font-bold mt-0.5">Urgent boosts &amp; branding</p>
             </div>
             <Coins size={20} className="text-brand" />
           </button>

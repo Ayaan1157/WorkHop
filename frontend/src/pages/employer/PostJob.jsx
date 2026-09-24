@@ -109,6 +109,29 @@ export default function PostJob() {
       const eid = getEmployerId();
       const areaCoords = customCoords || getAreaCoordinates(cleanArea);
 
+      // If urgent boost is enabled and user is not admin, charge ₹399 for the optional boost
+      if (isBoosted && !isAdmin && retryAfterPay) {
+        try {
+          const pr = await startPayment(
+            { product: "job_boost", plan_id: "urgent-boost", employer_id: eid, amount: 399 },
+            "Urgent Job Boost (48 hrs) · ₹399"
+          );
+          if (pr?.ok === false && !pr?.purchase) {
+            setError("Boost payment cancelled. Uncheck boost to publish for free.");
+            setSubmitting(false);
+            return;
+          }
+        } catch (payErr) {
+          if (payErr?.message === "PAYMENT_CANCELLED") {
+            setError("Boost payment cancelled. Uncheck boost to publish for free.");
+            setSubmitting(false);
+            return;
+          }
+          throw payErr;
+        }
+      }
+
+      // Standard job posting is 100% free!
       const data = await apiPost("/employer/jobs", {
         employer_id: eid,
         company_name: cleanCompany,
@@ -127,22 +150,7 @@ export default function PostJob() {
         loadCredits();
         return;
       }
-      if (!isAdmin && retryAfterPay) {
-        const costText = isBoosted ? "Job Post + Urgent Boost · ₹698" : "Single Post · ₹299";
-        const pr = await startPayment(
-          { product: "plan", plan_id: isBoosted ? "single-post-boost" : "single-post", employer_id: eid },
-          costText
-        );
-        if (pr?.purchase) {
-          await submit(false);
-          return;
-        }
-      }
-      if (isAdmin) {
-        setPosted(true);
-        return;
-      }
-      setError("Could not post the job.");
+      setError("Could not post the job. Please try again.");
     } catch (e) {
       if (e?.message !== "PAYMENT_CANCELLED") setError(e?.message || "Could not post the job.");
     } finally {
@@ -157,11 +165,11 @@ export default function PostJob() {
     <Shell>
       <TopBar
         title="POST A JOB"
-        sub={isAdmin ? "Unlimited Admin Post Credits" : (credits ? `${credits.remaining} post credit${credits.remaining === 1 ? "" : "s"} left` : "…")}
+        sub="100% Free Job Posting · Bangalore's Gig Network"
         backTestID="postjob-back-btn"
         right={
-          <span className={`border-2 border-ink px-2 py-1.5 text-[10px] font-black ${isAdmin ? "bg-[#FFF3C4] text-black" : "bg-brand text-white"}`}>
-            {isAdmin ? "ADMIN: FREE UNLIMITED" : "₹299/POST"}
+          <span className="border-2 border-ink px-2.5 py-1.5 text-[10px] font-black bg-ok text-white tracking-wider">
+            100% FREE
           </span>
         }
       />
@@ -483,18 +491,18 @@ export default function PostJob() {
             {submitting ? (
               <Loader2 size={18} className="animate-spin" />
             ) : isAdmin ? (
-              isBoosted ? "PUBLISH AS ADMIN (BOOSTED)" : "PUBLISH AS ADMIN"
-            ) : credits && credits.remaining > 0 ? (
-              isBoosted ? "PAY ₹299 (BOOST) & PUBLISH" : `PUBLISH JOB (${credits.remaining} POST CREDIT${credits.remaining === 1 ? "" : "S"} LEFT)`
+              isBoosted ? "PUBLISH AS ADMIN (BOOSTED)" : "PUBLISH AS ADMIN (FREE)"
             ) : isBoosted ? (
-              "PAY ₹598 & PUBLISH (POST + BOOST)"
+              "PAY ₹399 (BOOST) & PUBLISH"
             ) : (
-              "PAY ₹299 & PUBLISH"
+              "PUBLISH GIG · 100% FREE"
             )}
           </button>
 
-          <p className="text-center text-[11px] text-inkmuted">
-            🔒 Razorpay Test Mode · UPI (GPay/PhonePe), cards &amp; netbanking
+          <p className="text-center text-[11px] text-inkmuted font-semibold">
+            {isBoosted
+              ? "🔒 Razorpay Test Mode · ₹399 48-Hour Urgent Boost · Standard listing is 100% free"
+              : "✨ Job posting is 100% free · Zero platform fees · Live instantly in 5km radius"}
           </p>
         </div>
       )}

@@ -386,7 +386,7 @@ export function GlobalNav() {
                 className="mt-2 flex items-center justify-center gap-2 border-2 border-ink bg-brand py-3 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212]"
               >
                 <PlusCircle size={15} />
-                <span>POST A GIG (FROM ₹299)</span>
+                <span>POST A GIG (100% FREE)</span>
               </button>
             </div>
 
