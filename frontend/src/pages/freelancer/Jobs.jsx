@@ -28,6 +28,7 @@ import {
   getProximityCoordinates,
 } from "@/lib/locationAreas";
 import { JOB_CATEGORY_FILTERS } from "@/lib/catalogFilters";
+import { matchJobToTaxonomy } from "@/lib/keywordTaxonomy";
 import { apiGet, apiPost, getFreelancerId } from "@/lib/api";
 import {
   getSavedJobIds,
@@ -210,12 +211,7 @@ export default function Jobs() {
     return true;
   };
 
-  const matches = (j, t) =>
-    j.title.toLowerCase().includes(t) ||
-    (j.category || "").toLowerCase().includes(t) ||
-    (j.description || "").toLowerCase().includes(t) ||
-    (j.company_name || "").toLowerCase().includes(t) ||
-    (j.keywords || []).some((k) => k.toLowerCase().includes(t));
+  const matches = (j, t) => matchJobToTaxonomy(j, t);
 
   const filtered = useMemo(() => {
     let result = jobs.filter((j) => inCat(j) && passes(j) && (!term || matches(j, term)));

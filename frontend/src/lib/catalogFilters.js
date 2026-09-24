@@ -389,3 +389,12 @@ export const LEAD_CATEGORY_FILTERS = [
     ],
   },
 ];
+
+export {
+  KEYWORD_TAXONOMY,
+  FLAT_SUBDISCIPLINES,
+  SUBDISCIPLINE_KEYWORDS,
+  searchTaxonomy,
+  matchLeadToTaxonomy,
+  matchJobToTaxonomy,
+} from "./keywordTaxonomy";

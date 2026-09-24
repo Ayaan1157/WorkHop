@@ -19,6 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiGet } from "@/lib/api";
 import FALLBACK_LEADS from "@/data/leads.json";
 import FALLBACK_JOBS from "@/data/jobs.json";
+import { matchLeadToTaxonomy, matchJobToTaxonomy } from "@/lib/keywordTaxonomy";
 
 export default function LiveMap() {
   const nav = useNavigate();
@@ -165,13 +166,7 @@ export default function LiveMap() {
       );
     }
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (f) =>
-          f.name?.toLowerCase().includes(q) ||
-          f.skill?.toLowerCase().includes(q) ||
-          f.bucket?.toLowerCase().includes(q)
-      );
+      list = list.filter((f) => matchLeadToTaxonomy(f, searchQuery));
     }
     return list.sort((a, b) => (a.distance_km ?? 0) - (b.distance_km ?? 0));
   }, [processedFreelancers, radiusKm, catFilter, searchQuery]);
@@ -192,13 +187,7 @@ export default function LiveMap() {
       );
     }
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (j) =>
-          j.title?.toLowerCase().includes(q) ||
-          j.company_name?.toLowerCase().includes(q) ||
-          j.category?.toLowerCase().includes(q)
-      );
+      list = list.filter((j) => matchJobToTaxonomy(j, searchQuery));
     }
     return list.sort((a, b) => (a.distance_km ?? 0) - (b.distance_km ?? 0));
   }, [processedJobs, radiusKm, catFilter, searchQuery]);
@@ -423,8 +412,8 @@ export default function LiveMap() {
               type="text"
               placeholder={
                 viewMode === "employer"
-                  ? "Search freelancer skill, name..."
-                  : "Search gig title, company..."
+                  ? "Search pros — e.g. AutoCAD, Framer, Zomato, Kannada VO..."
+                  : "Search gigs — e.g. AutoCAD, Framer, Zomato, Kannada VO..."
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

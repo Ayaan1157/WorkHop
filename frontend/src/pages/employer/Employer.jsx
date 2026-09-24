@@ -19,6 +19,7 @@ import { getOrganicCoordinates, getProximityCoordinates } from "@/lib/locationAr
 import { apiGet, getEmployerId } from "@/lib/api";
 import { getSavedProIds, toggleSavePro, ADMIN_EMAILS } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
+import { matchLeadToTaxonomy, searchTaxonomy } from "@/lib/keywordTaxonomy";
 
 export default function Employer() {
   const nav = useNavigate();
@@ -68,6 +69,10 @@ export default function Employer() {
   };
 
   const term = search.trim().toLowerCase();
+  const matchedTaxonomies = useMemo(() => {
+    if (!term || term.length < 2) return [];
+    return searchTaxonomy(term);
+  }, [term]);
   const activeFilter = LEAD_CATEGORY_FILTERS.find((f) => f.key === catFilter || f.cats.includes(catFilter));
 
   const base = leads.filter((l) => {
@@ -87,12 +92,7 @@ export default function Employer() {
     }
     if (minRating && (l.rating || 0) < minRating) return false;
     if (!term) return true;
-    return (
-      l.skill.toLowerCase().includes(term) ||
-      l.name.toLowerCase().includes(term) ||
-      (l.portfolio || "").toLowerCase().includes(term) ||
-      (l.keywords || []).some((k) => k.toLowerCase().includes(term))
-    );
+    return matchLeadToTaxonomy(l, term);
   });
 
   const sorted = useMemo(() => {
@@ -288,7 +288,7 @@ export default function Employer() {
                 data-testid="leads-search-input"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search pros — logo, shopify, gst, reels…"
+                placeholder="Search pros — e.g. AutoCAD, Framer dev, Zomato menu, Kannada VO, Shopify…"
                 className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink dark:text-white placeholder:text-inkmuted"
               />
               {search && (
@@ -313,6 +313,25 @@ export default function Employer() {
               {(maxDistance || minRating) && <span className="h-2 w-2 rounded-full bg-brand" />}
             </button>
           </div>
+
+          {/* Keyword Taxonomy Mapped Service Indicator */}
+          {search && matchedTaxonomies.length > 0 && (
+            <div data-testid="taxonomy-tags-bar" className="flex items-center gap-1.5 flex-wrap pt-0.5 text-[11px]">
+              <span className="font-extrabold text-inkmuted dark:text-stone-400">Mapped Service:</span>
+              {matchedTaxonomies.slice(0, 3).map((m) => (
+                <button
+                  type="button"
+                  key={m.subdiscipline}
+                  onClick={() => setSearch(m.subdiscipline)}
+                  className="inline-flex items-center gap-1 border border-ink bg-[#FFF3C4] dark:bg-stone-800 px-2 py-0.5 font-bold text-ink dark:text-stone-200 shadow-[1px_1px_0px_#121212] hover:bg-brand hover:text-white transition"
+                >
+                  <Sparkles size={11} className="text-brand shrink-0" />
+                  <span>{m.subdiscipline}</span>
+                  <span className="text-[9px] opacity-75">({m.category})</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* TABS: ALL vs SAVED & SORT */}
           <div className="flex items-center justify-between gap-2 border-t border-ink/10 pt-2 flex-wrap">
