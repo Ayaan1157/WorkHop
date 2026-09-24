@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CheckCircle2, ArrowRight, Check, Loader2, Sparkles,
-  PlusCircle, ShieldCheck, Zap, Building2, Flame
+  PlusCircle, ShieldCheck, Zap, Flame
 } from "lucide-react";
 import { Shell, TopBar, Spinner, IconBtn } from "@/components/kit";
 import CouponInput from "@/components/CouponInput";
@@ -26,7 +26,6 @@ export default function Plans() {
   const [paying, setPaying] = useState(false);
   const [paySuccess, setPaySuccess] = useState(false);
   const [coupon, setCoupon] = useState(null);
-  const [activeTab, setActiveTab] = useState("all"); // 'all' | 'postings' | 'branding'
   const { startPayment } = useRazorpay();
 
   const loadPurchases = useCallback(async () => {
@@ -83,14 +82,6 @@ export default function Plans() {
   };
 
   const postingPlans = plans.filter((p) => p.section === "postings" || p.section === "add-ons");
-  const brandingPlans = plans.filter((p) => p.section === "branding");
-
-  const visiblePlans =
-    activeTab === "postings"
-      ? postingPlans
-      : activeTab === "branding"
-      ? brandingPlans
-      : plans;
 
   const finalLabel =
     coupon?.final_amount != null
@@ -101,7 +92,7 @@ export default function Plans() {
     <Shell>
       <TopBar
         title="PLANS &amp; PRICING"
-        sub="Free Job Posting · Optional Boosts &amp; Employer Branding"
+        sub="Free Job Posting · Optional Urgent 48h Boosts"
         backTestID="plans-back-btn"
         right={
           <IconBtn onClick={() => nav("/employer/post-job")} title="Post a Job">
@@ -186,86 +177,25 @@ export default function Plans() {
             </div>
           )}
 
-          {/* CATEGORY TABS */}
-          <div className="flex border-b-2 border-ink bg-sand dark:bg-[#1a1a1e] mb-6 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`border-r-2 border-ink px-4 py-3 text-xs font-black tracking-wide whitespace-nowrap transition ${
-                activeTab === "all"
-                  ? "bg-white text-ink dark:bg-[#161618] dark:text-white border-b-2 border-b-white dark:border-b-[#161618] -mb-[2px]"
-                  : "text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white hover:bg-sand/80 dark:hover:bg-[#25252a]"
-              }`}
-            >
-              ALL SERVICES ({plans.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("postings")}
-              className={`border-r-2 border-ink px-4 py-3 text-xs font-black tracking-wide whitespace-nowrap flex items-center gap-1.5 transition ${
-                activeTab === "postings"
-                  ? "bg-white text-ink dark:bg-[#161618] dark:text-white border-b-2 border-b-white dark:border-b-[#161618] -mb-[2px]"
-                  : "text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white hover:bg-sand/80 dark:hover:bg-[#25252a]"
-              }`}
-            >
-              <Zap size={14} className="text-ok" />
-              FREE POSTING &amp; BOOSTS ({postingPlans.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("branding")}
-              className={`border-r-2 border-ink px-4 py-3 text-xs font-black tracking-wide whitespace-nowrap flex items-center gap-1.5 transition ${
-                activeTab === "branding"
-                  ? "bg-white text-ink dark:bg-[#161618] dark:text-white border-b-2 border-b-white dark:border-b-[#161618] -mb-[2px]"
-                  : "text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white hover:bg-sand/80 dark:hover:bg-[#25252a]"
-              }`}
-            >
-              <Building2 size={14} className="text-ink dark:text-zinc-300" />
-              EMPLOYER BRANDING &amp; ADS ({brandingPlans.length})
-            </button>
+          {/* SERVICES & PERFORMANCE BOOSTS */}
+          <div className="mb-10">
+            <Section
+              tag="A"
+              title="Job Posting &amp; Performance Boosts"
+              sub="Post unlimited gigs for free, or add 48-hour urgent pinned placement"
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              {postingPlans.map((p) => (
+                <PlanCard
+                  key={p.plan_id}
+                  plan={p}
+                  onBuy={() => open(p)}
+                  onFreePost={() => nav("/employer/post-job")}
+                />
+              ))}
+            </div>
           </div>
-
-          {/* SECTION A: FREE POSTING & OPTIONAL BOOSTS */}
-          {(activeTab === "all" || activeTab === "postings") && (
-            <div className="mb-10">
-              <Section
-                tag="A"
-                title="Job Posting &amp; Performance Boosts"
-                sub="Post unlimited gigs for free, or add 48-hour urgent pinned placement"
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                {postingPlans.map((p) => (
-                  <PlanCard
-                    key={p.plan_id}
-                    plan={p}
-                    onBuy={() => open(p)}
-                    onFreePost={() => nav("/employer/post-job")}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* SECTION B: EMPLOYER BRANDING & ADS */}
-          {(activeTab === "all" || activeTab === "branding") && (
-            <div className="mb-6">
-              <Section
-                tag="B"
-                dark
-                title="Employer Branding &amp; Classified Ads"
-                sub="Enterprise visibility, logo placement, and priority matching"
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                {brandingPlans.map((p) => (
-                  <PlanCard
-                    key={p.plan_id}
-                    plan={p}
-                    onBuy={() => open(p)}
-                    onFreePost={() => nav("/employer/post-job")}
-                    enterprise
-                  />
-                ))}
-              </div>
-            </div>
-          )}
 
           <p className="mt-8 text-center text-xs text-inkmuted font-semibold">
             🔒 Optional add-on payments secured via Razorpay · UPI, Cards &amp; Netbanking

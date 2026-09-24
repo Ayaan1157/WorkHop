@@ -110,7 +110,7 @@ export default function Profile() {
     {
       icon: Tag,
       label: "Plans & Pricing",
-      sub: "Job posts, boosts & branding",
+      sub: "Job posts & urgent boosts",
       to: "/employer/plans",
       testID: "profile-plans",
     },

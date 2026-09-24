@@ -128,7 +128,7 @@ export const BLOG_POSTS = [
       },
       {
         type: "paragraph",
-        text: "Instead of taxing basic job creation, WorkHop offers high-value optional upgrades. Employers can purchase an Urgent 48h Boost (₹399) to pin their urgent gigs to the very top of the live feed with a prominent red badge, or book premium enterprise employer branding slots. Regular hiring remains 100% free forever."
+        text: "Instead of taxing basic job creation, WorkHop offers high-value optional upgrades. Employers can purchase an Urgent 48h Boost (₹399) to pin their urgent gigs to the very top of the live feed with a prominent red badge. Regular hiring remains 100% free forever."
       }
     ]
   },

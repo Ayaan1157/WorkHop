@@ -558,13 +558,13 @@ export default function Employer() {
               className="mt-4 flex flex-col gap-3 border-2 border-ink bg-[#121212] dark:bg-[#161618] p-6 text-left transition hover:bg-black shadow-[3px_3px_0px_#E65A1E]"
             >
               <span className="self-start bg-brand px-3 py-1 text-[10px] font-black tracking-[0.15em] text-white">
-                EMPLOYER BRANDING PLANS
+                PERFORMANCE BOOSTS &amp; SERVICES
               </span>
               <p className="text-xl font-black text-white">
                 Looking to Hire At Scale or Need Urgent Talent?
               </p>
               <p className="text-xs text-white/80 font-semibold">
-                Explore Pro Employer Plans · Unlimited Lead Unlocks · Dedicated Account Manager · Custom Boosts
+                100% Free Job Posting · Urgent 48h Pinned Placements · Verified Local Talent
               </p>
             </button>
 
