@@ -1563,4 +1563,99 @@ export function deleteStoredCoupon(code) {
   return { ok: true, code: targetCode };
 }
 
+// ---------------- MANUAL HOPS REFUND ENGINE (ADMIN) ----------------
+export const MANUAL_REFUNDS_KEY = "workhop_manual_hops_refunds";
+
+export function getManualHopsRefunds() {
+  try {
+    const raw = localStorage.getItem(MANUAL_REFUNDS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function adminRefundHops({
+  targetType = "employer", // 'employer' | 'freelancer' | 'job'
+  targetId,
+  hops = 1,
+  reason = "Admin manual refund",
+  relatedJobId = null,
+  adminEmail = "Zenithdeveleoperss@gmail.com",
+  refundApplicants = true,
+  refundEmployer = true,
+}) {
+  const hopsNum = Math.max(1, parseInt(hops, 10) || 1);
+  const now = new Date().toISOString();
+  const refunds = getManualHopsRefunds();
+
+  let details = "";
+  let refundedWallets = [];
+
+  if (targetType === "employer") {
+    const empId = targetId || "employer-demo";
+    const newBal = addEmployerHops(empId, hopsNum);
+    details = `Refunded ${hopsNum} Hops to employer "${empId}". New balance: ${newBal} Hops. Reason: ${reason}`;
+    refundedWallets.push({ id: empId, type: "employer", hops: hopsNum, balance: newBal });
+    addAdminLog("HOPS_MANUALLY_REFUNDED", details, empId);
+  } else if (targetType === "freelancer") {
+    const fId = targetId || "freelancer-demo";
+    const wallet = addCredits(fId, hopsNum, {
+      type: "refund",
+      related_job_id: relatedJobId,
+      description: `Admin Refund: ${hopsNum} Hops returned (${reason})`,
+    });
+    details = `Refunded ${hopsNum} Hops to freelancer "${fId}". New balance: ${wallet.balance} Hops. Reason: ${reason}`;
+    refundedWallets.push({ id: fId, type: "freelancer", hops: hopsNum, balance: wallet.balance });
+    addAdminLog("HOPS_MANUALLY_REFUNDED", details, fId);
+  } else if (targetType === "job") {
+    const jobs = getStoredJobs();
+    const job = jobs.find((j) => j.id === targetId) || { id: targetId, title: "Gig", pay: 5000 };
+    const allApps = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || "[]");
+    const jobApps = allApps.filter((a) => a.job_id === targetId);
+
+    let totalApplicantsHops = 0;
+    if (refundApplicants && jobApps.length > 0) {
+      jobApps.forEach((app) => {
+        const cost = (job.credits_to_apply || calculateHopsForJob(job.pay)) + (app.boost_credits || 0);
+        addCredits(app.freelancer_id, cost, {
+          type: "refund",
+          related_job_id: job.id,
+          job_title: job.title,
+          description: `Refund: ${cost} Hops returned for cancelled/refunded gig "${job.title}" (${reason})`,
+        });
+        totalApplicantsHops += cost;
+        refundedWallets.push({ id: app.freelancer_id, type: "freelancer", hops: cost });
+      });
+    }
+
+    let employerHopsRefunded = 0;
+    if (refundEmployer) {
+      addEmployerHops("employer-demo", hopsNum);
+      employerHopsRefunded = hopsNum;
+      refundedWallets.push({ id: "employer-demo", type: "employer", hops: hopsNum });
+    }
+
+    details = `Refunded gig "${job.title}" (ID: ${targetId}): ${jobApps.length} applicant(s) refunded ${totalApplicantsHops} Hops${employerHopsRefunded ? ` + employer refunded ${employerHopsRefunded} Hops` : ""}. Reason: ${reason}`;
+    addAdminLog("HOPS_MANUALLY_REFUNDED", details, targetId);
+  }
+
+  const record = {
+    id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    target_type: targetType,
+    target_id: targetId || (targetType === "employer" ? "employer-demo" : "freelancer-demo"),
+    hops: hopsNum,
+    reason,
+    admin_email: adminEmail,
+    details,
+    refunded_wallets: refundedWallets,
+    created_at: now,
+    status: "COMPLETED",
+  };
+
+  localStorage.setItem(MANUAL_REFUNDS_KEY, JSON.stringify([record, ...refunds]));
+  return { ok: true, record, message: details };
+}
+
+
 

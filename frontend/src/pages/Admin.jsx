@@ -14,6 +14,7 @@ import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from "@/lib/api";
 import { BENGALURU_AREAS } from "@/lib/locationAreas";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import { checkRateLimit, resetRateLimit } from "@/lib/security";
+import { calculateHopsForJob, getEmployerHops, getStoredJobs } from "@/lib/clientStore";
 
 const TABS = [
   { id: "CREDITS", label: "🪙 CREDITS & PRICING" },
@@ -501,6 +502,34 @@ function GigsModerationTab({ adminFetch }) {
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-ink/10 pt-2.5">
                 <span className="text-[10px] text-inkmuted">ID: {g.id}</span>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      const defaultHops = calculateHopsForJob(g.pay);
+                      const confirmRefund = window.confirm(
+                        `Manually refund Hops for gig "${g.title}"?\n\n• Employer Hops to refund: ${defaultHops} Hops\n• Applicant Freelancers to refund: ${g.applicants_count || 0}\n\nClick OK to proceed with refund.`
+                      );
+                      if (!confirmRefund) return;
+                      const reason = window.prompt("Enter refund reason (e.g. Employer cancelled without hiring):", "Employer cancelled gig without hiring") || "Employer cancelled gig without hiring";
+                      try {
+                        const res = await adminFetch("/refund-hops", "POST", {
+                          target_type: "job",
+                          target_id: g.id,
+                          hops: defaultHops,
+                          reason,
+                          refund_employer: true,
+                          refund_applicants: true,
+                        });
+                        alert(res?.message || `Successfully refunded Hops for "${g.title}"!`);
+                        loadGigs();
+                      } catch (err) {
+                        alert(err?.message || "Failed to process gig refund.");
+                      }
+                    }}
+                    className="flex items-center gap-1 border-2 border-ink bg-amber-50 px-2.5 py-1 text-[10px] font-black text-amber-900 hover:bg-amber-100 transition shadow-[1px_1px_0px_#121212]"
+                    title="Manually refund Hops for this gig to employer & applicants"
+                  >
+                    <RotateCcw size={12} /> REFUND HOPS
+                  </button>
                   <button
                     onClick={() => handleToggleBoost(g.id)}
                     disabled={busyId === g.id}
@@ -1465,6 +1494,59 @@ function CreditsConfigTab({ adminFetch }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ text: "", type: "" });
 
+  // Manual Hops Refund states
+  const [refundTargetType, setRefundTargetType] = useState("employer"); // "employer" | "freelancer" | "job"
+  const [refundTargetId, setRefundTargetId] = useState("employer-demo");
+  const [refundHops, setRefundHops] = useState(4);
+  const [refundReason, setRefundReason] = useState("Employer cancelled job without hiring");
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
+  const [refundStatus, setRefundStatus] = useState(null);
+  const [refundLogs, setRefundLogs] = useState([]);
+
+  const loadRefundLogs = useCallback(async () => {
+    try {
+      const res = await adminFetch("/refund-hops", "GET");
+      if (Array.isArray(res)) setRefundLogs(res);
+    } catch {
+      /* ignore */
+    }
+  }, [adminFetch]);
+
+  useEffect(() => {
+    loadRefundLogs();
+  }, [loadRefundLogs]);
+
+  const handleProcessRefund = async (e) => {
+    e?.preventDefault();
+    if (!refundTargetId.trim()) {
+      setRefundStatus({ type: "error", msg: "Please enter or select a valid Target ID." });
+      return;
+    }
+    setRefundSubmitting(true);
+    setRefundStatus(null);
+    try {
+      const res = await adminFetch("/refund-hops", "POST", {
+        target_type: refundTargetType,
+        target_id: refundTargetId.trim(),
+        hops: Math.max(1, Number(refundHops) || 1),
+        reason: refundReason.trim() || "Admin manual refund",
+        admin_email: "Zenithdeveleoperss@gmail.com",
+      });
+      setRefundStatus({
+        type: "success",
+        msg: res?.message || `Successfully refunded ${refundHops} Hops to ${refundTargetType} "${refundTargetId}"!`,
+      });
+      loadRefundLogs();
+    } catch (err) {
+      setRefundStatus({
+        type: "error",
+        msg: err?.message || "Failed to process manual Hops refund.",
+      });
+    } finally {
+      setRefundSubmitting(false);
+    }
+  };
+
   const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
@@ -1817,6 +1899,339 @@ function CreditsConfigTab({ adminFetch }) {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Section 3: Manual Hops Refund & Adjustment Console */}
+      <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212] flex flex-col gap-5" data-testid="manual-hops-refund-console">
+        <div className="flex items-center justify-between border-b-2 border-ink/10 pb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-[#FFF3C4] text-[#E65A1E] shadow-[2px_2px_0px_#121212]">
+              <RotateCcw size={18} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black uppercase text-ink">
+                  Manual Hops Refund &amp; Adjustment Console
+                </h3>
+                <span className="border border-ink bg-amber-100 text-amber-900 px-2 py-0.5 text-[9px] font-black uppercase">
+                  Admin Tool
+                </span>
+              </div>
+              <p className="text-[10px] text-inkmuted font-semibold mt-0.5">
+                Issue manual Hops refunds to employers, individual freelancers, or entire gig applicant pools (Upwork Connects refund model).
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold text-inkmuted">
+            Baseline Rate: <strong>₹15 = 1 Hop</strong>
+          </span>
+        </div>
+
+        {/* Feedback Alert Banner */}
+        {refundStatus && (
+          <div
+            className={`border-2 border-ink p-3 text-xs font-black flex items-center gap-2 shadow-[2px_2px_0px_#121212] ${
+              refundStatus.type === "success"
+                ? "bg-[#E5F7E0] text-[#1E4620]"
+                : "bg-[#FFEBEE] text-[#C62828]"
+            }`}
+          >
+            {refundStatus.type === "success" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+            <span>{refundStatus.msg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleProcessRefund} className="flex flex-col gap-4">
+          {/* Target Type Selector */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted block mb-1.5">
+              1. Select Refund Target Type
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setRefundTargetType("employer");
+                  setRefundTargetId("employer-demo");
+                  setRefundReason("Employer cancelled job without hiring");
+                }}
+                className={`flex items-center justify-center gap-2 border-2 border-ink p-3 text-xs font-black uppercase transition ${
+                  refundTargetType === "employer"
+                    ? "bg-ink text-brand shadow-[2px_2px_0px_#E65A1E]"
+                    : "bg-stone-50 text-ink hover:bg-sand"
+                }`}
+              >
+                <span>🏢 Employer Account</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRefundTargetType("freelancer");
+                  setRefundTargetId("freelancer-demo");
+                  setRefundReason("Refund for disputed/cancelled gig");
+                }}
+                className={`flex items-center justify-center gap-2 border-2 border-ink p-3 text-xs font-black uppercase transition ${
+                  refundTargetType === "freelancer"
+                    ? "bg-ink text-brand shadow-[2px_2px_0px_#E65A1E]"
+                    : "bg-stone-50 text-ink hover:bg-sand"
+                }`}
+              >
+                <span>🧑‍💻 Freelancer Wallet</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRefundTargetType("job");
+                  const stored = getStoredJobs();
+                  setRefundTargetId(stored[0]?.id || "job-1");
+                  setRefundHops(calculateHopsForJob(stored[0]?.pay || 5000));
+                  setRefundReason("Gig cancelled by employer without hiring");
+                }}
+                className={`flex items-center justify-center gap-2 border-2 border-ink p-3 text-xs font-black uppercase transition ${
+                  refundTargetType === "job"
+                    ? "bg-ink text-brand shadow-[2px_2px_0px_#E65A1E]"
+                    : "bg-stone-50 text-ink hover:bg-sand"
+                }`}
+              >
+                <span>💼 Job / Gig (All Applicants)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Target ID & Quick Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                2. Target ID ({refundTargetType === "employer" ? "Employer ID" : refundTargetType === "freelancer" ? "Freelancer ID" : "Job ID"})
+              </label>
+              {refundTargetType === "job" ? (
+                <select
+                  value={refundTargetId}
+                  onChange={(e) => {
+                    const jId = e.target.value;
+                    setRefundTargetId(jId);
+                    const j = getStoredJobs().find((item) => item.id === jId);
+                    if (j) setRefundHops(calculateHopsForJob(j.pay));
+                  }}
+                  className="border-2 border-ink bg-stone-50 px-3 py-2 text-xs font-bold text-ink outline-none"
+                >
+                  {getStoredJobs().map((j) => (
+                    <option key={j.id} value={j.id}>
+                      {j.id} · {j.title} (₹{j.pay} · {calculateHopsForJob(j.pay)} Hops)
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={refundTargetId}
+                  onChange={(e) => setRefundTargetId(e.target.value)}
+                  placeholder={refundTargetType === "employer" ? "e.g. employer-demo or company name" : "e.g. freelancer-demo"}
+                  className="border-2 border-ink bg-stone-50 px-3 py-2 text-xs font-bold text-ink outline-none"
+                  required
+                />
+              )}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[9px] font-bold text-inkmuted">Quick picks:</span>
+                {refundTargetType === "employer" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setRefundTargetId("employer-demo")}
+                      className="text-[9px] font-bold border border-ink bg-sand px-1.5 py-0.5 hover:bg-ink hover:text-white"
+                    >
+                      employer-demo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRefundTargetId("urban-ladder-corp")}
+                      className="text-[9px] font-bold border border-ink bg-sand px-1.5 py-0.5 hover:bg-ink hover:text-white"
+                    >
+                      urban-ladder-corp
+                    </button>
+                  </>
+                )}
+                {refundTargetType === "freelancer" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setRefundTargetId("freelancer-demo")}
+                      className="text-[9px] font-bold border border-ink bg-sand px-1.5 py-0.5 hover:bg-ink hover:text-white"
+                    >
+                      freelancer-demo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRefundTargetId("pro-1")}
+                      className="text-[9px] font-bold border border-ink bg-sand px-1.5 py-0.5 hover:bg-ink hover:text-white"
+                    >
+                      pro-1
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Hops Count & Upwork Tier Pills */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                  3. Hops to Refund
+                </label>
+                <span className="text-[10px] font-bold text-ok">
+                  Value: ₹{refundHops * 15} INR (at ₹15/Hop)
+                </span>
+              </div>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={refundHops}
+                onChange={(e) => setRefundHops(Math.max(1, Number(e.target.value) || 1))}
+                className="border-2 border-ink bg-stone-50 px-3 py-2 text-xs font-bold text-ink outline-none"
+                required
+              />
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-[9px] font-bold text-inkmuted">Tiers:</span>
+                {[2, 4, 6, 8, 10, 12, 16, 20, 40].map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => setRefundHops(count)}
+                    className={`text-[9px] font-bold border border-ink px-1.5 py-0.5 transition ${
+                      refundHops === count ? "bg-brand text-white" : "bg-sand hover:bg-stone-200"
+                    }`}
+                  >
+                    +{count}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Reason for Refund & Preset Chips */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              4. Reason for Refund (Recorded in Audit Logs &amp; User Statement)
+            </label>
+            <input
+              type="text"
+              value={refundReason}
+              onChange={(e) => setRefundReason(e.target.value)}
+              placeholder="e.g. Employer cancelled job without hiring"
+              className="border-2 border-ink bg-stone-50 px-3 py-2 text-xs font-bold text-ink outline-none"
+              required
+            />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[9px] font-bold text-inkmuted">Presets:</span>
+              {[
+                "Employer cancelled job without hiring",
+                "Disputed project cancellation",
+                "Employer requested refund",
+                "Zero qualified applicants",
+                "Technical / billing adjustment",
+                "Platform goodwill compensation",
+              ].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setRefundReason(preset)}
+                  className="text-[9px] font-semibold border border-ink/40 bg-sand/60 px-2 py-0.5 hover:bg-ink hover:text-white transition"
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Submit Refund Button */}
+          <div className="pt-2 flex items-center justify-between flex-wrap gap-3">
+            <div className="text-[10px] text-inkmuted">
+              {refundTargetType === "job" ? (
+                <span>⚠️ Will refund <strong>both the employer ({refundHops} Hops)</strong> and <strong>all applicant freelancers</strong> who bid on this gig.</span>
+              ) : (
+                <span>Refund will be credited immediately to the selected account wallet.</span>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={refundSubmitting}
+              className="flex items-center gap-2 border-2 border-ink bg-brand px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:bg-brand/90 active:translate-y-0.5 disabled:opacity-50"
+            >
+              {refundSubmitting ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <RotateCcw size={14} />
+              )}
+              <span>PROCESS MANUAL HOPS REFUND</span>
+            </button>
+          </div>
+        </form>
+
+        {/* Audit Table: Recent Manual Refunds */}
+        <div className="mt-4 border-t-2 border-ink/10 pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-black uppercase text-ink">
+              📜 Recent Manual Hops Refund Logs ({refundLogs.length})
+            </p>
+            <button
+              type="button"
+              onClick={loadRefundLogs}
+              className="text-[10px] font-bold text-inkmuted hover:text-ink flex items-center gap-1"
+            >
+              <RefreshCw size={10} /> Refresh
+            </button>
+          </div>
+
+          {refundLogs.length === 0 ? (
+            <p className="py-4 text-center text-xs font-bold text-inkmuted bg-stone-50 border border-ink/20">
+              No manual refunds recorded yet. Issue one above to test.
+            </p>
+          ) : (
+            <div className="overflow-x-auto border border-ink">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-ink bg-sand text-[10px] font-black uppercase text-inkmuted">
+                  <tr>
+                    <th className="p-2">Date</th>
+                    <th className="p-2">Target Type</th>
+                    <th className="p-2">Target ID</th>
+                    <th className="p-2">Hops</th>
+                    <th className="p-2">Reason</th>
+                    <th className="p-2">Admin</th>
+                    <th className="p-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-ink/10">
+                  {refundLogs.slice(0, 10).map((log, i) => (
+                    <tr key={log.id || i} className="hover:bg-stone-50 text-[11px]">
+                      <td className="p-2 font-mono text-[10px] text-inkmuted whitespace-nowrap">
+                        {log.created_at ? new Date(log.created_at).toLocaleString("en-IN") : "Just now"}
+                      </td>
+                      <td className="p-2 font-bold uppercase">
+                        <span className="border border-ink bg-stone-100 px-1.5 py-0.5 text-[9px]">
+                          {log.target_type}
+                        </span>
+                      </td>
+                      <td className="p-2 font-bold text-ink">{log.target_id}</td>
+                      <td className="p-2 font-black text-ok whitespace-nowrap">
+                        +{log.hops} Hops (₹{log.hops * 15})
+                      </td>
+                      <td className="p-2 text-ink/90 max-w-[240px] truncate" title={log.reason}>
+                        {log.reason}
+                      </td>
+                      <td className="p-2 text-[10px] text-inkmuted">{log.admin_email || "Admin"}</td>
+                      <td className="p-2">
+                        <span className="border border-ok bg-[#E5F7E0] px-1.5 py-0.5 text-[8px] font-black text-[#1E4620]">
+                          COMPLETED
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -2211,22 +2626,83 @@ export default function Admin() {
         )}
 
         {tab === "EMPLOYERS" && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.map((e, i) => (
-              <div key={e.email || `emp-${i}`} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-black text-ink">{e.name || "Client"}</p>
-                    <p className="text-xs font-bold text-inkmuted">{e.company_name || e.email}</p>
-                  </div>
-                  <Badge text="EMPLOYER" tone="gray" />
-                </div>
-                <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2 text-xs">
-                  <span>Spend: ₹{Number(e.spent_rupees || 0).toLocaleString("en-IN")}</span>
-                  <span className="font-bold text-brand">{e.jobs_posted || 0} Gigs Posted</span>
-                </div>
+          <div className="flex flex-col gap-4">
+            <div className="border-2 border-ink bg-[#FFF3C4] p-4 shadow-[3px_3px_0px_#121212] flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p className="text-xs font-black uppercase text-ink flex items-center gap-1.5">
+                  <Coins size={14} className="text-brand" /> Employer Accounts &amp; Hops Balance Management
+                </p>
+                <p className="text-[10px] text-inkmuted font-semibold mt-0.5">
+                  Manage registered hiring clients, active gig postings, and manually refund Hops directly.
+                </p>
               </div>
-            ))}
+              <button
+                type="button"
+                onClick={() => setTab("CREDITS")}
+                className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-1.5 text-xs font-black uppercase text-ink shadow-[2px_2px_0px_#121212] hover:bg-sand transition"
+              >
+                <RotateCcw size={12} className="text-brand" /> OPEN REFUND CONSOLE →
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {rows.map((e, i) => {
+                const empId = e.employer_id || e.id || "employer-demo";
+                const empHops = getEmployerHops(empId);
+                return (
+                  <div key={e.email || `emp-${i}`} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-black text-ink">{e.name || "Client"}</p>
+                        <p className="text-xs font-bold text-inkmuted">{e.company_name || e.email}</p>
+                      </div>
+                      <Badge text="EMPLOYER" tone="gray" />
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2 text-xs">
+                      <span>Spend: ₹{Number(e.spent_rupees || 0).toLocaleString("en-IN")}</span>
+                      <span className="font-bold text-brand">{e.jobs_posted || 0} Gigs Posted</span>
+                    </div>
+                    <div className="mt-2.5 flex items-center justify-between border-t border-ink/10 pt-2 text-xs">
+                      <span className="flex items-center gap-1 font-bold text-ink">
+                        <Coins size={13} className="text-brand" /> {empHops} Hops Active
+                      </span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const hopsInput = window.prompt(
+                            `Refund Hops to Employer "${e.name || e.company_name || empId}":\n\nEnter number of Hops to refund:`,
+                            "4"
+                          );
+                          if (!hopsInput) return;
+                          const hopsNum = parseInt(hopsInput, 10);
+                          if (!hopsNum || hopsNum <= 0) return;
+                          const reason = window.prompt(
+                            "Enter reason for refund:",
+                            "Employer requested refund for unhired job"
+                          ) || "Employer requested refund";
+                          try {
+                            const res = await adminFetch("/refund-hops", "POST", {
+                              target_type: "employer",
+                              target_id: empId,
+                              hops: hopsNum,
+                              reason,
+                              admin_email: "Zenithdeveleoperss@gmail.com",
+                            });
+                            alert(res?.message || `Successfully refunded ${hopsNum} Hops to ${e.name || empId}!`);
+                            load("EMPLOYERS");
+                          } catch (err) {
+                            alert(err?.message || "Failed to process employer refund.");
+                          }
+                        }}
+                        className="flex items-center gap-1 border-2 border-ink bg-amber-50 px-2 py-1 text-[10px] font-black text-amber-900 shadow-[1px_1px_0px_#121212] hover:bg-amber-100 transition"
+                      >
+                        <RotateCcw size={10} /> Refund Hops
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

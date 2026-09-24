@@ -1137,6 +1137,109 @@ async def update_admin_credits_config(req: Request):
     return {"ok": True, "config": data}
 
 
+@api_router.get("/admin/refund-hops")
+async def get_admin_refund_hops():
+    """List recent manual Hops refunds processed by admins."""
+    logs = await db.manual_hops_refunds.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return logs
+
+
+@api_router.post("/admin/refund-hops")
+async def admin_refund_hops(req: Request):
+    """Manually refund Hops to an employer, a freelancer, or all applicants on a job."""
+    body = await req.json()
+    target_type = body.get("target_type", "employer")
+    target_id = body.get("target_id") or ("employer-demo" if target_type == "employer" else "freelancer-demo")
+    hops = max(1, int(body.get("hops") or 1))
+    reason = body.get("reason", "Admin manual refund")
+    admin_email = body.get("admin_email", "Zenithdeveleoperss@gmail.com")
+    now = datetime.now(timezone.utc).isoformat()
+
+    details = ""
+    refunded_wallets = []
+
+    if target_type == "employer":
+        emp_doc = await db.employer_hops.find_one({"_id": target_id})
+        current_hops = emp_doc.get("hops", 5) if emp_doc else 5
+        new_hops = current_hops + hops
+        await db.employer_hops.update_one(
+            {"_id": target_id},
+            {"$set": {"hops": new_hops, "updated_at": now}},
+            upsert=True,
+        )
+        details = f"Refunded {hops} Hops to employer '{target_id}'. New balance: {new_hops} Hops. Reason: {reason}"
+        refunded_wallets.append({"id": target_id, "type": "employer", "hops": hops, "balance": new_hops})
+
+    elif target_type == "freelancer":
+        wallet = await _get_or_create_wallet(target_id)
+        new_balance = wallet["balance"] + hops
+        await db.credits_wallet.update_one(
+            {"user_id": target_id},
+            {"$set": {"balance": new_balance, "updated_at": now}}
+        )
+        await db.credit_transactions.insert_one({
+            "_id": f"ctx-{uuid.uuid4().hex[:8]}",
+            "user_id": target_id,
+            "type": "refund",
+            "amount": hops,
+            "balance_after": new_balance,
+            "description": f"Admin Refund: {hops} Hops returned ({reason})",
+            "created_at": now,
+        })
+        details = f"Refunded {hops} Hops to freelancer '{target_id}'. New balance: {new_balance} Hops. Reason: {reason}"
+        refunded_wallets.append({"id": target_id, "type": "freelancer", "hops": hops, "balance": new_balance})
+
+    elif target_type == "job":
+        job_apps = await db.job_applications.find({"job_id": target_id}).to_list(100)
+        total_applicants_hops = 0
+        for app in job_apps:
+            f_id = app.get("freelancer_id")
+            cost = app.get("boost_credits", 0) + hops
+            w = await _get_or_create_wallet(f_id)
+            new_bal = w["balance"] + cost
+            await db.credits_wallet.update_one(
+                {"user_id": f_id},
+                {"$set": {"balance": new_bal, "updated_at": now}}
+            )
+            await db.credit_transactions.insert_one({
+                "_id": f"ctx-{uuid.uuid4().hex[:8]}",
+                "user_id": f_id,
+                "type": "refund",
+                "amount": cost,
+                "balance_after": new_bal,
+                "description": f"Refund: {cost} Hops returned for cancelled/refunded gig '{target_id}' ({reason})",
+                "created_at": now,
+            })
+            total_applicants_hops += cost
+            refunded_wallets.append({"id": f_id, "type": "freelancer", "hops": cost})
+
+        emp_doc = await db.employer_hops.find_one({"_id": "employer-demo"})
+        current_hops = emp_doc.get("hops", 5) if emp_doc else 5
+        new_hops = current_hops + hops
+        await db.employer_hops.update_one(
+            {"_id": "employer-demo"},
+            {"$set": {"hops": new_hops, "updated_at": now}},
+            upsert=True,
+        )
+        refunded_wallets.append({"id": "employer-demo", "type": "employer", "hops": hops})
+        details = f"Refunded gig '{target_id}': {len(job_apps)} applicant(s) refunded {total_applicants_hops} Hops + employer refunded {hops} Hops. Reason: {reason}"
+
+    record = {
+        "id": f"ref-{uuid.uuid4().hex[:8]}",
+        "target_type": target_type,
+        "target_id": target_id,
+        "hops": hops,
+        "reason": reason,
+        "admin_email": admin_email,
+        "details": details,
+        "refunded_wallets": refunded_wallets,
+        "created_at": now,
+        "status": "COMPLETED",
+    }
+    await db.manual_hops_refunds.insert_one(record)
+    return {"ok": True, "record": record, "message": details}
+
+
 @api_router.post("/freelancer/quota/unlock", response_model=QuotaUnlockResponse)
 async def quota_unlock(req: QuotaUnlockRequest):
     """Mock ₹149 boost: +5 extra applies for 24 hours (on top of the 3 free/day)."""

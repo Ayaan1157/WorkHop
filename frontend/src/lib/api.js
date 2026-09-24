@@ -38,6 +38,8 @@ import {
   addEmployerReview,
   getStoredReviews,
   markJobCompletedAndReview,
+  adminRefundHops,
+  getManualHopsRefunds,
 } from "./clientStore";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
@@ -125,6 +127,12 @@ function mockRouter(path, method = "GET", body = null) {
       return saveCreditsConfig(body);
     }
     return getCreditsConfig();
+  }
+  if (cleanPath === "/admin/refund-hops") {
+    if (method === "POST") {
+      return adminRefundHops(body || {});
+    }
+    return getManualHopsRefunds();
   }
 
   // 3. Catalog & Map
