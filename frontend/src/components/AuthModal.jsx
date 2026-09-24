@@ -31,6 +31,8 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   const [area, setArea] = useState("Koramangala");
   const [companyName, setCompanyName] = useState("");
   const [skill, setSkill] = useState("");
+  const [gstNumber, setGstNumber] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Safety & Human Verification State
   const [captchaToken, setCaptchaToken] = useState(null);
@@ -303,6 +305,12 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       return;
     }
 
+    // Terms & Conditions and 18+ Age Declaration Check
+    if (!termsAccepted) {
+      setError("Please agree to the Terms and Conditions and confirm that you are 18 years of age or older.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -332,6 +340,9 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     if (userData?.phone || phoneDigits) localStorage.setItem("workhop_pro_phone", userData?.phone || phoneDigits);
     if (userData?.company_name || (targetRole === "employer" && companyName)) {
       localStorage.setItem("workhop_company_name", userData?.company_name || companyName);
+    }
+    if (targetRole === "employer" && gstNumber) {
+      localStorage.setItem("workhop_employer_gst", gstNumber.trim().toUpperCase());
     }
     if (userData?.skill || (targetRole !== "employer" && skill)) {
       localStorage.setItem("workhop_pro_skill", userData?.skill || skill);
@@ -596,23 +607,44 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                   </div>
                 </div>
 
-                {/* Dynamic Role Field: Company Name (Employer) OR Skill (Freelancer) */}
+                {/* Dynamic Role Field: Company Name & Optional GST (Employer) OR Skill (Freelancer) */}
                 {isEmployer ? (
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-                      Company / Business Name (Optional)
-                    </label>
-                    <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5">
-                      <Building2 size={16} className="text-inkmuted mr-2 shrink-0" />
-                      <input
-                        data-testid="auth-company-input"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="e.g. BrewBox Cafe / LedgerLite Studio"
-                        className="w-full bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60 focus:outline-none"
-                      />
+                  <>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                        Company / Business Name (Optional)
+                      </label>
+                      <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5">
+                        <Building2 size={16} className="text-inkmuted mr-2 shrink-0" />
+                        <input
+                          data-testid="auth-company-input"
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          placeholder="e.g. BrewBox Cafe / LedgerLite Studio"
+                          className="w-full bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60 focus:outline-none"
+                        />
+                      </div>
                     </div>
-                  </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                          GSTIN / GST Number (Optional)
+                        </label>
+                        <span className="text-[9px] font-bold text-inkmuted">Optional</span>
+                      </div>
+                      <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5">
+                        <input
+                          data-testid="auth-gst-input"
+                          value={gstNumber}
+                          onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
+                          placeholder="e.g. 29AAAAA0000A1Z5"
+                          maxLength={15}
+                          className="w-full bg-transparent text-xs font-mono font-bold tracking-wider text-ink placeholder:font-sans placeholder:tracking-normal placeholder:text-inkmuted/60 focus:outline-none uppercase"
+                        />
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
@@ -783,6 +815,40 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                   resetTrigger={captchaReset}
                   className="my-1"
                 />
+
+                {/* Terms & Conditions and 18+ Age Declaration Checkbox (For both Freelancer and Employer) */}
+                {mode === "signup" && (
+                  <label
+                    data-testid="terms-age-checkbox-label"
+                    className={`flex items-start gap-2.5 cursor-pointer select-none border-2 p-3 transition ${
+                      termsAccepted ? "border-ink bg-sand/60" : "border-ink/30 bg-sand/20 hover:border-ink"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      data-testid="terms-age-checkbox"
+                      checked={termsAccepted}
+                      onChange={(e) => {
+                        setTermsAccepted(e.target.checked);
+                        setError(null);
+                      }}
+                      className="mt-0.5 h-4 w-4 rounded-none border-2 border-ink text-brand focus:ring-0 accent-[#FF5A1F] cursor-pointer shrink-0"
+                    />
+                    <span className="text-xs font-bold leading-snug text-ink">
+                      I agree to the{" "}
+                      <a
+                        href="/legal"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-brand underline hover:text-black font-extrabold"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Terms and Conditions
+                      </a>{" "}
+                      and confirm that I am 18 years of age or older.
+                    </span>
+                  </label>
+                )}
 
                 {/* Main Action Button */}
                 <button

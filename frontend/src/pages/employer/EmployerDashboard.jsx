@@ -46,10 +46,13 @@ export default function EmployerDashboard() {
   const [bio, setBio] = useState(() =>
     localStorage.getItem("workhop_employer_bio") || "Hiring top-tier local freelance talent across Bengaluru for design, development, and marketing gigs."
   );
+  const [gstNumber, setGstNumber] = useState(() =>
+    user?.gst_number || localStorage.getItem("workhop_employer_gst") || ""
+  );
 
   // Modals & UI States
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ companyName, employerName, area, phone, industry, bio });
+  const [editForm, setEditForm] = useState({ companyName, employerName, area, phone, industry, bio, gstNumber });
   const [leaderboardJob, setLeaderboardJob] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [chats, setChats] = useState([]);
@@ -115,12 +118,14 @@ export default function EmployerDashboard() {
     setPhone(editForm.phone);
     setIndustry(editForm.industry);
     setBio(editForm.bio);
+    setGstNumber(editForm.gstNumber || "");
 
     localStorage.setItem("workhop_company_name", editForm.companyName);
     localStorage.setItem("workhop_user_area", editForm.area);
     localStorage.setItem("workhop_pro_phone", editForm.phone);
     localStorage.setItem("workhop_employer_industry", editForm.industry);
     localStorage.setItem("workhop_employer_bio", editForm.bio);
+    localStorage.setItem("workhop_employer_gst", editForm.gstNumber ? editForm.gstNumber.trim().toUpperCase() : "");
 
     setEditModalOpen(false);
   };
@@ -202,6 +207,18 @@ export default function EmployerDashboard() {
                   <span className="border border-ink bg-[#FFF3C4] px-2 py-0.5 text-[9px] font-black uppercase text-[#92400E] shadow-[1px_1px_0px_#121212] flex items-center gap-1">
                     <ShieldCheck size={12} className="text-brand" /> VERIFIED HIRER
                   </span>
+                  {gstNumber ? (
+                    <span
+                      data-testid="employer-gst-badge"
+                      className="border border-ink bg-white dark:bg-stone-800 px-2 py-0.5 text-[9px] font-black uppercase text-ink dark:text-stone-200 shadow-[1px_1px_0px_#121212] font-mono flex items-center gap-1"
+                    >
+                      <span className="text-brand font-black">GSTIN:</span> {gstNumber}
+                    </span>
+                  ) : (
+                    <span className="border border-ink/40 bg-sand/60 dark:bg-stone-800/60 px-2 py-0.5 text-[9px] font-bold uppercase text-inkmuted dark:text-stone-400 shadow-[1px_1px_0px_#121212]">
+                      GST: Optional
+                    </span>
+                  )}
                   {isAdmin && (
                     <span className="border border-ink bg-ok px-2 py-0.5 text-[9px] font-black uppercase text-white shadow-[1px_1px_0px_#121212]">
                       ADMIN ACCESS
@@ -229,6 +246,14 @@ export default function EmployerDashboard() {
                   <span className="flex items-center gap-1">
                     <Phone size={13} className="text-brand" /> +91 {phone}
                   </span>
+                  {gstNumber && (
+                    <>
+                      <span>•</span>
+                      <span className="flex items-center gap-1 font-mono text-ink dark:text-stone-200">
+                        <span className="text-brand font-black">GST:</span> {gstNumber}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -239,7 +264,7 @@ export default function EmployerDashboard() {
                 type="button"
                 data-testid="edit-employer-profile-btn"
                 onClick={() => {
-                  setEditForm({ companyName, employerName, area, phone, industry, bio });
+                  setEditForm({ companyName, employerName, area, phone, industry, bio, gstNumber });
                   setEditModalOpen(true);
                 }}
                 className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 border-2 border-ink bg-white dark:bg-stone-800 px-4 py-2.5 text-xs font-black uppercase text-ink dark:text-white hover:bg-stone-100 transition shadow-[2px_2px_0px_#121212] active:translate-y-0.5"
@@ -701,6 +726,27 @@ export default function EmployerDashboard() {
                   placeholder="Tell candidates about your company and hiring requirements…"
                   className="w-full border-2 border-ink bg-white dark:bg-stone-900 p-2.5 font-bold text-ink dark:text-white outline-none"
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400">
+                    GSTIN / GST Number (Optional)
+                  </label>
+                  <span className="text-[9px] font-bold text-inkmuted dark:text-stone-500 uppercase">Optional for Tax Invoicing</span>
+                </div>
+                <input
+                  type="text"
+                  data-testid="employer-gst-input"
+                  value={editForm.gstNumber || ""}
+                  onChange={(e) => setEditForm({ ...editForm, gstNumber: e.target.value.toUpperCase() })}
+                  placeholder="e.g. 29AAAAA0000A1Z5 (Optional)"
+                  maxLength={15}
+                  className="w-full border-2 border-ink bg-white dark:bg-stone-900 p-2.5 font-mono font-bold text-ink dark:text-white outline-none tracking-wider placeholder:tracking-normal placeholder:font-sans uppercase text-xs"
+                />
+                <p className="text-[10px] text-inkmuted dark:text-stone-400 mt-1">
+                  15-character GST identification number for claiming business tax credits on gig invoices.
+                </p>
               </div>
 
               <div className="mt-2 flex items-center justify-end gap-2 border-t-2 border-ink/10 pt-3">

@@ -41,6 +41,7 @@ export default function PostJob() {
   const [posted, setPosted] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
   const [captchaReset, setCaptchaReset] = useState(0);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const loadCredits = useCallback(async () => {
     if (isAdmin) {
@@ -96,6 +97,11 @@ export default function PostJob() {
     // Safety Measure: Human Verification reCAPTCHA
     if (!captchaToken) {
       return setError("Please complete the reCAPTCHA human verification check before publishing your gig.");
+    }
+
+    // Terms & Conditions and 18+ Age Declaration Check
+    if (!termsAccepted) {
+      return setError("Please agree to the Terms and Conditions and confirm you are 18 years of age or older.");
     }
 
     setSubmitting(true);
@@ -435,6 +441,38 @@ export default function PostJob() {
             resetTrigger={captchaReset}
             className="my-1"
           />
+
+          {/* Terms & Conditions and 18+ Age Declaration Checkbox */}
+          <label
+            data-testid="postjob-terms-checkbox-label"
+            className={`flex items-start gap-2.5 cursor-pointer select-none border-2 p-3 shadow-[2px_2px_0px_#121212] transition ${
+              termsAccepted ? "border-ink bg-white" : "border-ink/40 bg-sand/40 hover:border-ink"
+            }`}
+          >
+            <input
+              type="checkbox"
+              data-testid="postjob-terms-checkbox"
+              checked={termsAccepted}
+              onChange={(e) => {
+                setTermsAccepted(e.target.checked);
+                setError("");
+              }}
+              className="mt-0.5 h-4 w-4 rounded-none border-2 border-ink text-brand focus:ring-0 accent-[#FF5A1F] cursor-pointer shrink-0"
+            />
+            <span className="text-xs font-bold leading-snug text-ink">
+              I agree to the{" "}
+              <a
+                href="/legal"
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand underline hover:text-black font-extrabold"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Terms and Conditions
+              </a>{" "}
+              and confirm that I am 18 years of age or older.
+            </span>
+          </label>
 
           <button
             data-testid="postjob-submit-btn"

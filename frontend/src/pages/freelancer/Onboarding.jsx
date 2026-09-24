@@ -45,6 +45,7 @@ export default function Onboarding() {
   const [extRating, setExtRating] = useState("");
   const [extReviews, setExtReviews] = useState("");
   const [slots, setSlots] = useState([null, null, null]);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   useEffect(() => { if (user?.email) setVerifyEmail((v) => v || user.email); }, [user?.email]);
 
@@ -75,9 +76,9 @@ export default function Onboarding() {
   const phoneValid = phoneDigits.length === 10;
   const step3Done = !!linkedin && !!portfolio && phoneValid && !!skill.trim() && Number(rateHr) > 0 && !!intro.trim() && langs.length > 0;
   const slotsDone = slots.every(Boolean);
-  const completed = (state.paid ? 1 : 0) + (state.verified ? 1 : 0) + (step3Done ? 1 : 0) + (slotsDone ? 1 : 0);
-  const progressPct = Math.min((completed / TOTAL) * 100, 100);
-  const allReady = state.paid && state.verified && step3Done && slotsDone;
+  const completed = (state.paid ? 1 : 0) + (state.verified ? 1 : 0) + (step3Done ? 1 : 0) + (slotsDone ? 1 : 0) + (termsAccepted ? 1 : 0);
+  const progressPct = Math.min((completed / (TOTAL + 1)) * 100, 100);
+  const allReady = state.paid && state.verified && step3Done && slotsDone && termsAccepted;
 
   const handlePay = async () => {
     setPaying(true);
@@ -261,6 +262,35 @@ export default function Onboarding() {
               ))}
             </div>
           </Step>
+
+          {/* Terms & Conditions and 18+ Age Declaration Checkbox */}
+          <label
+            data-testid="onboarding-terms-checkbox-label"
+            className={`flex items-start gap-2.5 cursor-pointer select-none border-2 p-3.5 shadow-[2px_2px_0px_#121212] transition ${
+              termsAccepted ? "border-ink bg-white" : "border-ink/40 bg-sand/40 hover:border-ink"
+            }`}
+          >
+            <input
+              type="checkbox"
+              data-testid="onboarding-terms-checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded-none border-2 border-ink text-brand focus:ring-0 accent-[#FF5A1F] cursor-pointer shrink-0"
+            />
+            <span className="text-xs font-bold leading-snug text-ink">
+              I agree to the{" "}
+              <a
+                href="/legal"
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand underline hover:text-black font-extrabold"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Terms and Conditions
+              </a>{" "}
+              and confirm that I am 18 years of age or older.
+            </span>
+          </label>
 
           <button data-testid="submit-btn" disabled={!allReady || submitting} onClick={handleSubmit} className={`flex items-center justify-center gap-2 border-2 border-ink bg-ink py-4 text-[15px] font-black text-white ${!allReady ? "opacity-35" : ""}`}>
             {submitting ? <Loader2 size={18} className="animate-spin" /> : <>Submit for Verification <ArrowRight size={18} /></>}
