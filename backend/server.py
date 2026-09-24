@@ -381,9 +381,27 @@ with open(ROOT_DIR / "seeds" / "jobs.json", encoding="utf-8") as _f:
     _JOB_DEFS: List[dict] = json.load(_f)
 
 
+def calculate_hops_for_job(pay: float) -> int:
+    """Upwork-style Connects/Hops: 2, 4, 6, 8, 10, 12, 16 connects based on budget"""
+    p = float(pay or 0)
+    if p <= 3000:
+        return 2
+    if p <= 8000:
+        return 4
+    if p <= 15000:
+        return 6
+    if p <= 30000:
+        return 8
+    if p <= 50000:
+        return 10
+    if p <= 80000:
+        return 12
+    return 16
+
+
 def _make_seed_job(i: int, j: dict) -> dict:
     pay = j["pay"]
-    credits_to_apply = max(1, math.floor(pay / 1000))
+    credits_to_apply = calculate_hops_for_job(pay)
     sample_boost = (i == 0 or i == 3)
     expires_at = (datetime.now(timezone.utc) + timedelta(hours=36)).isoformat() if sample_boost else None
     return {
@@ -719,7 +737,7 @@ async def list_jobs(freelancer_id: Optional[str] = None, bucket: Optional[str] =
         if bucket and job["bucket"].lower() != bucket.lower():
             continue
         pay = int(job.get("pay", 1000))
-        credits_to_apply = job.get("credits_to_apply") or max(1, math.floor(pay / 1000))
+        credits_to_apply = job.get("credits_to_apply") or calculate_hops_for_job(pay)
         is_boosted = bool(job.get("is_boosted", False))
         exp = job.get("boost_expires_at")
         if is_boosted and exp:
@@ -849,7 +867,7 @@ async def apply_to_job(job_id: str, req: ApplyRequest):
 
     # Requirement 1: Credit-based deduction logic
     pay = int(job.get("pay", 1000))
-    base_cost = job.get("credits_to_apply") or max(1, math.floor(pay / 1000))
+    base_cost = job.get("credits_to_apply") or calculate_hops_for_job(pay)
     boost_credits = max(0, req.boost_credits or 0)
     total_cost = base_cost + boost_credits
 
@@ -1085,20 +1103,23 @@ async def get_admin_credits_config():
     cfg = await db.site_settings.find_one({"_id": "credits_config"}, {"_id": 0})
     if not cfg:
         cfg = {
-            "per_credit_rate_inr": 10,
+            "per_credit_rate_inr": 15,
+            "hop_rate_inr": 15,
             "credit_packs": [
-                {"id": "pack-10", "credits": 10, "price_inr": 100, "label": "10 Credits", "discount_label": "Standard Rate", "popular": False},
-                {"id": "pack-25", "credits": 25, "price_inr": 225, "label": "25 Credits", "discount_label": "Save 10%", "popular": True},
-                {"id": "pack-50", "credits": 50, "price_inr": 400, "label": "50 Credits", "discount_label": "Save 20%", "popular": False},
-                {"id": "pack-100", "credits": 100, "price_inr": 750, "label": "100 Credits", "discount_label": "Save 25% (Best Value)", "popular": False},
+                {"id": "pack-10", "credits": 10, "price_inr": 150, "label": "10 Hops", "discount_label": "Standard Rate (₹15/Hop)", "popular": False},
+                {"id": "pack-20", "credits": 20, "price_inr": 300, "label": "20 Hops", "discount_label": "Standard Rate (₹15/Hop)", "popular": False},
+                {"id": "pack-40", "credits": 40, "price_inr": 600, "label": "40 Hops", "discount_label": "Most Popular", "popular": True},
+                {"id": "pack-60", "credits": 60, "price_inr": 900, "label": "60 Hops", "discount_label": "Great Value", "popular": False},
+                {"id": "pack-80", "credits": 80, "price_inr": 1200, "label": "80 Hops", "discount_label": "Pro Bundle", "popular": False},
+                {"id": "pack-100", "credits": 100, "price_inr": 1500, "label": "100 Hops", "discount_label": "Best Value", "popular": False},
             ],
             "subscription_plans": [
-                {"id": "starter_pass", "name": "Starter Connects Pass", "credits_per_cycle": 30, "price_inr": 249, "billing_cycle": "monthly", "badge": "STARTER", "effective_per_credit": "₹8.30"},
-                {"id": "pro_pass", "name": "Pro Connects Pass", "credits_per_cycle": 60, "price_inr": 449, "billing_cycle": "monthly", "badge": "MOST POPULAR", "effective_per_credit": "₹7.48"},
-                {"id": "power_pass", "name": "Power Freelancer Pass", "credits_per_cycle": 120, "price_inr": 799, "billing_cycle": "monthly", "badge": "MAX SAVINGS", "effective_per_credit": "₹6.65"},
+                {"id": "starter_pass", "name": "Starter Hops Pass", "credits_per_cycle": 30, "price_inr": 399, "billing_cycle": "monthly", "badge": "STARTER", "effective_per_credit": "₹13.30"},
+                {"id": "pro_pass", "name": "Freelancer Plus Pass", "credits_per_cycle": 80, "price_inr": 999, "billing_cycle": "monthly", "badge": "MOST POPULAR", "effective_per_credit": "₹12.48"},
+                {"id": "power_pass", "name": "Power Freelancer Pass", "credits_per_cycle": 160, "price_inr": 1899, "billing_cycle": "monthly", "badge": "MAX SAVINGS", "effective_per_credit": "₹11.86"},
             ],
             "rollover_unused_credits": True,
-            "job_boost_price_inr": 299,
+            "job_boost_price_inr": 399,
             "job_boost_duration_hours": 48,
             "welcome_credits": 20,
         }
@@ -2301,7 +2322,7 @@ async def post_job(req: PostJobRequest):
         )
     job_id = f"cjob-{uuid.uuid4().hex[:8]}"
     idx = state["used"]
-    credits_to_apply = max(1, math.floor(req.pay / 1000))
+    credits_to_apply = calculate_hops_for_job(req.pay)
     job = {
         "id": job_id,
         "title": req.title.strip()[:120],

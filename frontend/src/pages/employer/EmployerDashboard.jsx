@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPost, getEmployerId } from "@/lib/api";
 import {
   getStoredJobs, getStoredChats, getSavedProIds,
-  getStoredLeads, ADMIN_EMAILS
+  getStoredLeads, ADMIN_EMAILS, calculateHopsForJob
 } from "@/lib/clientStore";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import ApplicantLeaderboardModal from "@/components/ApplicantLeaderboardModal";
@@ -557,7 +557,7 @@ export default function EmployerDashboard() {
                               </span>
                               <span>•</span>
                               <span className="flex items-center gap-1">
-                                <Coins size={12} className="text-[#E65A1E]" /> Requires {j.credits_to_apply || 5} Hops
+                                <Coins size={12} className="text-[#E65A1E]" /> Requires {j.credits_to_apply || calculateHopsForJob(j.pay)} Hops
                               </span>
                               <span>•</span>
                               <span className="flex items-center gap-1 font-semibold text-ok">

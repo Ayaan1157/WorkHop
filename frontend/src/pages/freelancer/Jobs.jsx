@@ -36,7 +36,8 @@ import {
   ADMIN_EMAILS,
   getCreditsWallet,
   getFreelancerProfile,
-  getJobLeaderboard
+  getJobLeaderboard,
+  calculateHopsForJob
 } from "@/lib/clientStore";
 import { scanText, redactViolations, scanPdfFile } from "@/lib/contactScanner";
 import { useAuth } from "@/context/AuthContext";
@@ -382,7 +383,7 @@ export default function Jobs() {
       return;
     }
 
-    const baseCost = activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000));
+    const baseCost = activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay);
     const totalCost = baseCost + boostCredits;
     const currentWallet = getCreditsWallet(fid);
 
@@ -927,7 +928,7 @@ export default function Jobs() {
                   <MapPin size={11} className="text-brand" /> Job Area: {activeJob?.area || "Bengaluru"}
                 </span>
                 <span className="border border-ink bg-white px-2 py-0.5 text-xs font-bold text-ink flex items-center gap-1 shadow-[1px_1px_0px_#121212]">
-                  <Coins size={11} className="text-brand" /> Base Apply: {activeJob?.credits_to_apply || Math.max(1, Math.floor((activeJob?.pay || 1000) / 1000))} Hops
+                  <Coins size={11} className="text-brand" /> Base Apply: {activeJob?.credits_to_apply || calculateHopsForJob(activeJob?.pay)} Hops
                 </span>
               </div>
 
@@ -1432,9 +1433,9 @@ export default function Jobs() {
                   <span className="text-[10px] font-black uppercase text-inkmuted tracking-wider">TOTAL REQUIRED</span>
                   <p className="text-sm font-black text-ink flex items-center gap-1">
                     <Coins size={15} className="text-brand" />
-                    {(activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits} Hops
+                    {(activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits} Hops
                     <span className="text-[10px] font-semibold text-inkmuted">
-                      ({activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))} base + {boostCredits} boost)
+                      ({activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)} base + {boostCredits} boost) · ₹{((activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits) * 15}
                     </span>
                   </p>
                 </div>
@@ -1442,7 +1443,7 @@ export default function Jobs() {
                 <div className="text-right">
                   <span className="text-[10px] font-black uppercase text-inkmuted tracking-wider">YOUR BALANCE</span>
                   <p className="text-sm font-black text-ink" data-testid="apply-current-balance">
-                    {wallet.balance} Hops
+                    {wallet.balance} Hops (₹{wallet.balance * 15})
                   </p>
                 </div>
               </div>
@@ -1455,11 +1456,11 @@ export default function Jobs() {
             )}
 
             {/* Insufficient Hops Banner & CTA */}
-            {activeJob && wallet.balance < ((activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits) && (
+            {activeJob && wallet.balance < ((activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits) && (
               <div className="mt-3 border-2 border-ink bg-[#FFEBEE] p-3 text-xs font-black text-[#C62828] shadow-[2px_2px_0px_#C62828]">
                 <p className="flex items-center gap-1.5">
                   <Lock size={14} />
-                  Insufficient Hops ({wallet.balance} available, {(activeJob.credits_to_apply || 1) + boostCredits} required).
+                  Insufficient Hops ({wallet.balance} available, {(activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits} required).
                 </p>
                 <button
                   type="button"
@@ -1467,7 +1468,7 @@ export default function Jobs() {
                   onClick={() => setCreditsModalOpen(true)}
                   className="mt-2 flex w-full items-center justify-center gap-1.5 border-2 border-ink bg-brand py-2.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] transition hover:bg-black"
                 >
-                  <Coins size={14} /> TOP UP HOPS OR SUBSCRIBE →
+                  <Coins size={14} /> TOP UP HOPS (₹15/HOP) OR SUBSCRIBE →
                 </button>
               </div>
             )}
@@ -1489,7 +1490,7 @@ export default function Jobs() {
                 )}
               </div>
             ) : (
-              activeJob && wallet.balance >= ((activeJob.credits_to_apply || Math.max(1, Math.floor((activeJob.pay || 1000) / 1000))) + boostCredits) && (
+              activeJob && wallet.balance >= ((activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits) && (
                 <button
                   data-testid="apply-confirm-btn"
                   disabled={applying || textViolations.length > 0 || pdfViolations.length > 0}
@@ -1523,7 +1524,7 @@ export default function Jobs() {
       <CreditsTopUpModal
         open={creditsModalOpen}
         onClose={() => setCreditsModalOpen(false)}
-        requiredCredits={activeJob ? (activeJob.credits_to_apply || 1) + boostCredits : null}
+        requiredCredits={activeJob ? (activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits : null}
         onUpdated={(w) => {
           setWallet(w);
           setApplyError(null);
@@ -1609,7 +1610,7 @@ function FilterGroup({ label, options, value, onPick }) {
 // Fiverr / Upwork modeled Gig Card
 const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress, onOpenLeaderboard }) {
   const [descExpanded, setDescExpanded] = useState(false);
-  const creditsCost = job.credits_to_apply || Math.max(1, Math.floor((job.pay || 1000) / 1000));
+  const creditsCost = job.credits_to_apply || calculateHopsForJob(job.pay);
   return (
     <div
       data-testid={`job-card-${index}`}

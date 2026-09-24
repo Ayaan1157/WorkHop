@@ -13,7 +13,7 @@ import { getFreelancerId } from "@/lib/api";
 
 export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCredits = null }) {
   const [tab, setTab] = useState("packs"); // "packs" | "subscriptions"
-  const [selectedPackId, setSelectedPackId] = useState("pack-25");
+  const [selectedPackId, setSelectedPackId] = useState("pack-40");
   const [selectedPlanId, setSelectedPlanId] = useState("pro_pass");
   const [processing, setProcessing] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -39,7 +39,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
       const updated = purchaseCreditPack(freelancerId, packId);
       setWallet({ ...updated });
       const pack = config.credit_packs.find((p) => p.id === packId);
-      setSuccessMsg(`✓ Successfully added ${pack?.credits || 25} Hops to your wallet!`);
+      setSuccessMsg(`✓ Successfully added ${pack?.credits || 40} Hops to your wallet!`);
       if (onUpdated) onUpdated(updated);
     } catch (err) {
       alert("Failed to purchase pack. Please try again.");
@@ -90,11 +90,16 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
             <Coins size={22} />
           </div>
           <div>
-            <h3 className="text-lg font-black uppercase tracking-wide text-ink dark:text-white">
-              Connects & Bidding Hops
-            </h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-lg font-black uppercase tracking-wide text-ink dark:text-white">
+                Connects & Bidding Hops
+              </h3>
+              <span className="border border-ink bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide">
+                ₹15 = 1 Hop · Upwork Model
+              </span>
+            </div>
             <p className="text-xs text-inkmuted dark:text-stone-400">
-              Apply to local gigs, unlock employer direct chats, and boost proposals
+              Apply to local gigs (2–16 Hops per job like Upwork), unlock employer direct chats, and boost proposals
             </p>
           </div>
         </div>

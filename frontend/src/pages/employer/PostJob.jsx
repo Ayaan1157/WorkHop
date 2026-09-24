@@ -12,7 +12,7 @@ import { API, apiGet, apiPost, getEmployerId } from "@/lib/api";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import MarketPriceAdvisor from "@/components/MarketPriceAdvisor";
 import { sanitizeInput, checkSpamKeywords } from "@/lib/security";
-import { ADMIN_EMAILS, getCreditsConfig } from "@/lib/clientStore";
+import { ADMIN_EMAILS, getCreditsConfig, calculateHopsForJob } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 
 export default function PostJob() {
@@ -314,10 +314,10 @@ export default function PostJob() {
             >
               <div className="flex items-center gap-2 font-bold text-ink">
                 <Coins size={16} className="text-brand shrink-0" />
-                <span>Freelancer Hops Required:</span>
+                <span>Freelancer Hops to Apply (Upwork Model):</span>
               </div>
               <span className="font-black text-ink bg-white px-2 py-0.5 border border-ink shadow-[1px_1px_0px_#121212]">
-                {Math.max(1, Math.floor((parseInt(pay, 10) || 0) / 1000))} Hops
+                {calculateHopsForJob(pay)} Hops (₹{calculateHopsForJob(pay) * 15})
               </span>
             </div>
           </div>

@@ -21,43 +21,46 @@ const JOB_BOOSTS_KEY = "workhop_job_boosts";
 const CREDITS_CONFIG_KEY = "workhop_credits_config";
 
 export const DEFAULT_CREDITS_CONFIG = {
-  per_credit_rate_inr: 10,
+  per_credit_rate_inr: 15,
+  hop_rate_inr: 15,
   credit_packs: [
-    { id: "pack-10", credits: 10, price_inr: 100, label: "10 Hops", discount_label: "Standard Rate", popular: false },
-    { id: "pack-25", credits: 25, price_inr: 225, label: "25 Hops", discount_label: "Save 10%", popular: true },
-    { id: "pack-50", credits: 50, price_inr: 400, label: "50 Hops", discount_label: "Save 20%", popular: false },
-    { id: "pack-100", credits: 100, price_inr: 750, label: "100 Hops", discount_label: "Save 25% (Best Value)", popular: false },
+    { id: "pack-10", credits: 10, price_inr: 150, label: "10 Hops", discount_label: "Standard Rate (₹15/Hop)", popular: false },
+    { id: "pack-20", credits: 20, price_inr: 300, label: "20 Hops", discount_label: "Standard Rate (₹15/Hop)", popular: false },
+    { id: "pack-40", credits: 40, price_inr: 600, label: "40 Hops", discount_label: "Most Popular", popular: true },
+    { id: "pack-60", credits: 60, price_inr: 900, label: "60 Hops", discount_label: "Great Value", popular: false },
+    { id: "pack-80", credits: 80, price_inr: 1200, label: "80 Hops", discount_label: "Pro Bundle", popular: false },
+    { id: "pack-100", credits: 100, price_inr: 1500, label: "100 Hops", discount_label: "Best Value", popular: false },
   ],
   subscription_plans: [
     {
       id: "starter_pass",
       name: "Starter Hops Pass",
       credits_per_cycle: 30,
-      price_inr: 249,
+      price_inr: 399,
       billing_cycle: "monthly",
       badge: "STARTER",
-      effective_per_credit: "₹8.30",
+      effective_per_credit: "₹13.30",
       features: ["30 Hops delivered monthly", "Unused Hops roll over", "Zero platform fee on gigs", "Priority applicant badge"],
     },
     {
       id: "pro_pass",
-      name: "Pro Hops Pass",
-      credits_per_cycle: 60,
-      price_inr: 449,
+      name: "Freelancer Plus Pass",
+      credits_per_cycle: 80,
+      price_inr: 999,
       billing_cycle: "monthly",
       badge: "MOST POPULAR",
-      effective_per_credit: "₹7.48",
-      features: ["60 Hops delivered monthly", "Unused Hops roll over", "1 free proposal boost monthly", "Verified Pro gold badge", "Early access to high-budget gigs"],
+      effective_per_credit: "₹12.48",
+      features: ["80 Hops delivered monthly", "Unused Hops roll over", "View competitor bid range", "Verified Pro gold badge", "Early access to high-budget gigs"],
     },
     {
       id: "power_pass",
       name: "Power Freelancer Pass",
-      credits_per_cycle: 120,
-      price_inr: 799,
+      credits_per_cycle: 160,
+      price_inr: 1899,
       billing_cycle: "monthly",
       badge: "MAX SAVINGS",
-      effective_per_credit: "₹6.65",
-      features: ["120 Hops delivered monthly", "Unlimited rollover cap", "3 free proposal boosts monthly", "Top-tier leaderboard priority", "Direct WhatsApp employer unlocks"],
+      effective_per_credit: "₹11.86",
+      features: ["160 Hops delivered monthly", "Unlimited rollover cap", "3 free proposal boosts monthly", "Top-tier leaderboard priority", "Direct WhatsApp employer unlocks"],
     },
   ],
   rollover_unused_credits: true,
@@ -65,6 +68,18 @@ export const DEFAULT_CREDITS_CONFIG = {
   job_boost_duration_hours: 48,
   welcome_credits: 20,
 };
+
+// Upwork-style Connects/Hops required per job based on budget and scope (2, 4, 6, 8, 10, 12, 16 Hops)
+export function calculateHopsForJob(budget) {
+  const pay = Number(budget) || 0;
+  if (pay <= 3000) return 2;
+  if (pay <= 8000) return 4;
+  if (pay <= 15000) return 6;
+  if (pay <= 30000) return 8;
+  if (pay <= 50000) return 10;
+  if (pay <= 80000) return 12;
+  return 16;
+}
 
 // Helper for masking phone numbers server-side/client-side safely
 export function maskPhone(phone) {
@@ -258,8 +273,10 @@ export function getStoredJobs() {
   const now = new Date();
   const base = jobsSeed.map((j, idx) => {
     const pay = Number(j.pay) || 1000;
-    // Requirement 1: credits_required = floor(job_budget / 1000), minimum 1 credit
-    const creditsToApply = j.credits_to_apply || Math.max(1, Math.floor(pay / 1000));
+    // Upwork-style Connects/Hops: 2, 4, 6, 8, 10, 12, 16 connects based on budget
+    const creditsToApply = j.credits_to_apply && j.credits_to_apply <= 16
+      ? j.credits_to_apply
+      : calculateHopsForJob(pay);
     // Sample some jobs with active boosts for testing
     const sampleBoost = idx === 0 || idx === 3;
     const isBoosted = j.is_boosted !== undefined
@@ -307,9 +324,8 @@ export function getStoredJobs() {
 export function postCustomJob(jobData) {
   const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
   const pay = Number(jobData.pay) || 0;
-  // Requirement 1: credits_required = floor(job_budget / 1000), minimum 1 credit
-  // Store this value on the job record at creation time (credits_to_apply field), don't recompute it dynamically later.
-  const creditsToApply = Math.max(1, Math.floor(pay / 1000));
+  // Upwork-style Connects/Hops: 2, 4, 6, 8, 10, 12, 16 connects based on budget
+  const creditsToApply = calculateHopsForJob(pay);
   const isBoosted = Boolean(jobData.is_boosted);
   const boostExpiresAt = isBoosted ? new Date(Date.now() + 48 * 3600000).toISOString() : null;
 
@@ -660,8 +676,16 @@ export function getStoredWallet() {
 export function getCreditsConfig() {
   try {
     const raw = localStorage.getItem(CREDITS_CONFIG_KEY);
-    if (raw) return { ...DEFAULT_CREDITS_CONFIG, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (!parsed.hop_rate_inr || parsed.hop_rate_inr !== 15 || parsed.per_credit_rate_inr !== 15) {
+        localStorage.setItem(CREDITS_CONFIG_KEY, JSON.stringify(DEFAULT_CREDITS_CONFIG));
+        return DEFAULT_CREDITS_CONFIG;
+      }
+      return { ...DEFAULT_CREDITS_CONFIG, ...parsed };
+    }
   } catch { /* ignore */ }
+  localStorage.setItem(CREDITS_CONFIG_KEY, JSON.stringify(DEFAULT_CREDITS_CONFIG));
   return DEFAULT_CREDITS_CONFIG;
 }
 
@@ -985,7 +1009,7 @@ export function applyToJob(
   const jobs = getStoredJobs();
   const job = jobs.find((j) => j.id === jobId) || jobs[0];
   const boost = Math.max(0, parseInt(boostCredits, 10) || 0);
-  const baseCost = job.credits_to_apply || Math.max(1, Math.floor((job.pay || 1000) / 1000));
+  const baseCost = job.credits_to_apply || calculateHopsForJob(job.pay);
   const totalCost = baseCost + boost;
 
   const fId = freelancerId || "freelancer-demo";

@@ -1605,7 +1605,7 @@ function CreditsConfigTab({ adminFetch }) {
               className="border-2 border-ink bg-stone-50 px-3 py-2 text-sm font-bold text-ink outline-none"
             />
             <p className="text-[10px] text-inkmuted">
-              Formula: credits_required = floor(job_budget / divisor). E.g. ₹5,000 / 1000 = 5 credits.
+              Upwork Tiered Connects Model: 2–16 Hops based on job budget tier (e.g. ₹5,000 = 4 Hops, ₹15,000 = 6 Hops, ₹50,000 = 10 Hops, ₹80,000+ = 16 Hops).
             </p>
           </div>
 
