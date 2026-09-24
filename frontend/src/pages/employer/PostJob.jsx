@@ -122,7 +122,7 @@ export default function PostJob() {
         return;
       }
       if (!isAdmin && retryAfterPay) {
-        const costText = isBoosted ? "Job Post + Urgent Boost · ₹598" : "Single Post · ₹299";
+        const costText = isBoosted ? "Job Post + Urgent Boost · ₹698" : "Single Post · ₹299";
         const pr = await startPayment(
           { product: "plan", plan_id: isBoosted ? "single-post-boost" : "single-post", employer_id: eid },
           costText
@@ -411,7 +411,7 @@ export default function PostJob() {
                     onChange={(e) => setIsBoosted(e.target.checked)}
                     className="h-4 w-4 accent-[#FF3B30] cursor-pointer"
                   />
-                  <span className="text-xs font-black text-ink">{isAdmin ? "FREE (Admin)" : "+₹299"}</span>
+                  <span className="text-xs font-black text-ink">{isAdmin ? "FREE (Admin)" : "+₹399"}</span>
                 </div>
                 <p className="text-[10px] text-inkmuted font-bold">48 hrs active</p>
               </div>

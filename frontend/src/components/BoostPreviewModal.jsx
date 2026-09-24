@@ -106,7 +106,7 @@ export default function BoostPreviewModal({ isOpen, onClose, onConfirmBoost }) {
         {/* Footer Actions */}
         <div className="mt-6 flex items-center justify-between border-t-2 border-ink pt-4">
           <div>
-            <p className="text-sm font-black text-ink">₹149 <span className="text-xs font-bold text-inkmuted">/ 24 hours</span></p>
+            <p className="text-sm font-black text-ink">₹399 <span className="text-xs font-bold text-inkmuted">/ 24 hours</span></p>
             <p className="text-[10px] text-inkmuted font-semibold">Instant urgent boost activation with Razorpay</p>
           </div>
           <div className="flex gap-2">
@@ -121,7 +121,7 @@ export default function BoostPreviewModal({ isOpen, onClose, onConfirmBoost }) {
               className="flex items-center gap-1.5 border-2 border-ink bg-[#FF3B30] hover:bg-[#E02B20] px-5 py-2.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
             >
               <Flame size={15} fill="white" />
-              <span>MAKE IT URGENT · ₹149</span>
+              <span>MAKE IT URGENT · ₹399</span>
             </button>
           </div>
         </div>

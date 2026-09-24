@@ -1640,9 +1640,9 @@ function CreditsConfigTab({ adminFetch }) {
             </label>
             <input
               type="number"
-              value={config.employer_job_boost_price_inr || 299}
+              value={config.employer_job_boost_price_inr || 399}
               onChange={(e) =>
-                setConfig({ ...config, employer_job_boost_price_inr: Number(e.target.value) || 299 })
+                setConfig({ ...config, employer_job_boost_price_inr: Number(e.target.value) || 399 })
               }
               className="border-2 border-ink bg-stone-50 px-3 py-2 text-sm font-bold text-ink outline-none"
             />
