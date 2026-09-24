@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell, MessageSquare, Briefcase, CreditCard, CheckCheck, X } from "lucide-react";
 import { getStoredNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/clientStore";
 
-export default function NotificationBell() {
+export default function NotificationBell({ embedded = false, className = "" }) {
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("all");
@@ -54,25 +54,31 @@ export default function NotificationBell() {
       case "payment":
         return <CreditCard size={14} className="text-[#3B82F6]" />;
       default:
-        return <Bell size={14} className="text-ink" />;
+        return <Bell size={14} className="text-ink dark:text-white" />;
     }
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={`relative ${embedded ? "h-full" : ""} ${className}`} ref={dropdownRef}>
       <button
         data-testid="notification-bell-btn"
         onClick={() => setOpen((v) => !v)}
         aria-label="Notifications"
-        className={`relative flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink transition hover:bg-sand ${
-          open ? "bg-sand" : "bg-white"
-        }`}
+        className={
+          embedded
+            ? `relative flex h-full w-9 shrink-0 items-center justify-center transition hover:bg-sand dark:hover:bg-[#252525] text-ink dark:text-white ${
+                open ? "bg-sand dark:bg-[#252525]" : ""
+              }`
+            : `relative flex h-9 w-9 shrink-0 items-center justify-center border-2 border-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition hover:bg-sand dark:hover:bg-[#252525] text-ink dark:text-white ${
+                open ? "bg-sand dark:bg-[#252525]" : ""
+              }`
+        }
       >
-        <Bell size={18} className="text-ink" />
+        <Bell size={16} className="text-ink dark:text-white" />
         {unreadCount > 0 && (
           <span
             data-testid="notification-badge"
-            className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center border-2 border-ink bg-brand text-[10px] font-black text-white"
+            className="absolute -top-1.5 -right-1 flex h-4.5 min-w-[18px] px-1 items-center justify-center border border-ink bg-brand text-[9.5px] font-black leading-none text-white z-10"
           >
             {unreadCount}
           </span>
@@ -82,12 +88,12 @@ export default function NotificationBell() {
       {open && (
         <div
           data-testid="notification-dropdown"
-          className="absolute right-0 top-12 z-50 w-[340px] max-w-[90vw] border-2 border-ink bg-white shadow-2xl sm:w-[380px]"
+          className="absolute right-0 top-11 z-50 w-[340px] max-w-[90vw] border-2 border-ink bg-white dark:bg-[#141414] text-ink dark:text-white shadow-2xl sm:w-[380px]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b-2 border-ink bg-sand px-4 py-2.5">
+          <div className="flex items-center justify-between border-b-2 border-ink bg-sand dark:bg-[#1c1c1c] px-4 py-2.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black tracking-wider text-ink">NOTIFICATIONS</span>
+              <span className="text-xs font-black tracking-wider text-ink dark:text-white">NOTIFICATIONS</span>
               {unreadCount > 0 && (
                 <span className="bg-brand px-1.5 py-0.5 text-[10px] font-black text-white">
                   {unreadCount} NEW
@@ -99,7 +105,7 @@ export default function NotificationBell() {
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAll}
-                  className="flex items-center gap-1 text-[10px] font-bold text-inkmuted hover:text-ink"
+                  className="flex items-center gap-1 text-[10px] font-bold text-inkmuted dark:text-stone-400 hover:text-ink dark:hover:text-white"
                 >
                   <CheckCheck size={13} />
                   <span>Mark read</span>
@@ -107,7 +113,7 @@ export default function NotificationBell() {
               )}
               <button
                 onClick={() => setOpen(false)}
-                className="text-inkmuted hover:text-ink"
+                className="text-inkmuted dark:text-stone-400 hover:text-ink dark:hover:text-white"
               >
                 <X size={16} />
               </button>
@@ -115,7 +121,7 @@ export default function NotificationBell() {
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex border-b-2 border-ink bg-white text-[10px] font-black">
+          <div className="flex border-b-2 border-ink bg-white dark:bg-[#181818] text-[10px] font-black">
             {[
               { key: "all", label: "ALL" },
               { key: "message", label: "MESSAGES" },
@@ -127,8 +133,8 @@ export default function NotificationBell() {
                 onClick={() => setTab(t.key)}
                 className={`flex-1 py-2 text-center transition ${
                   tab === t.key
-                    ? "border-b-2 border-brand bg-sand text-ink"
-                    : "text-inkmuted hover:text-ink"
+                    ? "border-b-2 border-brand bg-sand dark:bg-[#252525] text-ink dark:text-white"
+                    : "text-inkmuted dark:text-stone-400 hover:text-ink dark:hover:text-white"
                 }`}
               >
                 {t.label}
@@ -137,30 +143,30 @@ export default function NotificationBell() {
           </div>
 
           {/* List */}
-          <div className="wh-scroll max-h-[360px] divide-y divide-ink/10 overflow-y-auto">
+          <div className="wh-scroll max-h-[360px] divide-y divide-ink/10 dark:divide-white/10 overflow-y-auto">
             {filtered.length === 0 ? (
               <div className="p-8 text-center">
-                <Bell size={24} className="mx-auto text-inkmuted opacity-40" />
-                <p className="mt-2 text-xs font-bold text-inkmuted">No notifications in this tab.</p>
+                <Bell size={24} className="mx-auto text-inkmuted dark:text-stone-600 opacity-40" />
+                <p className="mt-2 text-xs font-bold text-inkmuted dark:text-stone-400">No notifications in this tab.</p>
               </div>
             ) : (
               filtered.map((n) => (
                 <button
                   key={n.id}
                   onClick={() => handleItemClick(n)}
-                  className={`flex w-full items-start gap-3 p-3.5 text-left transition hover:bg-sand ${
-                    !n.read ? "bg-[#FFF9F3]" : "bg-white"
+                  className={`flex w-full items-start gap-3 p-3.5 text-left transition hover:bg-sand dark:hover:bg-[#202020] ${
+                    !n.read ? "bg-[#FFF9F3] dark:bg-[#1a1410]" : "bg-white dark:bg-[#141414]"
                   }`}
                 >
-                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center border-2 border-ink bg-white">
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center border-2 border-ink dark:border-stone-700 bg-white dark:bg-[#222]">
                     {getIcon(n.type)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <p className="truncate text-xs font-black text-ink">{n.title}</p>
-                      <span className="shrink-0 text-[10px] font-semibold text-inkmuted">{n.time}</span>
+                      <p className="truncate text-xs font-black text-ink dark:text-white">{n.title}</p>
+                      <span className="shrink-0 text-[10px] font-semibold text-inkmuted dark:text-stone-400">{n.time}</span>
                     </div>
-                    <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-inkmuted">{n.description}</p>
+                    <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-inkmuted dark:text-stone-400">{n.description}</p>
                   </div>
                   {!n.read && (
                     <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand" />

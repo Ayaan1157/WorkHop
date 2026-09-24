@@ -75,7 +75,7 @@ export function Logo({ size = "default", className = "" }) {
             </span>
           </div>
           <span className="text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-[0.12em] text-inkmuted dark:text-stone-400 mt-0.5">
-            Bengaluru Gig Network
+            Bangalore’s Gig Network
           </span>
         </div>
       </div>
@@ -184,69 +184,69 @@ export function GlobalNav() {
           </nav>
 
           {/* Right Action Icons & Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Admin Full Access Badge or Credits Badge (Desktop) */}
             {isAdmin ? (
               <Link
                 to="/admin"
-                className="hidden md:flex items-center gap-1.5 border-2 border-ink bg-[#FFF3C4] dark:bg-[#2d2212] px-2.5 py-1 text-[11px] font-black text-ink dark:text-amber-300 hover:bg-amber-200 transition shadow-[1.5px_1.5px_0px_#121212]"
+                className="hidden md:inline-flex h-9 items-center gap-1.5 border-2 border-ink bg-[#FFF3C4] dark:bg-[#2d2212] px-3 text-xs font-black tracking-wider text-ink dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-[#3d2f1a] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]"
                 title="Admin Command Center (Full Platform Unlocked)"
               >
-                <Shield size={13} className="text-brand" />
+                <Shield size={14} className="text-brand shrink-0" />
                 <span>ADMIN FULL ACCESS</span>
               </Link>
             ) : (
               <Link
                 to="/employer/plans"
-                className="hidden md:flex items-center gap-1 border-2 border-ink bg-sand dark:bg-[#222] px-2.5 py-1 text-[11px] font-black text-ink dark:text-white hover:bg-stone transition"
+                className="hidden md:inline-flex h-9 items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#222] px-3 text-xs font-black tracking-wider text-ink dark:text-white hover:bg-stone transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]"
                 title="Your active Hops"
               >
-                <Coins size={14} className="text-brand" />
+                <Coins size={14} className="text-brand shrink-0" />
                 <span>5 HOPS</span>
               </Link>
             )}
 
-            {/* In-App Notification Bell */}
-            <NotificationBell />
-
-            {/* Dark / Light Mode Toggle */}
-            <button
-              data-testid="theme-toggle-btn"
-              onClick={toggleTheme}
-              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] hover:bg-stone transition-transform active:translate-y-0.5"
-            >
-              {isDark ? <Sun size={15} className="text-brand" /> : <Moon size={15} className="text-ink" />}
-            </button>
+            {/* Utility Controls Group: Bell & Theme Toggle (Merged uniformly) */}
+            <div className="inline-flex h-9 shrink-0 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]">
+              <NotificationBell embedded />
+              <button
+                data-testid="theme-toggle-btn"
+                onClick={toggleTheme}
+                title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                className="flex h-full w-9 items-center justify-center text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
+              >
+                {isDark ? <Sun size={15} className="text-brand" /> : <Moon size={15} className="text-ink dark:text-white" />}
+              </button>
+            </div>
 
             {/* Post Job Button (Desktop/Tablet) - Hidden for logged-in Freelancers */}
             {!isFreelancer && (
               <button
                 data-testid="nav-post-job-btn"
                 onClick={() => nav("/employer/post-job")}
-                className="hidden sm:flex items-center gap-1.5 border-2 border-ink bg-brand px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                className="hidden sm:inline-flex h-9 items-center gap-1.5 border-2 border-ink bg-brand px-3.5 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
               >
-                <PlusCircle size={14} />
+                <PlusCircle size={15} className="shrink-0" />
                 <span>POST JOB</span>
               </button>
             )}
 
             {/* User Account or Sign In Button (Desktop) */}
             {user ? (
-              <div className="hidden sm:flex items-center gap-1.5">
+              <div className="hidden sm:inline-flex h-9 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]">
                 <button
                   data-testid="nav-profile-btn"
                   onClick={() => nav("/profile")}
-                  className="flex items-center gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-2.5 py-1.5 text-xs font-extrabold text-ink dark:text-white hover:bg-sand"
+                  className="flex h-full items-center gap-1.5 px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
                 >
-                  <UserCircle2 size={15} className="text-brand" />
+                  <UserCircle2 size={15} className="text-brand shrink-0" />
                   <span className="max-w-[90px] truncate sm:max-w-[130px]">{user.name || user.email?.split("@")[0]}</span>
                 </button>
                 <button
                   data-testid="nav-logout-btn"
                   onClick={logout}
                   title="Logout"
-                  className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center border-2 border-ink bg-white dark:bg-[#1a1a1a] hover:bg-sand"
+                  className="flex h-full w-9 items-center justify-center text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
                 >
                   <LogOut size={14} />
                 </button>
@@ -258,7 +258,7 @@ export function GlobalNav() {
                   setAuthMode("signin");
                   setAuthOpen(true);
                 }}
-                className="hidden sm:flex border-2 border-ink bg-ink px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-black tracking-wider !text-white text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                className="hidden sm:inline-flex h-9 items-center border-2 border-ink bg-ink px-4 text-xs font-black tracking-wider !text-white text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
               >
                 SIGN IN
               </button>
@@ -268,7 +268,7 @@ export function GlobalNav() {
             <button
               data-testid="mobile-menu-toggle"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex lg:hidden h-8 w-8 sm:h-9 sm:w-9 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white hover:bg-stone transition-transform active:translate-y-0.5"
+              className="flex lg:hidden h-9 w-9 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white hover:bg-stone shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition"
               aria-label="Toggle Navigation Menu"
             >
               {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}

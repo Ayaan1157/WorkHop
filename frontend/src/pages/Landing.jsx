@@ -946,49 +946,49 @@ export default function Landing() {
           </nav>
 
           {/* Right Actions: Theme Toggle + Auth */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             
             {/* Dark / Light Mode Toggle */}
             <button
               data-testid="theme-toggle-btn"
               onClick={toggleTheme}
               title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5 hover:bg-stone/30"
+              className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition active:translate-y-0.5 hover:bg-stone/30"
             >
-              {isDark ? <Sun size={16} className="text-brand" /> : <Moon size={16} className="text-ink" />}
+              {isDark ? <Sun size={15} className="text-brand" /> : <Moon size={15} className="text-ink" />}
             </button>
 
             {user ? (
-              <div className="flex items-center gap-2">
+              <div className="inline-flex h-9 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]">
                 <button
                   data-testid="user-chip"
                   onClick={() => nav("/profile")}
-                  className="flex items-center gap-2 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 py-2 hover:bg-sand dark:hover:bg-[#222] text-ink dark:text-white"
+                  className="flex h-full items-center gap-1.5 px-3 hover:bg-sand dark:hover:bg-[#252525] text-xs font-black text-ink dark:text-white transition"
                 >
-                  <UserCircle2 size={16} className="text-brand" />
-                  <span className="truncate text-xs font-extrabold max-w-[110px]">
+                  <UserCircle2 size={15} className="text-brand shrink-0" />
+                  <span className="truncate text-xs font-black max-w-[110px]">
                     {user.name || user.email?.split("@")[0]}
                   </span>
-                  <ArrowRight size={13} className="text-inkmuted" />
+                  <ArrowRight size={13} className="text-inkmuted dark:text-stone-400" />
                 </button>
                 <button
                   data-testid="logout-btn"
                   onClick={logout}
-                  className="flex items-center gap-1 border-2 border-ink px-2.5 py-2 hover:bg-sand dark:hover:bg-[#222] text-ink dark:text-white"
+                  title="Logout"
+                  className="flex h-full w-9 items-center justify-center hover:bg-sand dark:hover:bg-[#252525] text-ink dark:text-white transition"
                 >
                   <LogOut size={14} />
-                  <span className="text-[10px] font-black tracking-wider hidden sm:inline">LOGOUT</span>
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   data-testid="landing-signin-btn"
                   onClick={() => {
                     setAuthModalMode("signin");
                     setAuthModalOpen(true);
                   }}
-                  className="border-2 border-ink dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-3.5 py-2 text-xs font-black tracking-wider text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition"
+                  className="flex h-9 items-center border-2 border-ink dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-3.5 text-xs font-black tracking-wider text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]"
                 >
                   SIGN IN
                 </button>
@@ -998,7 +998,7 @@ export default function Landing() {
                     setAuthModalMode("signup");
                     setAuthModalOpen(true);
                   }}
-                  className="border-2 border-ink dark:border-white bg-[#121212] px-3.5 py-2 text-xs font-black tracking-wider !text-white hover:bg-black transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E]"
+                  className="flex h-9 items-center border-2 border-ink dark:border-white bg-[#121212] px-3.5 text-xs font-black tracking-wider !text-white hover:bg-black transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E]"
                   style={{ color: "#FFFFFF" }}
                 >
                   <span className="!text-white font-black" style={{ color: "#FFFFFF" }}>
@@ -1012,7 +1012,7 @@ export default function Landing() {
             <button
               data-testid="landing-mobile-menu-btn"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex lg:hidden h-9 w-9 items-center justify-center border-2 border-ink bg-white dark:bg-[#222] text-ink dark:text-white shadow-[1.5px_1.5px_0px_#121212]"
+              className="flex lg:hidden h-9 w-9 items-center justify-center border-2 border-ink bg-white dark:bg-[#222] text-ink dark:text-white shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]"
               title="Toggle Menu"
             >
               {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
