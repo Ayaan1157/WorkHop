@@ -1657,5 +1657,40 @@ export function adminRefundHops({
   return { ok: true, record, message: details };
 }
 
+// ---------------- FREELANCER ADMIN APPROVAL / DECLINE SYSTEM ----------------
+export const FREELANCER_STATUSES_KEY = "workhop_freelancer_admin_statuses";
+
+export function getFreelancerStatuses() {
+  try {
+    const raw = localStorage.getItem(FREELANCER_STATUSES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function updateFreelancerStatus(freelancerId, approved, reason = "") {
+  const current = getFreelancerStatuses();
+  const status = approved ? "approved" : "declined";
+  const finalReason = reason || (approved ? "Approved by admin" : "Declined by admin");
+  const updated = {
+    ...current,
+    [freelancerId]: {
+      approved: Boolean(approved),
+      status,
+      reason: finalReason,
+      updated_at: new Date().toISOString(),
+    },
+  };
+  localStorage.setItem(FREELANCER_STATUSES_KEY, JSON.stringify(updated));
+  addAdminLog(
+    approved ? "FREELANCER_APPROVED" : "FREELANCER_DECLINED",
+    `Admin set freelancer ${freelancerId} to ${status.toUpperCase()} (${finalReason})`,
+    freelancerId
+  );
+  return { ok: true, freelancer_id: freelancerId, approved: Boolean(approved), status, reason: finalReason };
+}
+
+
 
 

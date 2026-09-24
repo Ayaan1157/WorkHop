@@ -40,6 +40,8 @@ import {
   markJobCompletedAndReview,
   adminRefundHops,
   getManualHopsRefunds,
+  getFreelancerStatuses,
+  updateFreelancerStatus,
 } from "./clientStore";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
@@ -336,16 +338,49 @@ function mockRouter(path, method = "GET", body = null) {
     ];
   }
   if (cleanPath === "/admin/freelancers") {
-    return getStoredLeads().map((l) => ({
-      freelancer_id: l.id,
-      name: l.name,
-      skill: l.skill,
-      email: `${l.name.toLowerCase().replace(/\s+/g, ".")}@gmail.com`,
-      phone: l.phone,
-      rating: l.rating,
-      approved: true,
-      status: "approved",
-    }));
+    const statuses = getFreelancerStatuses();
+    return getStoredLeads().map((l, idx) => {
+      const st = statuses[l.id];
+      let isApproved = true;
+      let statusText = "approved";
+      let reasonText = null;
+
+      if (st !== undefined) {
+        isApproved = Boolean(st.approved);
+        statusText = st.status;
+        reasonText = st.reason;
+      } else {
+        // Initial mock distribution: first 3 approved, next 3 pending, next 1 declined
+        if (idx === 1 || idx === 3 || idx === 5) {
+          isApproved = false;
+          statusText = "pending";
+        } else if (idx === 7) {
+          isApproved = false;
+          statusText = "declined";
+          reasonText = "Profile missing verified portfolio samples";
+        }
+      }
+
+      return {
+        freelancer_id: l.id,
+        name: l.name,
+        skill: l.skill,
+        category: l.category || "Creative",
+        email: `${l.name.toLowerCase().replace(/\s+/g, ".")}@gmail.com`,
+        phone: l.phone,
+        rating: l.rating,
+        jobs_done: l.jobs_done,
+        portfolio: l.portfolio,
+        approved: isApproved,
+        status: statusText,
+        reason: reasonText,
+      };
+    });
+  }
+  if (cleanPath.startsWith("/admin/freelancers/") && cleanPath.endsWith("/approve")) {
+    const parts = cleanPath.split("/");
+    const fId = parts[3];
+    return updateFreelancerStatus(fId, body?.approved, body?.reason);
   }
   if (cleanPath === "/admin/payments") {
     return [

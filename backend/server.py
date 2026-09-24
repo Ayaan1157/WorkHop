@@ -1889,6 +1889,7 @@ async def auth_logout(request: Request):
 # ============== Admin Dashboard (restricted to ADMIN_EMAILS) ==============
 class AdminApproveRequest(BaseModel):
     approved: bool
+    reason: Optional[str] = None
 
 
 class AdminCouponCreate(BaseModel):
@@ -2028,16 +2029,24 @@ async def admin_freelancers(request: Request):
 @api_router.post("/admin/freelancers/{freelancer_id}/approve")
 async def admin_approve_freelancer(freelancer_id: str, req: AdminApproveRequest, request: Request):
     await _require_admin(request)
+    status = "approved" if req.approved else "declined"
+    update_data = {
+        "approved_by_admin": req.approved,
+        "status": status,
+        "admin_decision_reason": req.reason or ("Approved by admin" if req.approved else "Declined by admin"),
+        "updated_at": _now_iso(),
+    }
     result = await db.freelancers.update_one(
         {"_id": freelancer_id},
-        {"$set": {
-            "approved_by_admin": req.approved,
-            "status": "approved" if req.approved else "under_review",
-        }},
+        {"$set": update_data},
     )
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Freelancer not found.")
-    return {"ok": True, "freelancer_id": freelancer_id, "approved": req.approved}
+        await db.freelancers.update_one(
+            {"freelancer_id": freelancer_id},
+            {"$set": update_data},
+            upsert=True,
+        )
+    return {"ok": True, "freelancer_id": freelancer_id, "approved": req.approved, "status": status}
 
 
 @api_router.get("/admin/payments")

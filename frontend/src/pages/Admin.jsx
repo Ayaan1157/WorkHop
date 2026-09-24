@@ -6,7 +6,7 @@ import {
   ExternalLink, Check, X, Megaphone, Settings, Eye, Sliders, Radio,
   ArrowUpRight, Phone, Mail, Award, Clock, FileText, ChevronRight,
   ShieldCheck, HelpCircle, Download, Zap, Coins, RotateCcw,
-  Tag, Percent, Edit3, Copy, Calendar
+  Tag, Percent, Edit3, Copy, Calendar, UserCheck, UserX
 } from "lucide-react";
 import { TopBar, Spinner } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
@@ -1487,6 +1487,360 @@ function CouponsTab({ adminFetch }) {
   );
 }
 
+// 5C. Freelancers Vetting & Moderation Tab
+function ProsTalentTab({ adminFetch }) {
+  const [pros, setPros] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | PENDING | APPROVED | DECLINED
+  const [busyId, setBusyId] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+
+  const loadPros = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminFetch("/freelancers");
+      setPros(Array.isArray(data) ? data : []);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  }, [adminFetch]);
+
+  useEffect(() => {
+    loadPros();
+  }, [loadPros]);
+
+  const handleApprove = async (freelancerId, name) => {
+    setBusyId(freelancerId);
+    setFeedback(null);
+    try {
+      await adminFetch(`/freelancers/${freelancerId}/approve`, "POST", {
+        approved: true,
+        reason: "Approved by admin",
+      });
+      setPros((prev) =>
+        prev.map((p) =>
+          (p.freelancer_id || p.id) === freelancerId
+            ? { ...p, approved: true, status: "approved", reason: null }
+            : p
+        )
+      );
+      setFeedback({
+        type: "success",
+        text: `✓ Approved "${name || freelancerId}" to live talent pool!`,
+      });
+    } catch (err) {
+      setFeedback({ type: "error", text: err?.message || "Failed to approve freelancer." });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleDecline = async (freelancerId, name) => {
+    const reason = window.prompt(
+      `Enter reason for declining ${name || "freelancer"}:`,
+      "Profile incomplete or does not meet verification standards"
+    );
+    if (reason === null) return;
+
+    setBusyId(freelancerId);
+    setFeedback(null);
+    try {
+      await adminFetch(`/freelancers/${freelancerId}/approve`, "POST", {
+        approved: false,
+        reason: reason || "Declined by admin",
+      });
+      setPros((prev) =>
+        prev.map((p) =>
+          (p.freelancer_id || p.id) === freelancerId
+            ? { ...p, approved: false, status: "declined", reason: reason || "Declined by admin" }
+            : p
+        )
+      );
+      setFeedback({
+        type: "success",
+        text: `✕ Declined "${name || freelancerId}".`,
+      });
+    } catch (err) {
+      setFeedback({ type: "error", text: err?.message || "Failed to decline freelancer." });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const pendingCount = pros.filter((p) => !p.approved && p.status !== "declined").length;
+  const approvedCount = pros.filter((p) => p.approved || p.status === "approved").length;
+  const declinedCount = pros.filter((p) => !p.approved && p.status === "declined").length;
+
+  const filtered = pros.filter((p) => {
+    const isApproved = Boolean(p.approved || p.status === "approved");
+    const isDeclined = Boolean(!p.approved && p.status === "declined");
+    const isPending = !isApproved && !isDeclined;
+
+    if (statusFilter === "PENDING" && !isPending) return false;
+    if (statusFilter === "APPROVED" && !isApproved) return false;
+    if (statusFilter === "DECLINED" && !isDeclined) return false;
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const name = (p.name || p.full_name || "").toLowerCase();
+      const skill = (p.skill || "").toLowerCase();
+      const email = (p.email || "").toLowerCase();
+      const phone = (p.phone || "").toLowerCase();
+      return name.includes(q) || skill.includes(q) || email.includes(q) || phone.includes(q);
+    }
+    return true;
+  });
+
+  return (
+    <div className="flex flex-col gap-5" data-testid="admin-pros-moderation">
+      {/* Top Banner & Stats */}
+      <div className="border-2 border-ink bg-[#FFF3C4] p-5 shadow-[4px_4px_0px_#121212] flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Award size={20} className="text-[#E65A1E]" />
+            <h2 className="text-base font-black uppercase text-ink">
+              Freelancer Vetting &amp; Profile Approvals
+            </h2>
+          </div>
+          <p className="text-xs text-inkmuted font-semibold mt-1">
+            Review applicant profiles, check portfolios &amp; credentials, and approve or decline them to join the verified talent feed.
+          </p>
+        </div>
+
+        {/* Filter Pills */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setStatusFilter("ALL")}
+            className={`border-2 border-ink px-3 py-1.5 text-xs font-black uppercase transition ${
+              statusFilter === "ALL" ? "bg-ink text-brand shadow-[2px_2px_0px_#121212]" : "bg-white text-ink hover:bg-sand"
+            }`}
+          >
+            All ({pros.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter("PENDING")}
+            className={`border-2 border-ink px-3 py-1.5 text-xs font-black uppercase transition ${
+              statusFilter === "PENDING" ? "bg-amber-400 text-ink shadow-[2px_2px_0px_#121212]" : "bg-white text-amber-800 hover:bg-amber-50"
+            }`}
+          >
+            ⏳ Pending ({pendingCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter("APPROVED")}
+            className={`border-2 border-ink px-3 py-1.5 text-xs font-black uppercase transition ${
+              statusFilter === "APPROVED" ? "bg-emerald-600 text-white shadow-[2px_2px_0px_#121212]" : "bg-white text-emerald-800 hover:bg-emerald-50"
+            }`}
+          >
+            ✓ Approved ({approvedCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter("DECLINED")}
+            className={`border-2 border-ink px-3 py-1.5 text-xs font-black uppercase transition ${
+              statusFilter === "DECLINED" ? "bg-red-600 text-white shadow-[2px_2px_0px_#121212]" : "bg-white text-red-800 hover:bg-red-50"
+            }`}
+          >
+            ✕ Declined ({declinedCount})
+          </button>
+        </div>
+      </div>
+
+      {/* Search & Actions Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-1 items-center gap-2 border-2 border-ink bg-sand/40 px-3 py-2 min-w-[260px]">
+          <Search size={14} className="text-inkmuted" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search pros by name, skill, email, or phone..."
+            className="w-full bg-transparent text-xs font-bold text-ink outline-none"
+          />
+          {search && (
+            <button type="button" onClick={() => setSearch("")} className="text-inkmuted hover:text-ink">
+              <X size={13} />
+            </button>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={loadPros}
+          className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2 text-xs font-black text-ink hover:bg-sand transition"
+        >
+          <RefreshCw size={13} /> Refresh List
+        </button>
+      </div>
+
+      {/* Feedback Toast */}
+      {feedback && (
+        <div
+          className={`border-2 border-ink p-3 text-xs font-black flex items-center justify-between shadow-[2px_2px_0px_#121212] ${
+            feedback.type === "success" ? "bg-[#E5F7E0] text-[#1E4620]" : "bg-[#FFEBEE] text-[#C62828]"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {feedback.type === "success" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+            <span>{feedback.text}</span>
+          </div>
+          <button type="button" onClick={() => setFeedback(null)} className="hover:opacity-70">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Pros Cards Grid */}
+      {loading ? (
+        <div className="py-16 text-center">
+          <Spinner />
+          <p className="mt-2 text-xs font-black uppercase text-inkmuted">Loading Talent Profiles...</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="border-2 border-ink bg-white p-8 text-center shadow-[4px_4px_0px_#121212]">
+          <p className="text-sm font-black text-ink">No freelancers match the current filter or search.</p>
+          <button
+            type="button"
+            onClick={() => { setStatusFilter("ALL"); setSearch(""); }}
+            className="mt-3 border-2 border-ink bg-sand px-3 py-1.5 text-xs font-black text-ink hover:bg-ink hover:text-white"
+          >
+            Clear Filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((f, i) => {
+            const fId = f.freelancer_id || f.id || `pro-${i}`;
+            const isApproved = Boolean(f.approved || f.status === "approved");
+            const isDeclined = Boolean(!f.approved && f.status === "declined");
+            const isPending = !isApproved && !isDeclined;
+            const isBusy = busyId === fId;
+
+            return (
+              <div
+                key={fId}
+                className={`flex flex-col justify-between border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 ${
+                  isDeclined ? "opacity-85 bg-stone-50" : ""
+                }`}
+              >
+                <div>
+                  {/* Top Bar with Name & Status Badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-black text-ink">{f.name || f.full_name || "Freelancer"}</p>
+                      <p className="text-xs font-bold text-brand">{f.skill || "Creative Pro"}</p>
+                    </div>
+                    {isApproved && (
+                      <span className="border border-ok bg-[#E5F7E0] px-2 py-0.5 text-[9px] font-black text-[#1E4620] uppercase flex items-center gap-1">
+                        <Check size={11} /> APPROVED
+                      </span>
+                    )}
+                    {isPending && (
+                      <span className="border border-amber-600 bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-900 uppercase">
+                        PENDING REVIEW
+                      </span>
+                    )}
+                    {isDeclined && (
+                      <span className="border border-red-500 bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-800 uppercase flex items-center gap-1">
+                        <X size={11} /> DECLINED
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Category & Stats */}
+                  <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px] text-inkmuted font-semibold">
+                    <span className="border border-ink/30 bg-sand px-1.5 py-0.5 text-[9px] uppercase font-bold text-ink">
+                      {f.category || "Creative"}
+                    </span>
+                    <span>⭐ {f.rating || 4.9}</span>
+                    <span>•</span>
+                    <span>{f.jobs_done || 25}+ jobs done</span>
+                  </div>
+
+                  {/* Contact Info */}
+                  <div className="mt-2 text-xs text-inkmuted space-y-0.5 border-t border-ink/10 pt-2">
+                    <p className="truncate">📧 {f.email || "No email"}</p>
+                    <p>📞 {f.phone || "No phone"}</p>
+                    {f.portfolio && (
+                      <p className="text-[11px] text-brand font-bold truncate">
+                        🔗 {f.portfolio}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Decline Reason Banner if present */}
+                  {isDeclined && f.reason && (
+                    <div className="mt-2 rounded border border-red-300 bg-red-50 p-2 text-[10px] font-bold text-red-800">
+                      ⚠️ Reason: {f.reason}
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Actions: Approve / Decline Buttons */}
+                <div className="mt-3.5 flex items-center justify-between border-t border-ink/10 pt-2.5 gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    {/* Approve Button */}
+                    {!isApproved ? (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => handleApprove(fId, f.name)}
+                        className="flex items-center gap-1 border-2 border-ink bg-emerald-600 px-3 py-1.5 text-xs font-black text-white hover:bg-emerald-700 shadow-[1px_1px_0px_#121212] transition disabled:opacity-50"
+                      >
+                        {isBusy ? <Loader2 size={12} className="animate-spin" /> : <UserCheck size={13} />}
+                        <span>APPROVE PRO</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => handleDecline(fId, f.name)}
+                        className="text-[10px] font-bold text-inkmuted hover:text-red-600 underline"
+                      >
+                        Revoke / Decline
+                      </button>
+                    )}
+
+                    {/* Decline Button */}
+                    {!isDeclined && (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => handleDecline(fId, f.name)}
+                        className="flex items-center gap-1 border-2 border-ink bg-red-50 px-2.5 py-1.5 text-xs font-black text-red-700 hover:bg-red-100 shadow-[1px_1px_0px_#121212] transition disabled:opacity-50"
+                      >
+                        {isBusy ? <Loader2 size={12} className="animate-spin" /> : <UserX size={13} />}
+                        <span>DECLINE</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* WhatsApp contact link */}
+                  {f.phone && (
+                    <a
+                      href={`https://wa.me/91${f.phone?.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 text-[10px] font-black text-ok hover:underline"
+                    >
+                      <Phone size={11} /> WhatsApp
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // 6. Connects & Credits Pricing Engine Tab
 function CreditsConfigTab({ adminFetch }) {
   const [config, setConfig] = useState(null);
@@ -2593,37 +2947,7 @@ export default function Admin() {
         {tab === "ESCROW" && <EscrowDisputesTab adminFetch={adminFetch} />}
         {tab === "LOGS" && <AuditLogsTab adminFetch={adminFetch} />}
 
-        {/* Dynamic Secondary Views */}
-        {tab === "PROS" && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.map((f, i) => (
-              <div key={f.freelancer_id || `pro-${i}`} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-black text-ink">{f.name || f.full_name || "Freelancer"}</p>
-                    <p className="text-xs font-bold text-brand">{f.skill}</p>
-                  </div>
-                  <Badge text={f.approved ? "APPROVED ✓" : "PENDING"} tone={f.approved ? "green" : "orange"} />
-                </div>
-                <div className="mt-2 text-xs text-inkmuted">
-                  <p>📧 {f.email || "No email"}</p>
-                  <p>📞 {f.phone || "No phone"}</p>
-                </div>
-                <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2 text-xs">
-                  <span className="font-bold text-ink">Rating: ⭐ {f.rating || 4.9}</span>
-                  <a
-                    href={`https://wa.me/91${f.phone?.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-[10px] font-black text-ok hover:underline"
-                  >
-                    <Phone size={11} /> WhatsApp
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {tab === "PROS" && <ProsTalentTab adminFetch={adminFetch} />}
 
         {tab === "EMPLOYERS" && (
           <div className="flex flex-col gap-4">
