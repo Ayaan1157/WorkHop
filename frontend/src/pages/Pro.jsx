@@ -343,16 +343,35 @@ export default function Pro() {
                   </div>
                 ) : (
                   reviews.map((r) => (
-                    <div key={r.review_id} className="border-2 border-ink bg-white p-4">
+                    <div key={r.review_id} className="border-2 border-ink bg-white p-4 shadow-[2px_2px_0px_#121212]">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-black text-ink">{r.reviewer_name}</span>
-                        <span className="text-xs font-black text-brand">
-                          {"★".repeat(r.rating)}
-                          {"☆".repeat(5 - r.rating)}
+                        <span className="text-sm font-black text-ink">
+                          {r.reviewer_name || `${r.employer_name || "Verified Client"}${r.company_name ? ` · ${r.company_name}` : ""}`}
                         </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-black text-amber-500">
+                            {"★".repeat(Math.min(5, Math.floor(r.rating || 5)))}
+                          </span>
+                          <span className="text-xs font-black text-ink">{Number(r.rating || 5).toFixed(1)}</span>
+                        </div>
                       </div>
-                      <p className="text-[10px] font-bold text-brand mt-0.5">{r.job_title}</p>
-                      {!!r.text && <p className="mt-2 text-xs text-ink leading-5">{r.text}</p>}
+                      <div className="flex items-center gap-2 mt-0.5 text-[10px] font-bold text-brand flex-wrap">
+                        <span>{r.job_title}</span>
+                        {r.pay && <span className="text-ink font-black">· ₹{Number(r.pay).toLocaleString("en-IN")}</span>}
+                        {r.date_formatted && <span className="text-inkmuted font-semibold">· {r.date_formatted}</span>}
+                      </div>
+
+                      {Array.isArray(r.badges) && r.badges.length > 0 && (
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          {r.badges.map((b) => (
+                            <span key={b} className="text-[9px] font-black text-ink bg-sand border border-ink/20 px-1.5 py-0.5">
+                              {b}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {!!r.text && <p className="mt-2 text-xs text-ink leading-5 italic bg-[#fcfcfc] p-2 border-l-2 border-brand">"{r.text}"</p>}
                     </div>
                   ))
                 )}
@@ -438,25 +457,37 @@ export default function Pro() {
                     COMPLETED JOBS &amp; HISTORY
                   </h2>
                   <span className="text-xs font-black text-brand">
-                    {pro.jobs_done || 0} TOTAL DELIVERIES
+                    {(reviews.length || pro.jobs_done || 0)} TOTAL DELIVERIES
                   </span>
                 </div>
                 <div className="flex flex-col gap-3">
-                  {[
-                    { title: `${pro.skill} Delivery · Local Gig`, time: "2 weeks ago", rating: 5, budget: "₹1,500" },
-                    { title: "Brand Identity Design & Revisions", time: "1 month ago", rating: 5, budget: "₹3,500" },
-                  ].map((h, i) => (
-                    <div key={i} className="border-2 border-ink bg-sand p-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-ink">{h.title}</span>
-                        <span className="text-xs font-black text-ink">{h.budget}</span>
+                  {reviews.length > 0 ? (
+                    reviews.map((h, i) => (
+                      <div key={h.review_id || i} className="border-2 border-ink bg-sand p-3.5 shadow-[1.5px_1.5px_0px_#121212]">
+                        <div className="flex items-center justify-between flex-wrap gap-1">
+                          <span className="text-xs font-black text-ink">{h.job_title}</span>
+                          <span className="text-xs font-black text-ink">
+                            {h.pay ? `₹${Number(h.pay).toLocaleString("en-IN")}` : "₹15,000"}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between text-[10px] text-inkmuted font-bold flex-wrap gap-1">
+                          <span>{h.date_formatted || h.date || `${i + 1} week ago`} · {h.company_name || h.reviewer_name || "Bengaluru Client"}</span>
+                          <span className="text-brand flex items-center gap-1 font-black">
+                            <span className="text-amber-500">★</span> {Number(h.rating || 5).toFixed(1)} Completed
+                          </span>
+                        </div>
+                        {h.text && (
+                          <p className="mt-2 text-[11px] text-ink/80 italic border-l-2 border-ink pl-2">
+                            "{h.text}"
+                          </p>
+                        )}
                       </div>
-                      <div className="mt-1 flex items-center justify-between text-[10px] text-inkmuted font-bold">
-                        <span>{h.time}</span>
-                        <span className="text-brand">★ {h.rating}.0 Completed</span>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-xs text-inkmuted font-bold">
+                      No completed jobs yet. Work history updates automatically as client projects conclude.
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>

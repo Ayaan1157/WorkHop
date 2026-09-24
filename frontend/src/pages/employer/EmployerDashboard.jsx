@@ -15,6 +15,7 @@ import {
 } from "@/lib/clientStore";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import ApplicantLeaderboardModal from "@/components/ApplicantLeaderboardModal";
+import CompleteJobReviewModal from "@/components/CompleteJobReviewModal";
 
 export default function EmployerDashboard() {
   const nav = useNavigate();
@@ -54,6 +55,7 @@ export default function EmployerDashboard() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({ companyName, employerName, area, phone, industry, bio, gstNumber });
   const [leaderboardJob, setLeaderboardJob] = useState(null);
+  const [reviewJob, setReviewJob] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [chats, setChats] = useState([]);
   const [savedPros, setSavedPros] = useState([]);
@@ -473,6 +475,21 @@ export default function EmployerDashboard() {
 
                     {/* Quick Action Buttons for this Job */}
                     <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap">
+                      {j.is_completed || j.status === "completed" ? (
+                        <span className="flex items-center gap-1 border-2 border-ok bg-[#E8F8E8] dark:bg-emerald-950 px-3 py-2 text-xs font-black uppercase text-ok dark:text-emerald-400 shadow-[1.5px_1.5px_0px_#121212]">
+                          <CheckCircle2 size={13} /> COMPLETED &amp; REVIEWED
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setReviewJob(j)}
+                          className="flex-1 sm:flex-initial flex items-center justify-center gap-1 border-2 border-ink bg-[#D4F8D3] hover:bg-[#B7F2B6] px-3 py-2 text-xs font-black uppercase text-ink transition shadow-[1.5px_1.5px_0px_#121212]"
+                          title="Mark gig complete and leave rating & feedback for the freelancer"
+                        >
+                          <CheckCircle2 size={13} className="text-ok" /> COMPLETE &amp; REVIEW
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => setLeaderboardJob(j)}
@@ -482,7 +499,7 @@ export default function EmployerDashboard() {
                         <Trophy size={13} className="text-amber-500" /> BIDS ({j.applicants_count || 3})
                       </button>
 
-                      {!j.is_boosted && (
+                      {!j.is_boosted && !j.is_completed && (
                         <button
                           type="button"
                           onClick={() => handleBoostJob(j.id)}
@@ -776,6 +793,19 @@ export default function EmployerDashboard() {
           onClose={() => setLeaderboardJob(null)}
           jobId={leaderboardJob.id}
           jobTitle={leaderboardJob.title}
+        />
+      )}
+
+      {/* Complete Job & Review Modal */}
+      {reviewJob && (
+        <CompleteJobReviewModal
+          isOpen={Boolean(reviewJob)}
+          onClose={() => setReviewJob(null)}
+          job={reviewJob}
+          employerName={companyName || employerName}
+          onSuccess={() => {
+            loadDashboardData();
+          }}
         />
       )}
     </Shell>

@@ -6,7 +6,7 @@ import {
   MapPin, Star, ChevronDown, ChevronUp, X, User, DollarSign,
   Code2, Loader2, Menu, MessagesSquare, Map as MapIcon,
   LayoutGrid, Tag, LifeBuoy, FileText, Shield, ChevronRight,
-  LogOut, Wallet, ShieldCheck, Camera, Upload, Coins, Sparkles, History, ArrowUpRight, Building2
+  LogOut, Wallet, ShieldCheck, Camera, Upload, Coins, Sparkles, History, ArrowUpRight, Building2, CheckCircle2
 } from "lucide-react";
 import { Shell } from "@/components/kit";
 import EditModal from "@/components/EditModal";
@@ -674,6 +674,130 @@ export default function FreelancerProfile() {
                 ) : (
                   <EmptyState text="Showcase your best work — add portfolio items" />
                 )}
+              </section>
+
+              {/* Work History & Client Reviews */}
+              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <History size={18} className="text-[#E65A1E]" />
+                    <h2 className="text-base font-bold text-ink dark:text-white">
+                      Work History &amp; Client Feedback
+                    </h2>
+                    <span className="text-xs font-bold text-[#E65A1E] bg-[#E65A1E]/10 px-2 py-0.5 rounded-full">
+                      {(profile.work_history || []).length} Completed Gigs
+                    </span>
+                  </div>
+                </div>
+
+                {/* Rating & Performance Summary Banner */}
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-[#F9F9FB] dark:bg-[#161618] border border-[#e5e5e5] dark:border-[#252528] rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 font-black text-lg">
+                      ★
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-lg font-black text-ink dark:text-white">
+                          {(profile.work_history || []).length > 0
+                            ? ((profile.work_history || []).reduce((acc, curr) => acc + (Number(curr.rating) || 5), 0) / (profile.work_history || []).length).toFixed(1)
+                            : "5.0"}
+                        </span>
+                        <div className="flex text-amber-500 text-xs">
+                          {"★★★★★"}
+                        </div>
+                      </div>
+                      <p className="text-xs text-inkmuted dark:text-[#888]">
+                        Average Rating ({(profile.work_history || []).length} reviews)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 border-t sm:border-t-0 sm:border-l border-[#e5e5e5] dark:border-[#252528] pt-2 sm:pt-0 sm:pl-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-ok/10 text-ok font-black">
+                      <ShieldCheck size={22} />
+                    </div>
+                    <div>
+                      <span className="text-lg font-black text-ink dark:text-white">100%</span>
+                      <p className="text-xs text-inkmuted dark:text-[#888]">Job Success Score</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 border-t sm:border-t-0 sm:border-l border-[#e5e5e5] dark:border-[#252528] pt-2 sm:pt-0 sm:pl-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#E65A1E]/10 text-[#E65A1E] font-black">
+                      <Sparkles size={20} />
+                    </div>
+                    <div>
+                      <span className="text-sm font-black text-ink dark:text-white">Verified Gigs</span>
+                      <p className="text-xs text-inkmuted dark:text-[#888]">Direct Employer Escrow</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* List of completed gigs & reviews */}
+                <div className="mt-4 flex flex-col gap-3">
+                  {(profile.work_history || []).length > 0 ? (
+                    (profile.work_history || []).map((gig) => (
+                      <div
+                        key={gig.id}
+                        className="bg-[#fcfcfc] dark:bg-[#151517] border border-[#e5e5e5] dark:border-[#26262a] rounded-lg p-4 flex flex-col gap-2.5 transition hover:border-[#E65A1E]/40"
+                      >
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <div>
+                            <h3 className="text-sm font-bold text-ink dark:text-white flex items-center gap-1.5 flex-wrap">
+                              <span>{gig.job_title}</span>
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black text-ok bg-ok/10 px-2 py-0.5 rounded border border-ok/20">
+                                <CheckCircle2 size={11} /> Completed
+                              </span>
+                            </h3>
+                            <p className="text-xs text-inkmuted dark:text-[#777] mt-0.5">
+                              {gig.company_name || "Bengaluru Client"} · {gig.date_formatted || "Recently completed"}
+                            </p>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-sm font-black text-ink dark:text-white">
+                              ₹{Number(gig.pay || 15000).toLocaleString("en-IN")}
+                            </span>
+                            <p className="text-[10px] text-inkmuted dark:text-[#777]">Fixed Price Gig</p>
+                          </div>
+                        </div>
+
+                        {/* Stars & Badges */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center text-amber-500 font-bold text-xs gap-1">
+                            <span>{"★".repeat(Math.min(5, Math.floor(gig.rating || 5)))}</span>
+                            <span className="text-ink dark:text-white font-black">{Number(gig.rating || 5).toFixed(1)}</span>
+                          </div>
+
+                          {Array.isArray(gig.badges) && gig.badges.map((b) => (
+                            <span
+                              key={b}
+                              className="text-[10px] font-bold text-ink dark:text-stone-300 bg-sand dark:bg-stone-800 border border-ink/20 dark:border-stone-700 px-2 py-0.5 rounded-full"
+                            >
+                              {b}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Employer Review / Feedback Quote */}
+                        {gig.review ? (
+                          <div className="bg-white dark:bg-[#1a1a1c] border-l-2 border-[#E65A1E] p-3 text-xs text-ink dark:text-[#ccc] italic leading-relaxed">
+                            "{gig.review}"
+                            <div className="not-italic font-bold text-[11px] text-inkmuted dark:text-[#888] mt-1.5">
+                              — {gig.employer_name || "Verified Employer"}, {gig.company_name || "Bengaluru Client"}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))
+                  ) : (
+                    <EmptyState
+                      text="No completed work history yet. Reviews from employers after gigs are finished will show up here automatically."
+                      icon={<History size={28} className="text-inkmuted dark:text-[#444]" />}
+                    />
+                  )}
+                </div>
               </section>
 
               {/* Employment History */}

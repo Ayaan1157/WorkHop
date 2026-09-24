@@ -35,6 +35,9 @@ import {
   saveStoredCoupon,
   updateStoredCoupon,
   deleteStoredCoupon,
+  addEmployerReview,
+  getStoredReviews,
+  markJobCompletedAndReview,
 } from "./clientStore";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
@@ -447,8 +450,17 @@ function mockRouter(path, method = "GET", body = null) {
   if (cleanPath.includes("/status") && method === "POST") {
     return { id: cleanPath.split("/")[2], status: body?.status || "active" };
   }
-  if (cleanPath === "/reviews") {
-    return { ok: true, rating: body?.rating, text: body?.text };
+  if (cleanPath.includes("/complete-and-review") && method === "POST") {
+    const parts = cleanPath.split("/");
+    const jobId = parts[3];
+    return markJobCompletedAndReview(jobId, body);
+  }
+  if (cleanPath === "/reviews" && method === "POST") {
+    const rev = addEmployerReview(body);
+    return { ok: true, review: rev };
+  }
+  if (cleanPath.startsWith("/reviews") && method === "GET") {
+    return getStoredReviews();
   }
   if (cleanPath === "/complaints") {
     return { ok: true, message: "Complaint submitted successfully." };

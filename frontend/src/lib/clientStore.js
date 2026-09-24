@@ -115,14 +115,140 @@ export function getStoredLeads() {
   }));
 }
 
+export const REVIEWS_KEY = "workhop_freelancer_reviews";
+
+export function getStoredReviews(freelancerId = null) {
+  try {
+    const raw = localStorage.getItem(REVIEWS_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    if (freelancerId) {
+      return list.filter((r) => !r.freelancer_id || String(r.freelancer_id) === String(freelancerId));
+    }
+    return list;
+  } catch {
+    return [];
+  }
+}
+
+export function addEmployerReview({
+  freelancer_id,
+  freelancer_name,
+  employer_name,
+  company_name,
+  job_id,
+  job_title,
+  rating,
+  text,
+  pay,
+  badges = [],
+}) {
+  const reviews = getStoredReviews();
+  const newReview = {
+    review_id: `rev-${Date.now()}`,
+    freelancer_id: freelancer_id || "fl-1",
+    freelancer_name: freelancer_name || "Freelancer Pro",
+    employer_name: employer_name || "Verified Client",
+    company_name: company_name || employer_name || "Bengaluru Client",
+    job_id: job_id || null,
+    job_title: job_title || "Freelance Gig",
+    rating: Number(rating) || 5,
+    text: text || "Great quality work and smooth communication.",
+    pay: Number(pay) || null,
+    badges: badges || [],
+    created_at: new Date().toISOString(),
+    date_formatted: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+  };
+
+  const updatedReviews = [newReview, ...reviews];
+  localStorage.setItem(REVIEWS_KEY, JSON.stringify(updatedReviews));
+
+  // Also update freelancer profile work_history and reviews
+  try {
+    const profile = getFreelancerProfile();
+    const currentHistory = profile.work_history || [];
+    const historyItem = {
+      id: `wh-${Date.now()}`,
+      job_title: newReview.job_title,
+      company_name: newReview.company_name,
+      employer_name: newReview.employer_name,
+      pay: newReview.pay || 15000,
+      rating: newReview.rating,
+      review: newReview.text,
+      badges: newReview.badges,
+      completed_at: newReview.created_at,
+      date_formatted: newReview.date_formatted,
+      verified_gig: true,
+    };
+
+    const updatedProfile = {
+      ...profile,
+      work_history: [historyItem, ...currentHistory],
+      reviews: [newReview, ...(profile.reviews || [])],
+    };
+    saveFreelancerProfile(updatedProfile);
+  } catch (err) {
+    console.error("Could not update freelancer profile work history", err);
+  }
+
+  // Update lead rating and review count in stored leads
+  try {
+    const leads = getStoredLeads();
+    const updatedLeads = leads.map((l) => {
+      if (String(l.id) === String(freelancer_id)) {
+        const nextCount = (l.reviews_count || 12) + 1;
+        const currentAvg = Number(l.rating) || 4.9;
+        const nextRating = (((currentAvg * (nextCount - 1)) + Number(rating)) / nextCount).toFixed(1);
+        return { ...l, reviews_count: nextCount, rating: nextRating };
+      }
+      return l;
+    });
+    localStorage.setItem(LEADS_KEY, JSON.stringify(updatedLeads));
+  } catch {
+    /* ignore */
+  }
+
+  return newReview;
+}
+
+export function markJobCompletedAndReview(jobId, reviewData) {
+  const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  let targetJob = null;
+  const updatedCustom = custom.map((j) => {
+    if (j.id === jobId) {
+      targetJob = { ...j, is_completed: true, is_filled: true, completed_at: new Date().toISOString() };
+      return targetJob;
+    }
+    return j;
+  });
+  localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify(updatedCustom));
+
+  // Save the review
+  const rev = addEmployerReview({
+    job_id: jobId,
+    job_title: reviewData.job_title || targetJob?.title || "Freelance Gig",
+    pay: reviewData.pay || targetJob?.pay || 15000,
+    freelancer_id: reviewData.freelancer_id,
+    freelancer_name: reviewData.freelancer_name,
+    employer_name: reviewData.employer_name,
+    company_name: reviewData.company_name,
+    rating: reviewData.rating,
+    text: reviewData.text,
+    badges: reviewData.badges || [],
+  });
+
+  return { ok: true, job: targetJob, review: rev };
+}
+
 export function getLeadById(id) {
   const leads = getStoredLeads();
   const pro = leads.find((l) => l.id === id) || leads[0];
-  const reviews = [
-    { reviewer_name: "Anita J. · LedgerLite", rating: 5, date: "3 days ago", text: "Delivered our 5-screen flow ahead of schedule. Flawless communication and clean design." },
-    { reviewer_name: "Karan S. · BrewBlock", rating: 5, date: "1 week ago", text: "Super responsive and understands local Bengaluru market aesthetic perfectly." },
-    { reviewer_name: "Siddharth R. · UrbanKrafts", rating: 4.8, date: "2 weeks ago", text: "Great quality assets, fast turnaround on revisions." },
+  const dynamicReviews = getStoredReviews(id);
+  const defaultReviews = [
+    { review_id: "rev-d1", reviewer_name: "Anita J. · LedgerLite", job_title: "Mobile App MVP", rating: 5, date: "3 days ago", text: "Delivered our 5-screen flow ahead of schedule. Flawless communication and clean design." },
+    { review_id: "rev-d2", reviewer_name: "Karan S. · BrewBlock", job_title: "Brand Identity Redesign", rating: 5, date: "1 week ago", text: "Super responsive and understands local Bengaluru market aesthetic perfectly." },
+    { review_id: "rev-d3", reviewer_name: "Siddharth R. · UrbanKrafts", job_title: "Next.js E-Commerce Landing Page", rating: 4.8, date: "2 weeks ago", text: "Great quality assets, fast turnaround on revisions." },
   ];
+  const reviews = [...dynamicReviews, ...defaultReviews];
   return { pro, reviews };
 }
 
@@ -1023,6 +1149,78 @@ export function getDefaultFreelancerProfile() {
     // Availability
     hours_per_week: "More than 30 hrs/week",
     availability: "Open to contract to hire",
+
+    // Work History & Completed Jobs with Employer Feedback
+    work_history: [
+      {
+        id: "wh-seed-1",
+        job_title: "Next.js E-Commerce Landing Page & Catalog",
+        company_name: "UrbanKrafts Studio",
+        employer_name: "Siddharth Rao",
+        category: "Web Development",
+        pay: 28000,
+        rating: 5,
+        review: "Delivered our 5-screen flow ahead of schedule. Outstanding communication, clean components, and flawless mobile responsiveness.",
+        badges: ["⚡ Fast Delivery", "🎯 Pixel Perfect", "💬 Great Communication"],
+        completed_at: "2026-09-18T10:00:00.000Z",
+        date_formatted: "18 Sep 2026",
+        verified_gig: true,
+      },
+      {
+        id: "wh-seed-2",
+        job_title: "Brand Identity, Logo & Social Collateral Kit",
+        company_name: "BrewBlock Cafe",
+        employer_name: "Karan S.",
+        category: "Graphics & Design",
+        pay: 18000,
+        rating: 5,
+        review: "Super responsive and understands the local Bengaluru market aesthetic perfectly. Will hire again for upcoming menu redesign.",
+        badges: ["🤝 Highly Recommended", "💡 Creative Problem Solver"],
+        completed_at: "2026-09-12T14:30:00.000Z",
+        date_formatted: "12 Sep 2026",
+        verified_gig: true,
+      },
+      {
+        id: "wh-seed-3",
+        job_title: "AutoCAD 2D Floor Plan & Spatial Layout",
+        company_name: "LedgerLite Tech Hub",
+        employer_name: "Anita J.",
+        category: "Architecture & Drafting",
+        pay: 15000,
+        rating: 4.9,
+        review: "Accurate architectural dielines and quick turnaround on revisions. Great attention to detail.",
+        badges: ["🎯 Pixel Perfect"],
+        completed_at: "2026-09-02T16:00:00.000Z",
+        date_formatted: "02 Sep 2026",
+        verified_gig: true,
+      },
+    ],
+    reviews: [
+      {
+        review_id: "rev-seed-1",
+        reviewer_name: "Siddharth Rao · UrbanKrafts",
+        job_title: "Next.js E-Commerce Landing Page",
+        rating: 5,
+        text: "Delivered our 5-screen flow ahead of schedule. Outstanding communication, clean components, and flawless mobile responsiveness.",
+        date_formatted: "18 Sep 2026",
+      },
+      {
+        review_id: "rev-seed-2",
+        reviewer_name: "Karan S. · BrewBlock Cafe",
+        job_title: "Brand Identity & Logo",
+        rating: 5,
+        text: "Super responsive and understands the local Bengaluru market aesthetic perfectly.",
+        date_formatted: "12 Sep 2026",
+      },
+      {
+        review_id: "rev-seed-3",
+        reviewer_name: "Anita J. · LedgerLite",
+        job_title: "AutoCAD 2D Floor Plan",
+        rating: 4.9,
+        text: "Accurate architectural dielines and quick turnaround on revisions.",
+        date_formatted: "02 Sep 2026",
+      },
+    ],
   };
 }
 
