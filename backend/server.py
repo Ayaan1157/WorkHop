@@ -2662,6 +2662,8 @@ CATALOG = [
         "Inventory Cataloging & SKU Tagging",
         "CRM Setup & Lead Pipeline Tracking",
         "POS System Setup for Retail & Cafes",
+        "Typing, Data Entry & Document Processing",
+        "Telecaller, Inside Sales & Customer Calling",
     ]},
     {"category": "Consulting", "icon": "people", "subcategories": [
         "Brand Strategy & Positioning Advisory",

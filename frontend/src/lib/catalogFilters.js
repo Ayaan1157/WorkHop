@@ -142,6 +142,8 @@ export const DISCIPLINES_CATALOG = [
       "Inventory Cataloging & SKU Tagging",
       "CRM Setup & Lead Pipeline Tracking",
       "POS System Setup for Retail & Cafes",
+      "Typing, Data Entry & Document Processing",
+      "Telecaller, Inside Sales & Customer Calling",
     ],
   },
   {
@@ -252,8 +254,9 @@ export const JOB_CATEGORY_FILTERS = [
     label: "MARKETING",
     cats: [
       "Marketing", "Digital Marketing", "SEO", "Social Media", "Performance Marketing", "Email Marketing", "Influencer", "PR", "Growth Hacking", "Brand Strategy",
+      "Telecaller", "Telecalling", "Telecaller & Inside Sales", "Customer Calling", "Inside Sales",
       "Local SEO & Google Business Profile Optimization", "Hyperlocal Meta Ads (Instagram/Facebook 3–5km Radius)", "Google Search & Display Ads", "Social Media Account Management", "WhatsApp Funnels & Broadcast Marketing", "Influencer Outreach & Local Campaign Management", "Growth Hacking & Local Lead Generation", "Email Marketing Campaigns & Automations", "E-Commerce Store & Marketplace Optimization", "Performance Marketing Audits & Analytics",
-      "Local Brand Activation & Experiential Stalls"
+      "Local Brand Activation & Experiential Stalls", "Telecaller, Inside Sales & Customer Calling"
     ],
   },
   {
@@ -261,7 +264,9 @@ export const JOB_CATEGORY_FILTERS = [
     label: "WRITING",
     cats: [
       "Writing", "Writing & Translation", "Content Writing", "Copywriting", "Technical Writing", "UX Copy", "Localization",
-      "Instagram Reel & Ad Scriptwriting", "Landing Page & Website Copywriting", "SEO Blog & Article Writing", "WhatsApp Broadcast Copy & Notification Messaging", "Brand Storytelling & About Us Copy", "Vernacular Translation & Content Adaptation (Kannada, Hindi)", "Email Newsletters & Sales Sequences", "Product Descriptions for E-Commerce & Zomato/Swiggy", "Proofreading, Copy Editing & Formatting", "PR, Press Releases & Media Kit Copy"
+      "Typing & Data Entry", "Typing", "Data Entry", "Document Processing",
+      "Instagram Reel & Ad Scriptwriting", "Landing Page & Website Copywriting", "SEO Blog & Article Writing", "WhatsApp Broadcast Copy & Notification Messaging", "Brand Storytelling & About Us Copy", "Vernacular Translation & Content Adaptation (Kannada, Hindi)", "Email Newsletters & Sales Sequences", "Product Descriptions for E-Commerce & Zomato/Swiggy", "Proofreading, Copy Editing & Formatting", "PR, Press Releases & Media Kit Copy",
+      "Typing, Data Entry & Document Processing"
     ],
   },
   {
@@ -295,7 +300,9 @@ export const JOB_CATEGORY_FILTERS = [
     label: "BUSINESS",
     cats: [
       "Business", "Chartered Accountant", "Fractional CFO", "Legal", "Business Plan", "HR Recruiter", "EA / VA", "Customer Support", "Sales / CRM", "Scrum / PM", "Supply Chain", "Event Coordinator", "Market Research", "Ops",
-      "Virtual Assistance & Email Management", "Spreadsheet Setup & Data Organization (Excel/Airtable)", "Customer Support & Live Chat Management", "Invoicing & Local GST Bookkeeping Support", "Local Market Research & Competitor Mapping", "Mystery Shopping & Physical Store Audits", "Offline Poster, Flyer & BTL Asset Distribution", "Operations & SOP Standardization", "Inventory Cataloging & SKU Tagging", "CRM Setup & Lead Pipeline Tracking", "POS System Setup for Retail & Cafes"
+      "Typing & Data Entry", "Typing", "Data Entry", "Telecaller", "Telecalling", "Telecaller & Inside Sales", "Inside Sales",
+      "Virtual Assistance & Email Management", "Spreadsheet Setup & Data Organization (Excel/Airtable)", "Customer Support & Live Chat Management", "Invoicing & Local GST Bookkeeping Support", "Local Market Research & Competitor Mapping", "Mystery Shopping & Physical Store Audits", "Offline Poster, Flyer & BTL Asset Distribution", "Operations & SOP Standardization", "Inventory Cataloging & SKU Tagging", "CRM Setup & Lead Pipeline Tracking", "POS System Setup for Retail & Cafes",
+      "Typing, Data Entry & Document Processing", "Telecaller, Inside Sales & Customer Calling"
     ],
   },
   {
@@ -376,7 +383,9 @@ export const LEAD_CATEGORY_FILTERS = [
     label: "BUSINESS",
     cats: [
       "Chartered Accountant (CA)", "Fractional CFO & Pitch Decks", "Legal Consultant / Contract Writer", "Business Plan Writer", "HR Consultant / Talent Recruiter", "Virtual / Executive Assistant", "Customer Support Executive (On-Demand)", "Sales Pipeline Builder", "Scrum Master / Agile Project Manager", "Supply Chain / Logistics Consultant", "On-Site Event Coordinator", "Market Research Analyst",
-      "Virtual Assistance & Email Management", "Spreadsheet Setup & Data Organization (Excel/Airtable)", "Customer Support & Live Chat Management", "Invoicing & Local GST Bookkeeping Support", "Local Market Research & Competitor Mapping", "Mystery Shopping & Physical Store Audits", "Offline Poster, Flyer & BTL Asset Distribution", "Operations & SOP Standardization", "Inventory Cataloging & SKU Tagging", "CRM Setup & Lead Pipeline Tracking", "POS System Setup for Retail & Cafes"
+      "Typing Specialist / Data Entry Operator", "Telecaller / Inside Sales Executive", "Typing & Data Entry", "Telecaller & Inside Sales",
+      "Virtual Assistance & Email Management", "Spreadsheet Setup & Data Organization (Excel/Airtable)", "Customer Support & Live Chat Management", "Invoicing & Local GST Bookkeeping Support", "Local Market Research & Competitor Mapping", "Mystery Shopping & Physical Store Audits", "Offline Poster, Flyer & BTL Asset Distribution", "Operations & SOP Standardization", "Inventory Cataloging & SKU Tagging", "CRM Setup & Lead Pipeline Tracking", "POS System Setup for Retail & Cafes",
+      "Typing, Data Entry & Document Processing", "Telecaller, Inside Sales & Customer Calling"
     ],
   },
   {

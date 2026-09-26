@@ -5,13 +5,13 @@ import pytest
 
 BASE = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://payment-mgmt-10.preview.emergentagent.com").rstrip("/")
 
-EXPECTED_TOTAL = 200
+EXPECTED_TOTAL = 212
 
 
 def _seeded(jobs):
     """Employer-posted (cjob-) jobs are dynamic; count assertions apply to seeds only."""
     return [j for j in jobs if not j["id"].startswith("cjob-")]
-EXPECTED_DIST = {"Creative": 56, "Tech": 48, "Marketing": 48, "Ops": 48}
+EXPECTED_DIST = {"Creative": 56, "Tech": 48, "Marketing": 54, "Ops": 54}
 TECH_COUNT = EXPECTED_DIST["Tech"]
 
 

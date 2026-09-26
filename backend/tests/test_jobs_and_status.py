@@ -5,7 +5,7 @@ import pytest
 
 BASE = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://payment-mgmt-10.preview.emergentagent.com").rstrip("/")
 
-EXPECTED_TOTAL = 200
+EXPECTED_TOTAL = 212
 
 
 def _seeded(jobs):

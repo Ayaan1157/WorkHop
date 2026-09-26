@@ -645,6 +645,29 @@ export const KEYWORD_TAXONOMY = [
           "Petpooja", "POS setup", "Retail billing system", "Restaurant POS",
           "Menu configuration", "Billing software"
         ]
+      },
+      {
+        name: "Typing, Data Entry & Document Processing",
+        keywords: [
+          "Typing", "Data entry", "Typist", "Copy typing", "Excel data entry",
+          "Document typing", "Kannada typing", "English typing", "Hindi typing",
+          "Audio transcription", "Transcription", "Handwritten to text",
+          "PDF to Word", "Form filling", "Data processing", "Speed typing",
+          "Fast typing", "Keyboard typing", "Word formatting", "Offline typing",
+          "Spreadsheet typing", "Typing operator", "Typing & Data Entry"
+        ]
+      },
+      {
+        name: "Telecaller, Inside Sales & Customer Calling",
+        keywords: [
+          "Telecaller", "Telecalling", "Inside sales", "Outbound calling",
+          "Inbound calling", "BPO caller", "Cold calling", "Lead qualification",
+          "Appointment setter", "Phone support", "Telesales executive",
+          "Customer calling", "Kannada telecaller", "English telecaller",
+          "Hindi telecaller", "B2B telecalling", "Real estate telecaller",
+          "Clinic caller", "Feedback caller", "Telemarketing", "Phone sales",
+          "BPO telecaller", "Call center executive", "Telecaller & Inside Sales"
+        ]
       }
     ]
   },
@@ -801,6 +824,12 @@ export const SUBDISCIPLINE_KEYWORDS = {
   ...RAW_SUBDISCIPLINE_KEYWORDS,
   "Architectural and interior design floor plan": RAW_SUBDISCIPLINE_KEYWORDS["Architectural & Interior Design Floor Plan"] || [],
   "Subtitle Styling & Captioning": RAW_SUBDISCIPLINE_KEYWORDS["Subtitle Styling & Captions"] || [],
+  "Typing & Data Entry": RAW_SUBDISCIPLINE_KEYWORDS["Typing, Data Entry & Document Processing"] || [],
+  "Telecaller & Inside Sales": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
+  "Typing": RAW_SUBDISCIPLINE_KEYWORDS["Typing, Data Entry & Document Processing"] || [],
+  "Telecaller": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
+  "Data Entry": RAW_SUBDISCIPLINE_KEYWORDS["Typing, Data Entry & Document Processing"] || [],
+  "Telecalling": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
 };
 
 // Fast search: build an inverted index mapping lowercased keywords and tokens
