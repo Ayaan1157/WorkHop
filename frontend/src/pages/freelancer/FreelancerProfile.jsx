@@ -6,7 +6,8 @@ import {
   MapPin, Star, ChevronDown, ChevronUp, X, User, DollarSign,
   Code2, Loader2, Menu, MessagesSquare, Map as MapIcon,
   LayoutGrid, Tag, LifeBuoy, FileText, Shield, ChevronRight,
-  LogOut, Wallet, ShieldCheck, Camera, Upload, Coins, Sparkles, History, ArrowUpRight, Building2, CheckCircle2
+  LogOut, Wallet, ShieldCheck, Camera, Upload, Coins, Sparkles, History, ArrowUpRight, Building2, CheckCircle2,
+  AlertTriangle, ImageIcon
 } from "lucide-react";
 import { Shell } from "@/components/kit";
 import EditModal from "@/components/EditModal";
@@ -15,6 +16,12 @@ import CreditsTopUpModal from "@/components/CreditsTopUpModal";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, getFreelancerId } from "@/lib/api";
 import { getFreelancerProfile, saveFreelancerProfile, getCreditsWallet, getCreditTransactions } from "@/lib/clientStore";
+import {
+  validateImageFile,
+  compressImage,
+  formatFileSize,
+  MAX_PORTFOLIO_IMAGE_SIZE_MB,
+} from "@/lib/fileUpload";
 
 /* ═══════════ helpers ═══════════ */
 const uid = () => `id_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -68,7 +75,41 @@ export default function FreelancerProfile() {
   const [proSaving, setProSaving] = useState(false);
   const [proSaveMsg, setProSaveMsg] = useState(null);
 
+  const [portfolioImageError, setPortfolioImageError] = useState(null);
+  const [isProcessingPortfolioImage, setIsProcessingPortfolioImage] = useState(false);
+  const [avatarError, setAvatarError] = useState(null);
+
   const photoInputRef = useRef(null);
+
+  const handlePortfolioImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = validateImageFile(file, MAX_PORTFOLIO_IMAGE_SIZE_MB);
+    if (!validation.valid) {
+      setPortfolioImageError(validation.error);
+      return;
+    }
+
+    setPortfolioImageError(null);
+    setIsProcessingPortfolioImage(true);
+
+    try {
+      const res = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.85 });
+      if (res?.dataUrl) {
+        setEditData((d) => ({
+          ...(d || {}),
+          image_data: res.dataUrl,
+          image_name: file.name,
+          image_size: formatFileSize(file.size),
+        }));
+      }
+    } catch {
+      setPortfolioImageError("Failed to process image. Please try another one.");
+    } finally {
+      setIsProcessingPortfolioImage(false);
+    }
+  };
 
   const saveProDetails = async () => {
     const digits = proPhone.replace(/\D/g, "");
@@ -193,11 +234,17 @@ export default function FreelancerProfile() {
   const openEdit = (section, data = null) => {
     setEditingSection(section);
     setEditData(data);
+    setPortfolioImageError(null);
+    setIsProcessingPortfolioImage(false);
+    setAvatarError(null);
   };
 
   const closeEdit = () => {
     setEditingSection(null);
     setEditData(null);
+    setPortfolioImageError(null);
+    setIsProcessingPortfolioImage(false);
+    setAvatarError(null);
   };
 
   /* ═══════════ save handlers ═══════════ */
@@ -1129,18 +1176,23 @@ export default function FreelancerProfile() {
                   ref={photoInputRef}
                   accept="image/png, image/jpeg, image/webp, image/gif"
                   className="hidden"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    if (file.size > 5 * 1024 * 1024) {
-                      alert("Image size should be under 5MB");
+                    const validation = validateImageFile(file, 5);
+                    if (!validation.valid) {
+                      setAvatarError(validation.error);
                       return;
                     }
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                      setEditData((d) => ({ ...d, picture: ev.target.result }));
-                    };
-                    reader.readAsDataURL(file);
+                    setAvatarError(null);
+                    try {
+                      const res = await compressImage(file, { maxWidth: 600, maxHeight: 600, quality: 0.85 });
+                      if (res?.dataUrl) {
+                        setEditData((d) => ({ ...d, picture: res.dataUrl }));
+                      }
+                    } catch {
+                      setAvatarError("Failed to process photo. Please try another image.");
+                    }
                   }}
                 />
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1158,6 +1210,7 @@ export default function FreelancerProfile() {
                       type="button"
                       onClick={() => {
                         if (photoInputRef.current) photoInputRef.current.value = "";
+                        setAvatarError(null);
                         setEditData((d) => ({ ...d, picture: "" }));
                       }}
                       className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold text-red-500 dark:text-red-400 border border-red-500/20 flex items-center gap-1.5 transition"
@@ -1167,6 +1220,11 @@ export default function FreelancerProfile() {
                     </button>
                   )}
                 </div>
+                {avatarError && (
+                  <p className="text-[11px] text-red-600 dark:text-red-400 font-medium">
+                    {avatarError}
+                  </p>
+                )}
                 <p className="text-[11px] text-inkmuted dark:text-[#777]">
                   Supports JPG, PNG, WebP up to 5MB.
                 </p>
@@ -1634,38 +1692,96 @@ export default function FreelancerProfile() {
             />
           </div>
           <div>
-            <p className={labelCls}>Project Image</p>
-            <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-[#ddd] dark:border-[#333] rounded-lg cursor-pointer hover:border-[#E65A1E] transition bg-[#f9f9f9] dark:bg-[#1a1a1a]">
-              {editData?.image_data ? (
-                <img
-                  src={editData.image_data}
-                  alt="Preview"
-                  className="h-full w-full object-contain rounded-lg"
-                />
-              ) : (
-                <div className="text-center">
-                  <Plus size={24} className="text-inkmuted dark:text-[#555] mx-auto mb-2" />
-                  <p className="text-xs text-inkmuted dark:text-[#555]">Click to upload image</p>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className={labelCls}>Project Image</p>
+              <span className="text-[11px] font-medium text-inkmuted dark:text-[#888]">
+                Max {MAX_PORTFOLIO_IMAGE_SIZE_MB} MB • JPG, PNG, WEBP
+              </span>
+            </div>
+
+            {portfolioImageError && (
+              <div className="mb-2.5 flex items-center gap-2 p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs rounded-lg">
+                <AlertTriangle size={15} className="shrink-0 text-red-500" />
+                <span>{portfolioImageError}</span>
+              </div>
+            )}
+
+            {editData?.image_data ? (
+              <div className="rounded-lg overflow-hidden border-2 border-[#ddd] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#1a1a1a]">
+                <div className="h-44 w-full flex items-center justify-center p-2 bg-black/5 dark:bg-black/40">
+                  <img
+                    src={editData.image_data}
+                    alt="Preview"
+                    className="max-h-full max-w-full object-contain rounded"
+                  />
                 </div>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    setEditData((d) => ({
-                      ...(d || {}),
-                      image_data: reader.result,
-                    }));
-                  };
-                  reader.readAsDataURL(file);
-                }}
-              />
-            </label>
+                <div className="p-2.5 bg-white dark:bg-[#202020] border-t border-[#eee] dark:border-[#333] flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                    <span className="text-xs font-semibold text-ink dark:text-white truncate max-w-[180px]">
+                      {editData.image_name || "portfolio-image.jpg"}
+                    </span>
+                    {editData.image_size && (
+                      <span className="text-[11px] text-inkmuted dark:text-[#888]">
+                        ({editData.image_size})
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <label className="text-xs font-bold text-[#E65A1E] hover:underline cursor-pointer">
+                      Change
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/webp, image/gif"
+                        className="hidden"
+                        onChange={handlePortfolioImageChange}
+                      />
+                    </label>
+                    <span className="text-gray-300 dark:text-[#444]">|</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPortfolioImageError(null);
+                        setEditData((d) => ({
+                          ...(d || {}),
+                          image_data: null,
+                          image_name: null,
+                          image_size: null,
+                        }));
+                      }}
+                      className="text-xs font-bold text-red-500 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-[#ddd] dark:border-[#333] rounded-lg cursor-pointer hover:border-[#E65A1E] dark:hover:border-[#E65A1E] transition bg-[#f9f9f9] dark:bg-[#1a1a1a] hover:bg-[#FFF8F5] dark:hover:bg-[#221712]">
+                {isProcessingPortfolioImage ? (
+                  <div className="text-center flex flex-col items-center gap-2">
+                    <Loader2 size={24} className="animate-spin text-[#E65A1E]" />
+                    <p className="text-xs font-medium text-inkmuted dark:text-[#888]">Optimizing image...</p>
+                  </div>
+                ) : (
+                  <div className="text-center px-4">
+                    <div className="h-10 w-10 mx-auto mb-2 rounded-full bg-[#f0f0f0] dark:bg-[#252525] flex items-center justify-center">
+                      <Upload size={20} className="text-inkmuted dark:text-[#777]" />
+                    </div>
+                    <p className="text-xs font-semibold text-ink dark:text-white">Click to upload image</p>
+                    <p className="text-[11px] text-inkmuted dark:text-[#777] mt-1">
+                      PNG, JPG, WEBP or GIF (Max {MAX_PORTFOLIO_IMAGE_SIZE_MB} MB)
+                    </p>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  className="hidden"
+                  onChange={handlePortfolioImageChange}
+                />
+              </label>
+            )}
           </div>
         </div>
       </EditModal>

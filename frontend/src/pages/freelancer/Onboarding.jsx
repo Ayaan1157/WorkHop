@@ -117,6 +117,10 @@ export default function Onboarding() {
   const pickSlot = (i, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert(`Image is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 5MB.`);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => setSlots((prev) => { const n = [...prev]; n[i] = String(reader.result).split(",")[1] || ""; return n; });
     reader.readAsDataURL(file);
@@ -252,7 +256,7 @@ export default function Onboarding() {
 
           {/* STEP 4 */}
           <Step n={4} title="Upload your work images (logo, landing page, 3D design, etc.)" active={state.paid} testID="step4-block">
-            <p className="text-xs text-inkmuted">Upload up to 3 high-resolution case studies</p>
+            <p className="text-xs text-inkmuted">Upload up to 3 high-resolution case studies (Max 5MB each • JPG, PNG, WEBP)</p>
             <div className="flex gap-3">
               {slots.map((slot, i) => (
                 <label key={i} data-testid={`portfolio-slot-${i}`} className={`flex aspect-square flex-1 cursor-pointer flex-col items-center justify-center gap-1 border-2 border-ink ${slot ? "bg-[#FFE5D6]" : "bg-sand"}`}>

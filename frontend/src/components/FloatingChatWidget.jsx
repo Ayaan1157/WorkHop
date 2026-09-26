@@ -154,6 +154,10 @@ export default function FloatingChatWidget({ role = "employer" }) {
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert(`Attachment "${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 5MB.`);
+      return;
+    }
     setAttachment({
       name: file.name,
       type: file.type.startsWith("image/") ? "image" : "doc"
@@ -540,7 +544,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-sand hover:bg-white text-ink transition"
-                        title="Attach file or screenshot"
+                        title="Attach file or screenshot (Max 5MB)"
                       >
                         <Paperclip size={16} />
                       </button>

@@ -105,6 +105,10 @@ export default function Chat() {
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert(`Attachment "${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 5MB.`);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       setAttachment({
@@ -415,7 +419,7 @@ export default function Chat() {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-ink bg-sand hover:bg-[#FFE5D6] transition"
-          title="Attach image or file"
+          title="Attach image or file (Max 5MB)"
         >
           <Paperclip size={18} className="text-ink" />
         </button>

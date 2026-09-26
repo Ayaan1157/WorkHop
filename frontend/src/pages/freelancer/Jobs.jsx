@@ -329,6 +329,10 @@ export default function Jobs() {
   const handlePdfUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setApplyError(`PDF is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 5MB.`);
+      return;
+    }
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
       setApplyError("Please upload a valid PDF document (.pdf).");
       return;
@@ -1165,7 +1169,7 @@ export default function Jobs() {
                     ) : (
                       <div className="flex items-center gap-2 text-xs font-black text-ink">
                         <UploadCloud size={16} className="text-brand" />
-                        <span>Upload Proposal / CV (.PDF) — Auto-scanned for privacy</span>
+                        <span>Upload Proposal / CV (.PDF, Max 5MB) — Auto-scanned for privacy</span>
                       </div>
                     )}
                   </label>
