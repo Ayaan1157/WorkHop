@@ -1692,43 +1692,51 @@ export default function FreelancerProfile() {
             />
           </div>
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-2">
               <p className={labelCls}>Project Image</p>
-              <span className="text-[11px] font-medium text-inkmuted dark:text-[#888]">
-                Max {MAX_PORTFOLIO_IMAGE_SIZE_MB} MB • JPG, PNG, WEBP
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FFF0E6] dark:bg-[#E65A1E]/20 text-[#E65A1E] border border-[#E65A1E]/30 shadow-xs">
+                Limit: 5 MB
               </span>
             </div>
 
             {portfolioImageError && (
-              <div className="mb-2.5 flex items-center gap-2 p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs rounded-lg">
-                <AlertTriangle size={15} className="shrink-0 text-red-500" />
-                <span>{portfolioImageError}</span>
+              <div className="mb-3 flex items-start gap-2.5 p-3 bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs rounded-lg shadow-sm">
+                <AlertTriangle size={16} className="shrink-0 text-red-500 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-bold text-red-800 dark:text-red-200">File size limit exceeded</p>
+                  <p className="mt-0.5">{portfolioImageError}</p>
+                </div>
               </div>
             )}
 
             {editData?.image_data ? (
-              <div className="rounded-lg overflow-hidden border-2 border-[#ddd] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#1a1a1a]">
-                <div className="h-44 w-full flex items-center justify-center p-2 bg-black/5 dark:bg-black/40">
+              <div className="rounded-xl overflow-hidden border-2 border-[#ddd] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#1a1a1a] shadow-sm">
+                <div className="h-48 w-full flex items-center justify-center p-3 bg-black/5 dark:bg-black/40">
                   <img
                     src={editData.image_data}
                     alt="Preview"
                     className="max-h-full max-w-full object-contain rounded"
                   />
                 </div>
-                <div className="p-2.5 bg-white dark:bg-[#202020] border-t border-[#eee] dark:border-[#333] flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                    <span className="text-xs font-semibold text-ink dark:text-white truncate max-w-[180px]">
-                      {editData.image_name || "portfolio-image.jpg"}
-                    </span>
-                    {editData.image_size && (
-                      <span className="text-[11px] text-inkmuted dark:text-[#888]">
-                        ({editData.image_size})
+                <div className="p-3 bg-white dark:bg-[#1f1f1f] border-t border-[#eee] dark:border-[#333] flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                      <span className="text-xs font-bold text-ink dark:text-white truncate max-w-[200px]">
+                        {editData.image_name || "portfolio-image.jpg"}
                       </span>
-                    )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        {editData.image_size || "Optimized"}
+                      </span>
+                      <span className="text-[11px] text-inkmuted dark:text-[#777]">
+                        Within 5 MB limit
+                      </span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <label className="text-xs font-bold text-[#E65A1E] hover:underline cursor-pointer">
+                    <label className="px-3 py-1.5 text-xs font-bold text-[#E65A1E] bg-[#FFF0E6] dark:bg-[#E65A1E]/20 hover:bg-[#FFE0CE] border border-[#E65A1E]/30 rounded-lg cursor-pointer transition">
                       Change
                       <input
                         type="file"
@@ -1737,7 +1745,6 @@ export default function FreelancerProfile() {
                         onChange={handlePortfolioImageChange}
                       />
                     </label>
-                    <span className="text-gray-300 dark:text-[#444]">|</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -1749,7 +1756,7 @@ export default function FreelancerProfile() {
                           image_size: null,
                         }));
                       }}
-                      className="text-xs font-bold text-red-500 hover:underline"
+                      className="px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition"
                     >
                       Remove
                     </button>
@@ -1757,21 +1764,29 @@ export default function FreelancerProfile() {
                 </div>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-[#ddd] dark:border-[#333] rounded-lg cursor-pointer hover:border-[#E65A1E] dark:hover:border-[#E65A1E] transition bg-[#f9f9f9] dark:bg-[#1a1a1a] hover:bg-[#FFF8F5] dark:hover:bg-[#221712]">
+              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#ccc] dark:border-[#3a3a3a] rounded-xl cursor-pointer hover:border-[#E65A1E] dark:hover:border-[#E65A1E] transition bg-[#fcfcfc] dark:bg-[#181818] hover:bg-[#FFF9F6] dark:hover:bg-[#201612] group">
                 {isProcessingPortfolioImage ? (
-                  <div className="text-center flex flex-col items-center gap-2">
-                    <Loader2 size={24} className="animate-spin text-[#E65A1E]" />
-                    <p className="text-xs font-medium text-inkmuted dark:text-[#888]">Optimizing image...</p>
+                  <div className="text-center flex flex-col items-center gap-2 py-4">
+                    <Loader2 size={26} className="animate-spin text-[#E65A1E]" />
+                    <p className="text-xs font-semibold text-ink dark:text-white">Optimizing project image...</p>
+                    <p className="text-[11px] text-inkmuted dark:text-[#888]">Scaling for web performance</p>
                   </div>
                 ) : (
-                  <div className="text-center px-4">
-                    <div className="h-10 w-10 mx-auto mb-2 rounded-full bg-[#f0f0f0] dark:bg-[#252525] flex items-center justify-center">
-                      <Upload size={20} className="text-inkmuted dark:text-[#777]" />
+                  <div className="text-center flex flex-col items-center">
+                    <div className="h-12 w-12 rounded-full bg-[#f0f0f0] dark:bg-[#262626] group-hover:bg-[#FFE5D6] dark:group-hover:bg-[#E65A1E]/30 flex items-center justify-center transition mb-3">
+                      <Upload size={22} className="text-inkmuted dark:text-[#888] group-hover:text-[#E65A1E] transition" />
                     </div>
-                    <p className="text-xs font-semibold text-ink dark:text-white">Click to upload image</p>
-                    <p className="text-[11px] text-inkmuted dark:text-[#777] mt-1">
-                      PNG, JPG, WEBP or GIF (Max {MAX_PORTFOLIO_IMAGE_SIZE_MB} MB)
+                    <p className="text-sm font-bold text-ink dark:text-white">
+                      Click to upload project image
                     </p>
+                    <div className="mt-2.5 flex items-center gap-2">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black bg-[#FFE5D6] dark:bg-[#E65A1E]/30 text-[#E65A1E] border border-[#E65A1E]/40 tracking-wider">
+                        MAX 5 MB
+                      </span>
+                      <span className="text-[11px] text-inkmuted dark:text-[#888]">
+                        JPG, PNG, WEBP, GIF
+                      </span>
+                    </div>
                   </div>
                 )}
                 <input
@@ -1782,6 +1797,9 @@ export default function FreelancerProfile() {
                 />
               </label>
             )}
+            <p className="mt-2 text-[11px] text-inkmuted dark:text-[#777]">
+              Notice: Maximum upload limit is <strong>5 MB</strong> per project image.
+            </p>
           </div>
         </div>
       </EditModal>
