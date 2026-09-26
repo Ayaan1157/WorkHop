@@ -1162,7 +1162,7 @@ export default function Landing() {
             <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/20 pt-4 text-xs font-extrabold text-white">
               <span>Hyperlocal matching</span>
               <span>•</span>
-              <span>Same-day payment releases</span>
+              <span>Same-Day Payouts</span>
             </div>
           </button>
 
