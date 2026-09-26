@@ -22,6 +22,7 @@ import {
   formatFileSize,
   MAX_PORTFOLIO_IMAGE_SIZE_MB,
 } from "@/lib/fileUpload";
+import { scanText, scanUploadFile } from "@/lib/contactScanner";
 
 /* ═══════════ helpers ═══════════ */
 const uid = () => `id_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -85,6 +86,7 @@ export default function FreelancerProfile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // 1. Size & format validation (Max 5MB)
     const validation = validateImageFile(file, MAX_PORTFOLIO_IMAGE_SIZE_MB);
     if (!validation.valid) {
       setPortfolioImageError(validation.error);
@@ -95,6 +97,18 @@ export default function FreelancerProfile() {
     setIsProcessingPortfolioImage(true);
 
     try {
+      // 2. Screen image for contact info (filename, metadata, and OCR)
+      const scanRes = await scanUploadFile(file);
+      if (scanRes?.hasViolations) {
+        const violationDetails = scanRes.violations.map((v) => v.label).join(", ");
+        setPortfolioImageError(
+          `Image contains prohibited contact details (${violationDetails}). Sharing phone numbers, emails, or personal contacts on portfolio items is not allowed.`
+        );
+        setIsProcessingPortfolioImage(false);
+        return;
+      }
+
+      // 3. Optimize image for web performance
       const res = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.85 });
       if (res?.dataUrl) {
         setEditData((d) => ({
@@ -1661,7 +1675,32 @@ export default function FreelancerProfile() {
         onClose={closeEdit}
         title="Add Portfolio Item"
         onSave={() => {
-          if (editData?.title) addPortfolioItem(editData);
+          if (!editData?.title?.trim()) {
+            setPortfolioImageError("Please enter a project title.");
+            return;
+          }
+
+          // Screen Title for emails, phone numbers, and external links
+          const titleScan = scanText(editData.title);
+          if (titleScan.hasViolations) {
+            setPortfolioImageError(
+              `Project title contains prohibited contact info (${titleScan.violations.map((v) => v.label).join(", ")}). Sharing phone numbers, emails, or personal contacts is not allowed.`
+            );
+            return;
+          }
+
+          // Screen Description for emails, phone numbers, and external links
+          if (editData?.description) {
+            const descScan = scanText(editData.description);
+            if (descScan.hasViolations) {
+              setPortfolioImageError(
+                `Project description contains prohibited contact info (${descScan.violations.map((v) => v.label).join(", ")}). Sharing phone numbers, emails, or personal contacts is not allowed.`
+              );
+              return;
+            }
+          }
+
+          addPortfolioItem(editData);
         }}
       >
         <div className="flex flex-col gap-4">
@@ -1703,7 +1742,7 @@ export default function FreelancerProfile() {
               <div className="mb-3 flex items-start gap-2.5 p-3 bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs rounded-lg shadow-sm">
                 <AlertTriangle size={16} className="shrink-0 text-red-500 mt-0.5" />
                 <div className="flex-1">
-                  <p className="font-bold text-red-800 dark:text-red-200">File size limit exceeded</p>
+                  <p className="font-bold text-red-800 dark:text-red-200">Upload & Privacy Alert</p>
                   <p className="mt-0.5">{portfolioImageError}</p>
                 </div>
               </div>
@@ -1798,7 +1837,7 @@ export default function FreelancerProfile() {
               </label>
             )}
             <p className="mt-2 text-[11px] text-inkmuted dark:text-[#777]">
-              Notice: Maximum upload limit is <strong>5 MB</strong> per project image.
+              Notice: Maximum upload limit is <strong>5 MB</strong> per project image. All text and files are screened to ensure no phone numbers or email addresses are shared.
             </p>
           </div>
         </div>

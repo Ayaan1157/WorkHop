@@ -7,6 +7,7 @@ import {
 import MilestoneTracker from "@/components/MilestoneTracker";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import { API, apiGet, apiPost } from "@/lib/api";
+import { scanText, scanUploadFile } from "@/lib/contactScanner";
 
 export default function Chat() {
   const nav = useNavigate();
@@ -102,13 +103,25 @@ export default function Chat() {
     }
   };
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       alert(`Attachment "${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 5MB.`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
+
+    // Screen attachment for contact info (phone numbers, emails, external links)
+    const scanRes = await scanUploadFile(file);
+    if (scanRes?.hasViolations) {
+      alert(
+        `Attachment blocked: Prohibited contact info detected (${scanRes.violations.map((v) => v.label).join(", ")}). Sharing phone numbers, emails, or personal contacts in chat is not allowed.`
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       setAttachment({
@@ -123,6 +136,18 @@ export default function Chat() {
   const send = async () => {
     const body = text.trim();
     if ((!body && !attachment) || sending) return;
+
+    // Screen message text for phone numbers or emails
+    if (body) {
+      const textScan = scanText(body);
+      if (textScan?.hasViolations) {
+        alert(
+          `Message blocked: Contact details detected (${textScan.violations.map((v) => v.label).join(", ")}). For your safety, sharing phone numbers, emails, or off-platform contacts is not allowed on WorkHop.`
+        );
+        return;
+      }
+    }
+
     setSending(true);
     const msgPayload = attachment ? `${body ? body + "\n" : ""}[Attachment: ${attachment.name}]` : body;
     setText("");

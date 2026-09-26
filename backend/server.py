@@ -458,6 +458,31 @@ def _mask_phone(phone: str) -> str:
     return "+91 XXXXX XXXXX"
 
 
+def _check_contact_violations(text: str) -> bool:
+    if not text:
+        return False
+    # Check emails
+    email_re = re.compile(
+        r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b|'
+        r'\b[A-Za-z0-9._%+-]+\s*(?:\(at\)|\[at\]|\bat\b|@)\s*[A-Za-z0-9.-]+\s*(?:\(dot\)|\[dot\]|\bdot\b|\.)\s*(?:com|in|org|net|co|io|ai|me)\b',
+        re.I
+    )
+    if email_re.search(text):
+        return True
+
+    # Check phones (10 digits)
+    phone_re = re.compile(r'(?:(?:\+?91|0)[\s.-]?)?(?:(?:\(\d{1,5}\)[\s.-]?)|\d[\s.-]?){9,14}\d')
+    for m in phone_re.finditer(text):
+        digits = re.sub(r'\D', '', m.group(0))
+        if digits.startswith('91') and len(digits) == 12:
+            digits = digits[2:]
+        elif digits.startswith('0') and len(digits) == 11:
+            digits = digits[1:]
+        if len(digits) == 10:
+            return True
+    return False
+
+
 def _freelancer_to_lead(doc: dict, unlocked: bool = False) -> Lead:
     name = doc.get("full_name") or "Verified Pro"
     initials = "".join(w[0] for w in name.split()[:2]).upper() or "VP"
@@ -2233,6 +2258,11 @@ async def send_message(conversation_id: str, req: SendMessageRequest):
     text = (req.text or "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
+    if _check_contact_violations(text):
+        raise HTTPException(
+            status_code=400,
+            detail="Sharing phone numbers or email addresses in chat messages is prohibited on WorkHop."
+        )
     message_id = str(uuid.uuid4())
     created_at = _now_iso()
     msg = {

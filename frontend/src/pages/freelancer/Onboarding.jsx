@@ -8,6 +8,7 @@ import { CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
 import { apiGet, apiPost, setFreelancerId, getFreelancerId } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { sanitizeInput } from "@/lib/security";
+import { scanUploadFile } from "@/lib/contactScanner";
 
 const TOTAL = 4;
 
@@ -114,13 +115,23 @@ export default function Onboarding() {
     finally { setVBusy(false); }
   };
 
-  const pickSlot = (i, e) => {
+  const pickSlot = async (i, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       alert(`Image is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 5MB.`);
       return;
     }
+
+    // Screen image for phone numbers, emails, and external links
+    const scanRes = await scanUploadFile(file);
+    if (scanRes?.hasViolations) {
+      alert(
+        `Work sample blocked: Prohibited contact details detected (${scanRes.violations.map((v) => v.label).join(", ")}). Sharing phone numbers, emails, or personal contacts is not permitted.`
+      );
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => setSlots((prev) => { const n = [...prev]; n[i] = String(reader.result).split(",")[1] || ""; return n; });
     reader.readAsDataURL(file);

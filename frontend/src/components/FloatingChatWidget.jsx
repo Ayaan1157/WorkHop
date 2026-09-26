@@ -8,6 +8,7 @@ import {
 import { apiGet, apiPost } from "@/lib/api";
 import { getStoredChats } from "@/lib/clientStore";
 import { getDistanceSuitability } from "@/lib/locationAreas";
+import { scanText, scanUploadFile } from "@/lib/contactScanner";
 
 export default function FloatingChatWidget({ role = "employer" }) {
   const nav = useNavigate();
@@ -124,6 +125,17 @@ export default function FloatingChatWidget({ role = "employer" }) {
     const text = inputMessage.trim();
     if ((!text && !attachment) || sending || !selectedConv) return;
 
+    // Screen message text for phone numbers or emails
+    if (text) {
+      const textScan = scanText(text);
+      if (textScan?.hasViolations) {
+        alert(
+          `Message blocked: Contact details detected (${textScan.violations.map((v) => v.label).join(", ")}). For safety and contract protection, sharing phone numbers or emails is not permitted.`
+        );
+        return;
+      }
+    }
+
     setSending(true);
     const convId = selectedConv.conversation_id || selectedConv.id;
     const msgPayload = attachment ? `${text ? text + "\n" : ""}[Attachment: ${attachment.name}]` : text;
@@ -151,13 +163,25 @@ export default function FloatingChatWidget({ role = "employer" }) {
     }
   };
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       alert(`Attachment "${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 5MB.`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
+
+    // Screen attachment for contact info (phone numbers, emails, external links)
+    const scanRes = await scanUploadFile(file);
+    if (scanRes?.hasViolations) {
+      alert(
+        `Attachment blocked: Prohibited contact info detected (${scanRes.violations.map((v) => v.label).join(", ")}). Sharing phone numbers, emails, or personal contacts is not allowed.`
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setAttachment({
       name: file.name,
       type: file.type.startsWith("image/") ? "image" : "doc"
