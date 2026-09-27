@@ -155,7 +155,7 @@ export default function Employer() {
   const mapSection = useMemo(() => {
     if (!showMap) return null;
     return (
-      <div className="relative isolate h-[160px] sm:h-[280px] w-full bg-sand/20" data-testid="employer-map">
+      <div className="relative isolate h-[200px] sm:h-[280px] w-full bg-sand/20" data-testid="employer-map">
         <GoogleMap
           pins={mapPins}
           zoom={13}
@@ -167,7 +167,7 @@ export default function Employer() {
         <button
           data-testid="leads-near-me-btn"
           onClick={requestLocation}
-          className={`absolute bottom-3 left-3 z-[400] flex items-center gap-1.5 border-2 border-ink px-2.5 py-1 text-xs font-black shadow-[2px_2px_0px_#121212] transition active:translate-y-0.5 ${
+          className={`absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 z-[400] flex items-center gap-1 sm:gap-1.5 border-2 border-ink px-2 sm:px-2.5 py-1 text-xs font-black shadow-[2px_2px_0px_#121212] transition active:translate-y-0.5 ${
             coords ? "bg-brand text-white" : "bg-white text-ink hover:bg-sand"
           }`}
         >

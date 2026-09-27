@@ -588,7 +588,7 @@ export default function Jobs() {
 
           {/* Collapsible Map Body with proper proportions */}
           {showMap && (
-            <div className="relative isolate h-[160px] sm:h-[280px] w-full bg-sand/20" data-testid="jobs-radar-map">
+            <div className="relative isolate h-[200px] sm:h-[280px] w-full bg-sand/20" data-testid="jobs-radar-map">
               <GoogleMap
                 pins={mapPins}
                 zoom={13}
@@ -607,7 +607,7 @@ export default function Jobs() {
               <button
                 data-testid="jobs-near-me-btn"
                 onClick={requestLocation}
-                className={`absolute bottom-3 left-3 z-[400] flex items-center gap-1.5 border-2 border-ink px-2.5 py-1 text-xs font-black shadow-[2px_2px_0px_#121212] transition active:translate-y-0.5 ${
+                className={`absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 z-[400] flex items-center gap-1 sm:gap-1.5 border-2 border-ink px-2 sm:px-2.5 py-1 text-xs font-black shadow-[2px_2px_0px_#121212] transition active:translate-y-0.5 ${
                   liveCoords ? "bg-[#059669] text-white" : "bg-white text-ink hover:bg-sand"
                 }`}
               >
@@ -616,7 +616,17 @@ export default function Jobs() {
                 ) : (
                   <LocateFixed size={13} />
                 )}
-                <span>{liveCoords ? "GPS Locked" : "Locate Me"}</span>
+                <span>
+                  {liveCoords ? (
+                    <>
+                      <span className="hidden xs:inline">GPS </span>Locked
+                    </>
+                  ) : (
+                    <>
+                      Locate<span className="hidden xs:inline"> Me</span>
+                    </>
+                  )}
+                </span>
               </button>
             </div>
           )}

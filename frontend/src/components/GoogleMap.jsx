@@ -169,9 +169,6 @@ export default function GoogleMap({
       isInteractingRef.current = false;
     });
 
-    // Custom Bottom-Right Zoom Control
-    L.control.zoom({ position: "bottomright" }).addTo(map);
-
     // Add Optimized Tile Layer
     const cfg = MAP_LAYERS[activeLayerType] || MAP_LAYERS.google_road;
     const tileLayer = createTileLayer(cfg).addTo(map);
@@ -545,7 +542,7 @@ export default function GoogleMap({
       </div>
 
       {/* Top-Right Floating Controls */}
-      <div className="absolute top-3 right-3 z-[1000] flex items-center gap-2">
+      <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-[1000] flex flex-col items-center gap-1.5">
         <button
           onClick={handleRecenter}
           data-testid="map-recenter-btn"
@@ -554,13 +551,29 @@ export default function GoogleMap({
         >
           <LocateFixed size={16} className={userLocation ? "text-brand" : "text-ink"} />
         </button>
+        <button
+          onClick={() => mapRef.current?.zoomIn()}
+          data-testid="map-zoom-in-btn"
+          className="hidden sm:flex h-7 w-7 items-center justify-center border-2 border-ink bg-white text-ink font-black shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
+          title="Zoom In"
+        >
+          <Plus size={13} strokeWidth={3} />
+        </button>
+        <button
+          onClick={() => mapRef.current?.zoomOut()}
+          data-testid="map-zoom-out-btn"
+          className="hidden sm:flex h-7 w-7 items-center justify-center border-2 border-ink bg-white text-ink font-black shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
+          title="Zoom Out"
+        >
+          <Minus size={13} strokeWidth={3} />
+        </button>
       </div>
 
       {/* Bottom Floating Interactive Radar Stepper & Range Dropdown */}
       <div
         ref={radarControlRef}
         data-testid="map-radar-control"
-        className="absolute bottom-3 right-3 z-[400] flex items-center border-2 border-ink bg-white/95 dark:bg-[#1a1a1a]/95 text-ink dark:text-white shadow-[2px_2px_0px_#121212] select-none backdrop-blur-sm"
+        className="absolute bottom-2.5 right-2.5 sm:bottom-3 sm:right-3 z-[400] flex items-center border-2 border-ink bg-white/95 dark:bg-[#1a1a1a]/95 text-ink dark:text-white shadow-[2px_2px_0px_#121212] select-none backdrop-blur-sm max-w-[calc(100%-110px)] sm:max-w-none"
       >
         {/* Decrease (-) Button */}
         <button
@@ -568,29 +581,39 @@ export default function GoogleMap({
           onClick={handleDecreaseRadius}
           disabled={currentRadius <= RADAR_STEPS[0]}
           data-testid="map-radar-decrease"
-          className="flex h-7 w-7 items-center justify-center text-ink dark:text-white hover:bg-brand hover:text-white transition disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-ink dark:disabled:hover:text-white disabled:cursor-not-allowed border-r border-ink/20 dark:border-white/20 active:translate-y-0.5"
+          className="flex h-7 w-7 shrink-0 items-center justify-center text-ink dark:text-white hover:bg-brand hover:text-white transition disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-ink dark:disabled:hover:text-white disabled:cursor-not-allowed border-r border-ink/20 dark:border-white/20 active:translate-y-0.5"
           title="Decrease Radar (-)"
         >
           <Minus size={13} strokeWidth={3} />
         </button>
 
         {/* Center Label & Dropdown Trigger */}
-        <div className="relative">
+        <div className="relative min-w-0">
           <button
             type="button"
             onClick={() => setRadarMenuOpen((prev) => !prev)}
             data-testid="map-radar-menu-trigger"
-            className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black text-ink dark:text-white hover:bg-sand/60 dark:hover:bg-neutral-800 transition"
+            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-[10px] font-black text-ink dark:text-white hover:bg-sand/60 dark:hover:bg-neutral-800 transition truncate"
             title="Click to pick radius preset"
           >
-            <span className="text-brand">⚡ WORKHOP RADAR</span>
+            <span className="text-brand flex items-center gap-0.5 shrink-0">
+              <span>⚡</span>
+              <span className="hidden sm:inline">WORKHOP </span>
+              <span>RADAR</span>
+            </span>
             <span className="text-ink/40 dark:text-white/40">·</span>
-            <span className="underline decoration-brand decoration-2 underline-offset-2">
-              {currentRadius ? `${currentRadius}km Radius` : "Bengaluru"}
+            <span className="underline decoration-brand decoration-2 underline-offset-2 whitespace-nowrap">
+              {currentRadius ? (
+                <>
+                  {currentRadius}km<span className="hidden sm:inline"> Radius</span>
+                </>
+              ) : (
+                "Bengaluru"
+              )}
             </span>
             <ChevronDown
               size={11}
-              className={`text-ink/60 dark:text-white/60 transition-transform duration-200 ${
+              className={`shrink-0 text-ink/60 dark:text-white/60 transition-transform duration-200 ${
                 radarMenuOpen ? "rotate-180" : ""
               }`}
             />
@@ -632,7 +655,7 @@ export default function GoogleMap({
           onClick={handleIncreaseRadius}
           disabled={currentRadius >= RADAR_STEPS[RADAR_STEPS.length - 1]}
           data-testid="map-radar-increase"
-          className="flex h-7 w-7 items-center justify-center text-ink dark:text-white hover:bg-brand hover:text-white transition disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-ink dark:disabled:hover:text-white disabled:cursor-not-allowed border-l border-ink/20 dark:border-white/20 active:translate-y-0.5"
+          className="flex h-7 w-7 shrink-0 items-center justify-center text-ink dark:text-white hover:bg-brand hover:text-white transition disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-ink dark:disabled:hover:text-white disabled:cursor-not-allowed border-l border-ink/20 dark:border-white/20 active:translate-y-0.5"
           title="Increase Radar (+)"
         >
           <Plus size={13} strokeWidth={3} />

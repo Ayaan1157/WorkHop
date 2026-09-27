@@ -415,6 +415,13 @@ svg.cat-icon,
     background: #1a1a1a;
 }
 
+/* Prevent default Leaflet zoom or attribution controls from overlapping custom controls */
+.leaflet-control-zoom,
+.leaflet-control-attribution,
+.leaflet-bottom.leaflet-right .leaflet-control {
+    display: none !important;
+}
+
 /* GPU Accelerated Leaflet Layer Rendering for 60fps Smooth Panning */
 .leaflet-tile-container,
 .leaflet-marker-pane,
