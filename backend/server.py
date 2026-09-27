@@ -1104,7 +1104,7 @@ async def get_job_leaderboard_endpoint(job_id: str):
 
 @api_router.post("/employer/jobs/{job_id}/boost")
 async def boost_employer_job(job_id: str, req: JobBoostReq):
-    """Requirement 4: Employer job boost (marks urgent/boosted for 48 hours)."""
+    """Requirement 4: Employer job boost (marks urgent/boosted for 48 hours and blasts 5km website notification)."""
     duration_hours = 48
     expires_at = (datetime.now(timezone.utc) + timedelta(hours=duration_hours)).isoformat()
     await db.custom_jobs.update_one(
@@ -1119,7 +1119,28 @@ async def boost_employer_job(job_id: str, req: JobBoostReq):
         "expires_at": expires_at,
         "created_at": _now_iso(),
     })
+    target_job = await db.custom_jobs.find_one({"_id": job_id})
+    if target_job:
+        await db.featured_blasts.insert_one({
+            "_id": str(uuid.uuid4()),
+            "job_id": job_id,
+            "title": target_job.get("title", "Featured Gig"),
+            "company_name": target_job.get("company_name", "Verified Employer"),
+            "pay": target_job.get("pay", 0),
+            "area": target_job.get("area", "Bengaluru"),
+            "lat": target_job.get("lat", 12.9716),
+            "lng": target_job.get("lng", 77.5946),
+            "radius_km": 5.0,
+            "created_at": _now_iso(),
+        })
     return {"ok": True, "is_boosted": True, "boost_expires_at": expires_at}
+
+
+@api_router.get("/featured-blasts/recent")
+async def get_recent_featured_blasts(limit: int = 10):
+    """Retrieve recent featured job blasts dispatched to freelancers within 5km radius."""
+    docs = await db.featured_blasts.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    return docs
 
 
 @api_router.get("/admin/credits-config")
@@ -2421,6 +2442,9 @@ class PostJobRequest(BaseModel):
     pay: int
     description: str
     area: str = "Bengaluru"
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    is_boosted: bool = False
 
 
 async def _post_credits(employer_id: str) -> dict:
@@ -2465,6 +2489,11 @@ async def post_job(req: PostJobRequest):
     job_id = f"cjob-{uuid.uuid4().hex[:8]}"
     idx = state["used"]
     credits_to_apply = calculate_hops_for_job(req.pay)
+    is_boosted = bool(req.is_boosted)
+    boost_expires_at = (datetime.now(timezone.utc) + timedelta(hours=48)).isoformat() if is_boosted else None
+    lat = req.lat if req.lat is not None else round(12.9716 + (idx % 11 - 5) * 0.006, 5)
+    lng = req.lng if req.lng is not None else round(77.5946 + (idx % 9 - 4) * 0.007, 5)
+
     job = {
         "id": job_id,
         "title": req.title.strip()[:120],
@@ -2473,14 +2502,14 @@ async def post_job(req: PostJobRequest):
         "pay": req.pay,
         "pay_label": f"₹{req.pay:,} fixed",
         "credits_to_apply": credits_to_apply,
-        "is_boosted": False,
-        "boost_expires_at": None,
+        "is_boosted": is_boosted,
+        "boost_expires_at": boost_expires_at,
         "distance_km": round(0.5 + (idx % 30) / 10.0, 1),
         "posted_minutes_ago": 0,
         "company_name": req.company_name.strip()[:60],
         "area": req.area.strip()[:40] or "Bengaluru",
-        "lat": round(12.9716 + (idx % 11 - 5) * 0.006, 5),
-        "lng": round(77.5946 + (idx % 9 - 4) * 0.007, 5),
+        "lat": lat,
+        "lng": lng,
         "description": req.description.strip()[:600],
         "keywords": [req.bucket.lower(), req.title.strip().lower()],
     }
@@ -2488,6 +2517,19 @@ async def post_job(req: PostJobRequest):
         "_id": job_id, **job,
         "employer_id": req.employer_id, "created_at": _now_iso(),
     })
+    if is_boosted:
+        await db.featured_blasts.insert_one({
+            "_id": str(uuid.uuid4()),
+            "job_id": job_id,
+            "title": job["title"],
+            "company_name": job["company_name"],
+            "pay": job["pay"],
+            "area": job["area"],
+            "lat": lat,
+            "lng": lng,
+            "radius_km": 5.0,
+            "created_at": _now_iso(),
+        })
     return Job(**job)
 
 

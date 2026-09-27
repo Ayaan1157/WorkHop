@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, MessageSquare, Briefcase, CreditCard, CheckCheck, X } from "lucide-react";
+import { Bell, MessageSquare, Briefcase, CreditCard, CheckCheck, X, Zap } from "lucide-react";
 import { getStoredNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/clientStore";
 
 export default function NotificationBell({ embedded = false, className = "" }) {
@@ -10,9 +10,39 @@ export default function NotificationBell({ embedded = false, className = "" }) {
   const [notifications, setNotifications] = useState([]);
   const dropdownRef = useRef(null);
 
-  useEffect(() => {
+  const refreshNotifs = () => {
     setNotifications(getStoredNotifications());
+  };
+
+  useEffect(() => {
+    refreshNotifs();
   }, [open]);
+
+  useEffect(() => {
+    window.addEventListener("workhop:featured_blast", refreshNotifs);
+    window.addEventListener("workhop:notifications_updated", refreshNotifs);
+    const handleStorage = (e) => {
+      if (e.key === "workhop_notifications" || e.key === "workhop_last_featured_blast") {
+        refreshNotifs();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    let channel;
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        channel = new BroadcastChannel("workhop_featured_blast");
+        channel.onmessage = refreshNotifs;
+      }
+    } catch {}
+
+    return () => {
+      window.removeEventListener("workhop:featured_blast", refreshNotifs);
+      window.removeEventListener("workhop:notifications_updated", refreshNotifs);
+      window.removeEventListener("storage", handleStorage);
+      if (channel) channel.close();
+    };
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -27,9 +57,11 @@ export default function NotificationBell({ embedded = false, className = "" }) {
   }, [open]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const hasUnreadBlast = notifications.some((n) => !n.read && n.type === "featured_blast");
 
   const filtered = notifications.filter((n) => {
     if (tab === "all") return true;
+    if (tab === "gig") return n.type === "gig" || n.type === "featured_blast";
     return n.type === tab;
   });
 
@@ -51,6 +83,8 @@ export default function NotificationBell({ embedded = false, className = "" }) {
         return <MessageSquare size={14} className="text-brand" />;
       case "gig":
         return <Briefcase size={14} className="text-ok" />;
+      case "featured_blast":
+        return <Zap size={14} className="text-brand fill-brand animate-pulse" />;
       case "payment":
         return <CreditCard size={14} className="text-[#3B82F6]" />;
       default:
@@ -80,7 +114,10 @@ export default function NotificationBell({ embedded = false, className = "" }) {
             data-testid="notification-badge"
             className="absolute -top-1.5 -right-1 flex h-4.5 min-w-[18px] px-1 items-center justify-center border border-ink bg-brand text-[9.5px] font-black leading-none text-white z-10"
           >
-            {unreadCount}
+            {hasUnreadBlast && (
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+            )}
+            <span className="relative">{unreadCount}</span>
           </span>
         )}
       </button>
@@ -124,8 +161,8 @@ export default function NotificationBell({ embedded = false, className = "" }) {
           <div className="flex border-b-2 border-ink bg-white dark:bg-[#181818] text-[10px] font-black">
             {[
               { key: "all", label: "ALL" },
+              { key: "gig", label: "GIGS & BLASTS" },
               { key: "message", label: "MESSAGES" },
-              { key: "gig", label: "GIGS" },
               { key: "payment", label: "ESCROW" },
             ].map((t) => (
               <button
@@ -155,15 +192,28 @@ export default function NotificationBell({ embedded = false, className = "" }) {
                   key={n.id}
                   onClick={() => handleItemClick(n)}
                   className={`flex w-full items-start gap-3 p-3.5 text-left transition hover:bg-sand dark:hover:bg-[#202020] ${
-                    !n.read ? "bg-[#FFF9F3] dark:bg-[#1a1410]" : "bg-white dark:bg-[#141414]"
+                    n.type === "featured_blast" && !n.read
+                      ? "bg-[#FFF4EC] dark:bg-[#25150d] border-l-4 border-l-brand"
+                      : !n.read
+                      ? "bg-[#FFF9F3] dark:bg-[#1a1410]"
+                      : "bg-white dark:bg-[#141414]"
                   }`}
                 >
-                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center border-2 border-ink dark:border-stone-700 bg-white dark:bg-[#222]">
+                  <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center border-2 border-ink dark:border-stone-700 ${
+                    n.type === "featured_blast" ? "bg-[#FFE8D6] dark:bg-[#331c10]" : "bg-white dark:bg-[#222]"
+                  }`}>
                     {getIcon(n.type)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <p className="truncate text-xs font-black text-ink dark:text-white">{n.title}</p>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="truncate text-xs font-black text-ink dark:text-white">{n.title}</p>
+                        {n.type === "featured_blast" && (
+                          <span className="shrink-0 border border-brand bg-brand px-1 py-0.2 text-[8px] font-black text-white uppercase rounded-[1px]">
+                            5KM BLAST
+                          </span>
+                        )}
+                      </div>
                       <span className="shrink-0 text-[10px] font-semibold text-inkmuted dark:text-stone-400">{n.time}</span>
                     </div>
                     <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-inkmuted dark:text-stone-400">{n.description}</p>

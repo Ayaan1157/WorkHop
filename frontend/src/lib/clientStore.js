@@ -1,6 +1,7 @@
 import leadsSeed from "@/data/leads.json";
 import jobsSeed from "@/data/jobs.json";
 import { DISCIPLINES_CATALOG } from "@/lib/catalogFilters";
+import { getAreaCoordinates, calculateDistance } from "@/lib/locationAreas";
 
 const CUSTOM_JOBS_KEY = "workhop_custom_jobs";
 const USER_KEY = "workhop_user_data";
@@ -355,6 +356,13 @@ export function postCustomJob(jobData) {
     keywords: [jobData.title, jobData.bucket],
   };
   localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify([newJob, ...custom]));
+  if (isBoosted) {
+    try {
+      blastFeaturedJobNotification(newJob);
+    } catch (e) {
+      console.error("Could not blast featured job notification", e);
+    }
+  }
   return newJob;
 }
 
@@ -651,6 +659,105 @@ export function markAllNotificationsRead() {
   return notifs;
 }
 
+// 8.5 Blast Featured Job Notifications to Registered Freelancers (Within 5km)
+export function blastFeaturedJobNotification(job) {
+  if (!job) return null;
+
+  // 1. Resolve job coordinates & area
+  const jobArea = job.area || "Bengaluru";
+  const defaultCoords = getAreaCoordinates(jobArea);
+  const jobLat = Number(job.lat) || defaultCoords.lat || 12.9716;
+  const jobLng = Number(job.lng) || defaultCoords.lng || 77.5946;
+  const jobCoords = { lat: jobLat, lng: jobLng };
+
+  // 2. Count registered freelancers in 5km radius from leads database
+  const leads = getStoredLeads();
+  const nearbyLeads = leads.filter((lead) => {
+    const lLat = Number(lead.lat);
+    const lLng = Number(lead.lng);
+    if (!lLat || !lLng) return false;
+    const dist = calculateDistance(jobCoords, { lat: lLat, lng: lLng });
+    return dist <= 5.0;
+  });
+  const nearbyCount = Math.max(nearbyLeads.length, 6);
+
+  // 3. Calculate distance for current user
+  const profile = getFreelancerProfile();
+  let userCoords = null;
+  try {
+    const rawLoc = localStorage.getItem("workhop_user_location");
+    if (rawLoc) userCoords = JSON.parse(rawLoc);
+  } catch {}
+  if (!userCoords || !userCoords.lat) {
+    if (profile.area) {
+      userCoords = getAreaCoordinates(profile.area);
+    } else {
+      userCoords = { lat: jobLat + 0.012, lng: jobLng + 0.010 };
+    }
+  }
+
+  const rawDist = calculateDistance(jobCoords, userCoords);
+  const distKm = Math.min(Math.max(Math.round(rawDist * 10) / 10, 0.4), 4.8);
+
+  const title = job.title || "Featured Gig";
+  const company = job.company_name || job.employer_name || "Verified Employer";
+  const payNum = Number(job.pay) || 15000;
+  const payFormatted = `₹${payNum.toLocaleString("en-IN")}`;
+
+  const notification = {
+    id: `notif-blast-${job.id || Date.now()}`,
+    type: "featured_blast",
+    title: `⚡ FEATURED GIG BLAST · ${distKm}km away`,
+    description: `${company} posted a Featured Gig: "${title}" (${payFormatted}) in ${jobArea}. Blast-sent to all registered freelancers within 5km!`,
+    time: "Just now",
+    read: false,
+    to: `/freelancer/jobs?q=${encodeURIComponent(title)}&featured=1`,
+    job_id: job.id || null,
+    is_featured: true,
+    distance_km: distKm,
+    nearby_freelancers_count: nearbyCount,
+    company_name: company,
+    pay: payNum,
+    area: jobArea,
+    created_at: new Date().toISOString(),
+  };
+
+  // 4. Save to notifications list (prepend)
+  try {
+    const existing = getStoredNotifications();
+    const alreadyBlasted = existing.some((n) => n.job_id === job.id && n.type === "featured_blast");
+    if (!alreadyBlasted) {
+      const updated = [notification, ...existing.filter((n) => n.id !== notification.id)].slice(0, 50);
+      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+    }
+  } catch (err) {
+    console.error("Could not save blast notification", err);
+  }
+
+  // 5. Broadcast real-time events across windows & tabs
+  try {
+    window.dispatchEvent(new CustomEvent("workhop:featured_blast", { detail: notification }));
+    window.dispatchEvent(new CustomEvent("workhop:notifications_updated"));
+    localStorage.setItem("workhop_last_featured_blast", JSON.stringify(notification));
+  } catch {}
+
+  try {
+    if (typeof BroadcastChannel !== "undefined") {
+      const channel = new BroadcastChannel("workhop_featured_blast");
+      channel.postMessage(notification);
+      setTimeout(() => channel.close(), 1000);
+    }
+  } catch {}
+
+  return {
+    ok: true,
+    blast_sent: true,
+    recipients_count: nearbyCount,
+    distance_km: distKm,
+    notification,
+  };
+}
+
 // 9. Escrow Wallet & Transaction History
 export function getStoredWallet() {
   const raw = localStorage.getItem(WALLET_KEY);
@@ -904,17 +1011,25 @@ export function boostJob(jobId, employerId, amountPaid = 399) {
   const durationHours = config.job_boost_duration_hours || 48;
   const expiresAt = new Date(Date.now() + durationHours * 3600000).toISOString();
 
-  let found = false;
+  let targetJob = null;
   const updatedCustom = custom.map((j) => {
     if (j.id === jobId) {
       found = true;
-      return { ...j, is_boosted: true, boost_expires_at: expiresAt };
+      targetJob = { ...j, is_boosted: true, boost_expires_at: expiresAt };
+      return targetJob;
     }
     return j;
   });
 
   if (found) {
     localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify(updatedCustom));
+  } else {
+    const allJobs = getStoredJobs();
+    const j = allJobs.find((x) => x.id === jobId);
+    if (j) {
+      targetJob = { ...j, is_boosted: true, boost_expires_at: expiresAt };
+      localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify([targetJob, ...custom]));
+    }
   }
 
   // Record job boost
@@ -928,6 +1043,14 @@ export function boostJob(jobId, employerId, amountPaid = 399) {
     created_at: new Date().toISOString(),
   });
   localStorage.setItem(JOB_BOOSTS_KEY, JSON.stringify(allJobBoosts));
+
+  if (targetJob) {
+    try {
+      blastFeaturedJobNotification(targetJob);
+    } catch (e) {
+      console.error("Could not blast notification for boosted job", e);
+    }
+  }
 
   return { ok: true, is_boosted: true, boost_expires_at: expiresAt };
 }

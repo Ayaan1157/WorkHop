@@ -4,7 +4,7 @@ import {
   Briefcase, Users, PlusCircle, MapPin, Sparkles, Building2,
   Phone, Mail, CheckCircle2, ChevronRight, ChevronLeft, Coins, Trophy,
   Pencil, X, ShieldCheck, Star, Check, ArrowRightLeft,
-  Flame, Plus, Menu, LayoutGrid, MessagesSquare,
+  Flame, Plus, Menu, LayoutGrid, MessagesSquare, Zap,
   Map as MapIcon, Tag, LifeBuoy, FileText, LogOut
 } from "lucide-react";
 import { Shell } from "@/components/kit";
@@ -12,7 +12,8 @@ import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPost, getEmployerId } from "@/lib/api";
 import {
   getStoredJobs, getStoredChats, getSavedProIds,
-  getStoredLeads, ADMIN_EMAILS, calculateHopsForJob
+  getStoredLeads, ADMIN_EMAILS, calculateHopsForJob,
+  blastFeaturedJobNotification
 } from "@/lib/clientStore";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import ApplicantLeaderboardModal from "@/components/ApplicantLeaderboardModal";
@@ -130,16 +131,27 @@ export default function EmployerDashboard() {
     nav("/freelancer/profile");
   };
 
-  // Quick 1-click Urgent Boost for a job
+  // Quick 1-click Urgent Boost for a job & blast-send 5km website notification
   const handleBoostJob = async (jobId) => {
+    const targetJob = jobs.find((j) => String(j.id) === String(jobId));
     try {
       await apiPost(`/employer/jobs/${jobId}/boost`, {});
       await loadDashboardData();
     } catch {
       const all = getStoredJobs().map((j) =>
-        j.id === jobId ? { ...j, is_boosted: true, boost_expires_at: new Date(Date.now() + 48 * 3600000).toISOString() } : j
+        String(j.id) === String(jobId) ? { ...j, is_boosted: true, boost_expires_at: new Date(Date.now() + 48 * 3600000).toISOString() } : j
       );
       setJobs(all);
+    }
+    if (targetJob) {
+      try {
+        blastFeaturedJobNotification({
+          ...targetJob,
+          is_boosted: true,
+        });
+      } catch (err) {
+        console.error("Could not trigger blast notification", err);
+      }
     }
   };
 
@@ -596,10 +608,11 @@ export default function EmployerDashboard() {
                               <button
                                 type="button"
                                 onClick={() => handleBoostJob(j.id)}
-                                className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-100 transition"
-                                title="Make this gig urgent & pin to top"
+                                className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-100 transition shadow-sm"
+                                title="Boost this gig & blast real-time website notifications to all registered freelancers within a 5km radius"
                               >
-                                <Flame size={13} className="text-red-500 fill-red-500" /> MAKE URGENT
+                                <Flame size={13} className="text-red-500 fill-red-500" />
+                                <span>BOOST &amp; BLAST (5KM)</span>
                               </button>
                             )}
 

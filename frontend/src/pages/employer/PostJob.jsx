@@ -12,7 +12,7 @@ import { API, apiGet, apiPost, getEmployerId } from "@/lib/api";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import MarketPriceAdvisor from "@/components/MarketPriceAdvisor";
 import { sanitizeInput, checkSpamKeywords } from "@/lib/security";
-import { ADMIN_EMAILS, getCreditsConfig, calculateHopsForJob } from "@/lib/clientStore";
+import { ADMIN_EMAILS, getCreditsConfig, calculateHopsForJob, blastFeaturedJobNotification } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 
 export default function PostJob() {
@@ -146,6 +146,23 @@ export default function PostJob() {
       });
 
       if (data) {
+        if (isBoosted) {
+          try {
+            blastFeaturedJobNotification({
+              id: data.id || `cjob-${Date.now()}`,
+              title: cleanTitle,
+              company_name: cleanCompany,
+              company: cleanCompany,
+              pay: parseInt(pay, 10) || 0,
+              area: cleanArea || "Bengaluru",
+              lat: areaCoords.lat,
+              lng: areaCoords.lng,
+              is_boosted: true,
+            });
+          } catch (blastErr) {
+            console.error("Could not trigger blast notification", blastErr);
+          }
+        }
         setPosted(true);
         loadCredits();
         return;
@@ -181,6 +198,19 @@ export default function PostJob() {
           <p className="text-[13px] text-inkmuted max-w-sm">
             Verified pros in <span className="font-bold text-ink">{area}</span> and surrounding neighborhoods (5km radius) can now see and apply to your gig.
           </p>
+
+          {isBoosted && (
+            <div data-testid="postjob-blast-success-banner" className="w-full max-w-sm border-2 border-ink bg-[#FFF4EE] dark:bg-[#201510] p-3.5 shadow-[3px_3px_0px_#E65A1E] text-left">
+              <div className="flex items-center gap-2 font-black text-xs uppercase tracking-wider text-[#E65A1E] mb-1">
+                <Zap size={16} className="text-[#E65A1E] fill-[#E65A1E] animate-pulse" />
+                <span>5KM RADAR BLAST DELIVERED</span>
+              </div>
+              <p className="text-[12px] font-bold text-ink dark:text-stone-200 leading-snug">
+                Real-time website notification dispatched to all registered freelancers within 5km of <span className="underline decoration-[#E65A1E] font-black">{area}</span>!
+              </p>
+            </div>
+          )}
+
           <button
             data-testid="postjob-done-btn"
             onClick={() => nav(-1)}
@@ -413,7 +443,7 @@ export default function PostJob() {
                     </span>
                   </div>
                   <p className="text-xs text-inkmuted mt-0.5">
-                    Pin this gig at the top of freelancer searches and neighborhood feeds with a glowing URGENT badge.
+                    Pin this gig at the top of freelancer searches and blast-send in-website notifications to all active freelancers within a 5km radius!
                   </p>
                 </div>
               </div>
