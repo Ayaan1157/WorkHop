@@ -3,10 +3,11 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   Navigation, LocateFixed, AlertCircle, Search, Sparkles, MapPin,
   Users, Briefcase, Star, ArrowUpRight, CheckCircle2, Eye,
-  Building2, SlidersHorizontal, Send, ChevronRight
+  Building2, SlidersHorizontal, Send, ChevronRight, Lock
 } from "lucide-react";
 import { Shell, TopBar, Spinner } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
+import ProfileLockedModal from "@/components/ProfileLockedModal";
 import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
 import {
   BENGALURU_AREAS,
@@ -49,6 +50,8 @@ export default function LiveMap() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPinId, setSelectedPinId] = useState(null);
   const [mobileTab, setMobileTab] = useState("map"); // "map" | "list" for mobile viewports
+  const [lockedModalOpen, setLockedModalOpen] = useState(false);
+  const [selectedLockedPro, setSelectedLockedPro] = useState(null);
 
   // Auto-request location on mount to center around closest real location
   useEffect(() => {
@@ -665,13 +668,13 @@ export default function LiveMap() {
                           </button>
                           <button
                             onClick={() => {
-                              window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-                              nav(`/pro/${pro.id}`);
+                              setSelectedLockedPro(pro);
+                              setLockedModalOpen(true);
                             }}
                             className="flex items-center justify-center gap-1 border border-ink bg-brand py-1.5 text-[11px] font-black text-white shadow-[1.5px_1.5px_0px_#121212] hover:opacity-90 transition"
                           >
-                            <span>Chat &amp; Hire</span>
-                            <ArrowUpRight size={12} />
+                            <Lock size={11} />
+                            <span>Invite &amp; Hire</span>
                           </button>
                         </div>
                       </div>
@@ -799,6 +802,11 @@ export default function LiveMap() {
 
         </div>
       </div>
+      <ProfileLockedModal
+        isOpen={lockedModalOpen}
+        onClose={() => setLockedModalOpen(false)}
+        pro={selectedLockedPro}
+      />
     </Shell>
   );
 }

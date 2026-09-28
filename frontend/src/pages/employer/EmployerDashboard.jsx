@@ -19,6 +19,7 @@ import { getDistanceSuitability } from "@/lib/locationAreas";
 import ApplicantLeaderboardModal from "@/components/ApplicantLeaderboardModal";
 import CompleteJobReviewModal from "@/components/CompleteJobReviewModal";
 import EditModal from "@/components/EditModal";
+import ProfileLockedModal from "@/components/ProfileLockedModal";
 
 const labelCls = "text-xs font-semibold text-inkmuted dark:text-[#888] mb-1.5 block";
 const inputCls = "w-full bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#ddd] dark:border-[#333] rounded-lg px-3.5 py-2.5 text-sm text-ink dark:text-white placeholder:text-[#999] dark:placeholder:text-[#555] focus:outline-none focus:border-[#E65A1E] transition";
@@ -63,6 +64,8 @@ export default function EmployerDashboard() {
   const [editForm, setEditForm] = useState({ companyName, employerName, area, phone, industry, bio, gstNumber });
   const [leaderboardJob, setLeaderboardJob] = useState(null);
   const [reviewJob, setReviewJob] = useState(null);
+  const [lockedModalOpen, setLockedModalOpen] = useState(false);
+  const [selectedLockedPro, setSelectedLockedPro] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [chats, setChats] = useState([]);
   const [savedPros, setSavedPros] = useState([]);
@@ -701,8 +704,8 @@ export default function EmployerDashboard() {
                       <div
                         key={pro.id}
                         onClick={() => {
-                          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-                          nav(`/pro/${pro.id}`);
+                          setSelectedLockedPro(pro);
+                          setLockedModalOpen(true);
                         }}
                         className="cursor-pointer bg-[#f9f9f9] dark:bg-[#161618] border border-[#e5e5e5] dark:border-[#26262a] rounded-lg p-3 hover:border-[#E65A1E]/50 transition flex items-center justify-between text-xs"
                       >
@@ -959,6 +962,13 @@ export default function EmployerDashboard() {
             }}
           />
         )}
+
+        {/* ═══════════ PROFILE LOCKED LAUNCH MODAL ═══════════ */}
+        <ProfileLockedModal
+          isOpen={lockedModalOpen}
+          onClose={() => setLockedModalOpen(false)}
+          pro={selectedLockedPro}
+        />
       </div>
     </Shell>
   );

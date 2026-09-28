@@ -2423,14 +2423,18 @@ async def pro_profile(lead_id: str):
     lead = next((l for l in SEED_LEADS if l["id"] == lead_id), None)
     if lead:
         pro = Lead(**lead)
+        pro_dict = pro.model_dump()
+        pro_dict["is_dummy"] = True
     else:
         doc = await db.freelancers.find_one({"_id": lead_id})
         if not doc:
             raise HTTPException(status_code=404, detail="Pro not found.")
         pro = _freelancer_to_lead(doc)
+        pro_dict = pro.model_dump()
+        pro_dict["is_dummy"] = False
     reviews = await db.reviews.find({"subject_id": lead_id}, {"_id": 0}).to_list(200)
     reviews.sort(key=lambda d: d["created_at"], reverse=True)
-    return {"pro": pro.model_dump(), "reviews": reviews}
+    return {"pro": pro_dict, "reviews": reviews}
 
 
 # ============== Employer Post-a-Job (₹299 Single Post / bundle credits) ==============

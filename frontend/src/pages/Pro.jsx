@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  Phone, Globe, LockOpen, ShieldCheck, MapPin, ArrowLeftRight,
+  Phone, Globe, Lock, LockOpen, ShieldCheck, MapPin, ArrowLeftRight,
   MessageSquare, CheckCircle2, Loader2, Star, Clock, IndianRupee,
   CheckCheck, Briefcase, Award, Sparkles, ExternalLink
 } from "lucide-react";
@@ -94,6 +94,59 @@ export default function Pro() {
           >
             ← BACK TO PROS
           </button>
+        </div>
+      ) : (pro?.is_dummy || String(id).startsWith("lead-")) ? (
+        <div data-testid="pro-profile-locked" className="mx-auto flex w-full max-w-lg flex-col items-center justify-center p-6 sm:p-8 text-center my-10 border-2 border-ink bg-white dark:bg-[#161618] shadow-[4px_4px_0px_#121212]">
+          <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-[#FFF4EE] text-brand mb-3">
+            <Lock size={24} />
+          </div>
+          <span className="border border-brand bg-brand/10 text-brand px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider mb-2">
+            LAUNCH STAGE · PROFILE PROTECTED
+          </span>
+          <h2 className="text-xl font-black text-ink dark:text-white uppercase tracking-tight">
+            Profile Private During Launch
+          </h2>
+          <p className="mt-2 text-xs text-inkmuted dark:text-stone-300 leading-relaxed max-w-sm">
+            Individual freelancer portfolios and direct contact details are private during our initial rollout across Bengaluru.
+          </p>
+
+          <div className="my-4 w-full border border-ink/20 bg-sand/40 dark:bg-[#202020] p-3 text-xs flex items-center justify-between">
+            <div className="text-left">
+              <p className="font-black text-ink dark:text-white">{pro.name}</p>
+              <p className="text-inkmuted font-semibold">{pro.skill}</p>
+            </div>
+            <span className="text-[10px] font-bold text-ok bg-ok/10 px-2 py-0.5 border border-ok/30">
+              Verified Candidate
+            </span>
+          </div>
+
+          <div className="rounded border border-brand/30 bg-[#FFF9F3] dark:bg-[#201510] p-3 text-xs text-brand text-left w-full mb-4">
+            <p className="font-bold mb-1">⚡ Looking to hire for this skill?</p>
+            <p className="text-[11px] text-ink dark:text-stone-300 leading-snug">
+              Post a gig for free! Verified freelancers matching <strong>{pro.skill}</strong> in your 5km radius will be notified immediately to apply.
+            </p>
+          </div>
+
+          <div className="w-full flex flex-col gap-2">
+            <button
+              onClick={() => nav("/employer/post-job", {
+                state: {
+                  prefillTitle: `Need ${pro.skill}`,
+                  prefillCategory: pro.category || pro.bucket || "Graphics & Design",
+                  prefillArea: pro.area || "Bengaluru",
+                }
+              })}
+              className="w-full border-2 border-ink bg-brand py-3 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition"
+            >
+              POST A FREE GIG TO HIRE ({pro.skill}) →
+            </button>
+            <button
+              onClick={() => nav("/employer")}
+              className="w-full border border-ink bg-sand py-2.5 text-xs font-bold text-ink hover:bg-stone/20 transition"
+            >
+              ← RETURN TO CANDIDATE DIRECTORY
+            </button>
+          </div>
         </div>
       ) : (
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 sm:p-6 pb-20">

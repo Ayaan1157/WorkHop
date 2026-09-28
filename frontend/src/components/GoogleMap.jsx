@@ -421,8 +421,8 @@ export default function GoogleMap({
                 : ""
             }
             <div style="display:flex;gap:4px;margin-top:6px;">
-              <a href="/pro/${p.id}" style="display:block;width:100%;text-align:center;background:#E65A1E;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:0 2px 8px rgba(0,0,0,0.15);letter-spacing:0.05em;">
-                VIEW PROFILE & CHAT →
+              <a href="/employer/post-job" style="display:block;width:100%;text-align:center;background:#E65A1E;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:0 2px 8px rgba(0,0,0,0.15);letter-spacing:0.05em;">
+                POST GIG TO HIRE (FREE) →
               </a>
             </div>
           </div>

@@ -12,6 +12,7 @@ import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
 import { ProCardSkeleton } from "@/components/Skeletons";
 import BoostPreviewModal from "@/components/BoostPreviewModal";
+import ProfileLockedModal from "@/components/ProfileLockedModal";
 import FloatingChatWidget from "@/components/FloatingChatWidget";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
@@ -43,6 +44,8 @@ export default function Employer() {
   const [savedPros, setSavedPros] = useState([]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [boostModalOpen, setBoostModalOpen] = useState(false);
+  const [lockedModalOpen, setLockedModalOpen] = useState(false);
+  const [selectedLockedPro, setSelectedLockedPro] = useState(null);
   const [coupon, setCoupon] = useState(null);
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
   const [showMap, setShowMap] = useState(true);
@@ -469,85 +472,57 @@ export default function Employer() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {sorted.slice(0, 2).map((l, i) => (
+              {sorted.slice(0, 3).map((l, i) => (
                 <LeadCard
                   key={l.id}
                   lead={l}
-                  unlocked={isAdmin || unlocked}
+                  unlocked={false}
                   index={i}
                   isSaved={savedPros.includes(String(l.id))}
                   onToggleSave={(e) => handleToggleSave(l.id, e)}
-                  onClick={() => {
-                    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-                    nav(`/pro/${l.id}`);
-                  }}
+                  onClick={() => handleCardClick(l)}
                 />
               ))}
             </div>
 
-            {!(isAdmin || unlocked) && sorted.length > 0 && (
+            {sorted.length > 0 && (
               <div className="relative my-2 border-2 border-ink p-6 bg-sand shadow-[3px_3px_0px_#121212]" data-testid="unlock-banner">
                 <div className="absolute -left-0.5 -top-0.5 h-8 w-8 bg-brand" />
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="border border-brand bg-brand px-2 py-0.5 text-[9px] font-black uppercase text-white tracking-wider">
+                    ⚡ 100% FREE JOB POSTING
+                  </span>
+                  <span className="text-[11px] font-bold text-inkmuted">
+                    Bengaluru's Hyperlocal Gig Network
+                  </span>
+                </div>
                 <p className="whitespace-pre-line text-2xl font-black leading-tight text-ink">
-                  Unlock the Closest 5{"\n"}Verified Experts on Your Block.
+                  Hire Bangalore's Top Local Talent{"\n"}Directly &amp; With Zero Middlemen.
                 </p>
                 <p className="mt-2 text-sm text-inkmuted">
-                  Phone numbers instantly revealed — call &amp; hire directly with zero middlemen.
+                  Direct contact profiles are protected during launch. Post your gig for free — verified pros within 5km get instant website alerts and apply directly to your dashboard!
                 </p>
                 <button
                   data-testid="unlock-cta-btn"
-                  onClick={() => setSheetOpen(true)}
-                  className="mt-4 flex w-full max-w-md items-center justify-center gap-2 border-2 border-ink bg-[#121212] dark:bg-[#1a1a1a] py-3.5 text-[15px] font-black text-white shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition"
+                  onClick={() => nav("/employer/post-job")}
+                  className="mt-4 flex w-full max-w-md items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-[15px] font-black text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
                 >
-                  <span>Unlock 5 Local Leads · ₹199</span>
-                  <LockOpen size={16} />
+                  <span>POST A GIG FOR FREE (0% PLATFORM FEES) →</span>
+                  <ArrowRight size={16} />
                 </button>
               </div>
             )}
 
-            {(isAdmin || unlocked) && (
-              <div
-                data-testid="unlocked-badge"
-                className="my-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-2 border-ok bg-[#E5F8EE] dark:bg-[#132c1e] p-3 sm:p-4 shadow-[2px_2px_0px_#121212]"
-              >
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={20} className="text-ok shrink-0" />
-                  <span className="text-xs sm:text-sm font-extrabold text-ink dark:text-emerald-200">
-                    {isAdmin ? "Admin Full Access · All Pro Leads Unlocked (Zero Paywall)" : "Payment verified · All 5 leads unlocked"}
-                  </span>
-                </div>
-                {isAdmin && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => nav("/freelancer/jobs")}
-                      className="border border-ink bg-white dark:bg-[#1a1a1a] px-2.5 py-1 text-[10px] font-black text-ink dark:text-white hover:bg-sand"
-                    >
-                      SWITCH TO GIGS →
-                    </button>
-                    <button
-                      onClick={() => nav("/admin")}
-                      className="border border-ink bg-brand text-white px-2.5 py-1 text-[10px] font-black"
-                    >
-                      ADMIN DASHBOARD
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
-              {sorted.slice(2).map((l, i) => (
+              {sorted.slice(3).map((l, i) => (
                 <LeadCard
                   key={l.id}
                   lead={l}
-                  unlocked={isAdmin || unlocked}
-                  index={i + 2}
+                  unlocked={false}
+                  index={i + 3}
                   isSaved={savedPros.includes(String(l.id))}
                   onToggleSave={(e) => handleToggleSave(l.id, e)}
-                  onClick={() => {
-                    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-                    nav(`/pro/${l.id}`);
-                  }}
+                  onClick={() => handleCardClick(l)}
                 />
               ))}
             </div>
@@ -688,6 +663,12 @@ export default function Employer() {
           nav("/employer/post-job", { state: { boost: true } });
         }}
       />
+      {/* PROFILE LOCKED LAUNCH MODAL */}
+      <ProfileLockedModal
+        isOpen={lockedModalOpen}
+        onClose={() => setLockedModalOpen(false)}
+        pro={selectedLockedPro}
+      />
       {/* FLOATING CIRCULAR CHAT WIDGET (Bottom Right) */}
       <FloatingChatWidget role="employer" />
     </Shell>
@@ -776,18 +757,13 @@ const LeadCard = memo(function LeadCard({ lead, unlocked, index, isSaved, onTogg
       </div>
 
       <div className="mt-3 flex items-center justify-between pt-1 border-t border-ink/10">
-        <span className="text-[11px] font-black text-ink group-hover:text-brand transition">
-          VIEW FULL PROFILE →
+        <span className="flex items-center gap-1.5 text-[11px] font-black text-inkmuted group-hover:text-brand transition">
+          <Lock size={12} className="text-brand" />
+          <span>PROFILE PROTECTED · LAUNCH</span>
         </span>
-        {unlocked ? (
-          <span className="border-2 border-ink bg-brand px-3 py-1 text-[11px] font-black tracking-wider text-white">
-            CONTACT
-          </span>
-        ) : (
-          <span className="flex items-center gap-1 bg-ink px-2.5 py-1 text-[10px] font-black tracking-wider text-white">
-            <Lock size={10} /> LOCKED
-          </span>
-        )}
+        <span className="border-2 border-ink bg-brand px-2.5 py-0.5 text-[10px] font-black tracking-wider text-white shadow-[1px_1px_0px_#121212] group-hover:bg-black transition">
+          TAP TO HIRE
+        </span>
       </div>
     </div>
   );
