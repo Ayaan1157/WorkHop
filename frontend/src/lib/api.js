@@ -42,6 +42,8 @@ import {
   getManualHopsRefunds,
   getFreelancerStatuses,
   updateFreelancerStatus,
+  getAdminAllChats,
+  getAdminChatMessages,
 } from "./clientStore";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
@@ -406,6 +408,13 @@ function mockRouter(path, method = "GET", body = null) {
   if (cleanPath.startsWith("/admin/coupons/") && method === "DELETE") {
     const code = cleanPath.split("/")[3];
     return deleteStoredCoupon(code);
+  }
+  if (cleanPath === "/admin/chats" && method === "GET") {
+    return getAdminAllChats();
+  }
+  if (cleanPath.startsWith("/admin/chats/") && cleanPath.endsWith("/messages") && method === "GET") {
+    const convId = cleanPath.split("/")[3];
+    return getAdminChatMessages(convId);
   }
 
   // 6. Freelancer Profile / Status / Quota

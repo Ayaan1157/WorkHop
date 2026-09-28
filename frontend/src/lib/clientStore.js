@@ -1816,6 +1816,317 @@ export function updateFreelancerStatus(freelancerId, approved, reason = "") {
   return { ok: true, freelancer_id: freelancerId, approved: Boolean(approved), status, reason: finalReason };
 }
 
+// ═══════════ 18. ADMIN CHAT OVERSIGHT & SURVEILLANCE ═══════════
+const ADMIN_SEED_CONVERSATIONS = [
+  {
+    id: "conv-seed-1",
+    conversation_id: "conv-seed-1",
+    job_id: "job-1",
+    job_title: "Design Brand Identity & Cafe Packaging",
+    company_name: "BrewBox Cafe",
+    employer_name: "Anita Joshi",
+    employer_area: "Indiranagar",
+    freelancer_id: "lead-2",
+    freelancer_name: "Sneha Kapoor",
+    freelancer_skill: "Brand Identity & Logo Designer",
+    freelancer_area: "Indiranagar",
+    distance_km: 1.4,
+    pay: 24000,
+    status: "hired",
+    created_at: new Date(Date.now() - 3600000 * 26).toISOString(),
+    last_message: "Thanks Anita! I've uploaded the second version of the cup sleeve packaging in Figma. Let me know what you think.",
+    last_message_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+    messages: [
+      {
+        id: "msg-101",
+        sender_role: "employer",
+        sender_name: "Anita Joshi (BrewBox Cafe)",
+        text: "Hi Sneha, loved your branding portfolio on WorkHop. We're opening our second cafe branch in Indiranagar and need a complete packaging kit and menu refresh.",
+        created_at: new Date(Date.now() - 3600000 * 25).toISOString(),
+      },
+      {
+        id: "msg-102",
+        sender_role: "freelancer",
+        sender_name: "Sneha Kapoor",
+        text: "Hello Anita! Thank you so much for reaching out. Indiranagar is right in my neighborhood! I'd love to help with the packaging and menu design. What timeline are you targeting for the launch?",
+        created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+      },
+      {
+        id: "msg-103",
+        sender_role: "employer",
+        sender_name: "Anita Joshi (BrewBox Cafe)",
+        text: "We are aiming to soft launch in 10 days. The budget of ₹24,000 works for us. I'll fund the escrow milestone now.",
+        created_at: new Date(Date.now() - 3600000 * 20).toISOString(),
+      },
+      {
+        id: "msg-104",
+        sender_role: "freelancer",
+        sender_name: "Sneha Kapoor",
+        text: "Milestone received, thank you! I've started on the moodboard and preliminary color palettes.",
+        created_at: new Date(Date.now() - 3600000 * 19).toISOString(),
+      },
+      {
+        id: "msg-105",
+        sender_role: "employer",
+        sender_name: "Anita Joshi (BrewBox Cafe)",
+        text: "The initial moodboard looks fantastic! Love the warm earth tones.",
+        created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+      },
+      {
+        id: "msg-106",
+        sender_role: "freelancer",
+        sender_name: "Sneha Kapoor",
+        text: "Thanks Anita! I've uploaded the second version of the cup sleeve packaging in Figma. Let me know what you think.",
+        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+      },
+    ],
+  },
+  {
+    id: "conv-seed-2",
+    conversation_id: "conv-seed-2",
+    job_id: "job-2",
+    job_title: "React & Next.js Booking Dashboard",
+    company_name: "UrbanKrafts Studio",
+    employer_name: "Siddharth Rao",
+    employer_area: "Koramangala",
+    freelancer_id: "lead-3",
+    freelancer_name: "Arjun Mehta",
+    freelancer_skill: "Full-Stack Web Developer (React & Next.js)",
+    freelancer_area: "HSR Layout",
+    distance_km: 2.1,
+    pay: 35000,
+    status: "completed",
+    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
+    last_message: "Payment and 5-star rating submitted! Thanks for the clean code and thorough docs.",
+    last_message_at: new Date(Date.now() - 3600000 * 8).toISOString(),
+    messages: [
+      {
+        id: "msg-201",
+        sender_role: "employer",
+        sender_name: "Siddharth Rao (UrbanKrafts)",
+        text: "Hi Arjun, we need a 4-screen dashboard built in Next.js 15 with Tailwind and Supabase auth.",
+        created_at: new Date(Date.now() - 3600000 * 70).toISOString(),
+      },
+      {
+        id: "msg-202",
+        sender_role: "freelancer",
+        sender_name: "Arjun Mehta",
+        text: "Hey Siddharth! Sounds like a great fit. I have built similar reservation portals before. Can deliver in 3 days.",
+        created_at: new Date(Date.now() - 3600000 * 68).toISOString(),
+      },
+      {
+        id: "msg-203",
+        sender_role: "employer",
+        sender_name: "Siddharth Rao (UrbanKrafts)",
+        text: "Great. Milestone funded. Let's kick off.",
+        created_at: new Date(Date.now() - 3600000 * 65).toISOString(),
+      },
+      {
+        id: "msg-204",
+        sender_role: "freelancer",
+        sender_name: "Arjun Mehta",
+        text: "PR is ready on GitHub with the Supabase schema and clean responsive components.",
+        created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+      },
+      {
+        id: "msg-205",
+        sender_role: "employer",
+        sender_name: "Siddharth Rao (UrbanKrafts)",
+        text: "Tested the staging preview on mobile and desktop. Looks pixel-perfect!",
+        created_at: new Date(Date.now() - 3600000 * 10).toISOString(),
+      },
+      {
+        id: "msg-206",
+        sender_role: "employer",
+        sender_name: "Siddharth Rao (UrbanKrafts)",
+        text: "Payment and 5-star rating submitted! Thanks for the clean code and thorough docs.",
+        created_at: new Date(Date.now() - 3600000 * 8).toISOString(),
+      },
+    ],
+  },
+  {
+    id: "conv-seed-3",
+    conversation_id: "conv-seed-3",
+    job_id: "job-3",
+    job_title: "Outbound Telecalling & Customer Outreach",
+    company_name: "Zenith EdTech",
+    employer_name: "Kunal Verma",
+    employer_area: "HSR Layout",
+    freelancer_id: "lead-7",
+    freelancer_name: "Pooja Sharma",
+    freelancer_skill: "Telecaller & Inside Sales Executive",
+    freelancer_area: "Koramangala",
+    distance_km: 0.6,
+    pay: 18000,
+    status: "hired",
+    created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
+    last_message: "Completed 45 calls today! 12 students scheduled consultation appointments. Sheet updated in portal.",
+    last_message_at: new Date(Date.now() - 3600000 * 1).toISOString(),
+    messages: [
+      {
+        id: "msg-301",
+        sender_role: "employer",
+        sender_name: "Kunal Verma (Zenith EdTech)",
+        text: "Hi Pooja, saw your profile under local telecalling pros. We need someone fluent in Kannada, English, and Hindi to contact our student leads.",
+        created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
+      },
+      {
+        id: "msg-302",
+        sender_role: "freelancer",
+        sender_name: "Pooja Sharma",
+        text: "Hello Kunal! Yes, I am fluent in all three languages and have done outbound student counseling for over 2 years.",
+        created_at: new Date(Date.now() - 3600000 * 17).toISOString(),
+      },
+      {
+        id: "msg-303",
+        sender_role: "employer",
+        sender_name: "Kunal Verma (Zenith EdTech)",
+        text: "Awesome. We have 150 verified leads for this batch. Escrow funded for ₹18,000.",
+        created_at: new Date(Date.now() - 3600000 * 15).toISOString(),
+      },
+      {
+        id: "msg-304",
+        sender_role: "freelancer",
+        sender_name: "Pooja Sharma",
+        text: "Completed 45 calls today! 12 students scheduled consultation appointments. Sheet updated in portal.",
+        created_at: new Date(Date.now() - 3600000 * 1).toISOString(),
+      },
+    ],
+  },
+  {
+    id: "conv-seed-4",
+    conversation_id: "conv-seed-4",
+    job_id: "job-4",
+    job_title: "Fast Typing & Catalog Data Entry",
+    company_name: "RetailPrime Hub",
+    employer_name: "Manish Sethi",
+    employer_area: "Rajajinagar",
+    freelancer_id: "lead-8",
+    freelancer_name: "Karthik Iyer",
+    freelancer_skill: "Data Entry & Fast Typing Specialist",
+    freelancer_area: "Malleshwaram",
+    distance_km: 3.1,
+    pay: 9500,
+    status: "applied",
+    created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+    last_message: "Sure Manish! Attached the 2-row test sample in CSV format matching your columns.",
+    last_message_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+    messages: [
+      {
+        id: "msg-401",
+        sender_role: "freelancer",
+        sender_name: "Karthik Iyer",
+        text: "Applied with note: I type at 80+ WPM and have digitized thousands of retail invoices. Can complete this 200-item spreadsheet by tomorrow evening.",
+        created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+      },
+      {
+        id: "msg-402",
+        sender_role: "employer",
+        sender_name: "Manish Sethi (RetailPrime)",
+        text: "Hi Karthik, can you do a quick 2-row test sample from the attached PDF format?",
+        created_at: new Date(Date.now() - 3600000 * 3).toISOString(),
+      },
+      {
+        id: "msg-403",
+        sender_role: "freelancer",
+        sender_name: "Karthik Iyer",
+        text: "Sure Manish! Attached the 2-row test sample in CSV format matching your columns.",
+        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+      },
+    ],
+  },
+];
+
+export function getAdminAllChats() {
+  const localChats = JSON.parse(localStorage.getItem(CHATS_KEY) || "[]");
+  const mergedMap = new Map();
+
+  // Add default seed conversations
+  ADMIN_SEED_CONVERSATIONS.forEach((c) => mergedMap.set(c.id, c));
+
+  // Merge any dynamic user chats from localStorage
+  localChats.forEach((c) => {
+    const cid = c.id || c.conversation_id;
+    const existing = mergedMap.get(cid);
+    const msgs = JSON.parse(localStorage.getItem(`workhop_chat_messages_${cid}`) || "null");
+    mergedMap.set(cid, {
+      ...(existing || {}),
+      ...c,
+      id: cid,
+      conversation_id: cid,
+      message_count: msgs ? msgs.length : (existing?.messages?.length || 2),
+    });
+  });
+
+  const list = Array.from(mergedMap.values()).map((conv) => {
+    const cid = conv.id || conv.conversation_id;
+    const storedMsgs = JSON.parse(localStorage.getItem(`workhop_chat_messages_${cid}`) || "null");
+    const msgs = storedMsgs || conv.messages || [];
+    const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+
+    // Check if any message attempted contact sharing
+    const hasViolation = msgs.some((m) => {
+      const text = (m.text || "").toLowerCase();
+      return /(\+91|98\d{8}|gmail|yahoo|@\w+\.\w+|wa\.me|whatsapp)/i.test(text);
+    });
+
+    return {
+      ...conv,
+      id: cid,
+      conversation_id: cid,
+      message_count: msgs.length,
+      last_message: lastMsg ? lastMsg.text : conv.last_message,
+      last_message_at: lastMsg ? lastMsg.created_at : conv.last_message_at || conv.updated_at || conv.created_at,
+      has_violation: hasViolation,
+    };
+  });
+
+  list.sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0));
+  return list;
+}
+
+export function getAdminChatMessages(conversationId) {
+  const cid = conversationId;
+  const storedMsgs = JSON.parse(localStorage.getItem(`workhop_chat_messages_${cid}`) || "null");
+  const allChats = getAdminAllChats();
+  const conv = allChats.find((c) => c.id === cid || c.conversation_id === cid) || {
+    id: cid,
+    conversation_id: cid,
+    job_title: "Gig Conversation",
+    company_name: "Employer",
+    freelancer_name: "Freelancer",
+  };
+
+  let msgs = storedMsgs;
+  if (!msgs) {
+    const seed = ADMIN_SEED_CONVERSATIONS.find((s) => s.id === cid);
+    msgs = seed ? seed.messages : [
+      { id: "m1", sender_role: "employer", text: "Hello! We reviewed your proposal and are excited to discuss.", created_at: conv.created_at || new Date().toISOString() },
+      { id: "m2", sender_role: "freelancer", text: "Thank you! I am ready to answer any questions or share work samples.", created_at: new Date().toISOString() },
+    ];
+  }
+
+  const enriched = msgs.map((m, idx) => {
+    const text = m.text || "";
+    const violation = /(\+91|98\d{8}|gmail|yahoo|@\w+\.\w+|wa\.me|whatsapp)/i.test(text);
+    return {
+      id: m.id || m.message_id || `msg-${idx}`,
+      sender_role: m.sender_role || "freelancer",
+      sender_name: m.sender_name || (m.sender_role === "employer" ? conv.employer_name || conv.company_name : conv.freelancer_name),
+      text,
+      created_at: m.created_at || new Date().toISOString(),
+      has_violation: violation,
+      attachment: m.attachment || null,
+    };
+  });
+
+  return {
+    conversation: conv,
+    messages: enriched,
+    total_messages: enriched.length,
+  };
+}
+
 
 
 

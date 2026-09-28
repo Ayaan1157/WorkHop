@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from "@/lib/api";
 import { BENGALURU_AREAS } from "@/lib/locationAreas";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
+import AdminChatsTab from "@/components/AdminChatsTab";
 import { checkRateLimit, resetRateLimit } from "@/lib/security";
 import { calculateHopsForJob, getEmployerHops, getStoredJobs } from "@/lib/clientStore";
 
@@ -20,6 +21,7 @@ const TABS = [
   { id: "CREDITS", label: "🪙 CREDITS & PRICING" },
   { id: "CONTROLS", label: "⚡ SITE CONTROLS" },
   { id: "GIGS", label: "💼 GIGS & MODERATION" },
+  { id: "CHATS", label: "💬 MESSAGES & CHATS" },
   { id: "PROS", label: "🛠️ PROS & TALENT" },
   { id: "EMPLOYERS", label: "🏢 EMPLOYERS" },
   { id: "ESCROW", label: "💰 ESCROW & PAYMENTS" },
@@ -2944,6 +2946,7 @@ export default function Admin() {
         {tab === "CREDITS" && <CreditsConfigTab adminFetch={adminFetch} />}
         {tab === "CONTROLS" && <SiteControlsTab adminFetch={adminFetch} />}
         {tab === "GIGS" && <GigsModerationTab adminFetch={adminFetch} />}
+        {tab === "CHATS" && <AdminChatsTab adminFetch={adminFetch} />}
         {tab === "ESCROW" && <EscrowDisputesTab adminFetch={adminFetch} />}
         {tab === "LOGS" && <AuditLogsTab adminFetch={adminFetch} />}
 

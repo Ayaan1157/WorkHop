@@ -2244,6 +2244,82 @@ async def admin_delete_coupon(code: str, request: Request):
     return {"ok": True, "code": c_id, "deleted": True}
 
 
+# ============== Admin Chat Surveillance & Compliance Audit ==============
+@api_router.get("/admin/chats")
+async def admin_list_chats(request: Request):
+    """Admin oversight endpoint to audit all conversations across employers and freelancers."""
+    await _require_admin(request)
+    conv_docs = await db.conversations.find({}, {"_id": 0}).to_list(1000)
+
+    out = []
+    for c in conv_docs:
+        cid = c.get("conversation_id") or c.get("id")
+        msgs = await db.messages.find({"conversation_id": cid}, {"_id": 0}).to_list(500)
+        has_violation = any(_check_contact_violations(m.get("text", "")) for m in msgs)
+        last_msg = msgs[-1]["text"] if msgs else c.get("last_message")
+        last_msg_at = msgs[-1]["created_at"] if msgs else (c.get("last_message_at") or c.get("created_at"))
+
+        out.append({
+            "id": cid,
+            "conversation_id": cid,
+            "job_id": c.get("job_id"),
+            "job_title": c.get("job_title", "Gig Discussion"),
+            "company_name": c.get("company_name", "Employer"),
+            "employer_name": c.get("employer_name", c.get("company_name", "Employer")),
+            "freelancer_id": c.get("freelancer_id"),
+            "freelancer_name": c.get("freelancer_name", "Freelancer"),
+            "status": c.get("status", "applied"),
+            "created_at": c.get("created_at"),
+            "last_message": last_msg,
+            "last_message_at": last_msg_at,
+            "message_count": len(msgs),
+            "has_violation": has_violation,
+        })
+
+    out.sort(key=lambda x: x.get("last_message_at") or x.get("created_at") or "", reverse=True)
+    return out
+
+
+@api_router.get("/admin/chats/{conversation_id}/messages")
+async def admin_get_chat_messages(conversation_id: str, request: Request):
+    """Admin endpoint to inspect the full transcript of a conversation with safety audits."""
+    await _require_admin(request)
+    conv = await db.conversations.find_one({"_id": conversation_id}, {"_id": 0})
+    if not conv:
+        conv = await db.conversations.find_one({"conversation_id": conversation_id}, {"_id": 0})
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+
+    msgs = await db.messages.find({"conversation_id": conversation_id}, {"_id": 0}).to_list(1000)
+    msgs.sort(key=lambda d: d.get("created_at", ""))
+
+    enriched = []
+    for m in msgs:
+        text = m.get("text", "")
+        enriched.append({
+            "id": m.get("message_id") or m.get("id"),
+            "message_id": m.get("message_id") or m.get("id"),
+            "conversation_id": conversation_id,
+            "sender_role": m.get("sender_role", "user"),
+            "sender_name": m.get("sender_name") or (
+                conv.get("company_name") if m.get("sender_role") == "employer" else conv.get("freelancer_name")
+            ),
+            "text": text,
+            "created_at": m.get("created_at"),
+            "has_violation": _check_contact_violations(text),
+            "attachment": m.get("attachment"),
+        })
+
+    return {
+        "conversation": {
+            **conv,
+            "id": conv.get("conversation_id") or conversation_id,
+        },
+        "messages": enriched,
+        "total_messages": len(enriched),
+    }
+
+
 # ============== In-app Chat (freelancer ↔ employer) ==============
 @api_router.get("/chats", response_model=List[Conversation])
 async def list_chats(freelancer_id: Optional[str] = None):
