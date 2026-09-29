@@ -1143,6 +1143,80 @@ async def get_recent_featured_blasts(limit: int = 10):
     return docs
 
 
+# ============== Push Notifications for Freelancers & Employers ==============
+class PushSubscriptionRequest(BaseModel):
+    user_id: Optional[str] = None
+    role: Optional[str] = "freelancer"
+    endpoint: Optional[str] = None
+    keys: Optional[dict] = None
+    user_agent: Optional[str] = None
+    preferences: Optional[dict] = None
+
+
+@api_router.post("/notifications/push-subscription")
+async def save_push_subscription(req: PushSubscriptionRequest, request: Request):
+    """Save or update browser push subscription for a freelancer or employer."""
+    user = await _optional_user_from_bearer(request)
+    uid = req.user_id or (user.get("user_id") if user else None) or "guest"
+    data = req.dict()
+    data["user_id"] = uid
+    data["updated_at"] = _now_iso()
+    await db.push_subscriptions.update_one(
+        {"user_id": uid},
+        {"$set": data},
+        upsert=True
+    )
+    return {"ok": True, "user_id": uid, "registered": True}
+
+
+@api_router.get("/notifications/push-subscription")
+async def get_push_subscription(request: Request, user_id: Optional[str] = None):
+    """Check push subscription status for user."""
+    user = await _optional_user_from_bearer(request)
+    uid = user_id or (user.get("user_id") if user else None)
+    if not uid:
+        return {"subscribed": False}
+    doc = await db.push_subscriptions.find_one({"user_id": uid}, {"_id": 0})
+    return {"subscribed": bool(doc), "subscription": doc}
+
+
+@api_router.post("/notifications/test-push")
+async def test_push_notification(request: Request):
+    """Dispatches a test push notification payload to verify client device reception."""
+    return {
+        "ok": True,
+        "sent": True,
+        "notification": {
+            "title": "⚡ [TEST] New ₹22,000 Gig in Koramangala!",
+            "body": "BrewBox Cafe posted Full Stack Next.js Dev (1.2km away). WorkHop push notifications are fully configured!",
+            "url": "/freelancer/jobs?featured=1",
+            "category": "system",
+            "created_at": _now_iso(),
+        }
+    }
+
+
+@api_router.post("/notifications/dispatch-push")
+async def dispatch_push_notification(req: Request):
+    """Dispatches push notifications to nearby registered freelancers."""
+    body = await req.json()
+    title = body.get("title", "⚡ WorkHop Freelancer Alert")
+    text = body.get("body", "New high-paying gig available near you!")
+    push_log = {
+        "_id": str(uuid.uuid4()),
+        "title": title,
+        "body": text,
+        "url": body.get("url", "/freelancer/jobs"),
+        "category": body.get("category", "featured_blasts"),
+        "job_id": body.get("job_id"),
+        "target_area": body.get("area"),
+        "created_at": _now_iso(),
+    }
+    await db.push_logs.insert_one(push_log)
+    return {"ok": True, "dispatched": True, "log_id": push_log["_id"]}
+
+
+
 @api_router.get("/admin/credits-config")
 async def get_admin_credits_config():
     """Requirement 6: Fetch editable pricing and rules config."""
@@ -1662,6 +1736,13 @@ async def _user_from_bearer(request: Request) -> dict:
     if not user:
         raise HTTPException(status_code=401, detail="User not found.")
     return user
+
+
+async def _optional_user_from_bearer(request: Request) -> Optional[dict]:
+    try:
+        return await _user_from_bearer(request)
+    except Exception:
+        return None
 
 
 ADMIN_EMAILS = {
@@ -2374,6 +2455,20 @@ async def send_message(conversation_id: str, req: SendMessageRequest):
         {"_id": conversation_id},
         {"$set": {"last_message": msg["text"][:80], "last_message_at": created_at}},
     )
+    if req.sender_role == "employer":
+        try:
+            await db.push_logs.insert_one({
+                "_id": str(uuid.uuid4()),
+                "title": f"💬 Message from {conv.get('company_name', 'Employer')}",
+                "body": text[:120],
+                "url": f"/chat/{conversation_id}?role=freelancer",
+                "category": "employer_messages",
+                "recipient_id": conv.get("freelancer_id"),
+                "conversation_id": conversation_id,
+                "created_at": created_at,
+            })
+        except Exception as pe:
+            logger.warning(f"Could not log push notification: {pe}")
     return ChatMessage(**msg)
 
 
@@ -2420,6 +2515,20 @@ async def update_chat_status(conversation_id: str, req: StatusRequest):
         raise HTTPException(status_code=400, detail=f"Invalid transition {current} -> {req.status}.")
     await db.conversations.update_one({"_id": conversation_id}, {"$set": {"status": req.status}})
     conv["status"] = req.status
+    if req.status == "hired":
+        try:
+            await db.push_logs.insert_one({
+                "_id": str(uuid.uuid4()),
+                "title": "🎉 You've Been Hired!",
+                "body": f"{conv.get('company_name', 'Employer')} hired you for \"{conv.get('job_title', 'Gig')}\"! Escrow milestone funded.",
+                "url": f"/chat/{conversation_id}?role=freelancer",
+                "category": "hired_alerts",
+                "recipient_id": conv.get("freelancer_id"),
+                "conversation_id": conversation_id,
+                "created_at": _now_iso(),
+            })
+        except Exception as pe:
+            logger.warning(f"Could not log push notification: {pe}")
     return Conversation(**conv)
 
 

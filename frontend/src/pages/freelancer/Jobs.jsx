@@ -16,6 +16,7 @@ import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
 import CreditsTopUpModal from "@/components/CreditsTopUpModal";
 import ApplicantLeaderboardModal from "@/components/ApplicantLeaderboardModal";
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import {
@@ -546,6 +547,11 @@ export default function Jobs() {
             <ProfileProgressBar user={user} role="freelancer" />
           </div>
         </div>
+      </div>
+
+      {/* Hyperlocal Push Notification Alert Prompt for Freelancers */}
+      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 pt-3">
+        <PushNotificationPrompt />
       </div>
 
       {/* Category Icons Strip Placed Directly Above Map */}

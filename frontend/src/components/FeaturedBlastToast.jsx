@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Zap, X, ArrowRight, MapPin, Building2, Flame } from "lucide-react";
+import { Zap, X, ArrowRight, MapPin, Building2, Flame, Bell } from "lucide-react";
 import { markNotificationRead, getStoredNotifications } from "@/lib/clientStore";
+import { isPushEnabled, requestPushPermission } from "@/lib/pushNotifications";
 
 function playBlastChime() {
   try {
@@ -28,8 +29,21 @@ export default function FeaturedBlastToast() {
   const nav = useNavigate();
   const [activeBlast, setActiveBlast] = useState(null);
   const [progress, setProgress] = useState(100);
+  const [pushActive, setPushActive] = useState(() => isPushEnabled());
   const timerRef = useRef(null);
   const animRef = useRef(null);
+
+  useEffect(() => {
+    const handlePushChange = () => setPushActive(isPushEnabled());
+    window.addEventListener("workhop:push_status_changed", handlePushChange);
+    return () => window.removeEventListener("workhop:push_status_changed", handlePushChange);
+  }, []);
+
+  const handleEnablePush = async (e) => {
+    e?.stopPropagation();
+    const res = await requestPushPermission();
+    if (res.ok) setPushActive(true);
+  };
 
   const showBlast = (blastData) => {
     if (!blastData) return;
@@ -173,6 +187,23 @@ export default function FeaturedBlastToast() {
               Blast sent to {activeBlast.nearby_freelancers_count || 12}+ Pros
             </span>
           </div>
+
+          {/* Push alert helper if browser push is not yet enabled */}
+          {!pushActive && (
+            <div className="flex items-center justify-between border-t border-dashed border-ink/20 pt-2 text-[10px]">
+              <span className="flex items-center gap-1 text-inkmuted dark:text-stone-400 font-semibold">
+                <Bell size={11} className="text-brand shrink-0" />
+                <span>Get phone alerts when tab is closed</span>
+              </span>
+              <button
+                type="button"
+                onClick={handleEnablePush}
+                className="font-black text-brand underline hover:text-black dark:hover:text-white"
+              >
+                Enable Push
+              </button>
+            </div>
+          )}
 
           {/* Action Row */}
           <div className="pt-1 flex items-center justify-between gap-2">

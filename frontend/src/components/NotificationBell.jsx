@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, MessageSquare, Briefcase, CreditCard, CheckCheck, X, Zap } from "lucide-react";
+import { Bell, MessageSquare, Briefcase, CreditCard, CheckCheck, X, Zap, SlidersHorizontal } from "lucide-react";
 import { getStoredNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/clientStore";
+import { isPushEnabled } from "@/lib/pushNotifications";
+import PushSettingsModal from "@/components/PushSettingsModal";
 
 export default function NotificationBell({ embedded = false, className = "" }) {
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("all");
   const [notifications, setNotifications] = useState([]);
+  const [pushModalOpen, setPushModalOpen] = useState(false);
+  const [isPushActive, setIsPushActive] = useState(() => isPushEnabled());
   const dropdownRef = useRef(null);
 
   const refreshNotifs = () => {
@@ -16,14 +20,20 @@ export default function NotificationBell({ embedded = false, className = "" }) {
 
   useEffect(() => {
     refreshNotifs();
+    setIsPushActive(isPushEnabled());
   }, [open]);
 
   useEffect(() => {
     window.addEventListener("workhop:featured_blast", refreshNotifs);
     window.addEventListener("workhop:notifications_updated", refreshNotifs);
+    const handlePushStatus = () => setIsPushActive(isPushEnabled());
+    window.addEventListener("workhop:push_status_changed", handlePushStatus);
     const handleStorage = (e) => {
       if (e.key === "workhop_notifications" || e.key === "workhop_last_featured_blast") {
         refreshNotifs();
+      }
+      if (e.key === "workhop_push_enabled") {
+        setIsPushActive(isPushEnabled());
       }
     };
     window.addEventListener("storage", handleStorage);
@@ -39,6 +49,7 @@ export default function NotificationBell({ embedded = false, className = "" }) {
     return () => {
       window.removeEventListener("workhop:featured_blast", refreshNotifs);
       window.removeEventListener("workhop:notifications_updated", refreshNotifs);
+      window.removeEventListener("workhop:push_status_changed", handlePushStatus);
       window.removeEventListener("storage", handleStorage);
       if (channel) channel.close();
     };
@@ -157,6 +168,23 @@ export default function NotificationBell({ embedded = false, className = "" }) {
             </div>
           </div>
 
+          {/* Push Notifications Status Ribbon */}
+          <div className="flex items-center justify-between border-b border-ink/20 bg-[#FFF8F3] dark:bg-[#1f1712] px-3.5 py-1.5 text-[10px]">
+            <div className="flex items-center gap-1.5 font-bold text-ink dark:text-white">
+              <span className="relative flex h-2 w-2">
+                <span className={`inline-flex h-full w-full rounded-full ${isPushActive ? "bg-[#0E6220]" : "bg-brand animate-pulse"}`} />
+              </span>
+              <span>Push Alerts: <strong className={isPushActive ? "text-[#0E6220] dark:text-[#6ee7b7]" : "text-brand"}>{isPushActive ? "ACTIVE" : "OFF"}</strong></span>
+            </div>
+            <button
+              onClick={() => setPushModalOpen(true)}
+              className="flex items-center gap-1 font-black text-brand hover:underline cursor-pointer"
+            >
+              <SlidersHorizontal size={10} />
+              <span>{isPushActive ? "Test & Settings" : "Enable Push"}</span>
+            </button>
+          </div>
+
           {/* Filter Tabs */}
           <div className="flex border-b-2 border-ink bg-white dark:bg-[#181818] text-[10px] font-black">
             {[
@@ -227,6 +255,7 @@ export default function NotificationBell({ embedded = false, className = "" }) {
           </div>
         </div>
       )}
+      <PushSettingsModal isOpen={pushModalOpen} onClose={() => setPushModalOpen(false)} />
     </div>
   );
 }

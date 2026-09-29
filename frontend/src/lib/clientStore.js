@@ -2,6 +2,7 @@ import leadsSeed from "@/data/leads.json";
 import jobsSeed from "@/data/jobs.json";
 import { DISCIPLINES_CATALOG } from "@/lib/catalogFilters";
 import { getAreaCoordinates, calculateDistance } from "@/lib/locationAreas";
+import { sendBrowserPushNotification } from "@/lib/pushNotifications";
 
 const CUSTOM_JOBS_KEY = "workhop_custom_jobs";
 const USER_KEY = "workhop_user_data";
@@ -750,6 +751,27 @@ export function blastFeaturedJobNotification(job) {
       setTimeout(() => channel.close(), 1000);
     }
   } catch {}
+
+  // 6. Native Browser & Web Push Notification for Freelancers
+  try {
+    sendBrowserPushNotification({
+      title: `⚡ FEATURED GIG BLAST · ${distKm}km away`,
+      body: `${company} posted a Featured Gig: "${title}" (${payFormatted}) in ${jobArea}. Tap to apply before spots fill!`,
+      icon: "/favicon.svg",
+      badge: "/favicon.svg",
+      tag: `blast-${job.id || Date.now()}`,
+      url: `/freelancer/jobs?q=${encodeURIComponent(title)}&featured=1`,
+      category: "featured_blasts",
+      data: {
+        job_id: job.id,
+        distance_km: distKm,
+        pay: payNum,
+        area: jobArea,
+      },
+    });
+  } catch (pushErr) {
+    console.warn("Could not dispatch browser push notification for blast:", pushErr);
+  }
 
   return {
     ok: true,

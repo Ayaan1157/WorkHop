@@ -7,12 +7,14 @@ import {
   Code2, Loader2, Menu, MessagesSquare, Map as MapIcon,
   LayoutGrid, Tag, LifeBuoy, FileText, Shield, ChevronRight,
   LogOut, Wallet, ShieldCheck, Camera, Upload, Coins, Sparkles, History, ArrowUpRight, Building2, CheckCircle2,
-  AlertTriangle, ImageIcon
+  AlertTriangle, ImageIcon, Bell
 } from "lucide-react";
 import { Shell } from "@/components/kit";
 import EditModal from "@/components/EditModal";
 import EscrowWalletModal from "@/components/EscrowWalletModal";
 import CreditsTopUpModal from "@/components/CreditsTopUpModal";
+import PushSettingsModal from "@/components/PushSettingsModal";
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, getFreelancerId } from "@/lib/api";
 import { getFreelancerProfile, saveFreelancerProfile, getCreditsWallet, getCreditTransactions } from "@/lib/clientStore";
@@ -67,6 +69,7 @@ export default function FreelancerProfile() {
   // Top-right Menu Drawer & Escrow Wallet states
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
+  const [pushSettingsOpen, setPushSettingsOpen] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [txHistoryOpen, setTxHistoryOpen] = useState(false);
   const [creditsWallet, setCreditsWallet] = useState(() => getCreditsWallet(freelancerId));
@@ -420,6 +423,7 @@ export default function FreelancerProfile() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
+          <PushNotificationPrompt className="mb-6" />
           <div className="flex flex-col lg:flex-row gap-8">
             {/* ═══════════ LEFT SIDEBAR ═══════════ */}
             <aside className="lg:w-[320px] shrink-0 flex flex-col gap-5 lg:sticky lg:top-8 lg:self-start">
@@ -1947,6 +1951,28 @@ export default function FreelancerProfile() {
                 </button>
               </div>
 
+              {/* Push Notifications & 5km Alerts */}
+              <div className="bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FFE8D6] text-brand">
+                    <Bell size={18} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-ink dark:text-white">Push Notifications</p>
+                    <p className="text-[10px] text-inkmuted dark:text-[#777]">5km gig alerts &amp; client chats</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setPushSettingsOpen(true);
+                    setMenuDrawerOpen(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-ink text-white dark:bg-white dark:text-black text-xs font-bold hover:bg-[#E65A1E] hover:text-white transition"
+                >
+                  CONFIGURE
+                </button>
+              </div>
+
               {/* Platform Navigation Cards */}
               <div className="flex flex-col gap-2">
                 {user?.is_admin && (
@@ -2014,6 +2040,9 @@ export default function FreelancerProfile() {
 
       {/* Escrow Wallet Modal */}
       <EscrowWalletModal isOpen={walletOpen} onClose={() => setWalletOpen(false)} />
+
+      {/* Push Notification Settings Modal */}
+      <PushSettingsModal isOpen={pushSettingsOpen} onClose={() => setPushSettingsOpen(false)} />
 
       {/* Credits / Connects Top Up & Subscription Modal */}
       <CreditsTopUpModal

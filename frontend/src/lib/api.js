@@ -45,6 +45,7 @@ import {
   getAdminAllChats,
   getAdminChatMessages,
 } from "./clientStore";
+import { sendBrowserPushNotification, sendTestPushNotification } from "./pushNotifications";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
 export const API = `${BACKEND_URL}/api`;
@@ -464,10 +465,46 @@ function mockRouter(path, method = "GET", body = null) {
     return getStoredChats();
   }
   if (cleanPath.includes("/messages") && method === "POST") {
+    if (body?.sender_role === "employer") {
+      try {
+        const convId = cleanPath.split("/")[2];
+        sendBrowserPushNotification({
+          title: "💬 New Message from Employer",
+          body: body?.text || "New message in WorkHop chat",
+          category: "employer_messages",
+          url: `/chat/${convId}?role=freelancer`,
+          tag: `chat-msg-${convId}`,
+        });
+      } catch {}
+    }
     return { id: `m-${Date.now()}`, sender_role: body?.sender_role || "user", text: body?.text, created_at: new Date().toISOString() };
   }
   if (cleanPath.includes("/status") && method === "POST") {
+    if (body?.status === "hired") {
+      try {
+        const convId = cleanPath.split("/")[2];
+        sendBrowserPushNotification({
+          title: "🎉 You've Been Hired!",
+          body: "An employer accepted your proposal and funded milestone escrow!",
+          category: "hired_alerts",
+          url: `/chat/${convId}?role=freelancer`,
+          tag: `hired-${convId}`,
+        });
+      } catch {}
+    }
     return { id: cleanPath.split("/")[2], status: body?.status || "active" };
+  }
+  if (cleanPath === "/notifications/push-subscription") {
+    if (method === "POST") {
+      return { ok: true, registered: true };
+    }
+    return { subscribed: true };
+  }
+  if (cleanPath === "/notifications/test-push" && method === "POST") {
+    return sendTestPushNotification();
+  }
+  if (cleanPath === "/notifications/dispatch-push" && method === "POST") {
+    return { ok: true, dispatched: true };
   }
   if (cleanPath.includes("/complete-and-review") && method === "POST") {
     const parts = cleanPath.split("/");
