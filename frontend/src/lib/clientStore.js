@@ -1433,11 +1433,11 @@ export function getDefaultSiteSettings() {
     direct_chat_enabled: true,
 
     // Statutory Grievance Redressal & Nodal Officer (IT Rules 2021 & DPDP Act 2023)
-    grievance_officer_name: "Ayaan S.",
-    grievance_officer_designation: "Resident Grievance Officer & Nodal Contact",
+    grievance_officer_name: "Alia Mansoor",
+    grievance_officer_designation: "Nodal officer",
     grievance_officer_email: "grievance@workhop.in",
-    grievance_officer_phone: "+91 98450 12345",
-    grievance_officer_address: "WorkHop Technologies Pvt. Ltd., #42, 4th Floor, 80 Feet Road, 4th Block, Koramangala, Bengaluru, Karnataka 560034, India",
+    grievance_officer_phone: "+91 9180169739",
+    grievance_officer_address: "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005",
     grievance_working_hours: "Monday to Friday, 10:00 AM – 6:00 PM IST (Excluding Public Holidays)",
     grievance_nodal_email: "nodal@workhop.in",
     grievance_ack_hours: 24, // Statutory 24-hour acknowledgement SLA
@@ -1446,11 +1446,23 @@ export function getDefaultSiteSettings() {
 }
 
 export function getSiteSettings() {
+  const defaults = getDefaultSiteSettings();
   const raw = localStorage.getItem(SITE_SETTINGS_KEY);
   if (raw) {
-    try { return { ...getDefaultSiteSettings(), ...JSON.parse(raw) }; } catch { /* ignore */ }
+    try {
+      const parsed = JSON.parse(raw);
+      // Migrate old placeholder name if still present
+      if (parsed.grievance_officer_name === "Ayaan S.") {
+        parsed.grievance_officer_name = defaults.grievance_officer_name;
+        parsed.grievance_officer_designation = defaults.grievance_officer_designation;
+        parsed.grievance_officer_phone = defaults.grievance_officer_phone;
+        parsed.grievance_officer_address = defaults.grievance_officer_address;
+        localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify({ ...defaults, ...parsed }));
+      }
+      return { ...defaults, ...parsed };
+    } catch { /* ignore */ }
   }
-  return getDefaultSiteSettings();
+  return defaults;
 }
 
 export function saveSiteSettings(updates) {

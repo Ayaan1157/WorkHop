@@ -278,7 +278,7 @@ function SiteControlsTab({ adminFetch }) {
               type="text"
               value={settings.grievance_officer_name || ""}
               onChange={(e) => setSettings({ ...settings, grievance_officer_name: e.target.value })}
-              placeholder="e.g. Ayaan S."
+              placeholder="e.g. Alia Mansoor"
               className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
               required
             />
@@ -293,7 +293,7 @@ function SiteControlsTab({ adminFetch }) {
               type="text"
               value={settings.grievance_officer_designation || ""}
               onChange={(e) => setSettings({ ...settings, grievance_officer_designation: e.target.value })}
-              placeholder="e.g. Resident Grievance Officer & Nodal Contact"
+              placeholder="e.g. Nodal officer"
               className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
               required
             />
@@ -323,7 +323,7 @@ function SiteControlsTab({ adminFetch }) {
               type="text"
               value={settings.grievance_officer_phone || ""}
               onChange={(e) => setSettings({ ...settings, grievance_officer_phone: e.target.value })}
-              placeholder="e.g. +91 98450 12345"
+              placeholder="e.g. +91 9180169739"
               className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
               required
             />
@@ -366,7 +366,7 @@ function SiteControlsTab({ adminFetch }) {
               rows={2}
               value={settings.grievance_officer_address || ""}
               onChange={(e) => setSettings({ ...settings, grievance_officer_address: e.target.value })}
-              placeholder="e.g. WorkHop Technologies Pvt. Ltd., #42, 4th Floor, 80 Feet Road, 4th Block, Koramangala, Bengaluru, Karnataka 560034, India"
+              placeholder="e.g. Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005"
               className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] p-3 text-xs font-bold text-ink focus:border-brand outline-none"
               required
             />
@@ -414,8 +414,8 @@ function SiteControlsTab({ adminFetch }) {
             <div className="flex justify-between items-start">
               <div>
                 <span className="font-mono text-[9px] font-black text-brand uppercase">RESIDENT GRIEVANCE OFFICER</span>
-                <p className="font-black text-sm text-ink">{settings.grievance_officer_name || "Resident Grievance Officer"}</p>
-                <p className="text-[11px] font-bold text-inkmuted">{settings.grievance_officer_designation || "Resident Grievance Officer & Nodal Contact"}</p>
+                <p className="font-black text-sm text-ink">{settings.grievance_officer_name || "Alia Mansoor"}</p>
+                <p className="text-[11px] font-bold text-inkmuted">{settings.grievance_officer_designation || "Nodal officer"}</p>
               </div>
               <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 text-[9px] font-black">
                 SLA: {settings.grievance_ack_hours || 24}h Ack / {settings.grievance_resolution_days || 15}d Disposal
@@ -423,8 +423,8 @@ function SiteControlsTab({ adminFetch }) {
             </div>
             <div className="mt-2 text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-1 text-ink/80 pt-2 border-t border-ink/10">
               <p>📧 <strong>Email:</strong> {settings.grievance_officer_email || "grievance@workhop.in"}</p>
-              <p>📞 <strong>Helpline:</strong> {settings.grievance_officer_phone || "+91 98450 12345"}</p>
-              <p className="sm:col-span-2 truncate">📍 <strong>Registered Office:</strong> {settings.grievance_officer_address || "Bengaluru, Karnataka, India"}</p>
+              <p>📞 <strong>Helpline:</strong> {settings.grievance_officer_phone || "+91 9180169739"}</p>
+              <p className="sm:col-span-2 truncate">📍 <strong>Registered Office:</strong> {settings.grievance_officer_address || "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005"}</p>
             </div>
           </div>
         </div>

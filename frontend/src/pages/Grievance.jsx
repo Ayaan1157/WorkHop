@@ -143,13 +143,13 @@ export default function Grievance() {
     }
   };
 
-  const officerName = settings.grievance_officer_name || "Ayaan S.";
-  const designation = settings.grievance_officer_designation || "Resident Grievance Officer & Nodal Contact";
+  const officerName = settings.grievance_officer_name || "Alia Mansoor";
+  const designation = settings.grievance_officer_designation || "Nodal officer";
   const officerEmail = settings.grievance_officer_email || "grievance@workhop.in";
-  const officerPhone = settings.grievance_officer_phone || "+91 98450 12345";
+  const officerPhone = settings.grievance_officer_phone || "+91 9180169739";
   const officerAddress =
     settings.grievance_officer_address ||
-    "WorkHop Technologies Pvt. Ltd., #42, 4th Floor, 80 Feet Road, 4th Block, Koramangala, Bengaluru, Karnataka 560034, India";
+    "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005";
   const workingHours =
     settings.grievance_working_hours ||
     "Monday to Friday, 10:00 AM – 6:00 PM IST (Excluding Public Holidays)";

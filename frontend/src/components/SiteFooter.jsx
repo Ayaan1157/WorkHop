@@ -1,6 +1,14 @@
 import { Link } from "react-router-dom";
+import { getSiteSettings } from "@/lib/clientStore";
 
 export default function SiteFooter() {
+  const settings = typeof window !== "undefined" && getSiteSettings ? getSiteSettings() : null;
+  const officerName = settings?.grievance_officer_name || "Alia Mansoor";
+  const officerDesignation = settings?.grievance_officer_designation || "Nodal officer";
+  const officerPhone = settings?.grievance_officer_phone || "+91 9180169739";
+  const officerEmail = settings?.grievance_officer_email || "grievance@workhop.in";
+  const officerAddress = settings?.grievance_officer_address || "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005";
+
   return (
     <footer className="w-full border-t-2 border-ink bg-[#0B0B0C] text-white pt-12 sm:pt-16 pb-28 sm:pb-32 lg:pb-14 transition-colors">
       <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 lg:px-12">
@@ -246,6 +254,16 @@ export default function SiteFooter() {
                 <Link to="/grievance" className="text-brand font-bold hover:text-white transition flex items-center gap-1">
                   <span>⚖️ Grievance Redressal (IT Rules)</span>
                 </Link>
+                <div className="mt-1 pl-2.5 border-l-2 border-brand/50 text-[11px] text-stone-300 leading-snug flex flex-col gap-0.5">
+                  <span className="font-bold text-white">{officerName}</span>
+                  <span className="text-[10px] text-brand uppercase font-bold">{officerDesignation}</span>
+                  <a href={`tel:${officerPhone.replace(/\s+/g, "")}`} className="text-stone-300 hover:text-white transition">
+                    📞 {officerPhone}
+                  </a>
+                  <p className="text-[10px] text-stone-400 leading-tight">
+                    Smart Plaza, Coles Rd, Frazer Town, Bangalore
+                  </p>
+                </div>
               </li>
               <li>
                 <Link to="/blog" className="text-stone-300 font-bold hover:text-white transition">
@@ -256,17 +274,92 @@ export default function SiteFooter() {
           </div>
         </div>
 
+        {/* Statutory Grievance Redressal & Nodal Officer Details Card */}
+        <div className="mt-10 border border-white/20 bg-white/[0.04] p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3 mb-4">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center border border-brand bg-brand/20 text-brand text-xs font-black">
+                ⚖️
+              </span>
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-wider text-brand">
+                  Statutory Intermediary Redressal · Rule 3(2) IT Rules 2021 &amp; DPDP Act 2023
+                </span>
+                <h5 className="text-sm font-black text-white tracking-wide">
+                  Resident Grievance &amp; Nodal Officer Details
+                </h5>
+              </div>
+            </div>
+            <Link
+              to="/grievance"
+              className="inline-flex items-center gap-1.5 border border-brand bg-brand px-3 py-1.5 text-[11px] font-black uppercase text-white shadow-[2px_2px_0px_#ffffff] hover:bg-white hover:text-ink transition self-start sm:self-auto"
+            >
+              <span>File Grievance Ticket (24h Ack / 15d Resolution) →</span>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
+                Nodal / Grievance Officer:
+              </span>
+              <p className="font-black text-white text-sm mt-0.5">{officerName}</p>
+              <p className="text-[11px] font-bold text-brand uppercase">{officerDesignation}</p>
+              <p className="text-[10px] text-stone-400 mt-0.5">Resident Citizen of India</p>
+            </div>
+
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
+                Mobile Number / Helpline:
+              </span>
+              <p className="mt-0.5">
+                <a
+                  href={`tel:${officerPhone.replace(/\s+/g, "")}`}
+                  className="font-black text-white text-sm hover:text-brand transition"
+                >
+                  {officerPhone}
+                </a>
+              </p>
+              <p className="text-[10px] text-stone-400 mt-0.5">Direct Intermediary Helpline</p>
+            </div>
+
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
+                Grievance &amp; Nodal Email:
+              </span>
+              <p className="mt-0.5">
+                <a
+                  href={`mailto:${officerEmail}`}
+                  className="font-black text-white text-sm hover:text-brand transition underline underline-offset-2"
+                >
+                  {officerEmail}
+                </a>
+              </p>
+              <p className="text-[10px] text-stone-400 mt-0.5">Mandatory 24h Acknowledgment SLA</p>
+            </div>
+
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
+                Physical Office Address:
+              </span>
+              <p className="font-medium text-white text-[11px] mt-0.5 leading-snug">
+                {officerAddress}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Bottom Strip: Copyright & Statutory Badges */}
-        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-stone-400 font-medium text-center sm:text-left">
+        <div className="mt-6 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-stone-400 font-medium text-center sm:text-left">
           <p>© 2026 WorkHop Technologies Pvt. Ltd. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-stone-400">
-            <Link to="/grievance" className="hover:text-white transition underline underline-offset-2 font-bold text-stone-300">
-              ⚖️ Grievance Officer (Rule 3(2))
+            <Link to="/grievance" className="hover:text-white transition underline underline-offset-2 font-bold text-brand">
+              ⚖️ Nodal Officer: {officerName} ({officerPhone})
             </Link>
             <span className="hidden xs:inline">·</span>
             <span>⚡ IT Act, 2000 &amp; DPDP Act, 2023 Compliant</span>
             <span className="hidden xs:inline">·</span>
-            <span>Bengaluru, Karnataka, India</span>
+            <span>Frazer Town, Bangalore, India</span>
           </div>
         </div>
 

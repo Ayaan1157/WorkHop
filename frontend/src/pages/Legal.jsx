@@ -269,18 +269,18 @@ export default function Legal() {
 
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs border-t border-ink/10 pt-3">
                 <div className="border border-ink/20 bg-white p-3">
-                  <span className="text-[10px] font-black uppercase text-inkmuted">Resident Grievance Officer</span>
-                  <p className="font-black text-sm text-ink">{settings.grievance_officer_name || "Ayaan S."}</p>
-                  <p className="text-[11px] font-bold text-brand">{settings.grievance_officer_designation || "Resident Grievance Officer & Nodal Contact"}</p>
+                  <span className="text-[10px] font-black uppercase text-inkmuted">Nodal / Grievance Officer</span>
+                  <p className="font-black text-sm text-ink">{settings.grievance_officer_name || "Alia Mansoor"}</p>
+                  <p className="text-[11px] font-bold text-brand">{settings.grievance_officer_designation || "Nodal officer"}</p>
                 </div>
                 <div className="border border-ink/20 bg-white p-3">
                   <span className="text-[10px] font-black uppercase text-inkmuted">Official Contact</span>
                   <p className="font-bold text-ink">📧 {settings.grievance_officer_email || "grievance@workhop.in"}</p>
-                  <p className="font-bold text-ink">📞 {settings.grievance_officer_phone || "+91 98450 12345"}</p>
+                  <p className="font-bold text-ink">📞 {settings.grievance_officer_phone || "+91 9180169739"}</p>
                 </div>
                 <div className="border border-ink/20 bg-white p-3 sm:col-span-2">
                   <span className="text-[10px] font-black uppercase text-inkmuted">Physical Registered Address</span>
-                  <p className="font-medium text-ink text-[11px]">{settings.grievance_officer_address || "Bengaluru, Karnataka, India"}</p>
+                  <p className="font-medium text-ink text-[11px]">{settings.grievance_officer_address || "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005"}</p>
                   <p className="mt-1 text-[10px] text-inkmuted">Working Hours: {settings.grievance_working_hours || "Mon-Fri 10 AM - 6 PM IST"}</p>
                 </div>
               </div>
