@@ -7,6 +7,7 @@ import Profile from "@/pages/Profile";
 import Categories from "@/pages/Categories";
 import Legal from "@/pages/Legal";
 import Support from "@/pages/Support";
+import Grievance from "@/pages/Grievance";
 import Blog from "@/pages/Blog";
 import LiveMap from "@/pages/LiveMap";
 import Admin from "@/pages/Admin";
@@ -55,6 +56,8 @@ function App() {
             <Route path="/blog/:slug" element={<Blog />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/grievance" element={<Grievance />} />
+            <Route path="/grievance-redressal" element={<Grievance />} />
             <Route path="/map" element={<LiveMap />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/chat/:id" element={<Chat />} />

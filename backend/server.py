@@ -2203,6 +2203,137 @@ async def admin_complaints(request: Request):
     return docs
 
 
+DEFAULT_SITE_SETTINGS = {
+    "broadcast_banner_active": True,
+    "broadcast_banner_text": "⚡ Special Launch: 100% verified local Bengaluru freelancers within 5km radius!",
+    "broadcast_banner_cta": "EXPLORE GIGS",
+    "broadcast_banner_link": "/freelancer/jobs",
+    "broadcast_banner_tone": "brand",
+    "maintenance_mode": False,
+    "commission_rate_pct": 0,
+    "freelancer_pro_fee": 99,
+    "quota_boost_fee": 149,
+    "auto_approve_pros": False,
+    "direct_chat_enabled": True,
+    # Statutory Grievance Redressal & Nodal Officer (IT Rules 2021 & DPDP Act 2023)
+    "grievance_officer_name": "Ayaan S.",
+    "grievance_officer_designation": "Resident Grievance Officer & Nodal Contact",
+    "grievance_officer_email": "grievance@workhop.in",
+    "grievance_officer_phone": "+91 98450 12345",
+    "grievance_officer_address": "WorkHop Technologies Pvt. Ltd., #42, 4th Floor, 80 Feet Road, 4th Block, Koramangala, Bengaluru, Karnataka 560034, India",
+    "grievance_working_hours": "Monday to Friday, 10:00 AM – 6:00 PM IST (Excluding Public Holidays)",
+    "grievance_nodal_email": "nodal@workhop.in",
+    "grievance_ack_hours": 24,
+    "grievance_resolution_days": 15,
+}
+
+
+@api_router.get("/site-settings")
+async def get_public_site_settings():
+    """Public endpoint to fetch site settings and Grievance Officer details."""
+    doc = await db.site_settings.find_one({"_id": "general_settings"}, {"_id": 0})
+    if not doc:
+        return DEFAULT_SITE_SETTINGS
+    return {**DEFAULT_SITE_SETTINGS, **doc}
+
+
+@api_router.get("/admin/site-settings")
+async def get_admin_site_settings(request: Request):
+    """Admin endpoint to fetch current site settings."""
+    await _require_admin(request)
+    doc = await db.site_settings.find_one({"_id": "general_settings"}, {"_id": 0})
+    if not doc:
+        return DEFAULT_SITE_SETTINGS
+    return {**DEFAULT_SITE_SETTINGS, **doc}
+
+
+@api_router.post("/admin/site-settings")
+async def save_admin_site_settings(request: Request):
+    """Admin endpoint to update site settings, Grievance Officer details, and broadcast banners."""
+    await _require_admin(request)
+    body = await request.json()
+    body_to_save = {k: v for k, v in body.items() if k != "_id"}
+    body_to_save["updated_at"] = _now_iso()
+    await db.site_settings.update_one(
+        {"_id": "general_settings"},
+        {"$set": body_to_save},
+        upsert=True,
+    )
+    doc = await db.site_settings.find_one({"_id": "general_settings"}, {"_id": 0})
+    return {**DEFAULT_SITE_SETTINGS, **(doc or {})}
+
+
+@api_router.post("/grievances")
+async def submit_grievance_ticket(request: Request):
+    """Public statutory grievance filing endpoint (Rule 3(2) IT Rules 2021 & DPDP Act 2023)."""
+    body = await request.json()
+    ticket_num = secrets.randbelow(9000) + 1000
+    ticket_id = f"WH-GRV-2026-{ticket_num}"
+    now_dt = datetime.now(timezone.utc)
+    ack_deadline = (now_dt + timedelta(hours=24)).isoformat()
+    resolution_deadline = (now_dt + timedelta(days=15)).isoformat()
+
+    doc = {
+        "_id": ticket_id,
+        "id": ticket_id,
+        "ticket_id": ticket_id,
+        "name": html.escape(body.get("name") or "Anonymous"),
+        "email": (body.get("email") or "").strip().lower(),
+        "phone": (body.get("phone") or "").strip(),
+        "role": body.get("role") or "visitor",
+        "category": body.get("category") or "General Grievance",
+        "subject": html.escape(body.get("subject") or "Grievance Filing"),
+        "description": html.escape(body.get("description") or ""),
+        "target_url": (body.get("target_url") or "").strip(),
+        "attachment_name": body.get("attachment_name"),
+        "status": "open",
+        "resolution_notes": None,
+        "created_at": now_dt.isoformat(),
+        "ack_deadline": ack_deadline,
+        "resolution_deadline": resolution_deadline,
+    }
+    await db.grievances.insert_one(doc)
+    doc_out = {k: v for k, v in doc.items() if k != "_id"}
+    return doc_out
+
+
+@api_router.get("/admin/grievances")
+async def admin_get_grievances(request: Request):
+    """Admin endpoint to retrieve all statutory grievance tickets."""
+    await _require_admin(request)
+    docs = await db.grievances.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return docs
+
+
+@api_router.post("/admin/grievances/{ticket_id}/status")
+async def admin_update_grievance_status(ticket_id: str, request: Request):
+    """Admin endpoint to update grievance ticket lifecycle status and notes."""
+    await _require_admin(request)
+    body = await request.json()
+    status = body.get("status") or "in_review"
+    resolution_notes = body.get("resolution_notes")
+
+    updates = {
+        "status": status,
+        "updated_at": _now_iso(),
+    }
+    if resolution_notes:
+        updates["resolution_notes"] = resolution_notes
+
+    res = await db.grievances.update_one(
+        {"$or": [{"_id": ticket_id}, {"ticket_id": ticket_id}]},
+        {"$set": updates},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Grievance ticket not found")
+
+    doc = await db.grievances.find_one(
+        {"$or": [{"_id": ticket_id}, {"ticket_id": ticket_id}]},
+        {"_id": 0},
+    )
+    return doc
+
+
 @api_router.get("/admin/coupons")
 async def admin_coupons(request: Request):
     await _require_admin(request)

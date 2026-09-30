@@ -239,7 +239,12 @@ export default function SiteFooter() {
               </li>
               <li>
                 <Link to="/support" className="hover:text-white transition">
-                  Help Desk &amp; Grievance Redressal
+                  Help Desk &amp; Customer Support
+                </Link>
+              </li>
+              <li>
+                <Link to="/grievance" className="text-brand font-bold hover:text-white transition flex items-center gap-1">
+                  <span>⚖️ Grievance Redressal (IT Rules)</span>
                 </Link>
               </li>
               <li>
@@ -255,6 +260,10 @@ export default function SiteFooter() {
         <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-stone-400 font-medium text-center sm:text-left">
           <p>© 2026 WorkHop Technologies Pvt. Ltd. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-stone-400">
+            <Link to="/grievance" className="hover:text-white transition underline underline-offset-2 font-bold text-stone-300">
+              ⚖️ Grievance Officer (Rule 3(2))
+            </Link>
+            <span className="hidden xs:inline">·</span>
             <span>⚡ IT Act, 2000 &amp; DPDP Act, 2023 Compliant</span>
             <span className="hidden xs:inline">·</span>
             <span>Bengaluru, Karnataka, India</span>

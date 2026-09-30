@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Mail, CheckCircle2, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ChevronDown, ChevronUp, Mail, CheckCircle2, Loader2, Scale } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
 import { apiPost } from "@/lib/api";
@@ -88,6 +89,25 @@ export default function Support() {
             {openFaq === i && <p className="mt-2 text-xs leading-[1.4] text-inkmuted">{f.a}</p>}
           </button>
         ))}
+
+        {/* Statutory Grievance Redressal Banner (IT Rules 2021 & DPDP Act 2023) */}
+        <div className="border-2 border-ink bg-[#FFF4ED] p-3.5 shadow-[2px_2px_0px_#121212] my-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span className="font-mono text-[9px] font-black text-brand uppercase flex items-center gap-1">
+                <Scale size={12} /> STATUTORY INTERMEDIARY COMPLIANCE
+              </span>
+              <p className="text-xs font-black text-ink">Need to file with the Resident Grievance Officer?</p>
+              <p className="text-[11px] text-inkmuted font-medium">Governed under Rule 3(2) IT Rules 2021 &amp; DPDP Act 2023 with mandatory 24h ack &amp; 15-day resolution SLAs.</p>
+            </div>
+            <Link
+              to="/grievance"
+              className="inline-flex items-center justify-center gap-1 border-2 border-ink bg-brand px-3 py-1.5 text-[10px] font-black uppercase text-white shadow-[1px_1px_0px_#121212] hover:bg-ink transition shrink-0"
+            >
+              <span>Grievance Cell →</span>
+            </Link>
+          </div>
+        </div>
 
         <p className="mb-0.5 mt-4 text-[11px] font-black tracking-[0.15em] text-ink">RAISE A COMPLAINT</p>
         <div className="flex items-center gap-2 border-2 border-ink bg-sand p-3">

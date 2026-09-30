@@ -44,6 +44,9 @@ import {
   updateFreelancerStatus,
   getAdminAllChats,
   getAdminChatMessages,
+  getStoredGrievances,
+  saveGrievanceTicket,
+  updateGrievanceStatus,
 } from "./clientStore";
 import { sendBrowserPushNotification, sendTestPushNotification } from "./pushNotifications";
 
@@ -293,11 +296,22 @@ function mockRouter(path, method = "GET", body = null) {
       complaints: 2,
     };
   }
-  if (cleanPath === "/admin/site-settings" && method === "GET") {
+  if ((cleanPath === "/site-settings" || cleanPath === "/admin/site-settings") && method === "GET") {
     return getSiteSettings();
   }
   if (cleanPath === "/admin/site-settings" && method === "POST") {
     return saveSiteSettings(body);
+  }
+  if (cleanPath === "/grievances" && method === "POST") {
+    return saveGrievanceTicket(body);
+  }
+  if (cleanPath === "/admin/grievances" && method === "GET") {
+    return getStoredGrievances();
+  }
+  if (cleanPath.startsWith("/admin/grievances/") && cleanPath.endsWith("/status") && method === "POST") {
+    const parts = cleanPath.split("/");
+    const ticketId = parts[3];
+    return updateGrievanceStatus(ticketId, body?.status, body?.resolution_notes);
   }
   if (cleanPath === "/admin/logs" && method === "GET") {
     return getAdminLogs();

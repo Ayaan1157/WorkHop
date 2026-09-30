@@ -1431,6 +1431,17 @@ export function getDefaultSiteSettings() {
     quota_boost_fee: 149,
     auto_approve_pros: false,
     direct_chat_enabled: true,
+
+    // Statutory Grievance Redressal & Nodal Officer (IT Rules 2021 & DPDP Act 2023)
+    grievance_officer_name: "Ayaan S.",
+    grievance_officer_designation: "Resident Grievance Officer & Nodal Contact",
+    grievance_officer_email: "grievance@workhop.in",
+    grievance_officer_phone: "+91 98450 12345",
+    grievance_officer_address: "WorkHop Technologies Pvt. Ltd., #42, 4th Floor, 80 Feet Road, 4th Block, Koramangala, Bengaluru, Karnataka 560034, India",
+    grievance_working_hours: "Monday to Friday, 10:00 AM – 6:00 PM IST (Excluding Public Holidays)",
+    grievance_nodal_email: "nodal@workhop.in",
+    grievance_ack_hours: 24, // Statutory 24-hour acknowledgement SLA
+    grievance_resolution_days: 15, // Statutory 15-day resolution SLA
   };
 }
 
@@ -1446,8 +1457,95 @@ export function saveSiteSettings(updates) {
   const current = getSiteSettings();
   const next = { ...current, ...updates };
   localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(next));
-  addAdminLog("UPDATED_SITE_SETTINGS", "Site configuration and broadcast banner updated");
+  addAdminLog("UPDATED_SITE_SETTINGS", "Site configuration, Grievance Officer details, and broadcast banner updated");
   return next;
+}
+
+// 12.5 Statutory Grievance Redressal Tickets (IT Rules 2021 & DPDP Act 2023)
+const GRIEVANCES_KEY = "workhop_grievances";
+
+export function getStoredGrievances() {
+  const raw = localStorage.getItem(GRIEVANCES_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch { /* ignore */ }
+  }
+  return [
+    {
+      id: "WH-GRV-2026-1001",
+      ticket_id: "WH-GRV-2026-1001",
+      name: "Rohit Malhotra",
+      email: "rohit.m@example.com",
+      phone: "+91 98451 22334",
+      role: "freelancer",
+      category: "Escrow & Milestone Dispute",
+      subject: "Milestone payment delay for catalog design gig",
+      description: "Work was completed and approved on March 28th, but milestone release was pending employer sign-off. Requesting administrative intervention.",
+      status: "resolved",
+      resolution_notes: "Escrow released to freelancer wallet following work verification on March 29th.",
+      created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
+      updated_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+    },
+    {
+      id: "WH-GRV-2026-1002",
+      ticket_id: "WH-GRV-2026-1002",
+      name: "Ananya Deshmukh",
+      email: "ananya.d@example.com",
+      phone: "+91 97410 88776",
+      role: "employer",
+      category: "Content & Copyright Infringement",
+      subject: "Uncredited portfolio artwork reuse inquiry",
+      description: "Reporting a profile that uploaded our brand packaging assets as their own sample.",
+      status: "in_review",
+      resolution_notes: "Grievance Officer reviewing submitted intellectual property documents with claimant.",
+      created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+      updated_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+    },
+  ];
+}
+
+export function saveGrievanceTicket(ticketData) {
+  const existing = getStoredGrievances();
+  const ticketId = `WH-GRV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+  const newTicket = {
+    id: ticketId,
+    ticket_id: ticketId,
+    name: ticketData.name || "Anonymous",
+    email: ticketData.email || "",
+    phone: ticketData.phone || "",
+    role: ticketData.role || "visitor",
+    category: ticketData.category || "General Grievance",
+    subject: ticketData.subject || "Grievance Filing",
+    description: ticketData.description || "",
+    target_url: ticketData.target_url || "",
+    attachment_name: ticketData.attachment_name || null,
+    status: "open",
+    resolution_notes: null,
+    created_at: new Date().toISOString(),
+    ack_deadline: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    resolution_deadline: new Date(Date.now() + 15 * 24 * 3600 * 1000).toISOString(),
+  };
+
+  const updated = [newTicket, ...existing];
+  localStorage.setItem(GRIEVANCES_KEY, JSON.stringify(updated));
+  addAdminLog("GRIEVANCE_FILED", `Statutory grievance ticket ${ticketId} registered by ${newTicket.name} (${newTicket.category})`);
+  return newTicket;
+}
+
+export function updateGrievanceStatus(ticketId, status, resolutionNotes = "") {
+  const list = getStoredGrievances().map((g) => {
+    if (g.id === ticketId || g.ticket_id === ticketId) {
+      return {
+        ...g,
+        status,
+        resolution_notes: resolutionNotes || g.resolution_notes,
+        updated_at: new Date().toISOString(),
+      };
+    }
+    return g;
+  });
+  localStorage.setItem(GRIEVANCES_KEY, JSON.stringify(list));
+  addAdminLog("GRIEVANCE_UPDATED", `Grievance ticket ${ticketId} marked as ${status}`);
+  return list;
 }
 
 // 13. Audit Logs

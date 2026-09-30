@@ -6,7 +6,7 @@ import {
   ExternalLink, Check, X, Megaphone, Settings, Eye, Sliders, Radio,
   ArrowUpRight, Phone, Mail, Award, Clock, FileText, ChevronRight,
   ShieldCheck, HelpCircle, Download, Zap, Coins, RotateCcw,
-  Tag, Percent, Edit3, Copy, Calendar, UserCheck, UserX
+  Tag, Percent, Edit3, Copy, Calendar, UserCheck, UserX, Scale
 } from "lucide-react";
 import { TopBar, Spinner } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
@@ -249,6 +249,186 @@ function SiteControlsTab({ adminFetch }) {
         </div>
       </div>
 
+      {/* Statutory Grievance Redressal & Nodal Officer Controls (IT Rules 2021 & DPDP Act 2023) */}
+      <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-ink/10 pb-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Scale size={18} className="text-brand shrink-0" />
+            <div>
+              <h3 className="text-sm font-black tracking-wider uppercase text-ink">
+                Statutory Grievance Redressal &amp; Nodal Officer Configuration
+              </h3>
+              <p className="text-[11px] text-inkmuted">
+                Mandatory under Rule 3(2) IT Rules, 2021 &amp; DPDP Act, 2023. Displayed publicly on <Link to="/grievance" target="_blank" className="font-bold underline text-brand">/grievance</Link>.
+              </p>
+            </div>
+          </div>
+          <span className="border border-ink bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-800 self-start sm:self-auto">
+            STATUTORY MANDATE
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Officer Name */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Name of Resident Grievance Officer * (Must be an Indian Resident)
+            </label>
+            <input
+              type="text"
+              value={settings.grievance_officer_name || ""}
+              onChange={(e) => setSettings({ ...settings, grievance_officer_name: e.target.value })}
+              placeholder="e.g. Ayaan S."
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+              required
+            />
+          </div>
+
+          {/* Designation */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Designation *
+            </label>
+            <input
+              type="text"
+              value={settings.grievance_officer_designation || ""}
+              onChange={(e) => setSettings({ ...settings, grievance_officer_designation: e.target.value })}
+              placeholder="e.g. Resident Grievance Officer & Nodal Contact"
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+              required
+            />
+          </div>
+
+          {/* Email Address */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Official Grievance Email Address *
+            </label>
+            <input
+              type="email"
+              value={settings.grievance_officer_email || ""}
+              onChange={(e) => setSettings({ ...settings, grievance_officer_email: e.target.value })}
+              placeholder="e.g. grievance@workhop.in"
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+              required
+            />
+          </div>
+
+          {/* Mobile Phone / Helpline */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Telephone / Helpline Mobile Number *
+            </label>
+            <input
+              type="text"
+              value={settings.grievance_officer_phone || ""}
+              onChange={(e) => setSettings({ ...settings, grievance_officer_phone: e.target.value })}
+              placeholder="e.g. +91 98450 12345"
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+              required
+            />
+          </div>
+
+          {/* Nodal Officer Email */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Nodal Contact Email (Law Enforcement Coordination)
+            </label>
+            <input
+              type="email"
+              value={settings.grievance_nodal_email || ""}
+              onChange={(e) => setSettings({ ...settings, grievance_nodal_email: e.target.value })}
+              placeholder="e.g. nodal@workhop.in"
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+            />
+          </div>
+
+          {/* Business Working Hours */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Operating / Business Working Hours
+            </label>
+            <input
+              type="text"
+              value={settings.grievance_working_hours || ""}
+              onChange={(e) => setSettings({ ...settings, grievance_working_hours: e.target.value })}
+              placeholder="e.g. Monday to Friday, 10:00 AM – 6:00 PM IST (Excluding Public Holidays)"
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+            />
+          </div>
+
+          {/* Physical Address */}
+          <div className="md:col-span-2">
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Registered Physical Office Address in India *
+            </label>
+            <textarea
+              rows={2}
+              value={settings.grievance_officer_address || ""}
+              onChange={(e) => setSettings({ ...settings, grievance_officer_address: e.target.value })}
+              placeholder="e.g. WorkHop Technologies Pvt. Ltd., #42, 4th Floor, 80 Feet Road, 4th Block, Koramangala, Bengaluru, Karnataka 560034, India"
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] p-3 text-xs font-bold text-ink focus:border-brand outline-none"
+              required
+            />
+          </div>
+
+          {/* Acknowledgment SLA */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Statutory Acknowledgment SLA (Hours)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="72"
+              value={settings.grievance_ack_hours ?? 24}
+              onChange={(e) => setSettings({ ...settings, grievance_ack_hours: Number(e.target.value) })}
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+            />
+            <p className="mt-1 text-[9px] text-inkmuted">Mandated maximum 24 hours under Rule 3(2)</p>
+          </div>
+
+          {/* Resolution SLA */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Statutory Resolution &amp; Disposal SLA (Calendar Days)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="30"
+              value={settings.grievance_resolution_days ?? 15}
+              onChange={(e) => setSettings({ ...settings, grievance_resolution_days: Number(e.target.value) })}
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+            />
+            <p className="mt-1 text-[9px] text-inkmuted">Mandated maximum 15 calendar days under Rule 3(2)</p>
+          </div>
+        </div>
+
+        {/* Live Officer Details Preview */}
+        <div className="mt-4 border-2 border-dashed border-ink/40 p-3 bg-sand/30">
+          <p className="text-[10px] font-black uppercase tracking-wider text-inkmuted mb-2">
+            👀 LIVE PREVIEW OF HOW CITIZENS &amp; AUTHORITIES SEE THIS ON /grievance:
+          </p>
+          <div className="border border-ink bg-white p-3 text-xs shadow-[2px_2px_0px_#121212]">
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="font-mono text-[9px] font-black text-brand uppercase">RESIDENT GRIEVANCE OFFICER</span>
+                <p className="font-black text-sm text-ink">{settings.grievance_officer_name || "Resident Grievance Officer"}</p>
+                <p className="text-[11px] font-bold text-inkmuted">{settings.grievance_officer_designation || "Resident Grievance Officer & Nodal Contact"}</p>
+              </div>
+              <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 text-[9px] font-black">
+                SLA: {settings.grievance_ack_hours || 24}h Ack / {settings.grievance_resolution_days || 15}d Disposal
+              </span>
+            </div>
+            <div className="mt-2 text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-1 text-ink/80 pt-2 border-t border-ink/10">
+              <p>📧 <strong>Email:</strong> {settings.grievance_officer_email || "grievance@workhop.in"}</p>
+              <p>📞 <strong>Helpline:</strong> {settings.grievance_officer_phone || "+91 98450 12345"}</p>
+              <p className="sm:col-span-2 truncate">📍 <strong>Registered Office:</strong> {settings.grievance_officer_address || "Bengaluru, Karnataka, India"}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Maintenance Mode & Safety */}
       <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212]">
@@ -2594,6 +2774,431 @@ function CreditsConfigTab({ adminFetch }) {
   );
 }
 
+// 10. Support & Statutory Grievance Redressal Tab
+function IssuesAndGrievancesTab({ adminFetch }) {
+  const [subTab, setSubTab] = useState("grievances"); // "grievances" | "complaints"
+  const [grievances, setGrievances] = useState([]);
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [busyId, setBusyId] = useState(null);
+  const [resolvingId, setResolvingId] = useState(null);
+  const [resolutionText, setResolutionText] = useState("");
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [grvs, cmps] = await Promise.all([
+        adminFetch("/grievances").catch(() => []),
+        adminFetch("/complaints").catch(() => []),
+      ]);
+      setGrievances(Array.isArray(grvs) ? grvs : []);
+      setComplaints(Array.isArray(cmps) ? cmps : []);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  }, [adminFetch]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleUpdateStatus = async (ticketId, status, notes = "") => {
+    setBusyId(ticketId);
+    try {
+      await adminFetch(`/grievances/${ticketId}/status`, "POST", {
+        status,
+        resolution_notes: notes || undefined,
+      });
+      await loadData();
+      setResolvingId(null);
+      setResolutionText("");
+    } catch (err) {
+      alert(err?.message || "Failed to update grievance ticket.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const filteredGrievances = useMemo(() => {
+    return grievances.filter((g) => {
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "open" && (g.status === "open" || !g.status)) ||
+        g.status === statusFilter;
+      const q = search.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        (g.ticket_id || "").toLowerCase().includes(q) ||
+        (g.name || "").toLowerCase().includes(q) ||
+        (g.email || "").toLowerCase().includes(q) ||
+        (g.subject || "").toLowerCase().includes(q) ||
+        (g.category || "").toLowerCase().includes(q);
+      return matchesStatus && matchesSearch;
+    });
+  }, [grievances, statusFilter, search]);
+
+  const stats = useMemo(() => {
+    const total = grievances.length;
+    const open = grievances.filter((g) => g.status === "open" || !g.status).length;
+    const inReview = grievances.filter((g) => g.status === "in_review").length;
+    const resolved = grievances.filter((g) => g.status === "resolved").length;
+    return { total, open, inReview, resolved };
+  }, [grievances]);
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Sub-tab Navigation */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-white p-3 shadow-[3px_3px_0px_#121212]">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setSubTab("grievances")}
+            className={`flex items-center gap-1.5 border-2 border-ink px-3 py-1.5 text-xs font-black transition ${
+              subTab === "grievances"
+                ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
+                : "bg-white text-ink hover:bg-sand"
+            }`}
+          >
+            <Scale size={14} />
+            <span>STATUTORY GRIEVANCES (IT RULES 2021)</span>
+            <span className="ml-1 bg-white text-ink px-1.5 py-0.2 text-[10px] font-black">
+              {grievances.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubTab("complaints")}
+            className={`flex items-center gap-1.5 border-2 border-ink px-3 py-1.5 text-xs font-black transition ${
+              subTab === "complaints"
+                ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
+                : "bg-white text-ink hover:bg-sand"
+            }`}
+          >
+            <HelpCircle size={14} />
+            <span>GENERAL SUPPORT COMPLAINTS</span>
+            <span className="ml-1 bg-white text-ink px-1.5 py-0.2 text-[10px] font-black">
+              {complaints.length}
+            </span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            to="/grievance"
+            target="_blank"
+            className="flex items-center gap-1 border-2 border-ink bg-[#FFF4ED] px-2.5 py-1 text-[11px] font-black text-brand shadow-[1px_1px_0px_#121212] hover:bg-[#FFE5D4] transition"
+          >
+            <ExternalLink size={12} />
+            <span>VIEW /grievance PAGE</span>
+          </Link>
+          <button
+            type="button"
+            onClick={loadData}
+            className="flex items-center gap-1 border-2 border-ink bg-white px-2.5 py-1 text-[11px] font-black text-ink hover:bg-sand transition"
+            title="Refresh"
+          >
+            <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+            <span>REFRESH</span>
+          </button>
+        </div>
+      </div>
+
+      {subTab === "grievances" ? (
+        <div className="flex flex-col gap-5">
+          {/* Statutory Metrics Banner */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="border-2 border-ink bg-white p-3 shadow-[2px_2px_0px_#121212]">
+              <span className="text-[10px] font-black uppercase tracking-wider text-inkmuted">TOTAL GRIEVANCES</span>
+              <p className="text-xl font-black text-ink mt-0.5">{stats.total}</p>
+            </div>
+            <div className="border-2 border-ink bg-[#FFF4ED] p-3 shadow-[2px_2px_0px_#121212]">
+              <span className="text-[10px] font-black uppercase tracking-wider text-brand">OPEN / PENDING ACK (24H)</span>
+              <p className="text-xl font-black text-brand mt-0.5">{stats.open}</p>
+            </div>
+            <div className="border-2 border-ink bg-[#FFF9E6] p-3 shadow-[2px_2px_0px_#121212]">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">IN REVIEW / INVESTIGATION</span>
+              <p className="text-xl font-black text-amber-800 mt-0.5">{stats.inReview}</p>
+            </div>
+            <div className="border-2 border-ink bg-[#E8F8F0] p-3 shadow-[2px_2px_0px_#121212]">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">RESOLVED / DISPOSED (15D)</span>
+              <p className="text-xl font-black text-emerald-800 mt-0.5">{stats.resolved}</p>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-2 border-ink bg-white p-3 shadow-[2px_2px_0px_#121212]">
+            <div className="relative flex-1">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-inkmuted" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by ticket ID, complainant name, email, or category..."
+                className="w-full border-2 border-ink bg-[#FAFAF8] py-1.5 pl-8 pr-3 text-xs font-bold text-ink focus:border-brand outline-none"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {[
+                { id: "all", label: "ALL" },
+                { id: "open", label: "OPEN" },
+                { id: "in_review", label: "IN REVIEW" },
+                { id: "resolved", label: "RESOLVED" },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setStatusFilter(f.id)}
+                  className={`border-2 border-ink px-2.5 py-1 text-[10px] font-black transition ${
+                    statusFilter === f.id
+                      ? "bg-ink text-white shadow-[1px_1px_0px_#121212]"
+                      : "bg-white text-ink hover:bg-sand"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grievance Ticket Cards */}
+          {loading ? (
+            <div className="py-12 text-center"><Spinner /></div>
+          ) : filteredGrievances.length === 0 ? (
+            <div className="border-2 border-dashed border-ink/40 bg-sand/20 p-8 text-center">
+              <p className="text-xs font-black uppercase tracking-wider text-inkmuted">
+                No statutory grievances match the filter criteria.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredGrievances.map((grv) => {
+                const isBusy = busyId === grv.id || busyId === grv.ticket_id;
+                const isResolving = resolvingId === grv.id || resolvingId === grv.ticket_id;
+                const status = grv.status || "open";
+
+                return (
+                  <div
+                    key={grv.id || grv.ticket_id}
+                    className="border-2 border-ink bg-white p-4 sm:p-5 shadow-[4px_4px_0px_#121212]"
+                  >
+                    {/* Header */}
+                    <div className="flex flex-wrap items-start justify-between gap-2 border-b border-ink/10 pb-3">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-xs font-black text-brand bg-[#FFF4ED] border border-brand px-2 py-0.5">
+                            {grv.ticket_id || grv.id}
+                          </span>
+                          <span className="border border-ink bg-sand px-2 py-0.5 text-[10px] font-black uppercase text-ink">
+                            {grv.category || "General Grievance"}
+                          </span>
+                          <span className="border border-ink/40 bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-inkmuted">
+                            {grv.role || "User"}
+                          </span>
+                        </div>
+                        <h4 className="mt-2 text-sm sm:text-base font-black text-ink">
+                          {grv.subject || "Grievance Statement"}
+                        </h4>
+                      </div>
+
+                      <div>
+                        {status === "resolved" ? (
+                          <span className="flex items-center gap-1 border-2 border-ok bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-800 shadow-[1px_1px_0px_#121212]">
+                            <CheckCircle2 size={12} /> RESOLVED &amp; DISPOSED
+                          </span>
+                        ) : status === "in_review" ? (
+                          <span className="flex items-center gap-1 border-2 border-amber-800 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase text-amber-800 shadow-[1px_1px_0px_#121212]">
+                            <Clock size={12} /> IN REVIEW / ACKNOWLEDGED
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 border-2 border-[#C62828] bg-red-50 px-2.5 py-1 text-[10px] font-black uppercase text-[#C62828] shadow-[1px_1px_0px_#121212]">
+                            <AlertTriangle size={12} /> OPEN · 24H ACK PENDING
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p className="mt-3 text-xs leading-relaxed text-ink/90 whitespace-pre-wrap bg-[#FAFAF8] border border-ink/20 p-3 font-medium">
+                      {grv.description}
+                    </p>
+
+                    {/* Reported Target URL or Attachment */}
+                    {(grv.target_url || grv.attachment_name) && (
+                      <div className="mt-2.5 flex flex-wrap gap-3 text-xs font-bold text-ink">
+                        {grv.target_url && (
+                          <a
+                            href={grv.target_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-brand underline underline-offset-2 hover:text-ink transition"
+                          >
+                            <ExternalLink size={12} />
+                            <span>Reported Gig / Profile: {grv.target_url}</span>
+                          </a>
+                        )}
+                        {grv.attachment_name && (
+                          <span className="flex items-center gap-1 text-inkmuted">
+                            <FileText size={12} />
+                            <span>Evidence: {grv.attachment_name}</span>
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Resolution Notes Box if present */}
+                    {grv.resolution_notes && (
+                      <div className="mt-3 border-2 border-ok/40 bg-emerald-50/50 p-3 text-xs">
+                        <span className="font-black text-emerald-800 text-[10px] uppercase tracking-wider block">
+                          Official Resolution &amp; Corrective Action Taken:
+                        </span>
+                        <p className="mt-0.5 text-ink font-medium">{grv.resolution_notes}</p>
+                      </div>
+                    )}
+
+                    {/* Complainant Info & Statutory SLA Bar */}
+                    <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 border-t border-ink/10 pt-3 text-xs">
+                      <div className="flex flex-wrap items-center gap-3 text-inkmuted font-medium">
+                        <span>
+                          Complainant: <strong className="text-ink">{grv.name}</strong>
+                        </span>
+                        <span>·</span>
+                        <a
+                          href={`mailto:${grv.email}?subject=Regarding Grievance Ticket ${grv.ticket_id || grv.id}`}
+                          className="flex items-center gap-1 text-ink hover:text-brand underline"
+                        >
+                          <Mail size={12} /> {grv.email}
+                        </a>
+                        {grv.phone && (
+                          <>
+                            <span>·</span>
+                            <a href={`tel:${grv.phone}`} className="flex items-center gap-1 text-ink hover:text-brand">
+                              <Phone size={12} /> {grv.phone}
+                            </a>
+                          </>
+                        )}
+                        <span>·</span>
+                        <span>Filed: {fmtDate(grv.created_at)}</span>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2">
+                        {status === "open" && (
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleUpdateStatus(grv.id || grv.ticket_id, "in_review")}
+                            className="flex items-center gap-1 border-2 border-ink bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase text-amber-900 shadow-[1px_1px_0px_#121212] hover:bg-amber-100 transition"
+                          >
+                            <Clock size={12} /> Acknowledge Ticket
+                          </button>
+                        )}
+
+                        {status !== "resolved" && !isResolving && (
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => {
+                              setResolvingId(grv.id || grv.ticket_id);
+                              setResolutionText(grv.resolution_notes || "");
+                            }}
+                            className="flex items-center gap-1 border-2 border-ink bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase text-white shadow-[1px_1px_0px_#121212] hover:bg-emerald-700 transition"
+                          >
+                            <CheckCircle2 size={12} /> Mark Resolved
+                          </button>
+                        )}
+
+                        {status === "resolved" && (
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleUpdateStatus(grv.id || grv.ticket_id, "in_review")}
+                            className="flex items-center gap-1 border-2 border-ink bg-white px-2.5 py-1 text-[10px] font-black text-ink hover:bg-sand transition"
+                          >
+                            <RotateCcw size={10} /> Reopen
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Inline Resolution Notes Box */}
+                    {isResolving && (
+                      <div className="mt-3 border-2 border-ink bg-[#FAFAF8] p-3 shadow-[2px_2px_0px_#121212]">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted block mb-1">
+                          Enter Official Resolution Notes &amp; Action Taken (Will be logged and communicated):
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={resolutionText}
+                          onChange={(e) => setResolutionText(e.target.value)}
+                          placeholder="e.g. Escrow milestone released following verification, or reported infringing image removed from profile."
+                          className="w-full border-2 border-ink bg-white p-2 text-xs font-bold text-ink outline-none"
+                        />
+                        <div className="mt-2 flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setResolvingId(null)}
+                            className="border border-ink bg-white px-2.5 py-1 text-[10px] font-black text-ink hover:bg-sand transition"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleUpdateStatus(grv.id || grv.ticket_id, "resolved", resolutionText)}
+                            className="flex items-center gap-1 border-2 border-ink bg-brand px-3 py-1 text-[10px] font-black text-white shadow-[1px_1px_0px_#121212] hover:bg-ink transition"
+                          >
+                            {isBusy ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                            <span>CONFIRM RESOLUTION &amp; CLOSE TICKET</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Complaints List */
+        <div className="grid grid-cols-1 gap-3">
+          {complaints.length === 0 ? (
+            <div className="border-2 border-dashed border-ink/40 bg-sand/20 p-8 text-center">
+              <p className="text-xs font-black uppercase tracking-wider text-inkmuted">
+                No general support complaints recorded.
+              </p>
+            </div>
+          ) : (
+            complaints.map((iss, i) => (
+              <div
+                key={iss.complaint_id || `iss-${i}`}
+                className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-black text-ink">{iss.subject || "User Issue / Feedback"}</p>
+                  <span className="border border-ink bg-brand px-2 py-0.5 text-[9px] font-black uppercase text-white">
+                    {iss.status || "PENDING"}
+                  </span>
+                </div>
+                <p className="text-xs text-ink/90 mt-2 font-medium">{iss.message}</p>
+                <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2 text-xs text-inkmuted">
+                  <span>From: <strong className="text-ink">{iss.email || iss.user_email}</strong></span>
+                  <span>{fmtDate(iss.created_at)}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------------- MAIN ADMIN COMPONENT ----------------
 
 export default function Admin() {
@@ -3035,23 +3640,7 @@ export default function Admin() {
 
         {tab === "COUPONS" && <CouponsTab adminFetch={adminFetch} />}
 
-        {tab === "ISSUES" && (
-          <div className="grid grid-cols-1 gap-3">
-            {rows.map((iss, i) => (
-              <div key={iss.complaint_id || `iss-${i}`} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-black text-ink">{iss.subject || "User Issue / Feedback"}</p>
-                  <Badge text={iss.status || "PENDING"} tone="orange" />
-                </div>
-                <p className="text-xs text-ink/90 mt-2">{iss.message}</p>
-                <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2 text-xs text-inkmuted">
-                  <span>From: {iss.email || iss.user_email}</span>
-                  <span>{fmtDate(iss.created_at)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {tab === "ISSUES" && <IssuesAndGrievancesTab adminFetch={adminFetch} />}
       </main>
     </div>
   );

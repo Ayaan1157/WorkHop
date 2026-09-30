@@ -1,21 +1,24 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ShieldCheck, FileText, Lock, DollarSign, Scale, Printer
+  ShieldCheck, FileText, Lock, DollarSign, Scale, Printer, ExternalLink, ArrowRight
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
+import { getSiteSettings } from "@/lib/clientStore";
 
 const TABS = [
   { id: "TERMS", label: "TERMS OF SERVICE", icon: FileText },
   { id: "PRIVACY", label: "PRIVACY POLICY (DPDP)", icon: Lock },
   { id: "PAYMENTS", label: "PAYMENTS & ESCROW", icon: DollarSign },
   { id: "SAFETY", label: "COMMUNITY & SAFETY", icon: ShieldCheck },
-  { id: "GRIEVANCE", label: "DISCLAIMERS & JURISDICTION", icon: Scale },
+  { id: "GRIEVANCE", label: "GRIEVANCE REDRESSAL (RULE 3(2))", icon: Scale },
+  { id: "DISCLAIMERS", label: "DISCLAIMERS & JURISDICTION", icon: FileText },
 ];
 
 export default function Legal() {
   const [activeTab, setActiveTab] = useState("TERMS");
   const [searchQuery, setSearchQuery] = useState("");
+  const settings = getSiteSettings();
 
   const handlePrint = () => {
     window.print();
@@ -239,25 +242,83 @@ export default function Legal() {
           </div>
         )}
 
-        {/* Tab 5: Disclaimers & Governing Jurisdiction */}
+        {/* Tab 5: Grievance Redressal Mechanism & Officer Appointment */}
         {activeTab === "GRIEVANCE" && (
           <div className="flex flex-col gap-5 animate-in fade-in">
-            <SectionHeader title="5. DISCLAIMERS, LIABILITY & GOVERNING JURISDICTION" badge="JURISDICTION" />
+            <SectionHeader title="5. STATUTORY GRIEVANCE REDRESSAL MECHANISM (IT RULES 2021 & DPDP ACT 2023)" badge="RULE 3(2) COMPLIANT" />
+
+            <div className="border-2 border-ink bg-[#FFF4ED] p-4 sm:p-5 shadow-[3px_3px_0px_#121212]">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <span className="font-mono text-[9px] font-black text-brand uppercase">MANDATORY STATUTORY DESIGNATION</span>
+                  <h3 className="text-base font-black text-ink mt-0.5">
+                    Resident Grievance Officer &amp; Nodal Contact
+                  </h3>
+                  <p className="text-xs text-ink/80 mt-1 max-w-2xl font-medium">
+                    In compliance with Rule 3(2) of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021 and the DPDP Act 2023, WorkHop Technologies has appointed a Resident Grievance Officer in India.
+                  </p>
+                </div>
+                <Link
+                  to="/grievance"
+                  className="flex items-center gap-1.5 border-2 border-ink bg-brand px-3 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-ink transition shrink-0"
+                >
+                  <span>GRIEVANCE PORTAL &amp; FORM</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs border-t border-ink/10 pt-3">
+                <div className="border border-ink/20 bg-white p-3">
+                  <span className="text-[10px] font-black uppercase text-inkmuted">Resident Grievance Officer</span>
+                  <p className="font-black text-sm text-ink">{settings.grievance_officer_name || "Ayaan S."}</p>
+                  <p className="text-[11px] font-bold text-brand">{settings.grievance_officer_designation || "Resident Grievance Officer & Nodal Contact"}</p>
+                </div>
+                <div className="border border-ink/20 bg-white p-3">
+                  <span className="text-[10px] font-black uppercase text-inkmuted">Official Contact</span>
+                  <p className="font-bold text-ink">📧 {settings.grievance_officer_email || "grievance@workhop.in"}</p>
+                  <p className="font-bold text-ink">📞 {settings.grievance_officer_phone || "+91 98450 12345"}</p>
+                </div>
+                <div className="border border-ink/20 bg-white p-3 sm:col-span-2">
+                  <span className="text-[10px] font-black uppercase text-inkmuted">Physical Registered Address</span>
+                  <p className="font-medium text-ink text-[11px]">{settings.grievance_officer_address || "Bengaluru, Karnataka, India"}</p>
+                  <p className="mt-1 text-[10px] text-inkmuted">Working Hours: {settings.grievance_working_hours || "Mon-Fri 10 AM - 6 PM IST"}</p>
+                </div>
+              </div>
+            </div>
 
             <PolicyCard
               num="5.1"
+              title="Statutory SLAs for Grievance Handling"
+              desc={`All grievances filed via our dedicated portal (/grievance) or emailed directly to ${settings.grievance_officer_email || "grievance@workhop.in"} are formally acknowledged within ${settings.grievance_ack_hours || 24} hours with an assigned ticket token, and investigated and disposed of within ${settings.grievance_resolution_days || 15} calendar days from receipt.`}
+            />
+
+            <PolicyCard
+              num="5.2"
+              title="Appeals to Grievance Appellate Committee (GAC)"
+              desc="Any user aggrieved by a decision of the Resident Grievance Officer may prefer an appeal before the central Grievance Appellate Committee (GAC) at gac.gov.in within thirty (30) days of receiving such decision."
+            />
+          </div>
+        )}
+
+        {/* Tab 6: Disclaimers & Governing Jurisdiction */}
+        {activeTab === "DISCLAIMERS" && (
+          <div className="flex flex-col gap-5 animate-in fade-in">
+            <SectionHeader title="6. DISCLAIMERS, LIABILITY & GOVERNING JURISDICTION" badge="JURISDICTION" />
+
+            <PolicyCard
+              num="6.1"
               title="Warranty Disclaimer"
               desc="The WorkHop platform, services, and matching tools are provided on an 'AS IS' and 'AS AVAILABLE' basis without warranties of any kind, express or implied. WorkHop does not guarantee uninterrupted service, specific earning amounts for freelancers, or the continuous availability of qualified candidates for employers."
             />
 
             <PolicyCard
-              num="5.2"
+              num="6.2"
               title="Limitation of Aggregate Liability"
               desc="To the maximum extent permitted by applicable Indian law, WorkHop Technologies and its directors, officers, and agents shall not be liable for any indirect, punitive, incidental, special, or consequential damages. In all circumstances, WorkHop's aggregate liability arising out of or related to platform usage shall not exceed the total fees paid by you to WorkHop in the three (3) months preceding the claim."
             />
 
             <PolicyCard
-              num="5.3"
+              num="6.3"
               title="Governing Law & Exclusive Jurisdiction"
               desc="This Agreement, platform transactions, and any dispute or claim arising out of them shall be governed by and construed in accordance with the substantive laws of the Republic of India. The courts situated in Bengaluru, Karnataka, India shall have exclusive legal jurisdiction to adjudicate any matters arising under this Agreement."
             />
