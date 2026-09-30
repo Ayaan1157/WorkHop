@@ -908,7 +908,7 @@ export default function Landing() {
       
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 w-full border-b-2 border-ink bg-white dark:bg-[#121212] transition-colors">
-        <div className="mx-auto flex h-[76px] w-full max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-8">
+        <div className="mx-auto flex h-[76px] w-full max-w-[1600px] items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 xl:px-8">
           
           {/* Logo */}
           <Link to="/" className="flex items-center shrink-0">
@@ -916,7 +916,7 @@ export default function Landing() {
           </Link>
 
           {/* Desktop Navigation Tabs */}
-          <nav className="hidden xl:flex flex-1 items-center justify-center gap-5 2xl:gap-7 min-w-0 px-2" data-testid="landing-nav-tabs">
+          <nav className="hidden xl:flex items-center gap-3.5 2xl:gap-6 shrink-0" data-testid="landing-nav-tabs">
             {(() => {
               const uRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
               const isEmp = Boolean(user && (uRole?.includes("employ") || uRole?.includes("client")));

@@ -139,16 +139,13 @@ export function GlobalNav() {
   const isEmployer = Boolean(user && (isAdmin || userRole?.includes("employ") || userRole?.includes("client")));
   const isFreelancer = Boolean(user && !isAdmin && (user.role === "freelancer" || userRole?.includes("freelancer") || (!userRole?.includes("employ") && !userRole?.includes("client"))));
 
-  const allLinks = [
+  const desktopLinks = [
     { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users, forRole: "employer" },
     { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs", icon: Briefcase, forRole: "freelancer" },
     { label: "LIVE MAP", path: "/map", testId: "nav-map", icon: MapPin },
     { label: "CATEGORIES", path: "/categories", testId: "nav-categories", icon: Grid3x3 },
     { label: "PLANS", path: "/employer/plans", testId: "nav-plans", icon: Coins },
-    ...(isAdmin ? [{ label: "ADMIN PORTAL", path: "/admin", testId: "nav-admin", icon: Shield }] : []),
-  ];
-
-  const links = allLinks.filter((link) => {
+  ].filter((link) => {
     if (!user) return true; // Show both if not signed in
     if (isAdmin) return true; // Admin gets access to both sides and everything!
     if (link.forRole === "employer") return isEmployer;
@@ -156,18 +153,23 @@ export function GlobalNav() {
     return true;
   });
 
+  const drawerLinks = [
+    ...desktopLinks,
+    ...(isAdmin ? [{ label: "ADMIN PORTAL", path: "/admin", testId: "nav-admin", icon: Shield }] : []),
+  ];
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b-2 border-ink bg-white dark:bg-[#121212] transition-colors">
-        <div className="mx-auto flex h-[76px] w-full max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-8">
+        <div className="mx-auto flex h-[76px] w-full max-w-[1600px] items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 xl:px-8">
           {/* Logo */}
           <Link to="/" className="flex items-center shrink-0">
             <Logo size="header" />
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden xl:flex flex-1 items-center justify-center gap-5 2xl:gap-7 min-w-0 px-2" data-testid="global-nav-links">
-            {links.map((link) => {
+          <nav className="hidden xl:flex items-center gap-3.5 2xl:gap-6 shrink-0" data-testid="global-nav-links">
+            {desktopLinks.map((link) => {
               const active = loc.pathname === link.path;
               return (
                 <Link
@@ -188,15 +190,15 @@ export function GlobalNav() {
 
           {/* Right Action Icons & Controls */}
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-            {/* Admin Full Access Badge or Credits Badge (Desktop) */}
+            {/* Admin Full Access Badge (White text with black background) */}
             {isAdmin ? (
               <Link
                 to="/admin"
-                className="hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-amber-600 dark:border-amber-400 bg-amber-100 dark:bg-amber-950/80 px-3 text-xs font-black tracking-wide text-amber-950 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900 transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#f59e0b] whitespace-nowrap shrink-0"
+                className="hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-black dark:border-white bg-black px-3.5 text-xs font-black tracking-wide text-white hover:bg-neutral-900 transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#ffffff] whitespace-nowrap shrink-0"
                 title="Admin Command Center (Full Platform Unlocked)"
               >
-                <Shield size={14} className="text-amber-700 dark:text-amber-300 shrink-0 fill-amber-400/20" />
-                <span>ADMIN FULL ACCESS</span>
+                <Shield size={14} className="text-white shrink-0 fill-white/20" />
+                <span className="text-white font-black">ADMIN FULL ACCESS</span>
               </Link>
             ) : (
               <Link
@@ -355,7 +357,7 @@ export function GlobalNav() {
               <span className="text-[9px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400 mb-1">
                 Explore WorkHop
               </span>
-              {links.map((link) => {
+              {drawerLinks.map((link) => {
                 const Icon = link.icon;
                 const active = loc.pathname === link.path;
                 return (
