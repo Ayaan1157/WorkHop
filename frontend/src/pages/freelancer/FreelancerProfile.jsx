@@ -198,8 +198,8 @@ export default function FreelancerProfile() {
     {
       icon: Tag,
       label: "Plans & Pricing",
-      sub: "Job posts & urgent boosts",
-      to: "/employer/plans",
+      sub: "Bidding Hops (1 Hop = ₹15) & passes",
+      to: "/plans?tab=freelancer",
       testID: "profile-plans",
     },
     {

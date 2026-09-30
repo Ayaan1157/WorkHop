@@ -63,7 +63,9 @@ function App() {
             <Route path="/chat/:id" element={<Chat />} />
             <Route path="/pro/:id" element={<Pro />} />
             <Route path="/employer" element={<Employer />} />
+            <Route path="/plans" element={<Plans />} />
             <Route path="/employer/plans" element={<Plans />} />
+            <Route path="/freelancer/plans" element={<Plans />} />
             <Route path="/employer/post-job" element={<PostJob />} />
             <Route path="/employer/inbox" element={<Inbox />} />
             <Route path="/freelancer" element={<Onboarding />} />

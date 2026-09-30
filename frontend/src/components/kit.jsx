@@ -6,7 +6,8 @@ import {
   MapPin, PlusCircle, UserCircle2, LogOut, Search, Compass, Tag, HelpCircle, Coins,
   Sun, Moon, Menu, X, Home, Shield, FileText, ArrowRight, BookOpen
 } from "lucide-react";
-import { apiGet } from "@/lib/api";
+import { apiGet, getFreelancerId } from "@/lib/api";
+import { getCreditsWallet } from "@/lib/clientStore";
 import { CATEGORY_VISUALS, CATEGORY_SHORT_LABELS, CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -139,12 +140,17 @@ export function GlobalNav() {
   const isEmployer = Boolean(user && (isAdmin || userRole?.includes("employ") || userRole?.includes("client")));
   const isFreelancer = Boolean(user && !isAdmin && (user.role === "freelancer" || userRole?.includes("freelancer") || (!userRole?.includes("employ") && !userRole?.includes("client"))));
 
+  const currentFreelancerId = getFreelancerId?.() || user?.id || "anon";
+  const userWallet = getCreditsWallet(currentFreelancerId);
+  const currentHops = userWallet?.balance ?? 20;
+  const plansPath = isEmployer ? "/plans?tab=employer" : "/plans?tab=freelancer";
+
   const desktopLinks = [
     { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users, forRole: "employer" },
     { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs", icon: Briefcase, forRole: "freelancer" },
     { label: "LIVE MAP", path: "/map", testId: "nav-map", icon: MapPin },
     { label: "CATEGORIES", path: "/categories", testId: "nav-categories", icon: Grid3x3 },
-    { label: "PLANS", path: "/employer/plans", testId: "nav-plans", icon: Coins },
+    { label: "PLANS", path: plansPath, testId: "nav-plans", icon: Coins },
   ].filter((link) => {
     if (!user) return true; // Show both if not signed in
     if (isAdmin) return true; // Admin gets access to both sides and everything!
@@ -170,7 +176,7 @@ export function GlobalNav() {
           {/* Desktop Nav Links */}
           <nav className="hidden xl:flex items-center gap-3.5 2xl:gap-6 shrink-0" data-testid="global-nav-links">
             {desktopLinks.map((link) => {
-              const active = loc.pathname === link.path;
+              const active = loc.pathname === link.path || (link.path.startsWith("/plans") && loc.pathname.includes("/plans"));
               return (
                 <Link
                   key={link.path}
@@ -202,12 +208,12 @@ export function GlobalNav() {
               </Link>
             ) : (
               <Link
-                to="/employer/plans"
+                to={plansPath}
                 className="hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#222] px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-stone dark:hover:bg-[#2c2c2c] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
-                title="Your active Hops"
+                title="Your active Bidding Hops (1 Hop = ₹15)"
               >
                 <Coins size={14} className="text-brand shrink-0" />
-                <span>5 HOPS</span>
+                <span>{currentHops} HOPS</span>
               </Link>
             )}
 
