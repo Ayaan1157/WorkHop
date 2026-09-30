@@ -91,12 +91,12 @@ export default function SiteFooter() {
         {/* Main Grid: 2 columns on mobile, 4 columns on tablet & desktop */}
         <div className="grid grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-8 sm:gap-y-10 sm:grid-cols-2 lg:grid-cols-4 pt-8 sm:pt-12">
           
-          {/* Column 1: For Employers (Business) */}
+          {/* Column 1: For Employers */}
           <div className="flex flex-col gap-3">
             <h4 className="text-sm font-black uppercase tracking-wider text-white">
-              Business
+              For Employers
             </h4>
-            <ul className="flex flex-col gap-2 text-xs sm:text-sm text-stone-400">
+            <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-stone-400">
               <li>
                 <Link to="/employer" className="hover:text-white transition">
                   Explore Verified Pros
@@ -104,122 +104,76 @@ export default function SiteFooter() {
               </li>
               <li>
                 <Link to="/employer/post-job" className="hover:text-white transition">
-                  Post a Local Gig (Free)
+                  Post a Gig (Free)
                 </Link>
               </li>
               <li>
                 <Link to="/employer/plans" className="hover:text-white transition">
-                  Pricing &amp; Unlock Plans
-                </Link>
-              </li>
-              <li>
-                <Link to="/map" className="hover:text-white transition">
-                  Live Radar Talent Map
-                </Link>
-              </li>
-              <li>
-                <Link to="/employer/inbox" className="hover:text-white transition">
-                  Applicant Inbox
+                  Pricing &amp; Plans
                 </Link>
               </li>
               <li>
                 <Link to="/categories" className="hover:text-white transition">
-                  Hire by Category
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal" className="hover:text-white transition">
-                  Escrow &amp; Dispute Terms
+                  Browse Categories
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 2: For Freelancers (Benefits) */}
+          {/* Column 2: For Freelancers */}
           <div className="flex flex-col gap-3">
             <h4 className="text-sm font-black uppercase tracking-wider text-white">
-              Benefits
+              For Freelancers
             </h4>
-            <ul className="flex flex-col gap-2 text-xs sm:text-sm text-stone-400">
+            <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-stone-400">
               <li>
                 <Link to="/freelancer/jobs" className="hover:text-white transition">
-                  Find Gigs (Within 5km)
+                  Find Nearby Gigs
                 </Link>
               </li>
               <li>
                 <Link to="/freelancer" className="hover:text-white transition">
-                  Freelancer Verification
-                </Link>
-              </li>
-              <li>
-                <Link to="/freelancer/chats" className="hover:text-white transition">
-                  Direct WhatsApp &amp; Chat
+                  Get Verified
                 </Link>
               </li>
               <li>
                 <Link to="/map" className="hover:text-white transition">
-                  Gig Radar Map
-                </Link>
-              </li>
-              <li>
-                <Link to="/freelancer/profile" className="hover:text-white transition">
-                  Portfolio Showcase
-                </Link>
-              </li>
-              <li>
-                <Link to="/categories" className="hover:text-white transition">
-                  Skill Taxonomy Directory
+                  Live Radar Map
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Guides & Blog (SEO) */}
+          {/* Column 3: Resources */}
           <div className="flex flex-col gap-3">
-            <h4 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-              <span>Guides &amp; Blog</span>
-              <span className="px-1.5 py-0.2 bg-brand text-[9px] font-black text-white rounded-none">SEO</span>
+            <h4 className="text-sm font-black uppercase tracking-wider text-white">
+              Resources
             </h4>
-            <ul className="flex flex-col gap-2 text-xs sm:text-sm text-stone-400">
+            <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-stone-400">
               <li>
-                <Link to="/blog" className="text-brand font-bold hover:text-white transition">
-                  WorkHop Blog &amp; Insights →
+                <Link to="/blog" className="hover:text-white transition">
+                  WorkHop Blog &amp; Insights
                 </Link>
               </li>
               <li>
-                <Link to="/blog/hyperlocal-freelance-network-bangalore" className="hover:text-white transition">
-                  5km Hyperlocal Network
+                <Link to="/support" className="hover:text-white transition">
+                  Help Desk &amp; Support
                 </Link>
               </li>
               <li>
-                <Link to="/blog/why-job-posting-is-free" className="hover:text-white transition">
-                  Why Job Posting is 100% Free
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog/bangalore-freelance-pricing-guide" className="hover:text-white transition">
-                  Bangalore Rate Card 2026
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog/direct-whatsapp-hiring-bangalore" className="hover:text-white transition">
-                  Direct WhatsApp Hiring
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog/how-to-rank-on-workhop-radar" className="hover:text-white transition">
-                  Rank #1 on 5km Radar
+                <Link to="/legal" className="hover:text-white transition">
+                  Community Guidelines
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Platform & Compliance (Trust & Legal) */}
+          {/* Column 4: Trust & Legal */}
           <div className="flex flex-col gap-3">
             <h4 className="text-sm font-black uppercase tracking-wider text-white">
               Trust &amp; Legal
             </h4>
-            <ul className="flex flex-col gap-2 text-xs sm:text-sm text-stone-400">
+            <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-stone-400">
               <li>
                 <Link to="/legal" className="hover:text-white transition">
                   Terms of Service
@@ -227,7 +181,7 @@ export default function SiteFooter() {
               </li>
               <li>
                 <Link to="/legal" className="hover:text-white transition">
-                  Privacy Policy (DPDP Act 2023)
+                  Privacy Policy (DPDP Act)
                 </Link>
               </li>
               <li>
@@ -236,38 +190,8 @@ export default function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/legal" className="hover:text-white transition">
-                  Community &amp; Safety Guidelines
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog/escrow-protection-and-trust-guide" className="hover:text-white transition">
-                  Escrow Protection Guide
-                </Link>
-              </li>
-              <li>
-                <Link to="/support" className="hover:text-white transition">
-                  Help Desk &amp; Customer Support
-                </Link>
-              </li>
-              <li>
-                <Link to="/grievance" className="text-brand font-bold hover:text-white transition flex items-center gap-1">
-                  <span>⚖️ Grievance Redressal (IT Rules)</span>
-                </Link>
-                <div className="mt-1 pl-2.5 border-l-2 border-brand/50 text-[11px] text-stone-300 leading-snug flex flex-col gap-0.5">
-                  <span className="font-bold text-white">{officerName}</span>
-                  <span className="text-[10px] text-brand uppercase font-bold">{officerDesignation}</span>
-                  <a href={`tel:${officerPhone.replace(/\s+/g, "")}`} className="text-stone-300 hover:text-white transition">
-                    📞 {officerPhone}
-                  </a>
-                  <p className="text-[10px] text-stone-400 leading-tight">
-                    Smart Plaza, Coles Rd, Frazer Town, Bangalore
-                  </p>
-                </div>
-              </li>
-              <li>
-                <Link to="/blog" className="text-stone-300 font-bold hover:text-white transition">
-                  WorkHop Blog &amp; Articles
+                <Link to="/grievance" className="text-brand font-bold hover:text-white transition flex items-center gap-1.5">
+                  <span>⚖️ Grievance Redressal</span>
                 </Link>
               </li>
             </ul>
