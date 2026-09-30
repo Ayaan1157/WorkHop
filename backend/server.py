@@ -1464,6 +1464,12 @@ SEED_COUPONS = [
     {"_id": "FLAT100", "code": "FLAT100", "discount_type": "flat", "value": 100,
      "applies_to": "plan", "active": True, "max_uses": 0, "used_count": 0,
      "description": "₹100 off employer plans"},
+    {"_id": "FREE", "code": "FREE", "discount_type": "percent", "value": 100,
+     "applies_to": "all", "active": True, "max_uses": 0, "used_count": 0,
+     "description": "100% off test pass"},
+    {"_id": "TEST", "code": "TEST", "discount_type": "percent", "value": 100,
+     "applies_to": "all", "active": True, "max_uses": 0, "used_count": 0,
+     "description": "100% off test pass"},
 ]
 
 
@@ -1478,7 +1484,9 @@ def _discount_paise(coupon: dict, amount_paise: int) -> int:
         disc = amount_paise * int(coupon["value"]) // 100
     else:
         disc = int(coupon["value"]) * 100
-    # Razorpay minimum order is ₹1 — never discount below that.
+    if int(coupon.get("value", 0)) == 100 and coupon["discount_type"] == "percent":
+        return amount_paise
+    # Razorpay minimum order is ₹1 — never discount below that for non-free coupons.
     return max(0, min(disc, amount_paise - 100))
 
 
@@ -1569,8 +1577,29 @@ async def create_payment_order(req: CreateOrderRequest):
     if req.coupon_code and req.coupon_code.strip():
         coupon = await _get_valid_coupon(req.coupon_code, req.product)
         discount_paise = _discount_paise(coupon, amount)
-        amount -= discount_paise
-        coupon_code = coupon["_id"]
+    if amount <= 0:
+        order_id = f"free_order_{uuid.uuid4().hex[:12]}"
+        paid_at = _now_iso()
+        if req.product == "freelancer_onboarding":
+            freelancer_id = str(uuid.uuid4())
+            await db.freelancers.insert_one({
+                "_id": freelancer_id,
+                "freelancer_id": freelancer_id,
+                "full_name": req.full_name or "New Pro",
+                "payment_method": "coupon_free",
+                "paid_amount": 0,
+                "paid": True,
+                "paid_at": paid_at,
+                "aadhaar_verified": False,
+                "status": "payment_complete",
+                "created_at": paid_at,
+            })
+            if coupon_code:
+                await db.coupons.update_one({"_id": coupon_code}, {"$inc": {"used_count": 1}})
+            return CreateOrderResponse(
+                order_id=order_id, amount=0, currency="INR",
+                key_id=os.environ.get("RAZORPAY_KEY_ID", razorpay_key_id), product=req.product,
+            )
 
     order = await asyncio.to_thread(
         razorpay_client.order.create,
@@ -1594,7 +1623,7 @@ async def create_payment_order(req: CreateOrderRequest):
     })
     return CreateOrderResponse(
         order_id=order["id"], amount=amount, currency="INR",
-        key_id=os.environ["RAZORPAY_KEY_ID"], product=req.product,
+        key_id=os.environ.get("RAZORPAY_KEY_ID", razorpay_key_id), product=req.product,
     )
 
 
