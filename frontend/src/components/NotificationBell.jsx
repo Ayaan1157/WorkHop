@@ -111,10 +111,10 @@ export default function NotificationBell({ embedded = false, className = "" }) {
         aria-label="Notifications"
         className={
           embedded
-            ? `relative flex h-full w-9 shrink-0 items-center justify-center transition hover:bg-sand dark:hover:bg-[#252525] text-ink dark:text-white ${
+            ? `relative flex h-full w-10 shrink-0 items-center justify-center transition hover:bg-sand dark:hover:bg-[#252525] text-ink dark:text-white ${
                 open ? "bg-sand dark:bg-[#252525]" : ""
               }`
-            : `relative flex h-9 w-9 shrink-0 items-center justify-center border-2 border-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition hover:bg-sand dark:hover:bg-[#252525] text-ink dark:text-white ${
+            : `relative flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition hover:bg-sand dark:hover:bg-[#252525] text-ink dark:text-white ${
                 open ? "bg-sand dark:bg-[#252525]" : ""
               }`
         }
@@ -128,7 +128,7 @@ export default function NotificationBell({ embedded = false, className = "" }) {
             {hasUnreadBlast && (
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
             )}
-            <span className="relative">{unreadCount}</span>
+            <span className="relative">{unreadCount > 9 ? "9+" : unreadCount}</span>
           </span>
         )}
       </button>
@@ -136,7 +136,7 @@ export default function NotificationBell({ embedded = false, className = "" }) {
       {open && (
         <div
           data-testid="notification-dropdown"
-          className="absolute right-0 top-11 z-50 w-[340px] max-w-[90vw] border-2 border-ink bg-white dark:bg-[#141414] text-ink dark:text-white shadow-2xl sm:w-[380px]"
+          className="absolute right-0 top-12 z-50 w-[340px] max-w-[90vw] border-2 border-ink bg-white dark:bg-[#141414] text-ink dark:text-white shadow-2xl sm:w-[380px]"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b-2 border-ink bg-sand dark:bg-[#1c1c1c] px-4 py-2.5">

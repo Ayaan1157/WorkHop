@@ -59,9 +59,9 @@ export function IconBtn({ onClick, children, testID, className = "", active = fa
 export function Logo({ size = "default", className = "" }) {
   if (size === "header") {
     return (
-      <div className={`flex items-center gap-2 sm:gap-2.5 group select-none ${className}`} data-testid="landing-logo">
+      <div className={`flex items-center gap-2 sm:gap-2.5 group select-none shrink-0 ${className}`} data-testid="landing-logo">
         {/* Aesthetic Circular Emblem Badge */}
-        <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink dark:border-white/80 bg-white p-0.5 shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] overflow-hidden transition-transform duration-200 group-hover:scale-105">
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink dark:border-white/80 bg-white p-0.5 shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] overflow-hidden transition-transform duration-200 group-hover:scale-105">
           <img
             src="/workhop-logo.png"
             alt="WorkHop Emblem"
@@ -71,13 +71,13 @@ export function Logo({ size = "default", className = "" }) {
         </div>
 
         {/* Brand Lockup */}
-        <div className="flex flex-col text-left">
-          <div className="flex items-center gap-1 leading-none">
+        <div className="flex flex-col text-left shrink-0">
+          <div className="flex items-center gap-1 leading-none whitespace-nowrap">
             <span className="text-base sm:text-lg font-black tracking-tight text-ink dark:text-white">
               WORK<span className="text-brand">HOP</span>
             </span>
           </div>
-          <span className="text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-[0.12em] text-inkmuted dark:text-stone-400 mt-0.5">
+          <span className="text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-[0.12em] text-inkmuted dark:text-stone-400 mt-0.5 whitespace-nowrap">
             Bangalore’s Gig Network
           </span>
         </div>
@@ -158,15 +158,15 @@ export function GlobalNav() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full border-b-2 border-ink bg-white dark:bg-[#121212]">
-        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-3 py-2.5 sm:px-8">
+      <header className="sticky top-0 z-40 w-full border-b-2 border-ink bg-white dark:bg-[#121212] transition-colors">
+        <div className="mx-auto flex h-[76px] w-full max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-8">
           {/* Logo */}
           <Link to="/" className="flex items-center shrink-0">
             <Logo size="header" />
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden xl:flex flex-1 items-center justify-center gap-5 2xl:gap-7 min-w-0 px-2" data-testid="global-nav-links">
             {links.map((link) => {
               const active = loc.pathname === link.path;
               return (
@@ -174,9 +174,9 @@ export function GlobalNav() {
                   key={link.path}
                   to={link.path}
                   data-testid={link.testId}
-                  className={`text-xs font-black tracking-wider transition ${
+                  className={`whitespace-nowrap px-1 py-1.5 text-xs font-black tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                     active
-                      ? "text-brand underline decoration-2 underline-offset-4"
+                      ? "text-brand underline decoration-2 underline-offset-8 decoration-brand"
                       : "text-ink dark:text-stone-300 hover:text-brand"
                   }`}
                 >
@@ -187,21 +187,21 @@ export function GlobalNav() {
           </nav>
 
           {/* Right Action Icons & Controls */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {/* Admin Full Access Badge or Credits Badge (Desktop) */}
             {isAdmin ? (
               <Link
                 to="/admin"
-                className="hidden md:inline-flex h-9 items-center gap-1.5 border-2 border-ink bg-[#FFF3C4] dark:bg-[#2d2212] px-3 text-xs font-black tracking-wider text-ink dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-[#3d2f1a] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]"
+                className="hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-amber-600 dark:border-amber-400 bg-amber-100 dark:bg-amber-950/80 px-3 text-xs font-black tracking-wide text-amber-950 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900 transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#f59e0b] whitespace-nowrap shrink-0"
                 title="Admin Command Center (Full Platform Unlocked)"
               >
-                <Shield size={14} className="text-brand shrink-0" />
+                <Shield size={14} className="text-amber-700 dark:text-amber-300 shrink-0 fill-amber-400/20" />
                 <span>ADMIN FULL ACCESS</span>
               </Link>
             ) : (
               <Link
                 to="/employer/plans"
-                className="hidden md:inline-flex h-9 items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#222] px-3 text-xs font-black tracking-wider text-ink dark:text-white hover:bg-stone transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]"
+                className="hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#222] px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-stone dark:hover:bg-[#2c2c2c] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
                 title="Your active Hops"
               >
                 <Coins size={14} className="text-brand shrink-0" />
@@ -210,13 +210,13 @@ export function GlobalNav() {
             )}
 
             {/* Utility Controls Group: Bell & Theme Toggle (Merged uniformly) */}
-            <div className="inline-flex h-9 shrink-0 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]">
+            <div className="inline-flex h-10 shrink-0 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]">
               <NotificationBell embedded />
               <button
                 data-testid="theme-toggle-btn"
                 onClick={toggleTheme}
                 title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-                className="flex h-full w-9 items-center justify-center text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
+                className="flex h-full w-10 items-center justify-center text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
               >
                 {isDark ? <Sun size={15} className="text-brand" /> : <Moon size={15} className="text-ink dark:text-white" />}
               </button>
@@ -227,7 +227,7 @@ export function GlobalNav() {
               <button
                 data-testid="nav-post-job-btn"
                 onClick={() => nav("/employer/post-job")}
-                className="hidden sm:inline-flex h-9 items-center gap-1.5 border-2 border-ink bg-brand px-3.5 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                className="hidden sm:inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-brand px-3.5 text-xs font-black tracking-wide text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
               >
                 <PlusCircle size={15} className="shrink-0" />
                 <span>POST JOB</span>
@@ -236,20 +236,21 @@ export function GlobalNav() {
 
             {/* User Account or Sign In Button (Desktop) */}
             {user ? (
-              <div className="hidden sm:inline-flex h-9 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]">
+              <div className="hidden sm:inline-flex h-10 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] shrink-0">
                 <button
                   data-testid="nav-profile-btn"
                   onClick={() => nav("/profile")}
+                  title={user.name || user.email}
                   className="flex h-full items-center gap-1.5 px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
                 >
                   <UserCircle2 size={15} className="text-brand shrink-0" />
-                  <span className="max-w-[90px] truncate sm:max-w-[130px]">{user.name || user.email?.split("@")[0]}</span>
+                  <span className="max-w-[105px] xl:max-w-[130px] truncate block">{user.name || user.email?.split("@")[0]}</span>
                 </button>
                 <button
                   data-testid="nav-logout-btn"
                   onClick={logout}
                   title="Logout"
-                  className="flex h-full w-9 items-center justify-center text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
+                  className="flex h-full w-10 items-center justify-center text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
                 >
                   <LogOut size={14} />
                 </button>
@@ -261,7 +262,7 @@ export function GlobalNav() {
                   setAuthMode("signin");
                   setAuthOpen(true);
                 }}
-                className="hidden sm:inline-flex h-9 items-center border-2 border-ink bg-ink px-4 text-xs font-black tracking-wider !text-white text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                className="hidden sm:inline-flex h-10 items-center border-2 border-ink bg-ink px-4 text-xs font-black tracking-wide !text-white text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
               >
                 SIGN IN
               </button>
@@ -271,7 +272,7 @@ export function GlobalNav() {
             <button
               data-testid="mobile-menu-toggle"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex lg:hidden h-9 w-9 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white hover:bg-stone shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition"
+              className="flex xl:hidden h-10 w-10 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white hover:bg-stone shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition shrink-0"
               aria-label="Toggle Navigation Menu"
             >
               {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -282,7 +283,7 @@ export function GlobalNav() {
 
       {/* MOBILE SLIDE-OUT DRAWER MENU */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[1000] flex lg:hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[1000] flex xl:hidden animate-in fade-in duration-200">
           {/* Backdrop */}
           <div
             onClick={() => setMobileMenuOpen(false)}

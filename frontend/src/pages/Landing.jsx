@@ -908,15 +908,15 @@ export default function Landing() {
       
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 w-full border-b-2 border-ink bg-white dark:bg-[#121212] transition-colors">
-        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-4 px-4 py-3 sm:px-8">
+        <div className="mx-auto flex h-[76px] w-full max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-8">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center shrink-0">
             <Logo size="header" />
           </Link>
 
           {/* Desktop Navigation Tabs */}
-          <nav className="hidden lg:flex items-center gap-6" data-testid="landing-nav-tabs">
+          <nav className="hidden xl:flex flex-1 items-center justify-center gap-5 2xl:gap-7 min-w-0 px-2" data-testid="landing-nav-tabs">
             {(() => {
               const uRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
               const isEmp = Boolean(user && (uRole?.includes("employ") || uRole?.includes("client")));
@@ -937,7 +937,7 @@ export default function Landing() {
                   key={link.path}
                   to={link.path}
                   data-testid={link.testId}
-                  className="text-xs font-black tracking-wider text-ink dark:text-white transition hover:text-brand hover:underline underline-offset-4"
+                  className="whitespace-nowrap px-1 py-1.5 text-xs font-black tracking-wide text-ink dark:text-stone-300 transition-colors hover:text-brand hover:underline decoration-2 underline-offset-8 decoration-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   {link.label}
                 </Link>
@@ -946,49 +946,50 @@ export default function Landing() {
           </nav>
 
           {/* Right Actions: Theme Toggle + Auth */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             
             {/* Dark / Light Mode Toggle */}
             <button
               data-testid="theme-toggle-btn"
               onClick={toggleTheme}
               title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition active:translate-y-0.5 hover:bg-stone/30"
+              className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition active:translate-y-0.5 hover:bg-stone/30 shrink-0"
             >
-              {isDark ? <Sun size={15} className="text-brand" /> : <Moon size={15} className="text-ink" />}
+              {isDark ? <Sun size={15} className="text-brand" /> : <Moon size={15} className="text-ink dark:text-white" />}
             </button>
 
             {user ? (
-              <div className="inline-flex h-9 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]">
+              <div className="inline-flex h-10 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] shrink-0">
                 <button
                   data-testid="user-chip"
                   onClick={() => nav("/profile")}
+                  title={user.name || user.email}
                   className="flex h-full items-center gap-1.5 px-3 hover:bg-sand dark:hover:bg-[#252525] text-xs font-black text-ink dark:text-white transition"
                 >
                   <UserCircle2 size={15} className="text-brand shrink-0" />
-                  <span className="truncate text-xs font-black max-w-[110px]">
+                  <span className="truncate text-xs font-black max-w-[110px] xl:max-w-[140px] block">
                     {user.name || user.email?.split("@")[0]}
                   </span>
-                  <ArrowRight size={13} className="text-inkmuted dark:text-stone-400" />
+                  <ArrowRight size={13} className="text-inkmuted dark:text-stone-400 shrink-0" />
                 </button>
                 <button
                   data-testid="logout-btn"
                   onClick={logout}
                   title="Logout"
-                  className="flex h-full w-9 items-center justify-center hover:bg-sand dark:hover:bg-[#252525] text-ink dark:text-white transition"
+                  className="flex h-full w-10 items-center justify-center hover:bg-sand dark:hover:bg-[#252525] text-ink dark:text-white transition"
                 >
                   <LogOut size={14} />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   data-testid="landing-signin-btn"
                   onClick={() => {
                     setAuthModalMode("signin");
                     setAuthModalOpen(true);
                   }}
-                  className="flex h-9 items-center border-2 border-ink dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-3.5 text-xs font-black tracking-wider text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]"
+                  className="flex h-10 items-center border-2 border-ink dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-3.5 text-xs font-black tracking-wide text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
                 >
                   SIGN IN
                 </button>
@@ -998,7 +999,7 @@ export default function Landing() {
                     setAuthModalMode("signup");
                     setAuthModalOpen(true);
                   }}
-                  className="flex h-9 items-center border-2 border-ink dark:border-white bg-[#121212] px-3.5 text-xs font-black tracking-wider !text-white hover:bg-black transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E]"
+                  className="flex h-10 items-center border-2 border-ink dark:border-white bg-[#121212] px-3.5 text-xs font-black tracking-wide !text-white hover:bg-black transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] whitespace-nowrap shrink-0"
                   style={{ color: "#FFFFFF" }}
                 >
                   <span className="!text-white font-black" style={{ color: "#FFFFFF" }}>
@@ -1012,7 +1013,7 @@ export default function Landing() {
             <button
               data-testid="landing-mobile-menu-btn"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex lg:hidden h-9 w-9 items-center justify-center border-2 border-ink bg-white dark:bg-[#222] text-ink dark:text-white shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333]"
+              className="flex xl:hidden h-10 w-10 items-center justify-center border-2 border-ink bg-white dark:bg-[#222] text-ink dark:text-white shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] shrink-0"
               title="Toggle Menu"
             >
               {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -1022,7 +1023,7 @@ export default function Landing() {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="border-t-2 border-ink bg-white dark:bg-[#181818] p-4 lg:hidden animate-in slide-in-from-top-2">
+          <div className="border-t-2 border-ink bg-white dark:bg-[#181818] p-4 xl:hidden animate-in slide-in-from-top-2">
             <div className="flex flex-col gap-2">
               <span className="text-[10px] font-black uppercase text-inkmuted dark:text-stone-400 tracking-wider">
                 Explore WorkHop
