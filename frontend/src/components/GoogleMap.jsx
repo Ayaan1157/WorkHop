@@ -542,7 +542,7 @@ export default function GoogleMap({
       </div>
 
       {/* Top-Right Floating Controls */}
-      <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-[1000] flex flex-col items-center gap-1.5">
+      <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-[1000] flex flex-col items-center gap-1.5 pointer-events-auto">
         <button
           onClick={handleRecenter}
           data-testid="map-recenter-btn"
@@ -554,7 +554,7 @@ export default function GoogleMap({
         <button
           onClick={() => mapRef.current?.zoomIn()}
           data-testid="map-zoom-in-btn"
-          className="hidden sm:flex h-7 w-7 items-center justify-center border-2 border-ink bg-white text-ink font-black shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
+          className="hidden md:flex h-7 w-7 items-center justify-center border-2 border-ink bg-white text-ink font-black shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
           title="Zoom In"
         >
           <Plus size={13} strokeWidth={3} />
@@ -562,7 +562,7 @@ export default function GoogleMap({
         <button
           onClick={() => mapRef.current?.zoomOut()}
           data-testid="map-zoom-out-btn"
-          className="hidden sm:flex h-7 w-7 items-center justify-center border-2 border-ink bg-white text-ink font-black shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
+          className="hidden md:flex h-7 w-7 items-center justify-center border-2 border-ink bg-white text-ink font-black shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
           title="Zoom Out"
         >
           <Minus size={13} strokeWidth={3} />
@@ -593,19 +593,18 @@ export default function GoogleMap({
             type="button"
             onClick={() => setRadarMenuOpen((prev) => !prev)}
             data-testid="map-radar-menu-trigger"
-            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-[10px] font-black text-ink dark:text-white hover:bg-sand/60 dark:hover:bg-neutral-800 transition truncate"
+            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-black text-ink dark:text-white hover:bg-sand/60 dark:hover:bg-neutral-800 transition whitespace-nowrap"
             title="Click to pick radius preset"
           >
-            <span className="text-brand flex items-center gap-0.5 shrink-0">
+            <span className="text-brand flex items-center gap-0.5 shrink-0 font-black">
               <span>⚡</span>
-              <span className="hidden sm:inline">WORKHOP </span>
-              <span>RADAR</span>
+              <span className="hidden xs:inline">RADAR</span>
             </span>
-            <span className="text-ink/40 dark:text-white/40">·</span>
-            <span className="underline decoration-brand decoration-2 underline-offset-2 whitespace-nowrap">
+            <span className="text-ink/40 dark:text-white/40 hidden xs:inline">·</span>
+            <span className="underline decoration-brand decoration-2 underline-offset-2 whitespace-nowrap font-black">
               {currentRadius ? (
                 <>
-                  {currentRadius}km<span className="hidden sm:inline"> Radius</span>
+                  {currentRadius}km<span className="hidden md:inline"> Radius</span>
                 </>
               ) : (
                 "Bengaluru"
@@ -621,11 +620,11 @@ export default function GoogleMap({
 
           {/* Preset Dropdown Popup */}
           {radarMenuOpen && (
-            <div className="absolute bottom-full right-0 mb-1.5 w-36 border-2 border-ink bg-white dark:bg-[#1e1e1e] p-1 shadow-[3px_3px_0px_#121212] z-[500] animate-in fade-in duration-150">
-              <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-inkmuted border-b border-ink/10 dark:border-white/10 mb-1">
+            <div className="absolute bottom-full right-0 mb-1.5 w-36 max-h-44 overflow-y-auto border-2 border-ink bg-white dark:bg-[#1e1e1e] p-1 shadow-[3px_3px_0px_#121212] z-[500] animate-in fade-in duration-150">
+              <div className="sticky top-0 bg-white dark:bg-[#1e1e1e] px-2 py-1 text-[9px] font-black uppercase tracking-wider text-inkmuted border-b border-ink/10 dark:border-white/10 mb-1">
                 Radar Range
               </div>
-              <div className="max-h-48 overflow-y-auto space-y-0.5">
+              <div className="space-y-0.5">
                 {RADAR_STEPS.map((step) => (
                   <button
                     key={step}

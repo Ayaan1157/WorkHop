@@ -594,7 +594,7 @@ export default function Jobs() {
 
           {/* Collapsible Map Body with proper proportions */}
           {showMap && (
-            <div className="relative isolate h-[200px] sm:h-[280px] w-full bg-sand/20" data-testid="jobs-radar-map">
+            <div className="relative isolate h-[260px] sm:h-[300px] md:h-[360px] w-full bg-sand/20" data-testid="jobs-radar-map">
               <GoogleMap
                 pins={mapPins}
                 zoom={13}

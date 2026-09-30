@@ -158,7 +158,7 @@ export default function Employer() {
   const mapSection = useMemo(() => {
     if (!showMap) return null;
     return (
-      <div className="relative isolate h-[200px] sm:h-[280px] w-full bg-sand/20" data-testid="employer-map">
+      <div className="relative isolate h-[260px] sm:h-[300px] md:h-[360px] w-full bg-sand/20" data-testid="employer-map">
         <GoogleMap
           pins={mapPins}
           zoom={13}
