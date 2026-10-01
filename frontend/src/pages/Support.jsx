@@ -121,7 +121,7 @@ export default function Support() {
                 <Scale size={12} /> STATUTORY INTERMEDIARY COMPLIANCE
               </span>
               <p className="text-xs font-black text-ink">Need to file with the Resident Grievance Officer?</p>
-              <p className="text-[11px] text-inkmuted font-medium">Governed under Rule 3(2) IT Rules 2021 &amp; DPDP Act 2023 with mandatory 24h ack &amp; 15-day resolution SLAs.</p>
+              <p className="text-[11px] text-inkmuted font-medium">Governed under Rule 3(2) IT Rules 2021 &amp; DPDP Act 2023 with mandatory 48h ack &amp; 30-day resolution SLAs.</p>
             </div>
             <Link
               to="/grievance"

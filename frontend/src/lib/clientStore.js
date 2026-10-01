@@ -1440,8 +1440,8 @@ export function getDefaultSiteSettings() {
     grievance_officer_address: "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005",
     grievance_working_hours: "Monday to Friday, 10:00 AM – 6:00 PM IST (Excluding Public Holidays)",
     grievance_nodal_email: "nodal@workhop.in",
-    grievance_ack_hours: 24, // Statutory 24-hour acknowledgement SLA
-    grievance_resolution_days: 15, // Statutory 15-day resolution SLA
+    grievance_ack_hours: 48, // Statutory 48-hour acknowledgement SLA
+    grievance_resolution_days: 30, // Statutory 30-day resolution SLA
   };
 }
 
@@ -1457,8 +1457,15 @@ export function getSiteSettings() {
         parsed.grievance_officer_designation = defaults.grievance_officer_designation;
         parsed.grievance_officer_phone = defaults.grievance_officer_phone;
         parsed.grievance_officer_address = defaults.grievance_officer_address;
-        localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify({ ...defaults, ...parsed }));
       }
+      // Migrate SLA timelines to 48 hours & 30 days if matching previous defaults
+      if (!parsed.grievance_ack_hours || parsed.grievance_ack_hours === 24) {
+        parsed.grievance_ack_hours = 48;
+      }
+      if (!parsed.grievance_resolution_days || parsed.grievance_resolution_days === 15) {
+        parsed.grievance_resolution_days = 30;
+      }
+      localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify({ ...defaults, ...parsed }));
       return { ...defaults, ...parsed };
     } catch { /* ignore */ }
   }

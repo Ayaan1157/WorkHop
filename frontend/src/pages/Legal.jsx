@@ -289,7 +289,7 @@ export default function Legal() {
             <PolicyCard
               num="5.1"
               title="Statutory SLAs for Grievance Handling"
-              desc={`All grievances filed via our dedicated portal (/grievance) or emailed directly to ${settings.grievance_officer_email || "grievance@workhop.in"} are formally acknowledged within ${settings.grievance_ack_hours || 24} hours with an assigned ticket token, and investigated and disposed of within ${settings.grievance_resolution_days || 15} calendar days from receipt.`}
+              desc={`All grievances filed via our dedicated portal (/grievance) or emailed directly to ${settings.grievance_officer_email || "grievance@workhop.in"} are formally acknowledged within ${settings.grievance_ack_hours || 48} hours with an assigned ticket token, and investigated and disposed of within ${settings.grievance_resolution_days || 30} calendar days from receipt.`}
             />
 
             <PolicyCard

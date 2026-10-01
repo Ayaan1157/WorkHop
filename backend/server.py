@@ -2252,8 +2252,8 @@ DEFAULT_SITE_SETTINGS = {
     "grievance_officer_address": "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005",
     "grievance_working_hours": "Monday to Friday, 10:00 AM – 6:00 PM IST (Excluding Public Holidays)",
     "grievance_nodal_email": "nodal@workhop.in",
-    "grievance_ack_hours": 24,
-    "grievance_resolution_days": 15,
+    "grievance_ack_hours": 48,
+    "grievance_resolution_days": 30,
 }
 
 

@@ -381,11 +381,11 @@ function SiteControlsTab({ adminFetch }) {
               type="number"
               min="1"
               max="72"
-              value={settings.grievance_ack_hours ?? 24}
+              value={settings.grievance_ack_hours ?? 48}
               onChange={(e) => setSettings({ ...settings, grievance_ack_hours: Number(e.target.value) })}
               className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
             />
-            <p className="mt-1 text-[9px] text-inkmuted">Mandated maximum 24 hours under Rule 3(2)</p>
+            <p className="mt-1 text-[9px] text-inkmuted">Acknowledgment deadline: 48 hours (Rule 3(2))</p>
           </div>
 
           {/* Resolution SLA */}
@@ -396,12 +396,12 @@ function SiteControlsTab({ adminFetch }) {
             <input
               type="number"
               min="1"
-              max="30"
-              value={settings.grievance_resolution_days ?? 15}
+              max="60"
+              value={settings.grievance_resolution_days ?? 30}
               onChange={(e) => setSettings({ ...settings, grievance_resolution_days: Number(e.target.value) })}
               className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
             />
-            <p className="mt-1 text-[9px] text-inkmuted">Mandated maximum 15 calendar days under Rule 3(2)</p>
+            <p className="mt-1 text-[9px] text-inkmuted">Resolution &amp; disposal deadline: 30 calendar days</p>
           </div>
         </div>
 
@@ -418,7 +418,7 @@ function SiteControlsTab({ adminFetch }) {
                 <p className="text-[11px] font-bold text-inkmuted">{settings.grievance_officer_designation || "Nodal officer"}</p>
               </div>
               <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 text-[9px] font-black">
-                SLA: {settings.grievance_ack_hours || 24}h Ack / {settings.grievance_resolution_days || 15}d Disposal
+                SLA: {settings.grievance_ack_hours || 48}h Ack / {settings.grievance_resolution_days || 30}d Disposal
               </span>
             </div>
             <div className="mt-2 text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-1 text-ink/80 pt-2 border-t border-ink/10">

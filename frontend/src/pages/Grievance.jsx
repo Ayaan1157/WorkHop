@@ -154,8 +154,8 @@ export default function Grievance() {
     settings.grievance_working_hours ||
     "Monday to Friday, 10:00 AM – 6:00 PM IST (Excluding Public Holidays)";
   const nodalEmail = settings.grievance_nodal_email || "nodal@workhop.in";
-  const ackHours = settings.grievance_ack_hours || 24;
-  const resolutionDays = settings.grievance_resolution_days || 15;
+  const ackHours = settings.grievance_ack_hours || 48;
+  const resolutionDays = settings.grievance_resolution_days || 30;
 
   return (
     <Shell>
@@ -300,7 +300,7 @@ export default function Grievance() {
                 {workingHours}
               </p>
               <p className="mt-2 text-[10px] text-inkmuted">
-                Statutory 24-hour acknowledgment clock initiates upon receipt regardless of business day.
+                Statutory {ackHours}-hour acknowledgment clock initiates upon receipt regardless of business day.
               </p>
             </div>
 
@@ -356,7 +356,7 @@ export default function Grievance() {
                   The Grievance Officer reviews your ticket, confirms receipt to your email, and assigns an investigator.
                 </p>
               </div>
-              <div className="mt-3 text-[10px] font-black text-amber-800 uppercase">Statutory 24h Legal Deadline</div>
+              <div className="mt-3 text-[10px] font-black text-amber-800 uppercase">Statutory {ackHours}h Legal Deadline</div>
             </div>
 
             <div className="border-2 border-ink bg-[#E8F8F0] p-4 flex flex-col justify-between">
@@ -369,7 +369,7 @@ export default function Grievance() {
                   Complete inquiry, corrective action (content takedown, account restriction, escrow resolution), and written decision provided.
                 </p>
               </div>
-              <div className="mt-3 text-[10px] font-black text-emerald-800 uppercase">Statutory 15-Day Final Resolution</div>
+              <div className="mt-3 text-[10px] font-black text-emerald-800 uppercase">Statutory {resolutionDays}-Day Final Resolution</div>
             </div>
           </div>
         </div>
@@ -577,7 +577,7 @@ export default function Grievance() {
                   className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
                 />
                 <p className="mt-1 text-[10px] text-inkmuted">
-                  You may also reply to the automated 24-hour acknowledgment email with original PDF / PNG attachments.
+                  You may also reply to the automated {ackHours}-hour acknowledgment email with original PDF / PNG attachments.
                 </p>
               </div>
             </div>
@@ -627,7 +627,7 @@ export default function Grievance() {
             Appellate Escalation Mechanism &amp; Grievance Appellate Committee (GAC)
           </h3>
           <p className="text-xs text-ink/80 leading-relaxed font-medium">
-            Under <strong>Rule 3A of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021</strong>, if you are dissatisfied with an order or resolution passed by WorkHop&apos;s Resident Grievance Officer, or if no decision is communicated within the statutory 15-day window, you have the right to prefer an appeal before the central <strong>Grievance Appellate Committee (GAC)</strong> established by the Ministry of Electronics and Information Technology (MeitY), Government of India, within thirty (30) days from the date of receipt of the decision.
+            Under <strong>Rule 3A of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021</strong>, if you are dissatisfied with an order or resolution passed by WorkHop&apos;s Resident Grievance Officer, or if no decision is communicated within the statutory {resolutionDays}-day window, you have the right to prefer an appeal before the central <strong>Grievance Appellate Committee (GAC)</strong> established by the Ministry of Electronics and Information Technology (MeitY), Government of India, within thirty (30) days from the date of receipt of the decision.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-bold">
             <a
