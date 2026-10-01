@@ -1161,9 +1161,9 @@ export default function Landing() {
               Direct chat with Bengaluru employers looking for immediate hires. Zero middlemen, keep 100% earnings.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/20 pt-4 text-xs font-extrabold text-white">
-              <span>Hyperlocal matching</span>
+              <span>Hyperlocal 5km Matching</span>
               <span>•</span>
-              <span>Same-Day Payouts</span>
+              <span>Direct Client Payments (0% Fee)</span>
             </div>
           </button>
 
@@ -1226,7 +1226,7 @@ export default function Landing() {
             </div>
             <h3 className="mt-3 text-base sm:text-lg font-black text-ink dark:text-white">TRANSPARENT PRICING</h3>
             <p className="mt-1.5 text-xs leading-5 text-inkmuted dark:text-stone-400">
-              Simple flat unlocking credits. No hidden deductions or surprise cuts taken from freelancer payouts.
+              Transparent 1 Hop = ₹15 bidding. Direct client payments with zero platform commission taken from your earnings.
             </p>
           </div>
         </div>
