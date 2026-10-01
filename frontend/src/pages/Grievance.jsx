@@ -14,7 +14,6 @@ import {
   FileText,
   Send,
   Loader2,
-  ExternalLink,
   ChevronRight,
   UserCheck,
 } from "lucide-react";
@@ -619,32 +618,6 @@ export default function Grievance() {
             </div>
           </form>
         )}
-
-        {/* Appellate Redressal Mechanism & Grievance Appellate Committee (GAC) */}
-        <div className="border-2 border-ink bg-[#FAFAF8] p-5 shadow-[4px_4px_0px_#121212]">
-          <h3 className="text-xs font-black uppercase tracking-wider text-ink flex items-center gap-2 mb-2">
-            <Scale size={16} className="text-brand" />
-            Appellate Escalation Mechanism &amp; Grievance Appellate Committee (GAC)
-          </h3>
-          <p className="text-xs text-ink/80 leading-relaxed font-medium">
-            Under <strong>Rule 3A of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021</strong>, if you are dissatisfied with an order or resolution passed by WorkHop&apos;s Resident Grievance Officer, or if no decision is communicated within the statutory {resolutionDays}-day window, you have the right to prefer an appeal before the central <strong>Grievance Appellate Committee (GAC)</strong> established by the Ministry of Electronics and Information Technology (MeitY), Government of India, within thirty (30) days from the date of receipt of the decision.
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-bold">
-            <a
-              href="https://gac.gov.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-brand underline underline-offset-2 hover:text-ink transition"
-            >
-              <span>MeitY Grievance Appellate Committee Portal (gac.gov.in)</span>
-              <ExternalLink size={12} />
-            </a>
-            <span className="text-inkmuted">·</span>
-            <Link to="/legal" className="text-ink underline underline-offset-2 hover:text-brand transition">
-              Review Full Platform Terms &amp; Conditions
-            </Link>
-          </div>
-        </div>
       </div>
     </Shell>
   );
