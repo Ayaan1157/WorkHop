@@ -24,7 +24,7 @@ import {
   formatFileSize,
   MAX_PORTFOLIO_IMAGE_SIZE_MB,
 } from "@/lib/fileUpload";
-import { scanText, scanUploadFile } from "@/lib/contactScanner";
+import { scanText, scanUploadFile, scanPortfolioLink } from "@/lib/contactScanner";
 
 /* ═══════════ helpers ═══════════ */
 const uid = () => `id_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -80,8 +80,23 @@ export default function FreelancerProfile() {
   const [proSaveMsg, setProSaveMsg] = useState(null);
 
   const [portfolioImageError, setPortfolioImageError] = useState(null);
+  const [portfolioLinkError, setPortfolioLinkError] = useState(null);
   const [isProcessingPortfolioImage, setIsProcessingPortfolioImage] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
+
+  const handlePortfolioLinkChange = (value) => {
+    setEditData((d) => ({ ...(d || {}), link: value }));
+    setPortfolioLinkError(null);
+    setPortfolioImageError(null);
+    if (!value || !value.trim()) return;
+
+    const scan = scanPortfolioLink(value);
+    if (scan.hasViolations) {
+      setPortfolioLinkError(
+        `Portfolio link contains prohibited details (${scan.violations.map((v) => v.label).join(", ")}). Direct phone numbers, emails, and company promotions are not permitted.`
+      );
+    }
+  };
 
   const photoInputRef = useRef(null);
 
@@ -252,6 +267,7 @@ export default function FreelancerProfile() {
     setEditingSection(section);
     setEditData(data);
     setPortfolioImageError(null);
+    setPortfolioLinkError(null);
     setIsProcessingPortfolioImage(false);
     setAvatarError(null);
   };
@@ -260,6 +276,7 @@ export default function FreelancerProfile() {
     setEditingSection(null);
     setEditData(null);
     setPortfolioImageError(null);
+    setPortfolioLinkError(null);
     setIsProcessingPortfolioImage(false);
     setAvatarError(null);
   };
@@ -716,19 +733,39 @@ export default function FreelancerProfile() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-inkmuted dark:text-[#333]">
-                            <Code2 size={32} />
+                          <div className="w-full h-full flex flex-col items-center justify-center text-inkmuted dark:text-[#555] p-3 text-center bg-[#f7f7f7] dark:bg-[#1a1a1a]">
+                            <Code2 size={28} className="text-[#E65A1E]/70 mb-1" />
+                            <p className="text-xs font-bold text-ink dark:text-white line-clamp-1">{item.title}</p>
+                            {item.link && (
+                              <span className="text-[10px] text-inkmuted dark:text-[#888] truncate max-w-[90%] mt-0.5">
+                                {item.link.replace(/^https?:\/\//i, "")}
+                              </span>
+                            )}
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-3">
-                          <div className="flex-1">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-3">
+                          <div className="flex-1 min-w-0 pr-2">
                             <p className="text-sm font-semibold text-white truncate">
                               {item.title}
                             </p>
+                            {item.link && (
+                              <a
+                                href={item.link.startsWith("http") ? item.link : `https://${item.link}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF8547] hover:text-white hover:underline mt-0.5"
+                                title="Open verified project link"
+                              >
+                                <span>View Project</span>
+                                <ExternalLink size={11} />
+                              </a>
+                            )}
                           </div>
                           <button
                             onClick={() => deletePortfolioItem(item.id)}
-                            className="h-7 w-7 rounded-full bg-red-500/80 flex items-center justify-center text-white hover:bg-red-600 transition"
+                            className="h-7 w-7 rounded-full bg-red-500/80 flex items-center justify-center text-white hover:bg-red-600 transition shrink-0"
+                            title="Delete portfolio item"
                           >
                             <Trash2 size={12} />
                           </button>
@@ -1704,7 +1741,23 @@ export default function FreelancerProfile() {
             }
           }
 
-          addPortfolioItem(editData);
+          // Screen Portfolio Link if provided
+          let cleanLink = "";
+          if (editData?.link && editData.link.trim()) {
+            const linkScan = scanPortfolioLink(editData.link);
+            if (linkScan.hasViolations) {
+              const violationMsg = `Portfolio link contains prohibited details (${linkScan.violations.map((v) => v.label).join(", ")}). Direct phone numbers, emails, and company promotions are strictly not allowed.`;
+              setPortfolioLinkError(violationMsg);
+              setPortfolioImageError(violationMsg);
+              return;
+            }
+            cleanLink = linkScan.cleanUrl || editData.link.trim();
+          }
+
+          addPortfolioItem({
+            ...editData,
+            link: cleanLink,
+          });
         }}
       >
         <div className="flex flex-col gap-4">
@@ -1733,6 +1786,37 @@ export default function FreelancerProfile() {
               rows={3}
               className={`${inputCls} resize-none`}
             />
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className={labelCls}>Portfolio / Project Link (Optional)</p>
+              {editData?.link?.trim() && !portfolioLinkError && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 size={12} /> Link Scanned &amp; Clean
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="url"
+                value={editData?.link || ""}
+                onChange={(e) => handlePortfolioLinkChange(e.target.value)}
+                placeholder="e.g. https://behance.net/gallery/12345 or https://github.com/user/project"
+                className={inputCls}
+              />
+            </div>
+            <p className="mt-1 text-[11px] text-inkmuted dark:text-[#888] leading-relaxed">
+              Paste your Behance, Dribbble, GitHub, Figma, or project demo link. Links are automatically scanned for personal contact details (phone, email) and company promotions.
+            </p>
+            {portfolioLinkError && (
+              <div className="mt-2 flex items-start gap-2 p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs rounded-lg">
+                <AlertTriangle size={14} className="shrink-0 text-red-500 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-bold">Link Compliance Notice</p>
+                  <p className="mt-0.5">{portfolioLinkError}</p>
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
