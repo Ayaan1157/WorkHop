@@ -188,7 +188,7 @@ export default function Legal() {
             <PolicyCard
               num="3.2"
               title="Platform Fees & Commercial Schedule"
-              desc="Our official fee structure: (a) Freelancer Onboarding & Verification Fee: ₹99 (one-time fee for verification badge & live profile hosting); (b) Employer Standard Job Posting: ₹0 (100% Free Unlimited Job Posts); (c) Optional Urgent Job Boost: ₹399 (48h top-of-feed pinned placement); (d) Daily Quota Boost: ₹149 (+5 extra applications); (e) Lead Contact Unlock: ₹199 per candidate unlock."
+              desc="Our official platform commercial schedule: (a) Freelancer Bidding Hops: Fixed transparent rate of 1 Hop = ₹15 INR. Hops packs are available in standard top-up tiers: 10 Hops (₹150), 20 Hops (₹300), 40 Hops (₹600 · Most Popular), 60 Hops (₹900), 80 Hops (₹1,200), and 100 Hops (₹1,500). Gigs consume between 2 to 16 Hops per proposal based upon project budget tiers. WorkHop charges 0% platform commission on freelance contract earnings; (b) Monthly Freelancer Passes: Optional subscription tiers offering discounted effective rates: Starter Hops Pass at ₹399/month (30 Hops/mo), Freelancer Plus Pass at ₹999/month (80 Hops/mo with competitor bid visibility & gold badge), and Power Freelancer Pass at ₹1,899/month (160 Hops/mo with unlimited rollover & 3 free proposal boosts); (c) Freelancer Verification Fee: ₹99 (one-time fee for digital identity tethering, anti-fraud screening, and verified public profile hosting); (d) Employer Standard Job Posting: ₹0 (100% Free Unlimited Gig Postings); (e) Employer Urgent 48h Gig Boost: ₹399 per post add-on (pinned top-of-feed placement with glowing radar badge); (f) Pro Candidate Contact Unlock: ₹199 per candidate unmasked profile unlock."
             />
 
             <PolicyCard
@@ -200,13 +200,13 @@ export default function Legal() {
             <PolicyCard
               num="3.4"
               title="Refunds & Cancellation Policy"
-              desc="Platform service fees (such as Onboarding fees, Lead unlocks, and Application boosts) are consumed immediately upon activation and are non-refundable. For failed, duplicate, or interrupted Razorpay transactions where service was not provisioned, refunds are automatically reconciled and credited back to the original payment source within 5 to 7 business days as per banking guidelines."
+              desc="Platform service fees (such as Onboarding fees, Bidding Hops packs, Monthly passes, Lead unlocks, and Urgent job boosts) are credited or provisioned immediately upon successful transaction. Unused Hops do not expire and roll over continuously. For failed, duplicate, or interrupted Razorpay transactions where Hops or services were not provisioned, refunds are automatically reconciled and credited back to the original payment source within 5 to 7 business days as per banking guidelines."
             />
 
             <PolicyCard
               num="3.5"
-              title="Job Credit Validity"
-              desc="Pre-purchased Job Post credits included in Employer bundles (Starter & Growth Packs) do not expire and remain valid indefinitely until redeemed on the platform. Credits are non-transferable and cannot be converted back into cash."
+              title="Bidding Hops & Credit Validity (Lifetime Rollover)"
+              desc="Pre-purchased Bidding Hops and Employer posting privileges do not expire and remain valid indefinitely until redeemed on the platform. All unused Hops roll over across billing cycles automatically. Hops are non-transferable between separate user accounts and cannot be redeemed for fiat cash, but remain permanently usable for gig proposals, proposal boosts, and platform bidding."
             />
           </div>
         )}

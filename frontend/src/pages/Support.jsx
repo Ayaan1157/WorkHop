@@ -10,11 +10,34 @@ import { sanitizeInput, checkSpamKeywords, checkRateLimit } from "@/lib/security
 const SUPPORT_EMAIL = "manarastudio22@gmail.com";
 
 const FAQS = [
-  { q: "How do I get verified as a Pro?", a: "Complete the 4-step wizard: pay the one-time ₹99 fee, verify your email with an OTP, add portfolio links and upload work samples." },
-  { q: "Why can't I see employer phone numbers?", a: "For safety, employer contact details stay private. Apply to a gig and chat in-app — employers share contacts in chat when ready." },
-  { q: "How many gigs can I apply to per day?", a: "3 free applications every 24 hours. Need more? The ₹149 Boost adds 5 extra applies for the day (max 8 total)." },
-  { q: "How do employer job posts work?", a: "Job posting is 100% free on WorkHop! Simply fill out the Post a Job form with your gig requirements, budget, and neighborhood. Your gig goes live instantly on the 5km radius feed with zero posting fees." },
-  { q: "How do refunds work?", a: "Payments are processed by Razorpay. For billing issues, raise a complaint below and we'll resolve within 48 hours." },
+  {
+    q: "How does the Freelancer Bidding Hops system work?",
+    a: "WorkHop uses a transparent bidding credit system called Hops, where 1 Hop = ₹15 INR. You only pay when you pitch on client requirements, with 0% platform commission on your earnings. Local Bangalore gigs require between 2 to 16 Hops depending on the project budget (e.g. a ₹5,000 gig needs 4 Hops / ₹60). Every newly verified freelancer starts with 20 welcome Hops. Unused Hops roll over forever and never expire.",
+  },
+  {
+    q: "How much do Hops Top-Up Packs cost?",
+    a: "Hops can be topped up anytime at the fixed rate of 1 Hop = ₹15 INR: 10 Hops (₹150), 20 Hops (₹300), 40 Hops (₹600 · Most Popular), 60 Hops (₹900), 80 Hops (₹1,200), and 100 Hops (₹1,500). Packs are credited instantly to your wallet with zero platform deductions on your client payments.",
+  },
+  {
+    q: "What Monthly Freelancer Passes are available?",
+    a: "For freelancers pitching weekly, WorkHop offers discounted monthly passes: (1) Starter Hops Pass at ₹399/mo (30 Hops, effective ₹13.30/Hop); (2) Freelancer Plus Pass at ₹999/mo (80 Hops, effective ₹12.48/Hop with competitor bid visibility & Verified Pro gold badge); and (3) Power Freelancer Pass at ₹1,899/mo (160 Hops, effective ₹11.86/Hop, unlimited rollover & 3 free proposal boosts).",
+  },
+  {
+    q: "How do employer job posts work and how much does it cost?",
+    a: "Job posting is 100% Free on WorkHop! Employers can post unlimited gigs with zero platform posting fees. Requirements go live instantly across a 5km radius in Bangalore with direct WhatsApp and candidate chats. Optional performance upgrades include an Urgent 48h Gig Boost for ₹399 (pinned top-of-feed placement) and Pro Candidate Unlocks for ₹199 per candidate.",
+  },
+  {
+    q: "How do I get verified as a Pro?",
+    a: "Complete the 4-step wizard at /freelancer: pay the one-time ₹99 verification fee (covers identity tethering, anti-fraud checks, and live profile hosting), verify your email with an OTP, import your Fiverr/Upwork reputation or add portfolio links, and publish your profile live across Bangalore.",
+  },
+  {
+    q: "Why can't I see employer phone numbers immediately?",
+    a: "For safety and privacy, employer contact details stay protected. Submit a proposal using Hops to chat in-app—employers can share phone and WhatsApp numbers directly in chat, or unlock direct contact.",
+  },
+  {
+    q: "How do refunds and billing disputes work?",
+    a: "All payments are processed securely via RBI-authorized payment partner Razorpay. Unused Hops roll over indefinitely. If you encounter any billing discrepancy, duplicate transaction, or technical issue, raise a ticket below or email support at manarastudio22@gmail.com, and we resolve it within 24 to 48 hours.",
+  },
 ];
 
 export default function Support() {
