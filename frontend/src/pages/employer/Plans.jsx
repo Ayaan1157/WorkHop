@@ -280,12 +280,9 @@ export default function Plans() {
                       <span className="px-2.5 py-0.5 text-[10px] font-black tracking-wide border border-ink bg-brand text-white">
                         1 HOP = ₹15 INR
                       </span>
-                      <span className="px-2 py-0.5 text-[9px] font-black tracking-wide border border-ink bg-white dark:bg-[#1a1a1a] text-ink dark:text-white">
-                        0% COMMISSION · ZERO PLATFORM CUT
-                      </span>
                     </div>
                     <h2 className="text-xl sm:text-2xl font-black text-ink dark:text-white mt-1">
-                      Pay Only When You Pitch · 1 Hop = ₹15
+                      Pay Only When You Pitch
                     </h2>
                     <p className="text-xs text-inkmuted dark:text-stone-300 font-semibold mt-1 max-w-2xl leading-relaxed">
                       No monthly lock-ins or mandatory subscriptions. Use Hops to submit proposals to verified Bangalore employers (2–16 Hops per gig based on project budget). Unused Hops roll over forever and never expire. Keep 100% of what clients pay you.
