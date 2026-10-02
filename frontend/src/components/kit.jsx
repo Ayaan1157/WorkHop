@@ -137,13 +137,35 @@ export function GlobalNav() {
     ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
   );
   const userRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
-  const isEmployer = Boolean(user && (isAdmin || userRole?.includes("employ") || userRole?.includes("client")));
-  const isFreelancer = Boolean(user && !isAdmin && (user.role === "freelancer" || userRole?.includes("freelancer") || (!userRole?.includes("employ") && !userRole?.includes("client"))));
+
+  // Route context: whether current view is a freelancer page or an employer page
+  const isFreelancerRoute = Boolean(
+    loc.pathname.startsWith("/freelancer") ||
+    (loc.pathname.startsWith("/plans") && (loc.search.includes("freelancer") || (!loc.search.includes("employer") && userRole !== "employer")))
+  );
+  const isEmployerRoute = Boolean(
+    loc.pathname.startsWith("/employer") ||
+    (loc.pathname.startsWith("/plans") && loc.search.includes("employer"))
+  );
+
+  const isEmployer = Boolean(
+    (user && (userRole?.includes("employ") || userRole?.includes("client"))) ||
+    (!isFreelancerRoute && (isAdmin || isEmployerRoute))
+  );
+
+  const isFreelancerRole = Boolean(
+    user?.role === "freelancer" ||
+    localStorage.getItem("workhop_auth_role") === "freelancer" ||
+    (user && !isAdmin && (userRole?.includes("freelancer") || (!userRole?.includes("employ") && !userRole?.includes("client"))))
+  );
+
+  const isFreelancer = Boolean(isFreelancerRoute || isFreelancerRole);
+  const showPostJob = !isFreelancerRoute && !isFreelancerRole;
 
   const currentFreelancerId = getFreelancerId?.() || user?.id || "anon";
   const userWallet = getCreditsWallet(currentFreelancerId);
   const currentHops = userWallet?.balance ?? 20;
-  const plansPath = isEmployer ? "/plans?tab=employer" : "/plans?tab=freelancer";
+  const plansPath = (isFreelancer && !isEmployerRoute) ? "/plans?tab=freelancer" : (isEmployer ? "/plans?tab=employer" : "/plans?tab=freelancer");
 
   const desktopLinks = [
     { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users, forRole: "employer" },
@@ -230,8 +252,8 @@ export function GlobalNav() {
               </button>
             </div>
 
-            {/* Post Job Button (Desktop/Tablet) - Hidden for logged-in Freelancers */}
-            {!isFreelancer && (
+            {/* Post Job Button (Desktop/Tablet) - Hidden on Freelancer pages and for Freelancers */}
+            {showPostJob && (
               <button
                 data-testid="nav-post-job-btn"
                 onClick={() => nav("/employer/post-job")}
@@ -386,17 +408,30 @@ export function GlobalNav() {
                 );
               })}
 
-              {/* Quick Post Job Action */}
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  nav("/employer/post-job");
-                }}
-                className="mt-2 flex items-center justify-center gap-2 border-2 border-ink bg-brand py-3 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212]"
-              >
-                <PlusCircle size={15} />
-                <span>POST A GIG (100% FREE)</span>
-              </button>
+              {/* Quick Action in Mobile Menu Drawer */}
+              {showPostJob ? (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    nav("/employer/post-job");
+                  }}
+                  className="mt-2 flex items-center justify-center gap-2 border-2 border-ink bg-brand py-3 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212]"
+                >
+                  <PlusCircle size={15} />
+                  <span>POST A GIG (100% FREE)</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    nav("/freelancer/jobs");
+                  }}
+                  className="mt-2 flex items-center justify-center gap-2 border-2 border-ink bg-brand py-3 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212]"
+                >
+                  <Briefcase size={15} />
+                  <span>FIND GIGS</span>
+                </button>
+              )}
             </div>
 
             {/* Secondary Pages & Links */}
