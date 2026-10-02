@@ -4,7 +4,7 @@ import {
   ChevronLeft, Send, ShieldCheck, Star, Loader2, CheckCheck,
   Search, Paperclip, X, Image as ImageIcon, FileText, Sparkles, MapPin
 } from "lucide-react";
-import MilestoneTracker from "@/components/MilestoneTracker";
+import DealTracker from "@/components/DealTracker";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import { API, apiGet, apiPost } from "@/lib/api";
 import { scanText, scanUploadFile } from "@/lib/contactScanner";
@@ -34,15 +34,22 @@ export default function Chat() {
   const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
 
-  const status = conv?.status || "applied";
+  const [deal, setDeal] = useState(null);
+  const [dealEvents, setDealEvents] = useState([]);
 
-  // Map conversation status to milestone key
-  const getMilestoneKey = () => {
-    if (myReviewDone) return "reviewed";
-    if (status === "completed") return "released";
-    if (status === "hired") return "in_progress";
-    return "applied";
-  };
+  const status = deal?.status || conv?.status || "applied";
+
+  const loadDeal = useCallback(async () => {
+    try {
+      const res = await apiGet(`/deals/by-conversation/${id}`);
+      if (res?.deal) {
+        setDeal(res.deal);
+        setDealEvents(res.events || []);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [id]);
 
   const loadMessages = useCallback(async () => {
     try {
@@ -56,30 +63,23 @@ export default function Chat() {
     apiGet(`/chats/${id}`)
       .then(setConv)
       .catch(() => {});
+    loadDeal();
     loadMessages().finally(() => setLoading(false));
     apiGet(`/reviews?conversation_id=${id}`)
       .then((rev) => {
         if ((rev || []).some((x) => x.reviewer_role === myRole)) setMyReviewDone(true);
       })
       .catch(() => {});
-    const timer = setInterval(loadMessages, 3000);
+    const timer = setInterval(() => {
+      loadMessages();
+      loadDeal();
+    }, 3000);
     return () => clearInterval(timer);
-  }, [id, loadMessages, myRole]);
+  }, [id, loadMessages, loadDeal, myRole]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, isTyping]);
-
-  const setStatus = async (next) => {
-    setBusy(true);
-    try {
-      setConv(await apiPost(`/chats/${id}/status`, { status: next }));
-    } catch {
-      /* ignore */
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const submitReview = async () => {
     if (rating < 1) return;
@@ -283,28 +283,6 @@ export default function Chat() {
 
         <div className="flex-1" />
 
-        {myRole === "employer" && status === "applied" && (
-          <button
-            data-testid="chat-hire-btn"
-            disabled={busy}
-            onClick={() => setStatus("hired")}
-            className="border-2 border-ink bg-ink px-3 py-1.5 text-[10px] font-black text-white hover:bg-brand transition"
-          >
-            HIRE PRO
-          </button>
-        )}
-
-        {myRole === "employer" && status === "hired" && (
-          <button
-            data-testid="chat-complete-btn"
-            disabled={busy}
-            onClick={() => setStatus("completed")}
-            className="border-2 border-ink bg-ok px-3 py-1.5 text-[10px] font-black text-white hover:bg-ok/90 transition"
-          >
-            MARK COMPLETED &amp; RELEASE FUNDS
-          </button>
-        )}
-
         {status === "completed" &&
           (myReviewDone ? (
             <span
@@ -324,10 +302,18 @@ export default function Chat() {
           ))}
       </div>
 
-      {/* UPWORK-STYLE MILESTONE TIMELINE TRACKER */}
-      <div className="border-b-2 border-ink bg-white px-4 py-2">
-        <MilestoneTracker currentStep={getMilestoneKey()} />
-      </div>
+      {/* PINNED WORKHOP DEAL TRACKER */}
+      <DealTracker
+        deal={deal}
+        events={dealEvents}
+        myRole={myRole}
+        onDealUpdated={(newDeal, newEvents) => {
+          setDeal(newDeal);
+          setDealEvents(newEvents || []);
+          loadMessages();
+        }}
+        onOpenReview={() => setReviewOpen(true)}
+      />
 
       {/* MESSAGES THREAD */}
       <div ref={scrollRef} className="wh-scroll flex-1 overflow-y-auto p-4 sm:p-6 bg-sand/30">
@@ -357,6 +343,19 @@ export default function Chat() {
         ) : (
           <div className="flex flex-col gap-3">
             {filteredMessages.map((m) => {
+              if (m.sender_role === "system") {
+                return (
+                  <div key={m.message_id} className="my-2 flex justify-center">
+                    <div
+                      data-testid="system-chat-message"
+                      className="max-w-[90%] sm:max-w-[80%] flex items-center gap-2 border border-ink/30 bg-white/95 dark:bg-zinc-800 px-3.5 py-2 rounded-full text-xs font-bold text-ink dark:text-zinc-200 shadow-sm text-center"
+                    >
+                      <Sparkles size={13} className="text-brand shrink-0" />
+                      <span className="leading-snug">{m.text}</span>
+                    </div>
+                  </div>
+                );
+              }
               const mine = m.sender_role === myRole;
               return (
                 <div key={m.message_id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>

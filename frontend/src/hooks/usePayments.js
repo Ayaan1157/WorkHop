@@ -63,3 +63,37 @@ export function useRazorpay() {
   }, []);
   return { startPayment };
 }
+
+export async function fundDealEscrow(dealId, description = "WorkHop Escrow Deposit") {
+  const res = await fetch(`${API}/deals/${dealId}/fund/create-order`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  const order = await res.json();
+  if (!res.ok) throw new Error(order?.detail || "Could not create escrow funding order.");
+
+  let paymentResult;
+  try {
+    paymentResult = await openWebCheckout(order, description);
+  } catch (err) {
+    if (order.key_id?.includes("test") || order.key_id?.includes("placeholder")) {
+      paymentResult = {
+        razorpay_order_id: order.order_id,
+        razorpay_payment_id: `pay_mock_${Date.now()}`,
+        razorpay_signature: "mock_signature",
+      };
+    } else {
+      throw err;
+    }
+  }
+
+  const vRes = await fetch(`${API}/deals/${dealId}/fund/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(paymentResult),
+  });
+  const vData = await vRes.json();
+  if (!vRes.ok) throw new Error(vData?.detail || "Escrow funding verification failed.");
+  return vData;
+}
+

@@ -16,6 +16,7 @@ import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
 import CreditsTopUpModal from "@/components/CreditsTopUpModal";
 import ApplicantLeaderboardModal from "@/components/ApplicantLeaderboardModal";
+import PaymentModeSelector from "@/components/PaymentModeSelector";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -112,6 +113,8 @@ export default function Jobs() {
   // Rate Quoting (Fixed vs Hourly)
   const [proposedRateType, setProposedRateType] = useState("fixed"); // "fixed" | "hourly"
   const [proposedQuote, setProposedQuote] = useState(1000);
+  const [paymentMode, setPaymentMode] = useState("escrow"); // "escrow" | "direct"
+  const [directAcknowledged, setDirectAcknowledged] = useState(false);
 
   // PDF Attachment & Scanner State
   const [pdfAttachment, setPdfAttachment] = useState(null);
@@ -399,6 +402,11 @@ export default function Jobs() {
       return;
     }
 
+    if (paymentMode === "direct" && !directAcknowledged) {
+      setApplyError("You must acknowledge the Direct Settlement risk disclaimer before applying.");
+      return;
+    }
+
     setApplying(true); setApplyError(null);
     const calculatedDist = calculateDistance(applicantArea, activeJob.area || "Bengaluru");
     try {
@@ -410,6 +418,8 @@ export default function Jobs() {
         boost_credits: boostCredits,
         proposed_rate_type: proposedRateType,
         proposed_quote: proposedQuote,
+        proposed_payment_mode: paymentMode,
+        freelancer_ack_at: paymentMode === "direct" ? new Date().toISOString() : null,
         pdf_attachment: pdfAttachment,
         portfolio_items: portfolioHighlights.filter((p) => p.visible),
       });
@@ -1037,20 +1047,15 @@ export default function Jobs() {
                   </div>
                 </div>
 
-                {/* Platform fee breakdown */}
-                <div className="flex items-center justify-between border-t border-dashed border-ink/20 pt-2 text-xs">
-                  <div>
-                    <span className="font-bold text-ink">Freelancer Platform Fee: 0%</span>
-                    <span className="ml-1.5 rounded bg-[#E5F8EE] px-1.5 py-0.5 text-[9px] font-black text-[#00875A]">WORKHOP 0% ADVANTAGE</span>
-                  </div>
-                  <span className="font-bold text-inkmuted">-₹0.00</span>
-                </div>
-
-                <div className="flex items-center justify-between border-t border-ink/20 pt-2 text-xs font-black">
-                  <span className="text-ink">You'll receive (100% of quote)</span>
-                  <span className="text-sm font-black text-[#00A86B]" data-testid="you-receive-amount">
-                    ₹{Number(proposedQuote || 0).toLocaleString("en-IN")}{proposedRateType === "hourly" ? " /hr" : ""}
-                  </span>
+                {/* Dual Payment Mode Selection */}
+                <div className="mt-3 pt-3 border-t-2 border-ink/20">
+                  <PaymentModeSelector
+                    quote={proposedQuote}
+                    selectedMode={paymentMode}
+                    onChangeMode={setPaymentMode}
+                    acknowledged={directAcknowledged}
+                    onToggleAck={setDirectAcknowledged}
+                  />
                 </div>
               </div>
             </div>
@@ -1513,10 +1518,14 @@ export default function Jobs() {
               activeJob && wallet.balance >= ((activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits) && (
                 <button
                   data-testid="apply-confirm-btn"
-                  disabled={applying || textViolations.length > 0 || pdfViolations.length > 0}
+                  disabled={applying || textViolations.length > 0 || pdfViolations.length > 0 || (paymentMode === "direct" && !directAcknowledged)}
                   onClick={submitApply}
                   className={`mt-4 flex w-full items-center justify-center gap-2 border-2 border-ink py-3.5 text-sm font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60 ${
-                    textViolations.length > 0 || pdfViolations.length > 0 ? "bg-danger cursor-not-allowed" : "bg-brand hover:bg-brand/95"
+                    textViolations.length > 0 || pdfViolations.length > 0
+                      ? "bg-danger cursor-not-allowed"
+                      : paymentMode === "direct" && !directAcknowledged
+                      ? "bg-amber-600 cursor-not-allowed"
+                      : "bg-brand hover:bg-brand/95"
                   }`}
                 >
                   {applying ? (
@@ -1526,16 +1535,21 @@ export default function Jobs() {
                       <AlertTriangle size={16} />
                       <span>RESOLVE CONTACT DETAILS TO SUBMIT</span>
                     </>
+                  ) : paymentMode === "direct" && !directAcknowledged ? (
+                    <>
+                      <AlertTriangle size={16} />
+                      <span>CHECK RISK ACKNOWLEDGEMENT TO SUBMIT</span>
+                    </>
                   ) : (
                     <>
                       <Send size={16} />
-                      <span>APPLY</span>
+                      <span>SUBMIT PROPOSAL ({paymentMode === "escrow" ? "ESCROW PROTECTED" : "DIRECT SETTLEMENT"})</span>
                     </>
                   )}
                 </button>
               )
             )}
-            <p className="mt-2 text-center text-[11px] text-inkmuted">Employer sees your verified credentials immediately. 0% platform fee on earnings.</p>
+            <p className="mt-2 text-center text-[11px] text-inkmuted">Dual payment choice: Protected Escrow or Direct Settlement. Employer sees your proposal instantly.</p>
           </div>
         </div>
       )}

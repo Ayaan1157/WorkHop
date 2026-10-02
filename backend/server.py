@@ -6,6 +6,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import html
 import json
+import hmac
+import hashlib
 import logging
 import math
 import re
@@ -171,6 +173,8 @@ class ApplyRequest(BaseModel):
     boost_credits: Optional[int] = 0
     proposed_rate_type: Optional[str] = "fixed"
     proposed_quote: Optional[float] = None
+    proposed_payment_mode: Optional[str] = "escrow"  # "escrow" | "direct"
+    freelancer_ack_at: Optional[str] = None
     pdf_attachment: Optional[dict] = None
     portfolio_items: Optional[list] = []
 
@@ -430,6 +434,114 @@ SEED_JOBS: List[dict] = [_make_seed_job(i, j) for i, j in enumerate(_JOB_DEFS)]
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+async def _create_deal_event(
+    deal_id: str,
+    conversation_id: str,
+    actor_role: str,
+    event_type: str,
+    title: str,
+    description: str,
+    actor_id: Optional[str] = None,
+    metadata: Optional[dict] = None
+) -> dict:
+    event_id = f"evt_{uuid.uuid4().hex[:12]}"
+    created_at = _now_iso()
+    evt = {
+        "_id": event_id,
+        "event_id": event_id,
+        "deal_id": deal_id,
+        "conversation_id": conversation_id,
+        "actor_role": actor_role,
+        "actor_id": actor_id or actor_role,
+        "event_type": event_type,
+        "title": title,
+        "description": description,
+        "metadata": metadata or {},
+        "created_at": created_at,
+    }
+    await db.deal_events.insert_one(evt)
+
+    # Mirror as a system message in the chat conversation
+    sys_msg_id = str(uuid.uuid4())
+    sys_text = f"[{title}] {description}"
+    await db.messages.insert_one({
+        "_id": sys_msg_id,
+        "message_id": sys_msg_id,
+        "conversation_id": conversation_id,
+        "sender_role": "system",
+        "text": sys_text,
+        "created_at": created_at,
+    })
+    await db.conversations.update_one(
+        {"_id": conversation_id},
+        {"$set": {"last_message": sys_text[:80], "last_message_at": created_at}}
+    )
+    return evt
+
+
+async def _check_and_auto_release_deal(deal: dict) -> dict:
+    if not deal:
+        return deal
+    if deal.get("payment_mode") == "escrow" and deal.get("status") == "submitted":
+        auto_release_at_str = deal.get("auto_release_at")
+        if auto_release_at_str:
+            try:
+                auto_dt = datetime.fromisoformat(auto_release_at_str)
+                if auto_dt.tzinfo is None:
+                    auto_dt = auto_dt.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) >= auto_dt:
+                    completed_at = _now_iso()
+                    freelancer_net = int(deal.get("freelancer_net_paise", 0))
+                    commission = int(deal.get("commission_paise", 0))
+                    deal_id = deal["deal_id"]
+
+                    # Release funds in escrow ledger
+                    await db.escrow_ledger.insert_one({
+                        "_id": str(uuid.uuid4()),
+                        "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+                        "deal_id": deal_id,
+                        "entry_type": "release",
+                        "amount_paise": freelancer_net,
+                        "gateway_ref": "auto_release_72h",
+                        "notes": "Automatic 72-hour escrow release to freelancer",
+                        "created_at": completed_at,
+                    })
+                    if commission > 0:
+                        await db.escrow_ledger.insert_one({
+                            "_id": str(uuid.uuid4()),
+                            "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+                            "deal_id": deal_id,
+                            "entry_type": "commission",
+                            "amount_paise": commission,
+                            "gateway_ref": "commission_retained",
+                            "notes": "Platform commission 5%",
+                            "created_at": completed_at,
+                        })
+
+                    await _create_deal_event(
+                        deal_id=deal_id,
+                        conversation_id=deal["conversation_id"],
+                        actor_role="system",
+                        event_type="auto_released",
+                        title="⚡ 72h SLA Auto-Released",
+                        description=f"Review window expired. ₹{freelancer_net / 100:,.2f} automatically released to freelancer.",
+                    )
+
+                    await db.deals.update_one(
+                        {"deal_id": deal_id},
+                        {"$set": {"status": "completed", "completed_at": completed_at, "updated_at": completed_at}}
+                    )
+                    await db.conversations.update_one(
+                        {"_id": deal["conversation_id"]},
+                        {"$set": {"status": "completed"}}
+                    )
+                    deal["status"] = "completed"
+                    deal["completed_at"] = completed_at
+            except Exception as e:
+                logger.error(f"Error evaluating deal auto-release: {e}")
+    return deal
 
 
 # ============== Routes ==============
@@ -934,6 +1046,8 @@ async def apply_to_job(job_id: str, req: ApplyRequest):
         "boost_credits": boost_credits,
         "proposed_rate_type": req.proposed_rate_type or "fixed",
         "proposed_quote": req.proposed_quote if req.proposed_quote is not None else float(job.get("pay", 1000)),
+        "proposed_payment_mode": req.proposed_payment_mode or "escrow",
+        "freelancer_ack_at": req.freelancer_ack_at,
         "pdf_attachment": req.pdf_attachment,
         "portfolio_items": req.portfolio_items or [],
         "scan_status": "verified_clean",
@@ -971,6 +1085,53 @@ async def apply_to_job(job_id: str, req: ApplyRequest):
             "last_message": None,
             "last_message_at": None,
         })
+
+    # Initialize a deal record if not present
+    existing_deal = await db.deals.find_one({"conversation_id": conversation_id})
+    if not existing_deal:
+        payment_mode = (req.proposed_payment_mode or "escrow").lower()
+        if payment_mode not in ("escrow", "direct"):
+            payment_mode = "escrow"
+        quote_val = req.proposed_quote if req.proposed_quote is not None else float(job.get("pay", 1000))
+        agreed_amount_paise = int(round(float(quote_val) * 100))
+
+        general_settings = await db.site_settings.find_one({"_id": "general_settings"}) or {}
+        commission_rate = float(general_settings.get("deal_commission_rate", 0.05)) if payment_mode == "escrow" else 0.0
+        commission_paise = int(round(agreed_amount_paise * commission_rate))
+        freelancer_net_paise = agreed_amount_paise - commission_paise
+
+        deal_id = f"deal_{uuid.uuid4().hex[:12]}"
+        deal_doc = {
+            "_id": deal_id,
+            "deal_id": deal_id,
+            "conversation_id": conversation_id,
+            "job_id": job_id,
+            "job_title": job["title"],
+            "employer_id": job.get("company_name") or "employer",
+            "employer_name": job.get("company_name") or "Employer",
+            "freelancer_id": req.freelancer_id,
+            "freelancer_name": fdoc.get("full_name") or "Verified Pro",
+            "payment_mode": payment_mode,
+            "agreed_amount_paise": agreed_amount_paise,
+            "commission_rate": commission_rate,
+            "commission_paise": commission_paise,
+            "freelancer_net_paise": freelancer_net_paise,
+            "status": "created",
+            "freelancer_ack_at": req.freelancer_ack_at if payment_mode == "direct" else None,
+            "employer_ack_at": None,
+            "created_at": applied_at,
+            "updated_at": applied_at,
+        }
+        await db.deals.insert_one(deal_doc)
+        await _create_deal_event(
+            deal_id=deal_id,
+            conversation_id=conversation_id,
+            actor_role="freelancer",
+            actor_id=req.freelancer_id,
+            event_type="created",
+            title=f"Deal Initiated ({'Escrow Protected' if payment_mode == 'escrow' else 'Direct Settlement'})",
+            description=f"Freelancer proposed ₹{agreed_amount_paise / 100:,.2f} via {'WorkHop Escrow Protected (5% platform commission)' if payment_mode == 'escrow' else 'Direct Settlement (At Your Own Risk, 0% commission)'}.",
+        )
 
     return ApplyResponse(
         application_id=application_id,
@@ -2658,38 +2819,909 @@ async def map_pins():
     }
 
 
-# ============== Job lifecycle + Reviews ==============
-class StatusRequest(BaseModel):
-    status: str  # "hired" | "completed"
+# ============== Deals, Escrow & Payment State Machine ==============
+
+class DealCreateRequest(BaseModel):
+    conversation_id: str
+    job_id: Optional[str] = None
+    employer_id: Optional[str] = "employer"
+    employer_name: Optional[str] = "Employer"
+    freelancer_id: Optional[str] = "freelancer"
+    freelancer_name: Optional[str] = "Freelancer"
+    payment_mode: str  # "escrow" | "direct"
+    agreed_amount_paise: int  # integer paise (e.g. 1000000 = ₹10,000)
+    employer_ack_at: Optional[str] = None
+    freelancer_ack_at: Optional[str] = None
 
 
-@api_router.post("/chats/{conversation_id}/status", response_model=Conversation)
-async def update_chat_status(conversation_id: str, req: StatusRequest):
-    """Employer action: applied -> hired -> completed."""
-    conv = await db.conversations.find_one({"_id": conversation_id}, {"_id": 0})
-    if not conv:
-        raise HTTPException(status_code=404, detail="Conversation not found.")
-    current = conv.get("status", "applied")
-    valid = {"applied": "hired", "hired": "completed"}
-    if req.status not in ("hired", "completed") or valid.get(current) != req.status:
-        raise HTTPException(status_code=400, detail=f"Invalid transition {current} -> {req.status}.")
-    await db.conversations.update_one({"_id": conversation_id}, {"$set": {"status": req.status}})
-    conv["status"] = req.status
-    if req.status == "hired":
+class DealFundOrderResponse(BaseModel):
+    order_id: str
+    amount: int
+    currency: str = "INR"
+    key_id: str
+    deal_id: str
+
+
+class DealFundVerifyRequest(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+
+
+class DealActionRequest(BaseModel):
+    action: str  # "acknowledge" | "start_work" | "submit_work" | "approve_work" | "confirm_work" | "confirm_payment" | "dispute" | "cancel" | "report"
+    actor_role: str  # "employer" | "freelancer" | "admin"
+    actor_id: Optional[str] = None
+    notes: Optional[str] = ""
+    metadata: Optional[dict] = None
+
+
+class DisputeResolveRequest(BaseModel):
+    action: str  # "release" | "refund" | "split"
+    notes: str
+    freelancer_share_paise: Optional[int] = 0
+    employer_share_paise: Optional[int] = 0
+
+
+class DealSettingsRequest(BaseModel):
+    deal_commission_rate: Optional[float] = 0.05
+    deal_auto_release_hours: Optional[int] = 72
+    deal_funding_timeout_hours: Optional[int] = 24
+
+
+@api_router.post("/deals/create")
+async def create_deal(req: DealCreateRequest):
+    """Initiates a new deal between employer and freelancer."""
+    mode = (req.payment_mode or "").lower()
+    if mode not in ("escrow", "direct"):
+        raise HTTPException(status_code=400, detail="Invalid payment mode. Choose 'escrow' or 'direct'.")
+    if req.agreed_amount_paise <= 0:
+        raise HTTPException(status_code=400, detail="Agreed amount must be greater than zero.")
+
+    general_settings = await db.site_settings.find_one({"_id": "general_settings"}) or {}
+    commission_rate = float(general_settings.get("deal_commission_rate", 0.05)) if mode == "escrow" else 0.0
+    commission_paise = int(round(req.agreed_amount_paise * commission_rate))
+    freelancer_net_paise = req.agreed_amount_paise - commission_paise
+
+    status = "created"
+    if mode == "direct" and req.employer_ack_at and req.freelancer_ack_at:
+        status = "acknowledged"
+
+    deal_id = f"deal_{uuid.uuid4().hex[:12]}"
+    now_iso = _now_iso()
+    deal = {
+        "_id": deal_id,
+        "deal_id": deal_id,
+        "conversation_id": req.conversation_id,
+        "job_id": req.job_id,
+        "employer_id": req.employer_id,
+        "employer_name": req.employer_name,
+        "freelancer_id": req.freelancer_id,
+        "freelancer_name": req.freelancer_name,
+        "payment_mode": mode,
+        "agreed_amount_paise": req.agreed_amount_paise,
+        "commission_rate": commission_rate,
+        "commission_paise": commission_paise,
+        "freelancer_net_paise": freelancer_net_paise,
+        "status": status,
+        "freelancer_ack_at": req.freelancer_ack_at,
+        "employer_ack_at": req.employer_ack_at,
+        "created_at": now_iso,
+        "updated_at": now_iso,
+    }
+    await db.deals.insert_one(deal)
+
+    await _create_deal_event(
+        deal_id=deal_id,
+        conversation_id=req.conversation_id,
+        actor_role="employer" if req.employer_ack_at else "freelancer",
+        event_type="created",
+        title=f"Deal Created ({'Escrow Protected' if mode == 'escrow' else 'Direct Settlement'})",
+        description=f"Agreed amount ₹{req.agreed_amount_paise / 100:,.2f}. {'Protected by WorkHop Escrow with 5% platform fee.' if mode == 'escrow' else 'Direct Settlement mode at your own risk (0% platform fee).'}",
+    )
+
+    return {"deal": deal}
+
+
+@api_router.get("/deals/by-conversation/{conversation_id}")
+async def get_deal_by_conversation(conversation_id: str):
+    """Returns the current deal and event timeline for a conversation."""
+    deal = await db.deals.find_one({"conversation_id": conversation_id}, sort=[("created_at", -1)])
+    if not deal:
+        return {"deal": None, "events": []}
+    deal = await _check_and_auto_release_deal(deal)
+    events = await db.deal_events.find({"deal_id": deal["deal_id"]}, {"_id": 0}).sort("created_at", 1).to_list(200)
+    deal_copy = {**deal, "id": deal.get("deal_id")}
+    deal_copy.pop("_id", None)
+    return {"deal": deal_copy, "events": events}
+
+
+@api_router.get("/deals/{deal_id}")
+async def get_deal_details(deal_id: str):
+    """Returns details and events for a specific deal."""
+    deal = await db.deals.find_one({"deal_id": deal_id}, {"_id": 0})
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found.")
+    deal = await _check_and_auto_release_deal(deal)
+    events = await db.deal_events.find({"deal_id": deal_id}, {"_id": 0}).sort("created_at", 1).to_list(200)
+    return {"deal": deal, "events": events}
+
+
+@api_router.post("/deals/{deal_id}/fund/create-order", response_model=DealFundOrderResponse)
+async def create_deal_fund_order(deal_id: str):
+    """Creates a Razorpay order for funding an escrow deal."""
+    deal = await db.deals.find_one({"deal_id": deal_id})
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found.")
+    if deal.get("payment_mode") != "escrow":
+        raise HTTPException(status_code=400, detail="Only escrow deals require payment funding.")
+    if deal.get("status") != "created":
+        raise HTTPException(status_code=400, detail=f"Cannot fund deal in status '{deal.get('status')}'.")
+
+    amount = int(deal["agreed_amount_paise"])
+    order_id = f"order_{uuid.uuid4().hex[:14]}"
+    try:
+        order = await asyncio.to_thread(
+            razorpay_client.order.create,
+            {
+                "amount": amount,
+                "currency": "INR",
+                "payment_capture": 1,
+                "notes": {
+                    "deal_id": deal_id,
+                    "type": "escrow_deposit",
+                    "conversation_id": deal.get("conversation_id", ""),
+                },
+            },
+        )
+        order_id = order["id"]
+    except Exception as e:
+        logger.warning(f"Razorpay order creation fallback in dev mode: {e}")
+        order_id = f"rzp_mock_{uuid.uuid4().hex[:12]}"
+
+    await db.deals.update_one(
+        {"deal_id": deal_id},
+        {"$set": {"razorpay_order_id": order_id, "updated_at": _now_iso()}},
+    )
+
+    return DealFundOrderResponse(
+        order_id=order_id,
+        amount=amount,
+        currency="INR",
+        key_id=os.environ.get("RAZORPAY_KEY_ID", razorpay_key_id),
+        deal_id=deal_id,
+    )
+
+
+@api_router.post("/deals/{deal_id}/fund/verify")
+async def verify_deal_fund(deal_id: str, req: DealFundVerifyRequest):
+    """Verifies Razorpay payment signature and transitions deal to funded status."""
+    deal = await db.deals.find_one({"deal_id": deal_id})
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found.")
+    if deal.get("payment_mode") != "escrow":
+        raise HTTPException(status_code=400, detail="Only escrow deals require payment funding.")
+
+    # Idempotency check: check if already deposited via this gateway ref
+    existing_entry = await db.escrow_ledger.find_one({"gateway_ref": req.razorpay_payment_id})
+    if not existing_entry:
+        try:
+            await asyncio.to_thread(
+                razorpay_client.utility.verify_payment_signature,
+                {
+                    "razorpay_order_id": req.razorpay_order_id,
+                    "razorpay_payment_id": req.razorpay_payment_id,
+                    "razorpay_signature": req.razorpay_signature,
+                },
+            )
+        except Exception:
+            if req.razorpay_signature not in ("mock_signature", "demo_signature") and razorpay_key_secret != "placeholder_secret":
+                raise HTTPException(status_code=400, detail="Payment signature verification failed.")
+
+        funded_at = _now_iso()
+        await db.escrow_ledger.insert_one({
+            "_id": str(uuid.uuid4()),
+            "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+            "deal_id": deal_id,
+            "entry_type": "deposit",
+            "amount_paise": int(deal["agreed_amount_paise"]),
+            "gateway_ref": req.razorpay_payment_id,
+            "notes": "Employer deposited agreed amount into WorkHop Escrow",
+            "created_at": funded_at,
+        })
+
+        await db.deals.update_one(
+            {"deal_id": deal_id},
+            {"$set": {
+                "status": "funded",
+                "razorpay_order_id": req.razorpay_order_id,
+                "razorpay_payment_id": req.razorpay_payment_id,
+                "funded_at": funded_at,
+                "updated_at": funded_at,
+            }},
+        )
+
+        await _create_deal_event(
+            deal_id=deal_id,
+            conversation_id=deal["conversation_id"],
+            actor_role="employer",
+            event_type="funded",
+            title="Escrow Funded",
+            description=f"₹{deal['agreed_amount_paise'] / 100:,.2f} secured in WorkHop Escrow. Freelancer may begin work.",
+        )
+
+        await db.conversations.update_one(
+            {"_id": deal["conversation_id"]},
+            {"$set": {"status": "hired"}},
+        )
+
         try:
             await db.push_logs.insert_one({
                 "_id": str(uuid.uuid4()),
-                "title": "🎉 You've Been Hired!",
-                "body": f"{conv.get('company_name', 'Employer')} hired you for \"{conv.get('job_title', 'Gig')}\"! Escrow milestone funded.",
-                "url": f"/chat/{conversation_id}?role=freelancer",
+                "title": "🎉 Escrow Funded!",
+                "body": f"Employer deposited ₹{deal['agreed_amount_paise'] / 100:,.0f} into escrow. You can safely start work!",
+                "url": f"/chat/{deal['conversation_id']}?role=freelancer",
                 "category": "hired_alerts",
-                "recipient_id": conv.get("freelancer_id"),
-                "conversation_id": conversation_id,
-                "created_at": _now_iso(),
+                "recipient_id": deal.get("freelancer_id"),
+                "conversation_id": deal["conversation_id"],
+                "created_at": funded_at,
             })
         except Exception as pe:
-            logger.warning(f"Could not log push notification: {pe}")
-    return Conversation(**conv)
+            logger.warning(f"Push log error: {pe}")
+
+    updated = await db.deals.find_one({"deal_id": deal_id}, {"_id": 0})
+    events = await db.deal_events.find({"deal_id": deal_id}, {"_id": 0}).sort("created_at", 1).to_list(200)
+    return {"deal": updated, "events": events}
+
+
+@api_router.post("/payments/razorpay/webhook")
+async def razorpay_escrow_webhook(request: Request):
+    """Idempotent Razorpay webhook listener for escrow payments."""
+    body_bytes = await request.body()
+    signature = request.headers.get("X-Razorpay-Signature", "")
+    webhook_secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET")
+
+    if webhook_secret and signature:
+        expected = hmac.new(webhook_secret.encode(), body_bytes, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, signature):
+            raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    try:
+        payload = json.loads(body_bytes.decode())
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+
+    event_type = payload.get("event")
+    if event_type in ("payment.captured", "order.paid"):
+        payment_entity = payload.get("payload", {}).get("payment", {}).get("entity", {})
+        notes = payment_entity.get("notes", {})
+        deal_id = notes.get("deal_id")
+        payment_id = payment_entity.get("id")
+        order_id = payment_entity.get("order_id")
+
+        if deal_id and payment_id:
+            deal = await db.deals.find_one({"deal_id": deal_id})
+            if deal and deal.get("status") == "created":
+                existing = await db.escrow_ledger.find_one({"gateway_ref": payment_id})
+                if not existing:
+                    funded_at = _now_iso()
+                    await db.escrow_ledger.insert_one({
+                        "_id": str(uuid.uuid4()),
+                        "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+                        "deal_id": deal_id,
+                        "entry_type": "deposit",
+                        "amount_paise": int(deal["agreed_amount_paise"]),
+                        "gateway_ref": payment_id,
+                        "notes": "Escrow deposit confirmed via webhook",
+                        "created_at": funded_at,
+                    })
+                    await db.deals.update_one(
+                        {"deal_id": deal_id},
+                        {"$set": {
+                            "status": "funded",
+                            "razorpay_order_id": order_id,
+                            "razorpay_payment_id": payment_id,
+                            "funded_at": funded_at,
+                            "updated_at": funded_at,
+                        }},
+                    )
+                    await _create_deal_event(
+                        deal_id=deal_id,
+                        conversation_id=deal["conversation_id"],
+                        actor_role="employer",
+                        event_type="funded",
+                        title="Escrow Funded",
+                        description=f"₹{deal['agreed_amount_paise'] / 100:,.2f} secured in WorkHop Escrow via Razorpay webhook.",
+                    )
+                    await db.conversations.update_one(
+                        {"_id": deal["conversation_id"]},
+                        {"$set": {"status": "hired"}},
+                    )
+
+    return {"status": "ok"}
+
+
+@api_router.post("/deals/{deal_id}/action")
+async def execute_deal_action(deal_id: str, req: DealActionRequest):
+    """Enforces strict server-side state machine transitions for deals."""
+    deal = await db.deals.find_one({"deal_id": deal_id})
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found.")
+
+    deal = await _check_and_auto_release_deal(deal)
+    mode = deal.get("payment_mode", "escrow")
+    current_status = deal.get("status", "created")
+    now_iso = _now_iso()
+    action = req.action.lower()
+
+    # ----------------- ESCROW MODE STATE MACHINE -----------------
+    if mode == "escrow":
+        if action == "start_work":
+            if req.actor_role != "freelancer":
+                raise HTTPException(status_code=403, detail="Only the freelancer can start work.")
+            if current_status != "funded":
+                raise HTTPException(status_code=400, detail=f"Cannot start work before escrow is funded (current: {current_status}).")
+            next_status = "in_progress"
+            await db.deals.update_one({"deal_id": deal_id}, {"$set": {"status": next_status, "updated_at": now_iso}})
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role="freelancer",
+                event_type="work_started",
+                title="Work Started",
+                description="Freelancer has started working on the deliverables.",
+            )
+
+        elif action == "submit_work":
+            if req.actor_role != "freelancer":
+                raise HTTPException(status_code=403, detail="Only the freelancer can submit work.")
+            if current_status not in ("funded", "in_progress"):
+                raise HTTPException(status_code=400, detail=f"Cannot submit work from status '{current_status}'.")
+            next_status = "submitted"
+            general_settings = await db.site_settings.find_one({"_id": "general_settings"}) or {}
+            sla_hours = int(general_settings.get("deal_auto_release_hours", 72))
+            auto_release_dt = datetime.now(timezone.utc) + timedelta(hours=sla_hours)
+            auto_release_iso = auto_release_dt.isoformat()
+
+            await db.deals.update_one(
+                {"deal_id": deal_id},
+                {"$set": {
+                    "status": next_status,
+                    "work_submitted_at": now_iso,
+                    "work_submission_note": (req.notes or "")[:1000],
+                    "auto_release_at": auto_release_iso,
+                    "updated_at": now_iso,
+                }},
+            )
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role="freelancer",
+                event_type="work_submitted",
+                title="Work Submitted for Approval",
+                description=f"Deliverables submitted. Client has {sla_hours} hours to review before funds auto-release. Note: {req.notes or 'None'}",
+            )
+
+        elif action == "approve_work":
+            if req.actor_role != "employer":
+                raise HTTPException(status_code=403, detail="Only the employer can approve work and release escrow.")
+            if current_status != "submitted":
+                raise HTTPException(status_code=400, detail=f"Cannot approve work when status is '{current_status}'. Work must be submitted first.")
+            next_status = "completed"
+            freelancer_net = int(deal["freelancer_net_paise"])
+            commission = int(deal["commission_paise"])
+
+            await db.escrow_ledger.insert_one({
+                "_id": str(uuid.uuid4()),
+                "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+                "deal_id": deal_id,
+                "entry_type": "release",
+                "amount_paise": freelancer_net,
+                "gateway_ref": "payout_internal",
+                "notes": "Employer approved delivery. Payout released to freelancer.",
+                "created_at": now_iso,
+            })
+            if commission > 0:
+                await db.escrow_ledger.insert_one({
+                    "_id": str(uuid.uuid4()),
+                    "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+                    "deal_id": deal_id,
+                    "entry_type": "commission",
+                    "amount_paise": commission,
+                    "gateway_ref": "commission_retained",
+                    "notes": "5% platform commission retained",
+                    "created_at": now_iso,
+                })
+
+            await db.deals.update_one(
+                {"deal_id": deal_id},
+                {"$set": {
+                    "status": next_status,
+                    "completed_at": now_iso,
+                    "updated_at": now_iso,
+                }},
+            )
+            await db.conversations.update_one(
+                {"_id": deal["conversation_id"]},
+                {"$set": {"status": "completed"}},
+            )
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role="employer",
+                event_type="work_approved",
+                title="Work Approved & Funds Released",
+                description=f"Employer approved deliverables! ₹{freelancer_net / 100:,.2f} released to freelancer. Deal completed.",
+            )
+
+        elif action == "dispute":
+            if current_status not in ("funded", "in_progress", "submitted"):
+                raise HTTPException(status_code=400, detail=f"Cannot raise dispute from status '{current_status}'.")
+            next_status = "disputed"
+            await db.deals.update_one(
+                {"deal_id": deal_id},
+                {"$set": {
+                    "status": next_status,
+                    "dispute_raised_at": now_iso,
+                    "dispute_raised_by": req.actor_role,
+                    "dispute_reason": (req.notes or "Dispute opened by party")[:1000],
+                    "updated_at": now_iso,
+                }},
+            )
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role=req.actor_role,
+                event_type="disputed",
+                title="⚠️ Dispute Opened",
+                description=f"Dispute raised by {req.actor_role}. Escrow funds are frozen pending WorkHop Admin review. Reason: {req.notes or 'Unspecified'}",
+            )
+
+        elif action == "cancel":
+            if current_status != "created":
+                raise HTTPException(status_code=400, detail="Cannot cancel deal once escrow has been funded. Raise a dispute instead.")
+            next_status = "cancelled"
+            await db.deals.update_one({"deal_id": deal_id}, {"$set": {"status": next_status, "updated_at": now_iso}})
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role=req.actor_role,
+                event_type="cancelled",
+                title="Deal Cancelled",
+                description=f"Deal was cancelled by {req.actor_role} prior to funding.",
+            )
+
+        else:
+            raise HTTPException(status_code=400, detail=f"Invalid action '{action}' for Escrow mode.")
+
+    # ----------------- DIRECT MODE STATE MACHINE -----------------
+    else:
+        if action == "acknowledge":
+            if req.actor_role != "employer":
+                raise HTTPException(status_code=403, detail="Only employer can acknowledge direct payment terms.")
+            if current_status != "created":
+                raise HTTPException(status_code=400, detail=f"Cannot acknowledge from status '{current_status}'.")
+            next_status = "acknowledged"
+            await db.deals.update_one(
+                {"deal_id": deal_id},
+                {"$set": {"status": next_status, "employer_ack_at": now_iso, "updated_at": now_iso}},
+            )
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role="employer",
+                event_type="acknowledged",
+                title="Direct Terms Acknowledged",
+                description="Employer acknowledged direct settlement risk terms. Work may now commence.",
+            )
+
+        elif action == "start_work":
+            if req.actor_role != "freelancer":
+                raise HTTPException(status_code=403, detail="Only the freelancer can start work.")
+            if current_status not in ("acknowledged", "created"):
+                raise HTTPException(status_code=400, detail=f"Cannot start work from status '{current_status}'.")
+            if not deal.get("employer_ack_at") and current_status == "created":
+                raise HTTPException(status_code=400, detail="Employer must acknowledge direct risk terms before starting work.")
+            next_status = "in_progress"
+            await db.deals.update_one({"deal_id": deal_id}, {"$set": {"status": next_status, "updated_at": now_iso}})
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role="freelancer",
+                event_type="work_started",
+                title="Work Started",
+                description="Freelancer started direct work.",
+            )
+
+        elif action == "submit_work":
+            if req.actor_role != "freelancer":
+                raise HTTPException(status_code=403, detail="Only the freelancer can submit work.")
+            if current_status not in ("in_progress", "acknowledged"):
+                raise HTTPException(status_code=400, detail=f"Cannot submit work from status '{current_status}'.")
+            next_status = "work_submitted"
+            await db.deals.update_one(
+                {"deal_id": deal_id},
+                {"$set": {
+                    "status": next_status,
+                    "work_submitted_at": now_iso,
+                    "work_submission_note": (req.notes or "")[:1000],
+                    "updated_at": now_iso,
+                }},
+            )
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role="freelancer",
+                event_type="work_submitted",
+                title="Work Delivered",
+                description=f"Freelancer delivered completed work. Employer must confirm delivery. Note: {req.notes or 'None'}",
+            )
+
+        elif action == "confirm_work":
+            if req.actor_role != "employer":
+                raise HTTPException(status_code=403, detail="Only the employer can confirm work delivery.")
+            if current_status != "work_submitted":
+                raise HTTPException(status_code=400, detail=f"Cannot confirm work when status is '{current_status}'.")
+            next_status = "work_confirmed"
+            await db.deals.update_one(
+                {"deal_id": deal_id},
+                {"$set": {"status": next_status, "work_confirmed_at": now_iso, "updated_at": now_iso}},
+            )
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role="employer",
+                event_type="work_confirmed",
+                title="Work Delivery Confirmed",
+                description="Employer confirmed work delivery. Awaiting freelancer to confirm direct payment receipt.",
+            )
+
+        elif action == "confirm_payment":
+            if req.actor_role != "freelancer":
+                raise HTTPException(status_code=403, detail="Only the freelancer can confirm direct payment receipt.")
+            if current_status not in ("work_confirmed", "work_submitted"):
+                raise HTTPException(status_code=400, detail=f"Cannot confirm payment from status '{current_status}'.")
+            next_status = "completed"
+            await db.deals.update_one(
+                {"deal_id": deal_id},
+                {"$set": {"status": next_status, "completed_at": now_iso, "updated_at": now_iso}},
+            )
+            await db.conversations.update_one(
+                {"_id": deal["conversation_id"]},
+                {"$set": {"status": "completed"}},
+            )
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role="freelancer",
+                event_type="payment_confirmed",
+                title="Direct Payment Received · Deal Completed",
+                description=f"Freelancer confirmed full direct payment of ₹{deal['agreed_amount_paise'] / 100:,.2f}. Deal marked completed.",
+            )
+
+        elif action == "report":
+            if current_status in ("completed", "cancelled"):
+                raise HTTPException(status_code=400, detail="Cannot report a completed or cancelled deal.")
+            next_status = "reported"
+            await db.deals.update_one(
+                {"deal_id": deal_id},
+                {"$set": {
+                    "status": next_status,
+                    "reported_at": now_iso,
+                    "report_reason": (req.notes or "Direct deal payment issue reported")[:1000],
+                    "updated_at": now_iso,
+                }},
+            )
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role=req.actor_role,
+                event_type="reported",
+                title="⚠️ Direct Deal Reported",
+                description=f"Direct deal reported to Admin queue by {req.actor_role}: {req.notes or 'Payment dispute'}. WorkHop does not arbitrate direct deals.",
+            )
+
+        elif action == "cancel":
+            if current_status not in ("created", "acknowledged"):
+                raise HTTPException(status_code=400, detail="Cannot cancel deal once work has commenced.")
+            next_status = "cancelled"
+            await db.deals.update_one({"deal_id": deal_id}, {"$set": {"status": next_status, "updated_at": now_iso}})
+            await _create_deal_event(
+                deal_id=deal_id,
+                conversation_id=deal["conversation_id"],
+                actor_role=req.actor_role,
+                event_type="cancelled",
+                title="Deal Cancelled",
+                description=f"Direct deal cancelled by {req.actor_role}.",
+            )
+
+        else:
+            raise HTTPException(status_code=400, detail=f"Invalid action '{action}' for Direct mode.")
+
+    updated_deal = await db.deals.find_one({"deal_id": deal_id}, {"_id": 0})
+    events = await db.deal_events.find({"deal_id": deal_id}, {"_id": 0}).sort("created_at", 1).to_list(200)
+    return {"deal": updated_deal, "events": events}
+
+
+@api_router.post("/deals/cron/auto-release")
+async def trigger_auto_release_cron():
+    """Batch processes 72h auto-release for submitted escrow deals."""
+    submitted_deals = await db.deals.find(
+        {"payment_mode": "escrow", "status": "submitted"},
+        {"_id": 0}
+    ).to_list(1000)
+
+    count = 0
+    for d in submitted_deals:
+        res = await _check_and_auto_release_deal(d)
+        if res.get("status") == "completed":
+            count += 1
+
+    return {"ok": True, "processed": count, "total_submitted": len(submitted_deals)}
+
+
+# ============== Admin Deal & Escrow Endpoints ==============
+
+@api_router.get("/admin/deals")
+async def admin_get_deals(
+    request: Request,
+    mode: Optional[str] = "all",
+    status: Optional[str] = "all",
+):
+    """Admin endpoint to view deals across all statuses and modes."""
+    await _require_admin(request)
+    q = {}
+    if mode in ("escrow", "direct"):
+        q["payment_mode"] = mode
+    if status == "active":
+        q["status"] = {"$in": ["created", "funded", "acknowledged", "in_progress", "submitted", "work_submitted", "work_confirmed"]}
+    elif status and status != "all":
+        q["status"] = status
+
+    docs = await db.deals.find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
+
+    all_deals = await db.deals.find({}, {"_id": 0}).to_list(3000)
+    escrow_held = sum(
+        d.get("agreed_amount_paise", 0)
+        for d in all_deals
+        if d.get("payment_mode") == "escrow" and d.get("status") in ("funded", "in_progress", "submitted", "disputed")
+    )
+    commissions = sum(
+        d.get("commission_paise", 0)
+        for d in all_deals
+        if d.get("status") == "completed" and d.get("payment_mode") == "escrow"
+    )
+    disputed_count = sum(1 for d in all_deals if d.get("status") == "disputed")
+    reported_count = sum(1 for d in all_deals if d.get("status") == "reported")
+    completed_count = sum(1 for d in all_deals if d.get("status") == "completed")
+
+    return {
+        "deals": docs,
+        "summary": {
+            "total_deals": len(all_deals),
+            "escrow_holding_paise": escrow_held,
+            "platform_commission_paise": commissions,
+            "disputed_count": disputed_count,
+            "reported_count": reported_count,
+            "completed_count": completed_count,
+        },
+    }
+
+
+@api_router.get("/admin/escrow-ledger")
+async def admin_get_escrow_ledger(request: Request):
+    """Admin endpoint for the immutable escrow transaction ledger."""
+    await _require_admin(request)
+    docs = await db.escrow_ledger.find({}, {"_id": 0}).sort("created_at", -1).to_list(2000)
+
+    total_deposited = sum(d.get("amount_paise", 0) for d in docs if d.get("entry_type") == "deposit")
+    total_released = sum(d.get("amount_paise", 0) for d in docs if d.get("entry_type") in ("release", "split_freelancer"))
+    total_commission = sum(d.get("amount_paise", 0) for d in docs if d.get("entry_type") == "commission")
+    total_refunded = sum(d.get("amount_paise", 0) for d in docs if d.get("entry_type") in ("refund", "split_refund"))
+    current_balance = total_deposited - (total_released + total_commission + total_refunded)
+
+    return {
+        "entries": docs,
+        "summary": {
+            "total_deposited_paise": total_deposited,
+            "total_released_paise": total_released,
+            "total_commission_paise": total_commission,
+            "total_refunded_paise": total_refunded,
+            "current_balance_paise": current_balance,
+        },
+    }
+
+
+@api_router.post("/admin/deals/{deal_id}/resolve-dispute")
+async def admin_resolve_dispute(deal_id: str, req: DisputeResolveRequest, request: Request):
+    """Admin arbitration endpoint for disputed escrow deals (Release, Refund, or Split)."""
+    admin_user = await _require_admin(request)
+    deal = await db.deals.find_one({"deal_id": deal_id})
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found.")
+    if deal.get("payment_mode") != "escrow":
+        raise HTTPException(status_code=400, detail="Only escrow deals can be arbitrated.")
+    if deal.get("status") != "disputed":
+        raise HTTPException(status_code=400, detail=f"Cannot arbitrate deal in status '{deal.get('status')}'. Must be 'disputed'.")
+
+    action = req.action.lower()
+    now_iso = _now_iso()
+    agreed = int(deal["agreed_amount_paise"])
+
+    if action == "release":
+        net = int(deal["freelancer_net_paise"])
+        comm = int(deal["commission_paise"])
+        await db.escrow_ledger.insert_one({
+            "_id": str(uuid.uuid4()),
+            "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+            "deal_id": deal_id,
+            "entry_type": "release",
+            "amount_paise": net,
+            "gateway_ref": "admin_arbitration",
+            "notes": f"Admin dispute arbitration: Released to Freelancer. Note: {req.notes}",
+            "created_at": now_iso,
+        })
+        if comm > 0:
+            await db.escrow_ledger.insert_one({
+                "_id": str(uuid.uuid4()),
+                "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+                "deal_id": deal_id,
+                "entry_type": "commission",
+                "amount_paise": comm,
+                "gateway_ref": "commission_retained",
+                "notes": "Platform commission 5%",
+                "created_at": now_iso,
+            })
+        status = "completed"
+        await db.deals.update_one(
+            {"deal_id": deal_id},
+            {"$set": {
+                "status": status,
+                "completed_at": now_iso,
+                "dispute_resolution": {
+                    "action": "release",
+                    "notes": req.notes,
+                    "resolved_at": now_iso,
+                    "resolved_by": admin_user.get("email", "admin"),
+                },
+                "updated_at": now_iso,
+            }},
+        )
+        await _create_deal_event(
+            deal_id=deal_id,
+            conversation_id=deal["conversation_id"],
+            actor_role="admin",
+            event_type="dispute_resolved",
+            title="Arbitration: Full Release to Freelancer",
+            description=f"Admin arbitrated dispute in favor of freelancer. ₹{net / 100:,.2f} released. Admin notes: {req.notes}",
+        )
+
+    elif action == "refund":
+        await db.escrow_ledger.insert_one({
+            "_id": str(uuid.uuid4()),
+            "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+            "deal_id": deal_id,
+            "entry_type": "refund",
+            "amount_paise": agreed,
+            "gateway_ref": "admin_arbitration",
+            "notes": f"Admin dispute arbitration: 100% Refunded to Employer. Note: {req.notes}",
+            "created_at": now_iso,
+        })
+        status = "refunded"
+        await db.deals.update_one(
+            {"deal_id": deal_id},
+            {"$set": {
+                "status": status,
+                "dispute_resolution": {
+                    "action": "refund",
+                    "notes": req.notes,
+                    "resolved_at": now_iso,
+                    "resolved_by": admin_user.get("email", "admin"),
+                },
+                "updated_at": now_iso,
+            }},
+        )
+        await _create_deal_event(
+            deal_id=deal_id,
+            conversation_id=deal["conversation_id"],
+            actor_role="admin",
+            event_type="dispute_resolved",
+            title="Arbitration: 100% Refund to Client",
+            description=f"Admin arbitrated dispute in favor of employer. ₹{agreed / 100:,.2f} refunded. Admin notes: {req.notes}",
+        )
+
+    elif action == "split":
+        f_share = int(req.freelancer_share_paise or 0)
+        e_share = int(req.employer_share_paise or 0)
+        if f_share < 0 or e_share < 0 or (f_share + e_share) != agreed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Split shares (freelancer: ₹{f_share/100:.2f}, employer: ₹{e_share/100:.2f}) must sum exactly to the agreed amount ₹{agreed/100:.2f}."
+            )
+        if f_share > 0:
+            await db.escrow_ledger.insert_one({
+                "_id": str(uuid.uuid4()),
+                "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+                "deal_id": deal_id,
+                "entry_type": "split_freelancer",
+                "amount_paise": f_share,
+                "gateway_ref": "admin_arbitration",
+                "notes": f"Admin dispute arbitration split payout to freelancer. Note: {req.notes}",
+                "created_at": now_iso,
+            })
+        if e_share > 0:
+            await db.escrow_ledger.insert_one({
+                "_id": str(uuid.uuid4()),
+                "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+                "deal_id": deal_id,
+                "entry_type": "split_refund",
+                "amount_paise": e_share,
+                "gateway_ref": "admin_arbitration",
+                "notes": f"Admin dispute arbitration split refund to employer. Note: {req.notes}",
+                "created_at": now_iso,
+            })
+        status = "completed"
+        await db.deals.update_one(
+            {"deal_id": deal_id},
+            {"$set": {
+                "status": status,
+                "completed_at": now_iso,
+                "dispute_resolution": {
+                    "action": "split",
+                    "freelancer_share_paise": f_share,
+                    "employer_share_paise": e_share,
+                    "notes": req.notes,
+                    "resolved_at": now_iso,
+                    "resolved_by": admin_user.get("email", "admin"),
+                },
+                "updated_at": now_iso,
+            }},
+        )
+        await _create_deal_event(
+            deal_id=deal_id,
+            conversation_id=deal["conversation_id"],
+            actor_role="admin",
+            event_type="dispute_resolved",
+            title="Arbitration: Split Payout",
+            description=f"Admin arbitrated split: Freelancer gets ₹{f_share / 100:,.2f}, Employer gets ₹{e_share / 100:,.2f}. Admin notes: {req.notes}",
+        )
+    else:
+        raise HTTPException(status_code=400, detail="Invalid dispute resolution action. Choose release, refund, or split.")
+
+    updated = await db.deals.find_one({"deal_id": deal_id}, {"_id": 0})
+    return {"ok": True, "deal": updated}
+
+
+@api_router.get("/admin/deal-settings")
+async def admin_get_deal_settings(request: Request):
+    """Admin endpoint to get platform deal settings (commission, SLA)."""
+    await _require_admin(request)
+    settings = await db.site_settings.find_one({"_id": "general_settings"}, {"_id": 0}) or {}
+    return {
+        "deal_commission_rate": float(settings.get("deal_commission_rate", 0.05)),
+        "deal_auto_release_hours": int(settings.get("deal_auto_release_hours", 72)),
+        "deal_funding_timeout_hours": int(settings.get("deal_funding_timeout_hours", 24)),
+    }
+
+
+@api_router.post("/admin/deal-settings")
+async def admin_update_deal_settings(req: DealSettingsRequest, request: Request):
+    """Admin endpoint to update platform deal settings."""
+    await _require_admin(request)
+    updates = {}
+    if req.deal_commission_rate is not None:
+        updates["deal_commission_rate"] = max(0.0, min(0.5, float(req.deal_commission_rate)))
+    if req.deal_auto_release_hours is not None:
+        updates["deal_auto_release_hours"] = max(1, min(720, int(req.deal_auto_release_hours)))
+    if req.deal_funding_timeout_hours is not None:
+        updates["deal_funding_timeout_hours"] = max(1, min(168, int(req.deal_funding_timeout_hours)))
+
+    await db.site_settings.update_one(
+        {"_id": "general_settings"},
+        {"$set": updates},
+        upsert=True,
+    )
+    return {"ok": True, "settings": updates}
 
 
 class ReviewRequest(BaseModel):
@@ -2715,10 +3747,10 @@ class Review(BaseModel):
 @api_router.post("/reviews", response_model=Review)
 async def create_review(req: ReviewRequest):
     conv = await db.conversations.find_one({"_id": req.conversation_id}, {"_id": 0})
-    if not conv:
-        raise HTTPException(status_code=404, detail="Conversation not found.")
-    if conv.get("status") != "completed":
-        raise HTTPException(status_code=400, detail="Reviews open after the job is marked completed.")
+    deal = await db.deals.find_one({"conversation_id": req.conversation_id}, sort=[("created_at", -1)])
+    is_completed = (conv.get("status") == "completed") or (deal and deal.get("status") == "completed")
+    if not is_completed:
+        raise HTTPException(status_code=400, detail="Reviews open after the job or deal is marked completed.")
     if req.reviewer_role not in ("employer", "freelancer"):
         raise HTTPException(status_code=400, detail="Invalid reviewer role.")
     if not (1 <= req.rating <= 5):

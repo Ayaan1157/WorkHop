@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import ProfileProgressBar from "@/components/ProfileProgressBar";
-import EscrowWalletModal from "@/components/EscrowWalletModal";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, getFreelancerId } from "@/lib/api";
 
@@ -19,7 +18,6 @@ export default function Profile() {
   const [skill, setSkill] = useState(() => user?.skill || localStorage.getItem("workhop_pro_skill") || "");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
-  const [walletOpen, setWalletOpen] = useState(false);
 
   const loadPro = useCallback(async () => {
     const fid = getFreelancerId();
@@ -171,29 +169,6 @@ export default function Profile() {
           proDetails={{ phone, skill, verified: true, portfolioUploaded: Boolean(skill) }}
         />
 
-        {/* ESCROW WALLET & PAYMENTS CARD */}
-        <div className="border-2 border-ink bg-white p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-[#FFF3C4]">
-                <Wallet size={18} className="text-ink" />
-              </span>
-              <div>
-                <p className="text-sm font-black text-ink">Escrow Wallet &amp; Payouts</p>
-                <p className="text-[11px] text-inkmuted font-semibold">
-                  Secure milestones &amp; UPI withdrawal
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setWalletOpen(true)}
-              className="border-2 border-ink bg-ink px-3 py-1.5 text-xs font-black text-white hover:bg-brand transition active:translate-y-0.5"
-            >
-              OPEN WALLET
-            </button>
-          </div>
-        </div>
-
         {/* PRO EDIT DETAILS */}
         {freelancerId && (
           <div className="flex flex-col gap-2 border-2 border-ink bg-white p-4" data-testid="pro-profile-card">
@@ -290,9 +265,6 @@ export default function Profile() {
         )}
         <p className="text-center text-[11px] text-inkmuted">WorkHop v2 · Made in Bengaluru 🧡</p>
       </div>
-
-      {/* ESCROW WALLET MODAL */}
-      <EscrowWalletModal isOpen={walletOpen} onClose={() => setWalletOpen(false)} />
     </Shell>
   );
 }

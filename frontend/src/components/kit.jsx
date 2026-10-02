@@ -15,14 +15,14 @@ import NotificationBell from "@/components/NotificationBell";
 import AuthModal from "@/components/AuthModal";
 export { default as Breadcrumbs } from "@/components/Breadcrumbs";
 export { default as ProfileProgressBar } from "@/components/ProfileProgressBar";
-export { default as MilestoneTracker } from "@/components/MilestoneTracker";
 export { default as RatingBreakdown } from "@/components/RatingBreakdown";
-export { default as EscrowWalletModal } from "@/components/EscrowWalletModal";
 export { default as BoostPreviewModal } from "@/components/BoostPreviewModal";
 export { default as AuthModal } from "@/components/AuthModal";
 export { default as RecaptchaWidget } from "@/components/RecaptchaWidget";
 export { default as SiteFooter } from "@/components/SiteFooter";
 export { default as FloatingChatWidget } from "@/components/FloatingChatWidget";
+export { default as PaymentModeSelector } from "@/components/PaymentModeSelector";
+export { default as DealTracker } from "@/components/DealTracker";
 export * from "@/components/Skeletons";
 import SiteFooter from "@/components/SiteFooter";
 

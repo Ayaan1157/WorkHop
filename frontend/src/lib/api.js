@@ -20,8 +20,6 @@ import {
   addAdminGig,
   toggleBoostGig,
   deleteGigAdmin,
-  getEscrowOrders,
-  resolveEscrowOrder,
   ADMIN_EMAILS,
   getCreditsWallet,
   getCreditTransactions,
@@ -329,17 +327,6 @@ function mockRouter(path, method = "GET", body = null) {
   if (cleanPath.startsWith("/admin/gigs/") && method === "DELETE") {
     const jobId = cleanPath.split("/")[3];
     return deleteGigAdmin(jobId);
-  }
-  if (cleanPath === "/admin/escrow" && method === "GET") {
-    return getEscrowOrders();
-  }
-  if (cleanPath.startsWith("/admin/escrow/") && cleanPath.endsWith("/release") && method === "POST") {
-    const orderId = cleanPath.split("/")[3];
-    return resolveEscrowOrder(orderId, "release");
-  }
-  if (cleanPath.startsWith("/admin/escrow/") && cleanPath.endsWith("/refund") && method === "POST") {
-    const orderId = cleanPath.split("/")[3];
-    return resolveEscrowOrder(orderId, "refund");
   }
   if (cleanPath === "/admin/users") {
     return [

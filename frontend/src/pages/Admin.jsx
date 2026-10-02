@@ -738,49 +738,112 @@ function GigsModerationTab({ adminFetch }) {
   );
 }
 
-// 4. Escrow & Disputes Tab
-function EscrowDisputesTab({ adminFetch }) {
-  const [orders, setOrders] = useState([]);
+// 4. Payments, Escrow & Dispute Resolution Tab
+function PaymentsTab({ adminFetch }) {
+  const [activeSubTab, setActiveSubTab] = useState("deals"); // "deals" | "ledger" | "settings"
+  const [dealsData, setDealsData] = useState({ deals: [], summary: {} });
+  const [ledgerData, setLedgerData] = useState({ entries: [], summary: {} });
+  const [settings, setSettings] = useState({ deal_commission_rate: 0.05, deal_auto_release_hours: 72, deal_funding_timeout_hours: 24 });
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [filterMode, setFilterMode] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
 
-  const loadEscrow = useCallback(async () => {
+  // Dispute Arbitration Modal
+  const [arbitrateDeal, setArbitrateDeal] = useState(null);
+  const [arbitrationAction, setArbitrationAction] = useState("release"); // "release" | "refund" | "split"
+  const [arbitrationNotes, setArbitrationNotes] = useState("");
+  const [freelancerShare, setFreelancerShare] = useState(0);
+  const [employerShare, setEmployerShare] = useState(0);
+  const [arbitrating, setArbitrating] = useState(false);
+  const [modalError, setModalError] = useState(null);
+
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await adminFetch("/escrow");
-      setOrders(Array.isArray(data) ? data : []);
-    } catch {
-      /* ignore */
+      const [dealsRes, ledgerRes, settingsRes] = await Promise.all([
+        adminFetch(`/deals?mode=${filterMode}&status=${filterStatus}`),
+        adminFetch("/escrow-ledger"),
+        adminFetch("/deal-settings"),
+      ]);
+      setDealsData(dealsRes || { deals: [], summary: {} });
+      setLedgerData(ledgerRes || { entries: [], summary: {} });
+      if (settingsRes) setSettings(settingsRes);
+    } catch (err) {
+      console.error("Could not load payments data:", err);
     } finally {
       setLoading(false);
     }
-  }, [adminFetch]);
+  }, [adminFetch, filterMode, filterStatus]);
 
   useEffect(() => {
-    loadEscrow();
-  }, [loadEscrow]);
+    loadData();
+  }, [loadData]);
 
-  const handleAction = async (orderId, action) => {
-    const confirmText = action === "release"
-      ? "Release all milestone escrow funds to the freelancer?"
-      : "Process a full escrow refund back to the employer client?";
-    if (!window.confirm(confirmText)) return;
-
-    setBusyId(orderId);
+  const handleSaveSettings = async (e) => {
+    e?.preventDefault();
+    setSavingSettings(true);
     try {
-      await adminFetch(`/escrow/${orderId}/${action}`, "POST");
-      loadEscrow();
-    } catch {
-      /* ignore */
+      await adminFetch("/deal-settings", "POST", settings);
+      alert("Deal & SLA settings updated successfully!");
+      loadData();
+    } catch (err) {
+      alert(err?.message || "Failed to save settings.");
     } finally {
-      setBusyId(null);
+      setSavingSettings(false);
+    }
+  };
+
+  const openArbitrationModal = (deal) => {
+    setArbitrateDeal(deal);
+    setArbitrationAction("release");
+    setArbitrationNotes("");
+    const agreedRupees = Math.round((deal.agreed_amount_paise || 0) / 100);
+    setFreelancerShare(Math.round(agreedRupees * 0.95));
+    setEmployerShare(0);
+    setModalError(null);
+  };
+
+  const handleResolveDispute = async () => {
+    if (!arbitrateDeal) return;
+    if (!arbitrationNotes.trim()) {
+      setModalError("Please provide resolution notes explaining the decision.");
+      return;
+    }
+    const agreedPaise = arbitrateDeal.agreed_amount_paise || 0;
+    if (arbitrationAction === "split") {
+      const fPaise = Math.round(Number(freelancerShare) * 100);
+      const ePaise = Math.round(Number(employerShare) * 100);
+      if (fPaise + ePaise !== agreedPaise) {
+        setModalError(`Split shares must equal total agreed amount (₹${agreedPaise / 100}). Current sum: ₹${(fPaise + ePaise) / 100}`);
+        return;
+      }
+    }
+
+    setArbitrating(true);
+    setModalError(null);
+    try {
+      await adminFetch(`/deals/${arbitrateDeal.deal_id}/resolve-dispute`, "POST", {
+        action: arbitrationAction,
+        notes: arbitrationNotes,
+        freelancer_share_paise: Math.round(Number(freelancerShare) * 100),
+        employer_share_paise: Math.round(Number(employerShare) * 100),
+      });
+      setArbitrateDeal(null);
+      loadData();
+    } catch (err) {
+      setModalError(err?.message || "Dispute arbitration failed.");
+    } finally {
+      setArbitrating(false);
     }
   };
 
   const handleExportCSV = () => {
     const csvContent = "data:text/csv;charset=utf-8,"
-      + "Order ID,Job Title,Freelancer,Employer,Amount (INR),Status,Date\n"
-      + orders.map(o => `"${o.order_id}","${o.job_title}","${o.freelancer_name}","${o.employer_name}",${o.amount_rupees},"${o.status}","${o.created_at}"`).join("\n");
+      + "Ledger ID,Deal ID,Entry Type,Amount (INR),Gateway Ref,Notes,Date\n"
+      + (ledgerData.entries || []).map(e =>
+        `"${e.ledger_id}","${e.deal_id}","${e.entry_type}",${(e.amount_paise || 0) / 100},"${e.gateway_ref || ''}","${(e.notes || '').replace(/"/g, '""')}","${e.created_at}"`
+      ).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -790,90 +853,551 @@ function EscrowDisputesTab({ adminFetch }) {
     document.body.removeChild(link);
   };
 
+  const summary = dealsData.summary || {};
+  const ledgerSummary = ledgerData.summary || {};
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-white p-3 shadow-[3px_3px_0px_#121212]">
-        <div>
-          <p className="text-xs font-black uppercase text-ink">Escrow Dispute Resolution Hub</p>
-          <p className="text-[11px] text-inkmuted">Manage protected client milestone funds and arbitrate disputes</p>
+    <div className="flex flex-col gap-4 font-sans" data-testid="admin-payments-hub">
+      {/* 1. TOP METRICS CARDS */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="border-2 border-ink bg-white p-3 shadow-[2px_2px_0px_#121212]">
+          <span className="text-[10px] font-black uppercase text-inkmuted block">TOTAL DEALS</span>
+          <p className="text-xl font-black text-ink">{summary.total_deals || 0}</p>
         </div>
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center gap-1.5 border-2 border-ink bg-sand px-3 py-1.5 text-xs font-black text-ink hover:bg-white"
-        >
-          <Download size={14} /> EXPORT CSV LEDGER
-        </button>
+
+        <div className="border-2 border-ink bg-[#FFF4EE] p-3 shadow-[2px_2px_0px_#E65A1E]">
+          <span className="text-[10px] font-black uppercase text-[#E65A1E] block">ESCROW HELD</span>
+          <p className="text-xl font-black text-[#E65A1E]">
+            ₹{((summary.escrow_holding_paise || 0) / 100).toLocaleString("en-IN")}
+          </p>
+        </div>
+
+        <div className="border-2 border-ink bg-[#E5F8EE] p-3 shadow-[2px_2px_0px_#00A86B]">
+          <span className="text-[10px] font-black uppercase text-[#00875A] block">5% COMMISSION</span>
+          <p className="text-xl font-black text-[#00A86B]">
+            ₹{((summary.platform_commission_paise || 0) / 100).toLocaleString("en-IN")}
+          </p>
+        </div>
+
+        <div className={`border-2 border-ink p-3 shadow-[2px_2px_0px_#121212] ${
+          (summary.disputed_count || 0) > 0 ? "bg-rose-100 text-danger border-danger" : "bg-white"
+        }`}>
+          <span className="text-[10px] font-black uppercase block">DISPUTES</span>
+          <p className="text-xl font-black">{summary.disputed_count || 0}</p>
+        </div>
+
+        <div className={`border-2 border-ink p-3 shadow-[2px_2px_0px_#121212] ${
+          (summary.reported_count || 0) > 0 ? "bg-amber-100 text-amber-800 border-amber-600" : "bg-white"
+        }`}>
+          <span className="text-[10px] font-black uppercase block">DIRECT REPORTED</span>
+          <p className="text-xl font-black">{summary.reported_count || 0}</p>
+        </div>
+      </div>
+
+      {/* 2. SUB-TABS & ACTIONS HEADER */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-white p-3 shadow-[3px_3px_0px_#121212]">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            onClick={() => setActiveSubTab("deals")}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition border ${
+              activeSubTab === "deals" ? "bg-ink text-white border-ink" : "bg-sand text-ink border-ink/20 hover:bg-white"
+            }`}
+          >
+            DEALS QUEUE ({(dealsData.deals || []).length})
+          </button>
+          <button
+            onClick={() => setActiveSubTab("ledger")}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition border ${
+              activeSubTab === "ledger" ? "bg-ink text-white border-ink" : "bg-sand text-ink border-ink/20 hover:bg-white"
+            }`}
+          >
+            ESCROW LEDGER ({(ledgerData.entries || []).length})
+          </button>
+          <button
+            onClick={() => setActiveSubTab("settings")}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition border ${
+              activeSubTab === "settings" ? "bg-ink text-white border-ink" : "bg-sand text-ink border-ink/20 hover:bg-white"
+            }`}
+          >
+            COMMISSION &amp; SLA SETTINGS
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {activeSubTab === "ledger" && (
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1 border-2 border-ink bg-sand px-3 py-1.5 text-xs font-black text-ink hover:bg-white"
+            >
+              <Download size={14} /> EXPORT CSV
+            </button>
+          )}
+          <button
+            onClick={loadData}
+            className="flex items-center gap-1 border border-ink bg-white px-2.5 py-1 text-xs font-bold text-ink hover:bg-sand"
+            title="Refresh"
+          >
+            <RefreshCw size={13} />
+          </button>
+        </div>
       </div>
 
       {loading ? (
         <div className="py-12 text-center"><Spinner /></div>
-      ) : orders.length === 0 ? (
-        <p className="py-8 text-center text-xs font-bold text-inkmuted">No escrow orders found.</p>
+      ) : activeSubTab === "deals" ? (
+        /* ═══════ SUB-TAB 1: DEALS LIST ═══════ */
+        <div className="flex flex-col gap-3">
+          {/* Filters Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-sand p-2.5 border-2 border-ink text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-black uppercase text-[10px]">Filter Mode:</span>
+              <select
+                value={filterMode}
+                onChange={(e) => setFilterMode(e.target.value)}
+                className="border border-ink bg-white px-2 py-1 text-xs font-bold"
+              >
+                <option value="all">All Modes</option>
+                <option value="escrow">Escrow Protected</option>
+                <option value="direct">Direct Settlement</option>
+              </select>
+
+              <span className="font-black uppercase text-[10px] ml-2">Status:</span>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="border border-ink bg-white px-2 py-1 text-xs font-bold"
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active Pipeline</option>
+                <option value="disputed">⚠️ Disputed Escrow</option>
+                <option value="reported">⚠️ Reported Direct</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <span className="text-[11px] font-bold text-inkmuted">
+              Showing {(dealsData.deals || []).length} deals
+            </span>
+          </div>
+
+          {(dealsData.deals || []).length === 0 ? (
+            <div className="border-2 border-dashed border-ink p-8 text-center text-xs text-inkmuted bg-white">
+              No deals match the selected filters.
+            </div>
+          ) : (
+            (dealsData.deals || []).map((d) => {
+              const agreed = Math.round((d.agreed_amount_paise || 0) / 100);
+              const comm = Math.round((d.commission_paise || 0) / 100);
+              const net = Math.round((d.freelancer_net_paise || 0) / 100);
+
+              return (
+                <div
+                  key={d.deal_id}
+                  data-testid={`deal-card-${d.deal_id}`}
+                  className={`border-2 border-ink p-4 shadow-[3px_3px_0px_#121212] transition ${
+                    d.status === "disputed"
+                      ? "bg-rose-50 border-danger"
+                      : d.status === "reported"
+                      ? "bg-amber-50 border-amber-600"
+                      : d.payment_mode === "escrow"
+                      ? "bg-white"
+                      : "bg-[#FAFAFA]"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-black text-ink">{d.deal_id}</span>
+                        <Badge
+                          text={d.payment_mode === "escrow" ? "ESCROW" : "DIRECT"}
+                          tone={d.payment_mode === "escrow" ? "orange" : "gray"}
+                        />
+                        <Badge
+                          text={d.status.toUpperCase().replace(/_/g, " ")}
+                          tone={
+                            d.status === "completed"
+                              ? "green"
+                              : d.status === "disputed"
+                              ? "black"
+                              : d.status === "reported"
+                              ? "orange"
+                              : "blue"
+                          }
+                        />
+                      </div>
+                      <p className="text-sm font-black text-ink mt-1.5">{d.job_title || "WorkHop Gig"}</p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-xl font-black text-ink">₹{agreed.toLocaleString("en-IN")}</p>
+                      <p className="text-[10px] text-inkmuted font-bold">
+                        {d.payment_mode === "escrow" ? `Net: ₹${net} · Fee: ₹${comm}` : "0% Platform Fee"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-ink/10 pt-2 text-xs">
+                    <div>
+                      <span className="text-inkmuted font-bold">Freelancer:</span>{" "}
+                      <span className="font-black text-ink">{d.freelancer_name}</span>{" "}
+                      <span className="text-[10px] text-inkmuted">({d.freelancer_id})</span>
+                      {d.freelancer_ack_at && (
+                        <p className="text-[10px] text-ok mt-0.5">✓ Freelancer Risk Ack: {fmtDate(d.freelancer_ack_at)}</p>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-inkmuted font-bold">Employer:</span>{" "}
+                      <span className="font-black text-ink">{d.employer_name}</span>
+                      {d.employer_ack_at && (
+                        <p className="text-[10px] text-ok mt-0.5">✓ Employer Risk Ack: {fmtDate(d.employer_ack_at)}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Dispute Banner & Arbitration Action */}
+                  {d.status === "disputed" && (
+                    <div className="mt-3 border-2 border-danger bg-red-50 p-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-danger uppercase flex items-center gap-1">
+                          <AlertTriangle size={14} /> ACTIVE DISPUTE (Raised by {d.dispute_raised_by})
+                        </span>
+                        <button
+                          onClick={() => openArbitrationModal(d)}
+                          className="border-2 border-danger bg-danger px-3 py-1 text-xs font-black text-white hover:bg-black transition shadow-sm"
+                        >
+                          ⚖️ ARBITRATE DISPUTE
+                        </button>
+                      </div>
+                      <p className="mt-1 text-[11px] text-ink font-semibold">
+                        Reason: {d.dispute_reason || "Unspecified"}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Direct Mode Reported Banner */}
+                  {d.status === "reported" && (
+                    <div className="mt-3 border-2 border-amber-600 bg-amber-50 p-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-amber-800 uppercase flex items-center gap-1">
+                          <AlertTriangle size={14} /> DIRECT DEAL ISSUE REPORTED
+                        </span>
+                        <Link
+                          to={`/chat/${d.conversation_id}`}
+                          className="border border-ink bg-white px-2.5 py-1 text-[11px] font-bold text-ink hover:bg-sand"
+                        >
+                          View Chat Thread →
+                        </Link>
+                      </div>
+                      <p className="mt-1 text-[11px] text-ink font-semibold">
+                        Report Details: {d.report_reason || "Reported by user"}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Resolution Notes if Resolved */}
+                  {d.dispute_resolution && (
+                    <div className="mt-2.5 border border-ok/40 bg-emerald-50 p-2 text-xs text-emerald-900 rounded">
+                      <strong className="font-black uppercase">Arbitration Decision ({d.dispute_resolution.action}):</strong>{" "}
+                      {d.dispute_resolution.notes}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : activeSubTab === "ledger" ? (
+        /* ═══════ SUB-TAB 2: ESCROW TRANSACTION LEDGER ═══════ */
+        <div className="flex flex-col gap-3">
+          {/* Running Balance Banner */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 border-2 border-ink bg-[#FAF7F2] p-3 text-xs">
+            <div>
+              <span className="text-[10px] text-inkmuted uppercase font-bold">Total Deposited</span>
+              <p className="text-base font-black text-ink">₹{((ledgerSummary.total_deposited_paise || 0) / 100).toLocaleString("en-IN")}</p>
+            </div>
+            <div>
+              <span className="text-[10px] text-inkmuted uppercase font-bold">Total Released</span>
+              <p className="text-base font-black text-ok">₹{((ledgerSummary.total_released_paise || 0) / 100).toLocaleString("en-IN")}</p>
+            </div>
+            <div>
+              <span className="text-[10px] text-inkmuted uppercase font-bold">Total Platform Fee</span>
+              <p className="text-base font-black text-[#E65A1E]">₹{((ledgerSummary.total_commission_paise || 0) / 100).toLocaleString("en-IN")}</p>
+            </div>
+            <div>
+              <span className="text-[10px] text-inkmuted uppercase font-bold">Net Holding Balance</span>
+              <p className="text-base font-black text-ink">₹{((ledgerSummary.current_balance_paise || 0) / 100).toLocaleString("en-IN")}</p>
+            </div>
+          </div>
+
+          <div className="border-2 border-ink bg-white overflow-x-auto shadow-[3px_3px_0px_#121212]">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b-2 border-ink bg-sand text-[10px] font-black uppercase text-ink">
+                  <th className="p-2.5">Date &amp; ID</th>
+                  <th className="p-2.5">Deal ID</th>
+                  <th className="p-2.5">Entry Type</th>
+                  <th className="p-2.5">Amount (INR)</th>
+                  <th className="p-2.5">Gateway / Ref</th>
+                  <th className="p-2.5">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(ledgerData.entries || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-6 text-center text-inkmuted">
+                      No escrow ledger entries recorded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  (ledgerData.entries || []).map((e) => (
+                    <tr key={e.ledger_id || e._id} className="border-b border-ink/10 hover:bg-sand/30 font-medium">
+                      <td className="p-2.5">
+                        <span className="font-bold block text-ink">{fmtDate(e.created_at)}</span>
+                        <span className="text-[10px] text-inkmuted">{e.ledger_id}</span>
+                      </td>
+                      <td className="p-2.5 font-bold text-ink">{e.deal_id}</td>
+                      <td className="p-2.5">
+                        <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded ${
+                          e.entry_type === "deposit"
+                            ? "bg-blue-100 text-blue-800"
+                            : e.entry_type === "release" || e.entry_type === "split_freelancer"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : e.entry_type === "commission"
+                            ? "bg-orange-100 text-[#E65A1E]"
+                            : "bg-rose-100 text-rose-800"
+                        }`}>
+                          {e.entry_type}
+                        </span>
+                      </td>
+                      <td className="p-2.5 font-black text-ink">
+                        ₹{((e.amount_paise || 0) / 100).toLocaleString("en-IN")}
+                      </td>
+                      <td className="p-2.5 text-[10px] text-inkmuted font-mono">{e.gateway_ref || "internal"}</td>
+                      <td className="p-2.5 text-[11px] text-ink">{e.notes}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3">
-          {orders.map((o) => (
-            <div
-              key={o.order_id}
-              className={`border-2 border-ink p-4 shadow-[3px_3px_0px_#121212] ${
-                o.status === "held_in_escrow" ? "bg-white" : o.status === "under_review" ? "bg-[#FFF3E9]" : "bg-gray-50"
-              }`}
+        /* ═══════ SUB-TAB 3: COMMISSION & SLA SETTINGS ═══════ */
+        <div className="border-2 border-ink bg-white p-5 shadow-[3px_3px_0px_#121212] max-w-xl">
+          <h4 className="text-sm font-black uppercase text-ink flex items-center gap-1.5 border-b border-ink/10 pb-2">
+            <Settings size={16} className="text-brand" /> Platform Deal &amp; SLA Controls
+          </h4>
+          <form onSubmit={handleSaveSettings} className="mt-4 flex flex-col gap-4 text-xs">
+            <div>
+              <label className="font-black text-ink block mb-1">
+                Escrow Commission Rate (Decimal):
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="0.5"
+                value={settings.deal_commission_rate}
+                onChange={(e) => setSettings({ ...settings, deal_commission_rate: parseFloat(e.target.value) })}
+                className="wh-input border-2 border-ink p-2 w-full text-xs font-bold"
+              />
+              <p className="text-[10px] text-inkmuted mt-0.5">
+                Current: {(settings.deal_commission_rate * 100).toFixed(0)}% platform commission retained on escrow releases.
+              </p>
+            </div>
+
+            <div>
+              <label className="font-black text-ink block mb-1">
+                72-Hour Auto-Release SLA Window (Hours):
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="720"
+                value={settings.deal_auto_release_hours}
+                onChange={(e) => setSettings({ ...settings, deal_auto_release_hours: parseInt(e.target.value, 10) })}
+                className="wh-input border-2 border-ink p-2 w-full text-xs font-bold"
+              />
+              <p className="text-[10px] text-inkmuted mt-0.5">
+                Hours given to employer to review submitted deliverables before automated payout release.
+              </p>
+            </div>
+
+            <div>
+              <label className="font-black text-ink block mb-1">
+                Funding Timeout Window (Hours):
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="168"
+                value={settings.deal_funding_timeout_hours}
+                onChange={(e) => setSettings({ ...settings, deal_funding_timeout_hours: parseInt(e.target.value, 10) })}
+                className="wh-input border-2 border-ink p-2 w-full text-xs font-bold"
+              />
+              <p className="text-[10px] text-inkmuted mt-0.5">
+                Time allowed for employer to fund escrow before deal expiry.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingSettings}
+              className="mt-2 bg-ink text-white py-2.5 px-4 font-black text-xs hover:bg-brand transition flex items-center justify-center gap-2"
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black text-ink">Order #{o.order_id}</span>
-                    <Badge
-                      text={o.status.toUpperCase().replace(/_/g, " ")}
-                      tone={o.status === "released" ? "green" : o.status === "held_in_escrow" ? "orange" : "blue"}
+              {savingSettings && <Loader2 size={14} className="animate-spin" />}
+              SAVE DEAL SETTINGS
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* ═══════ DISPUTE ARBITRATION MODAL ═══════ */}
+      {arbitrateDeal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-lg border-4 border-ink bg-white p-6 shadow-[8px_8px_0px_#121212]">
+            <div className="flex items-center justify-between border-b-2 border-ink pb-3">
+              <div>
+                <h3 className="text-base font-black uppercase text-danger flex items-center gap-1.5">
+                  <Scale size={18} /> Arbitrate Escrow Dispute
+                </h3>
+                <p className="text-xs text-inkmuted font-semibold mt-0.5">
+                  Deal #{arbitrateDeal.deal_id} · Total: ₹{((arbitrateDeal.agreed_amount_paise || 0) / 100).toLocaleString("en-IN")}
+                </p>
+              </div>
+              <button onClick={() => setArbitrateDeal(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Arbitration Choice */}
+            <div className="mt-4 flex flex-col gap-2.5">
+              <label className="text-xs font-black text-ink uppercase">Select Arbitration Ruling:</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setArbitrationAction("release");
+                    const total = Math.round((arbitrateDeal.agreed_amount_paise || 0) / 100);
+                    setFreelancerShare(Math.round(total * 0.95));
+                    setEmployerShare(0);
+                  }}
+                  className={`border-2 p-2.5 text-xs font-black uppercase text-center transition ${
+                    arbitrationAction === "release"
+                      ? "border-ok bg-emerald-50 text-emerald-800 shadow-[2px_2px_0px_#00A86B]"
+                      : "border-ink/20 hover:border-ink"
+                  }`}
+                >
+                  Full Release
+                  <span className="block text-[9px] font-normal text-inkmuted mt-0.5">To Freelancer</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setArbitrationAction("refund");
+                    const total = Math.round((arbitrateDeal.agreed_amount_paise || 0) / 100);
+                    setFreelancerShare(0);
+                    setEmployerShare(total);
+                  }}
+                  className={`border-2 p-2.5 text-xs font-black uppercase text-center transition ${
+                    arbitrationAction === "refund"
+                      ? "border-danger bg-red-50 text-danger shadow-[2px_2px_0px_#dc2626]"
+                      : "border-ink/20 hover:border-ink"
+                  }`}
+                >
+                  Full Refund
+                  <span className="block text-[9px] font-normal text-inkmuted mt-0.5">To Employer</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setArbitrationAction("split");
+                    const total = Math.round((arbitrateDeal.agreed_amount_paise || 0) / 100);
+                    setFreelancerShare(Math.round(total * 0.5));
+                    setEmployerShare(total - Math.round(total * 0.5));
+                  }}
+                  className={`border-2 p-2.5 text-xs font-black uppercase text-center transition ${
+                    arbitrationAction === "split"
+                      ? "border-[#E65A1E] bg-orange-50 text-[#E65A1E] shadow-[2px_2px_0px_#E65A1E]"
+                      : "border-ink/20 hover:border-ink"
+                  }`}
+                >
+                  Split Payout
+                  <span className="block text-[9px] font-normal text-inkmuted mt-0.5">Custom Shares</span>
+                </button>
+              </div>
+
+              {/* Split inputs */}
+              {arbitrationAction === "split" && (
+                <div className="mt-2 grid grid-cols-2 gap-3 border-2 border-dashed border-ink/30 p-3 bg-sand/30">
+                  <div>
+                    <label className="text-[11px] font-black text-ink block mb-1">Freelancer Share (₹):</label>
+                    <input
+                      type="number"
+                      value={freelancerShare}
+                      onChange={(e) => {
+                        const val = Math.max(0, Number(e.target.value));
+                        setFreelancerShare(val);
+                        const total = Math.round((arbitrateDeal.agreed_amount_paise || 0) / 100);
+                        setEmployerShare(Math.max(0, total - val));
+                      }}
+                      className="border border-ink p-1.5 w-full text-xs font-bold"
                     />
                   </div>
-                  <p className="text-sm font-black text-ink mt-1">{o.job_title}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xl font-black text-ink">₹{Number(o.amount_rupees).toLocaleString("en-IN")}</p>
-                  <p className="text-[10px] text-inkmuted font-bold">Milestone Protected</p>
-                </div>
-              </div>
-
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 border-t border-ink/10 pt-2 text-xs">
-                <div>
-                  <span className="text-inkmuted font-bold">Freelancer:</span>{" "}
-                  <span className="font-black text-ink">{o.freelancer_name}</span>{" "}
-                  <span className="text-[10px] text-inkmuted">({o.freelancer_email})</span>
-                </div>
-                <div>
-                  <span className="text-inkmuted font-bold">Employer:</span>{" "}
-                  <span className="font-black text-ink">{o.employer_name}</span>{" "}
-                  <span className="text-[10px] text-inkmuted">({o.employer_email})</span>
-                </div>
-              </div>
-
-              {o.dispute_reason && (
-                <div className="mt-2 border-2 border-red-300 bg-red-50 p-2 text-xs font-bold text-[#C62828]">
-                  ⚠️ Dispute Note: {o.dispute_reason}
+                  <div>
+                    <label className="text-[11px] font-black text-ink block mb-1">Employer Refund (₹):</label>
+                    <input
+                      type="number"
+                      value={employerShare}
+                      onChange={(e) => {
+                        const val = Math.max(0, Number(e.target.value));
+                        setEmployerShare(val);
+                        const total = Math.round((arbitrateDeal.agreed_amount_paise || 0) / 100);
+                        setFreelancerShare(Math.max(0, total - val));
+                      }}
+                      className="border border-ink p-1.5 w-full text-xs font-bold"
+                    />
+                  </div>
                 </div>
               )}
 
-              {o.status !== "released" && o.status !== "refunded" && (
-                <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-ink/10 pt-3">
-                  <button
-                    onClick={() => handleAction(o.order_id, "release")}
-                    disabled={busyId === o.order_id}
-                    className="border-2 border-ink bg-ok px-3 py-1.5 text-xs font-black text-white hover:opacity-90"
-                  >
-                    ✓ FORCE RELEASE TO FREELANCER
-                  </button>
-                  <button
-                    onClick={() => handleAction(o.order_id, "refund")}
-                    disabled={busyId === o.order_id}
-                    className="border-2 border-ink bg-ink px-3 py-1.5 text-xs font-black text-white hover:bg-black"
-                  >
-                    ↩ REFUND TO CLIENT
-                  </button>
-                </div>
+              {/* Notes */}
+              <div className="mt-2">
+                <label className="text-[11px] font-black text-ink block mb-1">Arbitration Notes &amp; Rationale <span className="text-danger">*</span></label>
+                <textarea
+                  rows={3}
+                  value={arbitrationNotes}
+                  onChange={(e) => setArbitrationNotes(e.target.value)}
+                  placeholder="Explain the factual basis for this ruling (e.g. Freelancer provided 80% deliverables as agreed in chat logs)..."
+                  className="w-full border border-ink p-2 text-xs font-medium"
+                />
+              </div>
+
+              {modalError && (
+                <p className="text-xs text-danger font-bold">{modalError}</p>
               )}
             </div>
-          ))}
+
+            <div className="flex justify-end gap-2 mt-5 pt-3 border-t border-ink/10">
+              <button
+                type="button"
+                onClick={() => setArbitrateDeal(null)}
+                className="px-3.5 py-2 text-xs font-bold border border-ink"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={arbitrating}
+                onClick={handleResolveDispute}
+                className="px-4 py-2 text-xs font-black bg-danger text-white hover:bg-black transition flex items-center gap-1.5"
+              >
+                {arbitrating && <Loader2 size={13} className="animate-spin" />}
+                EXECUTE ARBITRATION RULING
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -3552,7 +4076,7 @@ export default function Admin() {
         {tab === "CONTROLS" && <SiteControlsTab adminFetch={adminFetch} />}
         {tab === "GIGS" && <GigsModerationTab adminFetch={adminFetch} />}
         {tab === "CHATS" && <AdminChatsTab adminFetch={adminFetch} />}
-        {tab === "ESCROW" && <EscrowDisputesTab adminFetch={adminFetch} />}
+        {tab === "ESCROW" && <PaymentsTab adminFetch={adminFetch} />}
         {tab === "LOGS" && <AuditLogsTab adminFetch={adminFetch} />}
 
         {tab === "PROS" && <ProsTalentTab adminFetch={adminFetch} />}

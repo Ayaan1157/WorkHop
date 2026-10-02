@@ -139,8 +139,25 @@ export default function ApplicantLeaderboardModal({ open, onClose, job, onOpenAp
                     </div>
                   </div>
 
-                  {/* Proposal Details (Rate, PDF, Portfolio) */}
+                  {/* Proposal Details (Rate, Payment Mode, PDF, Portfolio) */}
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-ink/10 pt-2">
+                    {applicant.proposed_payment_mode && (
+                      <span
+                        data-testid={`applicant-mode-badge-${applicant.proposed_payment_mode}`}
+                        className={`border border-ink px-1.5 py-0.5 text-[9px] font-black uppercase flex items-center gap-1 ${
+                          applicant.proposed_payment_mode === "escrow"
+                            ? "bg-[#FFF4EE] text-[#E65A1E] dark:bg-[#E65A1E]/20 dark:text-[#E65A1E]"
+                            : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                        }`}
+                      >
+                        {applicant.proposed_payment_mode === "escrow" ? (
+                          <><ShieldCheck size={10} /> Escrow Protected</>
+                        ) : (
+                          <><AlertTriangle size={10} /> Direct Payment</>
+                        )}
+                      </span>
+                    )}
+
                     {applicant.proposed_quote && (
                       <span className="border border-ink bg-[#E5F8EE] dark:bg-[#133020] px-1.5 py-0.5 text-[9px] font-black text-[#00875A] dark:text-[#4ade80]">
                         Quote: ₹{Number(applicant.proposed_quote).toLocaleString("en-IN")}{applicant.proposed_rate_type === "hourly" ? "/hr" : ""}

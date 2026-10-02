@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Shell } from "@/components/kit";
 import EditModal from "@/components/EditModal";
-import EscrowWalletModal from "@/components/EscrowWalletModal";
 import CreditsTopUpModal from "@/components/CreditsTopUpModal";
 import PushSettingsModal from "@/components/PushSettingsModal";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
@@ -66,9 +65,8 @@ export default function FreelancerProfile() {
   const [expandedEmployment, setExpandedEmployment] = useState(true);
   const [expandedCerts, setExpandedCerts] = useState(true);
 
-  // Top-right Menu Drawer & Escrow Wallet states
+  // Top-right Menu Drawer states
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
-  const [walletOpen, setWalletOpen] = useState(false);
   const [pushSettingsOpen, setPushSettingsOpen] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [txHistoryOpen, setTxHistoryOpen] = useState(false);
@@ -831,7 +829,7 @@ export default function FreelancerProfile() {
                     </div>
                     <div>
                       <span className="text-sm font-black text-ink dark:text-white">Verified Gigs</span>
-                      <p className="text-xs text-inkmuted dark:text-[#888]">Direct Employer Escrow</p>
+                      <p className="text-xs text-inkmuted dark:text-[#888]">Verified WorkHop Deals</p>
                     </div>
                   </div>
                 </div>
@@ -2013,28 +2011,6 @@ export default function FreelancerProfile() {
                 </button>
               </div>
 
-              {/* Escrow Wallet Quick Access */}
-              <div className="bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl p-3.5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FFF3C4] text-black">
-                    <Wallet size={18} />
-                  </span>
-                  <div>
-                    <p className="text-xs font-bold text-ink dark:text-white">Escrow Wallet & Payouts</p>
-                    <p className="text-[10px] text-inkmuted dark:text-[#777]">Milestones & UPI withdrawal</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setWalletOpen(true);
-                    setMenuDrawerOpen(false);
-                  }}
-                  className="px-3 py-1.5 rounded-lg bg-ink text-white dark:bg-white dark:text-black text-xs font-bold hover:bg-[#E65A1E] hover:text-white transition"
-                >
-                  OPEN
-                </button>
-              </div>
-
               {/* Push Notifications & 5km Alerts */}
               <div className="bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl p-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -2121,9 +2097,6 @@ export default function FreelancerProfile() {
           </div>
         </div>
       )}
-
-      {/* Escrow Wallet Modal */}
-      <EscrowWalletModal isOpen={walletOpen} onClose={() => setWalletOpen(false)} />
 
       {/* Push Notification Settings Modal */}
       <PushSettingsModal isOpen={pushSettingsOpen} onClose={() => setPushSettingsOpen(false)} />
