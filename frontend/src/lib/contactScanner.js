@@ -16,8 +16,8 @@ const EMAIL_REGEX = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b|\b[A-Za-
 // URL / Web domain detection
 const URL_REGEX = /(?:https?:\/\/|www\.)[^\s/$.?#].[^\s]*|\b[A-Za-z0-9-]+\.(?:com|in|co|org|net|io|tech|agency|me|app)\b(?:\/[^\s]*)?/gi;
 
-// Social handles & external communication apps
-const SOCIAL_REGEX = /(?:(?:whatsapp|wa\.me|wa|tg|telegram|t\.me|instagram|insta|ig|linkedin|twitter|x\.com)\s*[:=/@-]?\s*[\w.-]+)|(?:\b@[\w.-]{3,}\b)/gi;
+// Social handles & external communication apps (strictly requiring word boundaries and separators)
+const SOCIAL_REGEX = /(?:\b(?:whatsapp|telegram|instagram|linkedin|twitter|snapchat)\s*[:=/@-]?\s*@?[a-zA-Z0-9_.-]{3,}\b)|(?:\b(?:wa\.me|t\.me)\/[a-zA-Z0-9_.-]+)|(?:\b(?:wa|tg|ig|insta)\s*[:=/@-]\s*@?[a-zA-Z0-9_.-]{2,}\b)|(?:\B@[a-zA-Z][a-zA-Z0-9_]{2,23}\b)/gi;
 
 const NUMBER_WORDS = {
   zero: "0",
@@ -58,14 +58,14 @@ function extractPrintableStrings(buffer) {
     if ((b >= 32 && b <= 126) || b === 10 || b === 13 || b === 9) {
       currentChunk.push(String.fromCharCode(b));
     } else {
-      if (currentChunk.length >= 4) {
+      if (currentChunk.length >= 6) {
         chunks.push(currentChunk.join(""));
       }
       currentChunk = [];
     }
   }
 
-  if (currentChunk.length >= 4) {
+  if (currentChunk.length >= 6) {
     chunks.push(currentChunk.join(""));
   }
 
@@ -257,24 +257,27 @@ export async function scanImageFile(file) {
 
   const allViolations = [];
 
-  // Layer 1: Check filename
-  const filenameScan = scanText(file.name);
+  // Layer 1: Check filename (strip extension so image format extensions do not trigger false positive URL matches)
+  const baseName = (file.name || "").replace(/\.[^/.]+$/, "");
+  const filenameScan = scanText(baseName);
   if (filenameScan.hasViolations) {
     allViolations.push(...filenameScan.violations);
   }
 
-  // Layer 2: Extract printable strings from file buffer (EXIF tags, PNG text chunks, SVG tags)
-  try {
-    const buffer = await file.arrayBuffer();
-    const extractedText = extractPrintableStrings(buffer);
-    if (extractedText) {
-      const metadataScan = scanText(extractedText);
-      if (metadataScan.hasViolations) {
-        allViolations.push(...metadataScan.violations);
+  // Layer 2: For SVG vector graphics (XML text markup), screen XML content for contact details
+  const isSvg = file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
+  if (isSvg) {
+    try {
+      const text = await file.text();
+      if (text) {
+        const svgScan = scanText(text);
+        if (svgScan.hasViolations) {
+          allViolations.push(...svgScan.violations);
+        }
       }
+    } catch {
+      /* ignore read errors */
     }
-  } catch {
-    /* ignore read errors */
   }
 
   // Layer 3: Perform in-browser OCR to detect text visually printed inside the image
@@ -337,8 +340,9 @@ export async function scanPdfFile(file) {
           textContent = extractPrintableStrings(rawContent);
         }
 
-        // Also check filename itself
-        const filenameScan = scanText(file.name);
+        // Also check filename itself (strip extension)
+        const baseName = (file.name || "").replace(/\.[^/.]+$/, "");
+        const filenameScan = scanText(baseName);
         const contentScan = scanText(textContent);
 
         const allViolations = [...filenameScan.violations, ...contentScan.violations];
@@ -423,14 +427,22 @@ export async function scanUploadFile(file) {
 
   // Other documents (plain text, code, doc)
   const allViolations = [];
-  const filenameScan = scanText(file.name);
+  const baseName = (file.name || "").replace(/\.[^/.]+$/, "");
+  const filenameScan = scanText(baseName);
   if (filenameScan.hasViolations) allViolations.push(...filenameScan.violations);
 
   try {
-    const buffer = await file.arrayBuffer();
-    const text = extractPrintableStrings(buffer);
-    const contentScan = scanText(text);
-    if (contentScan.hasViolations) allViolations.push(...contentScan.violations);
+    const isTextDoc = file.type?.startsWith("text/") || /\.(txt|md|csv|json|html|xml|js|ts|jsx|tsx)$/i.test(file.name);
+    if (isTextDoc) {
+      const text = await file.text();
+      const contentScan = scanText(text);
+      if (contentScan.hasViolations) allViolations.push(...contentScan.violations);
+    } else {
+      const buffer = await file.arrayBuffer();
+      const text = extractPrintableStrings(buffer);
+      const contentScan = scanText(text);
+      if (contentScan.hasViolations) allViolations.push(...contentScan.violations);
+    }
   } catch {
     /* ignore */
   }
