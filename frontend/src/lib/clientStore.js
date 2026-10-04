@@ -61,7 +61,7 @@ export const DEFAULT_CREDITS_CONFIG = {
       billing_cycle: "monthly",
       badge: "MAX SAVINGS",
       effective_per_credit: "₹11.86",
-      features: ["160 Hops delivered monthly", "Unlimited rollover cap", "3 free proposal boosts monthly", "Top-tier leaderboard priority", "Direct WhatsApp employer unlocks"],
+      features: ["160 Hops delivered monthly", "Unlimited rollover cap", "Priority proposal delivery", "Direct WhatsApp employer unlocks"],
     },
   ],
   rollover_unused_credits: true,
@@ -1184,9 +1184,8 @@ export function applyToJob(
 ) {
   const jobs = getStoredJobs();
   const job = jobs.find((j) => j.id === jobId) || jobs[0];
-  const boost = Math.max(0, parseInt(boostCredits, 10) || 0);
   const baseCost = job.credits_to_apply || calculateHopsForJob(job.pay);
-  const totalCost = baseCost + boost;
+  const totalCost = baseCost;
 
   const fId = freelancerId || "freelancer-demo";
   const wallet = getCreditsWallet(fId);
@@ -1194,7 +1193,7 @@ export function applyToJob(
   // Requirement 1: Block application if balance is insufficient
   if (wallet.balance < totalCost) {
     const err = new Error(
-      `Insufficient credits. This job requires ${totalCost} credits (base: ${baseCost}${boost > 0 ? `, boost: ${boost}` : ""}), but your wallet balance is only ${wallet.balance} credits.`
+      `Insufficient Hops. This job requires ${totalCost} Hops, but your wallet balance is only ${wallet.balance} Hops.`
     );
     err.code = "INSUFFICIENT_CREDITS";
     err.status = 402;
@@ -1205,12 +1204,10 @@ export function applyToJob(
 
   // Deduct credits from wallet
   deductCredits(fId, totalCost, {
-    type: boost > 0 ? "boost" : "spend",
+    type: "spend",
     related_job_id: job.id,
     job_title: job.title,
-    description: boost > 0
-      ? `Applied to "${job.title}" (${baseCost} base + ${boost} boost credits)`
-      : `Applied to "${job.title}" (${baseCost} credits)`,
+    description: `Applied to "${job.title}" (${baseCost} Hops)`,
   });
 
   const apps = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || "[]");
@@ -1226,7 +1223,7 @@ export function applyToJob(
     job_id: jobId,
     freelancer_id: fId,
     note,
-    boost_credits: boost,
+    boost_credits: 0,
     applicant_area: applicantArea || "Indiranagar",
     distance_km: distKm != null ? distKm : (job.distance_km || 1.2),
     proposed_rate_type: proposedRateType,

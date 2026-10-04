@@ -9,13 +9,12 @@ import {
 } from "lucide-react";
 import {
   Shell, TopBar, IconBtn, EmptyBlock, Breadcrumbs,
-  ProfileProgressBar, BoostPreviewModal, JobCardSkeleton, CategoryTiles,
+  ProfileProgressBar, JobCardSkeleton, CategoryTiles,
   FloatingChatWidget
 } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
 import CreditsTopUpModal from "@/components/CreditsTopUpModal";
-import ApplicantLeaderboardModal from "@/components/ApplicantLeaderboardModal";
 import PaymentModeSelector from "@/components/PaymentModeSelector";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import { useRazorpay } from "@/hooks/usePayments";
@@ -38,7 +37,6 @@ import {
   ADMIN_EMAILS,
   getCreditsWallet,
   getFreelancerProfile,
-  getJobLeaderboard,
   calculateHopsForJob
 } from "@/lib/clientStore";
 import { scanText, redactViolations, scanPdfFile } from "@/lib/contactScanner";
@@ -93,22 +91,12 @@ export default function Jobs() {
   const [activeJob, setActiveJob] = useState(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyNote, setApplyNote] = useState("");
-  const [boostCredits, setBoostCredits] = useState(0);
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState(null);
   const [appliedJustNow, setAppliedJustNow] = useState(null);
   const [lastConvId, setLastConvId] = useState(null);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
-  const [leaderboardJob, setLeaderboardJob] = useState(null);
   const [wallet, setWallet] = useState(() => getCreditsWallet(getFreelancerId()));
-
-  // Live Bidding Leaderboard & Top Bid computation for the active gig proposal modal
-  const modalLeaderboard = useMemo(() => {
-    if (!activeJob?.id) return { list: [], topBid: 10 };
-    const list = getJobLeaderboard(activeJob.id) || [];
-    const highestBid = list.length > 0 ? Math.max(...list.map((item) => Number(item.boost_credits) || 0), 0) : 0;
-    return { list, topBid: highestBid > 0 ? highestBid : 10 };
-  }, [activeJob]);
 
   // Rate Quoting (Fixed vs Hourly)
   const [proposedRateType, setProposedRateType] = useState("fixed"); // "fixed" | "hourly"
@@ -129,7 +117,6 @@ export default function Jobs() {
   const [showAddHighlight, setShowAddHighlight] = useState(false);
 
   const [paywallOpen, setPaywallOpen] = useState(false);
-  const [boostPreviewOpen, setBoostPreviewOpen] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [showMap, setShowMap] = useState(true);
   const [radarRadius, setRadarRadius] = useState(5);
@@ -271,7 +258,6 @@ export default function Jobs() {
     const fid = freelancerId || getFreelancerId();
     if (!freelancerId) setFid(fid);
     setWallet(getCreditsWallet(fid));
-    setBoostCredits(0);
     setActiveJob(job);
     setApplyNote("");
     setApplyError(null);
@@ -392,7 +378,7 @@ export default function Jobs() {
     }
 
     const baseCost = activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay);
-    const totalCost = baseCost + boostCredits;
+    const totalCost = baseCost;
     const currentWallet = getCreditsWallet(fid);
 
     // Requirement 1: Block application if balance is insufficient
@@ -415,7 +401,7 @@ export default function Jobs() {
         note: applyNote,
         applicant_area: applicantArea,
         distance_km: calculatedDist,
-        boost_credits: boostCredits,
+        boost_credits: 0,
         proposed_rate_type: proposedRateType,
         proposed_quote: proposedQuote,
         proposed_payment_mode: paymentMode,
@@ -493,7 +479,6 @@ export default function Jobs() {
             isSaved={savedJobIds.includes(job.id)}
             onToggleSave={(e) => handleToggleSave(job.id, e)}
             onApply={() => openApplyFor(job)}
-            onOpenLeaderboard={() => setLeaderboardJob(job)}
             onMessage={() => {
               const cid = convByJob[job.id];
               cid ? nav(`/chat/${cid}?role=freelancer`) : nav("/freelancer/chats");
@@ -660,9 +645,6 @@ export default function Jobs() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setBoostPreviewOpen(true)} className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-white underline">
-                <Sparkles size={12} /> Preview Boost
-              </button>
               {!hasBoost && (
                 <button data-testid="quota-upgrade-btn" onClick={() => setPaywallOpen(true)} className="border-2 border-ink bg-ink px-3 py-1 text-[10px] font-black text-white hover:bg-black transition shadow-[1.5px_1.5px_0px_#FFFFFF]">
                   +5 APPLIES ₹149
@@ -1357,110 +1339,16 @@ export default function Jobs() {
               </div>
             </div>
 
-            {/* ═══════ 5. UPWORK-STYLE PROPOSAL BOOSTING (LIVE BIDDING) ═══════ */}
-            {activeJob && (
-              <div className="mt-3 border-2 border-ink dark:border-amber-900/40 bg-[#FFF9E6] dark:bg-amber-950/20 p-3 shadow-[2px_2px_0px_#121212]" data-testid="proposal-boost-section">
-                <div className="flex items-center justify-between border-b border-ink/20 dark:border-zinc-700 pb-2">
-                  <div>
-                    <span className="flex items-center gap-1 text-[10px] font-black uppercase text-brand tracking-wider">
-                      <Rocket size={13} />
-                      BOOST YOUR PROPOSAL (OPTIONAL)
-                    </span>
-                    <p className="text-[10px] text-inkmuted dark:text-zinc-400">Place a bid to move your proposal to the top of the client's list.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLeaderboardJob(activeJob)}
-                    className="text-[10px] font-black text-brand underline hover:text-brand/80"
-                  >
-                    Full Standings →
-                  </button>
-                </div>
-
-                {/* Mini competitor bids table */}
-                <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
-                  {[
-                    { rank: "1st Place", bid: Math.max(10, modalLeaderboard?.topBid || 10), medal: "🥇" },
-                    { rank: "2nd Place", bid: Math.max(6, Math.floor((modalLeaderboard?.topBid || 10) * 0.7)), medal: "🥈" },
-                    { rank: "3rd Place", bid: Math.max(4, Math.floor((modalLeaderboard?.topBid || 10) * 0.4)), medal: "🥉" },
-                    { rank: "4th Place", bid: 2, medal: "🎖️" },
-                  ].map((slot, i) => (
-                    <div key={i} className="border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1.5">
-                      <span className="text-[9px] font-black text-inkmuted dark:text-zinc-400">{slot.medal} {slot.rank}</span>
-                      <p className="text-xs font-black text-ink dark:text-white">{slot.bid} Hops</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Recommendation banner */}
-                <div className="mt-2.5 flex items-center justify-between border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2 text-xs">
-                  <span className="flex items-center gap-1 font-bold text-ink dark:text-zinc-200 text-[11px]">
-                    <Flame size={13} className="text-brand" />
-                    Bid {Math.max(1, (modalLeaderboard?.topBid || 10) + 1)} Hops or higher to take 1st place!
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setBoostCredits(Math.max(1, (modalLeaderboard?.topBid || 10) + 1))}
-                    className="border border-ink dark:border-zinc-700 bg-brand px-2 py-0.5 text-[9px] font-black text-white hover:bg-black transition"
-                  >
-                    BID FOR #1
-                  </button>
-                </div>
-
-                {/* Stepper counter */}
-                <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <span className="text-xs font-black text-ink dark:text-white">Your Boost Bid:</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setBoostCredits((b) => Math.max(0, b - 1))}
-                      className="flex h-8 w-8 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 font-black text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <input
-                      type="number"
-                      value={boostCredits}
-                      onChange={(e) => setBoostCredits(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                      className="wh-input h-8 w-16 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 text-center text-xs font-black text-ink dark:text-white outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setBoostCredits((b) => b + 1)}
-                      className="flex h-8 w-8 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 font-black text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
-                    >
-                      <Plus size={14} />
-                    </button>
-                    <div className="ml-1 flex gap-1 flex-wrap">
-                      {[0, 2, 5, 8, 12].map((pts) => (
-                        <button
-                          key={pts}
-                          type="button"
-                          data-testid={`boost-option-${pts}`}
-                          onClick={() => setBoostCredits(pts)}
-                          className={`border border-ink dark:border-zinc-700 px-2 py-1 text-[10px] font-black transition ${
-                            boostCredits === pts ? "bg-brand text-white" : "bg-white dark:bg-zinc-800 text-ink dark:text-zinc-200 hover:bg-sand dark:hover:bg-zinc-700"
-                          }`}
-                        >
-                          {pts === 0 ? "Standard" : `+${pts}`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ═══════ 6. HOPS COST & WALLET BALANCE SUMMARY ═══════ */}
+            {/* ═══════ 5. HOPS COST & WALLET BALANCE SUMMARY ═══════ */}
             {activeJob && (
               <div className="mt-3 flex items-center justify-between border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1a1a1c] p-3 shadow-[2px_2px_0px_#121212]">
                 <div>
                   <span className="text-[10px] font-black uppercase text-inkmuted dark:text-zinc-400 tracking-wider">TOTAL REQUIRED</span>
                   <p className="text-sm font-black text-ink dark:text-white flex items-center gap-1">
                     <Coins size={15} className="text-brand" />
-                    {(activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits} Hops
+                    {activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)} Hops
                     <span className="text-[10px] font-semibold text-inkmuted dark:text-zinc-400">
-                      ({activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)} base + {boostCredits} boost) · ₹{((activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits) * 15}
+                      · ₹{(activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) * 15}
                     </span>
                   </p>
                 </div>
@@ -1481,11 +1369,11 @@ export default function Jobs() {
             )}
 
             {/* Insufficient Hops Banner & CTA */}
-            {activeJob && wallet.balance < ((activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits) && (
+            {activeJob && wallet.balance < (activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) && (
               <div className="mt-3 border-2 border-ink dark:border-rose-800 bg-[#FFEBEE] dark:bg-rose-950/40 p-3 text-xs font-black text-[#C62828] dark:text-rose-300 shadow-[2px_2px_0px_#C62828]">
                 <p className="flex items-center gap-1.5">
                   <Lock size={14} />
-                  Insufficient Hops ({wallet.balance} available, {(activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits} required).
+                  Insufficient Hops ({wallet.balance} available, {activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)} required).
                 </p>
                 <button
                   type="button"
@@ -1515,7 +1403,7 @@ export default function Jobs() {
                 )}
               </div>
             ) : (
-              activeJob && wallet.balance >= ((activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits) && (
+              activeJob && wallet.balance >= (activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) && (
                 <button
                   data-testid="apply-confirm-btn"
                   disabled={applying || textViolations.length > 0 || pdfViolations.length > 0 || (paymentMode === "direct" && !directAcknowledged)}
@@ -1558,19 +1446,11 @@ export default function Jobs() {
       <CreditsTopUpModal
         open={creditsModalOpen}
         onClose={() => setCreditsModalOpen(false)}
-        requiredCredits={activeJob ? (activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits : null}
+        requiredCredits={activeJob ? (activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) : null}
         onUpdated={(w) => {
           setWallet(w);
           setApplyError(null);
         }}
-      />
-
-      {/* Applicant Leaderboard Modal */}
-      <ApplicantLeaderboardModal
-        open={Boolean(leaderboardJob)}
-        onClose={() => setLeaderboardJob(null)}
-        job={leaderboardJob}
-        onOpenApply={(j) => openApplyFor(j)}
       />
 
       {/* Paywall Modal */}
@@ -1608,12 +1488,6 @@ export default function Jobs() {
         </div>
       )}
 
-      {/* Boost Preview Modal */}
-      <BoostPreviewModal
-        isOpen={boostPreviewOpen}
-        onClose={() => setBoostPreviewOpen(false)}
-        onConfirmBoost={() => { setBoostPreviewOpen(false); setPaywallOpen(true); }}
-      />
       {/* FLOATING CIRCULAR CHAT WIDGET (Bottom Right) */}
       <FloatingChatWidget role="freelancer" />
     </Shell>
@@ -1642,7 +1516,7 @@ function FilterGroup({ label, options, value, onPick }) {
 }
 
 // Fiverr / Upwork modeled Gig Card
-const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress, onOpenLeaderboard }) {
+const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress }) {
   const [descExpanded, setDescExpanded] = useState(false);
   const creditsCost = job.credits_to_apply || calculateHopsForJob(job.pay);
   return (
@@ -1740,18 +1614,6 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
               <span>{job.area || "Bengaluru"}</span>
             </div>
           </div>
-
-          {/* Proposal Leaderboard Trigger */}
-          <button
-            type="button"
-            data-testid={`view-leaderboard-btn-${index}`}
-            onClick={onOpenLeaderboard}
-            className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 hover:bg-white dark:hover:bg-zinc-700 px-2 py-1 text-[9px] font-black uppercase text-ink dark:text-zinc-200 shadow-[1px_1px_0px_#121212] transition"
-            title="View proposal bidding leaderboard"
-          >
-            <Trophy size={11} className="text-brand" />
-            <span>Leaderboard</span>
-          </button>
         </div>
       </div>
 

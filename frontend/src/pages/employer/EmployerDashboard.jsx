@@ -16,7 +16,6 @@ import {
   blastFeaturedJobNotification
 } from "@/lib/clientStore";
 import { getDistanceSuitability } from "@/lib/locationAreas";
-import ApplicantLeaderboardModal from "@/components/ApplicantLeaderboardModal";
 import CompleteJobReviewModal from "@/components/CompleteJobReviewModal";
 import EditModal from "@/components/EditModal";
 import EditJobModal from "@/components/EditJobModal";
@@ -63,7 +62,6 @@ export default function EmployerDashboard() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
   const [editForm, setEditForm] = useState({ companyName, employerName, area, phone, industry, bio, gstNumber });
-  const [leaderboardJob, setLeaderboardJob] = useState(null);
   const [reviewJob, setReviewJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
@@ -676,7 +674,6 @@ export default function EmployerDashboard() {
                     {chats.slice(0, 4).map((c, idx) => {
                       const dist = c.distance_km ?? 1.2;
                       const suit = getDistanceSuitability(dist);
-                      const isBoosted = (c.boost_credits || 0) > 0;
 
                       return (
                         <div
@@ -691,11 +688,6 @@ export default function EmployerDashboard() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <p className="font-bold text-ink dark:text-white truncate">{c.freelancer_name || "Verified Pro"}</p>
-                                {isBoosted && (
-                                  <span className="rounded bg-amber-500 text-white px-1.5 py-0.2 text-[8px] font-bold">
-                                    ★ +{c.boost_credits} Hops Bid
-                                  </span>
-                                )}
                                 <span className="text-[8px] font-bold text-white px-1.5 py-0.2 rounded" style={{ backgroundColor: suit.color }}>
                                   {suit.badge}
                                 </span>
@@ -964,15 +956,6 @@ export default function EmployerDashboard() {
           </form>
         </EditModal>
 
-        {/* ═══════════ APPLICANT LEADERBOARD MODAL ═══════════ */}
-        {leaderboardJob && (
-          <ApplicantLeaderboardModal
-            isOpen={Boolean(leaderboardJob)}
-            onClose={() => setLeaderboardJob(null)}
-            jobId={leaderboardJob.id}
-            jobTitle={leaderboardJob.title}
-          />
-        )}
 
         {/* ═══════════ COMPLETE JOB & REVIEW MODAL ═══════════ */}
         {reviewJob && (
