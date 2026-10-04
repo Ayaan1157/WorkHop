@@ -9,6 +9,7 @@ import { Shell, TopBar } from "@/components/kit";
 import SiteFooter from "@/components/SiteFooter";
 import { getStoredReviews, addEmployerReview } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
+import { Testimonials } from "@/components/ui/demo";
 
 const SEED_COMMUNITY_REVIEWS = [
   {
@@ -333,6 +334,11 @@ export default function Reviews() {
               <p className="text-[10px] sm:text-xs font-bold uppercase text-inkmuted dark:text-stone-400 mt-0.5">Hyperlocal Radius</p>
             </div>
           </div>
+        </div>
+
+        {/* Animated Infinite Testimonials Columns (from components/ui) */}
+        <div className="mt-8 border-2 border-ink dark:border-zinc-800 bg-white dark:bg-[#121214] p-4 sm:p-8 shadow-[4px_4px_0px_#121212] overflow-hidden">
+          <Testimonials />
         </div>
 
         {/* Filter Toolbar */}

@@ -32,13 +32,11 @@ export default function DealTracker({
   const [reportReason, setReportReason] = useState("");
   const [employerDirectAck, setEmployerDirectAck] = useState(false);
 
-  if (!deal) return null;
-
-  const mode = deal.payment_mode || "escrow";
-  const status = deal.status || "created";
-  const agreedRupees = Math.round((deal.agreed_amount_paise || 0) / 100);
-  const commissionRupees = Math.round((deal.commission_paise || 0) / 100);
-  const netRupees = Math.round((deal.freelancer_net_paise || 0) / 100);
+  const mode = deal?.payment_mode || "escrow";
+  const status = deal?.status || "created";
+  const agreedRupees = Math.round((deal?.agreed_amount_paise || 0) / 100);
+  const commissionRupees = Math.round((deal?.commission_paise || 0) / 100);
+  const netRupees = Math.round((deal?.freelancer_net_paise || 0) / 100);
 
   // Calculate active step index for the 5-step stepper
   const stepIndex = useMemo(() => {
@@ -151,10 +149,11 @@ export default function DealTracker({
       }
     }
     return "Deal in progress.";
-  }, [mode, status, myRole, agreedRupees, netRupees, deal.auto_release_at]);
+  }, [mode, status, myRole, agreedRupees, netRupees, deal?.auto_release_at]);
 
   // Handler for deal actions
   const handleAction = async (action, notes = "") => {
+    if (!deal) return;
     setBusy(true);
     setActionError(null);
     try {
@@ -178,6 +177,7 @@ export default function DealTracker({
 
   // Handler for employer funding escrow
   const handleFundEscrow = async () => {
+    if (!deal) return;
     setBusy(true);
     setActionError(null);
     try {
@@ -193,6 +193,8 @@ export default function DealTracker({
       setBusy(false);
     }
   };
+
+  if (!deal) return null;
 
   return (
     <div
