@@ -279,17 +279,17 @@ export default function DealTracker({
       </div>
 
       {/* 2. RESPONSIVE 5-STEP STEPPER */}
-      <div className="px-4 py-3 sm:px-6 overflow-x-auto">
-        <div className="flex items-center justify-between min-w-[500px] sm:min-w-0">
+      <div className="px-2 py-3 sm:px-6 overflow-x-auto">
+        <div className="flex items-center justify-between w-full min-w-0">
           {currentSteps.map((s, idx) => {
             const isCompleted = idx < stepIndex || (idx === 4 && status === "completed");
             const isCurrent = (idx === stepIndex && status !== "completed") || (idx === Math.floor(stepIndex) && stepIndex % 1 !== 0);
 
             return (
               <React.Fragment key={idx}>
-                <div className="flex flex-col items-center text-center px-1 flex-1">
+                <div className="flex flex-col items-center text-center px-0.5 sm:px-1 flex-1 min-w-0">
                   <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black transition-all border-2 ${
+                    className={`flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full text-[10px] sm:text-xs font-black transition-all border-2 shrink-0 ${
                       isCompleted
                         ? "bg-ok text-white border-ok"
                         : isCurrent
@@ -299,18 +299,19 @@ export default function DealTracker({
                         : "bg-sand text-inkmuted border-ink/20 dark:bg-zinc-800 dark:text-zinc-500"
                     }`}
                   >
-                    {isCompleted ? <CheckCircle2 size={15} /> : idx + 1}
+                    {isCompleted ? <CheckCircle2 size={13} className="sm:w-[15px] sm:h-[15px]" /> : idx + 1}
                   </div>
                   <span
-                    className={`mt-1.5 text-[11px] font-black uppercase tracking-tight ${
+                    className={`mt-1 sm:mt-1.5 text-[8.5px] sm:text-[11px] font-black uppercase tracking-tight max-w-[56px] sm:max-w-none truncate sm:whitespace-normal ${
                       isCurrent
                         ? mode === "escrow"
                           ? "text-[#E65A1E]"
-                          : "text-amber-600"
+                          : "text-amber-600 dark:text-amber-400"
                         : isCompleted
                         ? "text-ink dark:text-white"
                         : "text-inkmuted dark:text-zinc-500"
                     }`}
+                    title={s.label}
                   >
                     {s.label}
                   </span>
@@ -320,7 +321,7 @@ export default function DealTracker({
                 </div>
                 {idx < currentSteps.length - 1 && (
                   <div
-                    className={`h-[3px] flex-1 -mt-4 transition-all ${
+                    className={`h-[2px] sm:h-[3px] flex-1 -mt-3.5 sm:-mt-4 transition-all min-w-[6px] sm:min-w-[12px] ${
                       idx < stepIndex
                         ? "bg-ok"
                         : "bg-ink/15 dark:bg-white/10"
@@ -561,14 +562,14 @@ export default function DealTracker({
                   key={evt.event_id || i}
                   className="flex items-start gap-2.5 text-xs text-ink dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-ink/10 dark:border-white/10 p-2.5 rounded"
                 >
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-sand text-inkmuted shrink-0">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-sand dark:bg-zinc-800 text-inkmuted dark:text-zinc-300 shrink-0">
                     {evt.actor_role}
                   </span>
                   <div className="flex-1">
                     <p className="font-bold text-xs text-ink dark:text-white">{evt.title}</p>
                     <p className="text-[11px] text-inkmuted dark:text-zinc-400 mt-0.5">{evt.description}</p>
                   </div>
-                  <span className="text-[10px] text-inkmuted shrink-0">
+                  <span className="text-[10px] text-inkmuted dark:text-zinc-400 shrink-0">
                     {new Date(evt.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
@@ -581,12 +582,12 @@ export default function DealTracker({
       {/* 5. MODAL: SUBMIT DELIVERABLES */}
       {submitModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md border-2 border-ink bg-white dark:bg-zinc-900 p-5 shadow-[4px_4px_0px_#121212]">
+          <div className="w-full max-w-md border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 shadow-[4px_4px_0px_#121212]">
             <div className="flex items-center justify-between pb-3 border-b border-ink/10 dark:border-white/10">
               <h3 className="text-sm font-black uppercase text-ink dark:text-white flex items-center gap-1.5">
                 <Send size={16} className="text-brand" /> Submit Work Delivery
               </h3>
-              <button onClick={() => setSubmitModalOpen(false)}>
+              <button onClick={() => setSubmitModalOpen(false)} className="text-ink dark:text-zinc-300 hover:text-black dark:hover:text-white">
                 <X size={18} />
               </button>
             </div>
@@ -604,7 +605,7 @@ export default function DealTracker({
             <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={() => setSubmitModalOpen(false)}
-                className="px-3 py-1.5 text-xs font-bold border border-ink/30 text-ink dark:text-zinc-300"
+                className="px-3 py-1.5 text-xs font-bold border border-ink/30 dark:border-white/20 text-ink dark:text-zinc-300 hover:bg-sand dark:hover:bg-zinc-800"
               >
                 Cancel
               </button>
@@ -629,7 +630,7 @@ export default function DealTracker({
               <h3 className="text-sm font-black uppercase text-danger flex items-center gap-1.5">
                 <AlertTriangle size={16} /> Open Escrow Dispute
               </h3>
-              <button onClick={() => setDisputeModalOpen(false)}>
+              <button onClick={() => setDisputeModalOpen(false)} className="text-danger hover:opacity-75">
                 <X size={18} />
               </button>
             </div>
@@ -646,7 +647,7 @@ export default function DealTracker({
             <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={() => setDisputeModalOpen(false)}
-                className="px-3 py-1.5 text-xs font-bold border border-ink/30 text-ink dark:text-zinc-300"
+                className="px-3 py-1.5 text-xs font-bold border border-ink/30 dark:border-white/20 text-ink dark:text-zinc-300 hover:bg-sand dark:hover:bg-zinc-800"
               >
                 Cancel
               </button>
@@ -671,7 +672,7 @@ export default function DealTracker({
               <h3 className="text-sm font-black uppercase text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
                 <Flag size={16} /> Report Direct Deal Issue
               </h3>
-              <button onClick={() => setReportModalOpen(false)}>
+              <button onClick={() => setReportModalOpen(false)} className="text-amber-700 dark:text-amber-400 hover:opacity-75">
                 <X size={18} />
               </button>
             </div>
@@ -688,7 +689,7 @@ export default function DealTracker({
             <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={() => setReportModalOpen(false)}
-                className="px-3 py-1.5 text-xs font-bold border border-ink/30 text-ink dark:text-zinc-300"
+                className="px-3 py-1.5 text-xs font-bold border border-ink/30 dark:border-white/20 text-ink dark:text-zinc-300 hover:bg-sand dark:hover:bg-zinc-800"
               >
                 Cancel
               </button>

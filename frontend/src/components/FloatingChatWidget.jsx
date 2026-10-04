@@ -255,7 +255,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                 <button
                   type="button"
                   onClick={() => setSelectedConv(null)}
-                  className="flex items-center gap-1 border border-ink bg-white dark:bg-stone-800 px-2 py-1 text-xs font-black md:hidden hover:bg-sand"
+                  className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-white dark:bg-stone-800 px-2 py-1 text-xs font-black text-ink dark:text-white md:hidden hover:bg-sand"
                 >
                   <ChevronLeft size={16} /> BACK
                 </button>
@@ -344,7 +344,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                     onClick={() => setActiveTab("all")}
                     className={`flex-1 border border-ink py-1 text-[10px] font-black uppercase transition ${
                       activeTab === "all"
-                        ? "bg-ink text-white"
+                        ? "bg-ink dark:bg-zinc-700 text-white"
                         : "bg-white dark:bg-stone-800 text-ink dark:text-white hover:bg-sand"
                     }`}
                   >
@@ -365,16 +365,16 @@ export default function FloatingChatWidget({ role = "employer" }) {
               </div>
 
               {/* Conversations List */}
-              <div className="flex-1 overflow-y-auto divide-y divide-ink/10">
+              <div className="flex-1 overflow-y-auto divide-y divide-ink/10 dark:divide-zinc-800">
                 {loading ? (
-                  <div className="p-8 text-center text-xs font-bold text-inkmuted">
+                  <div className="p-8 text-center text-xs font-bold text-inkmuted dark:text-zinc-400">
                     Loading conversations…
                   </div>
                 ) : filteredChats.length === 0 ? (
                   <div className="p-8 text-center">
-                    <MessagesSquare size={32} className="mx-auto text-inkmuted/40" />
+                    <MessagesSquare size={32} className="mx-auto text-inkmuted/40 dark:text-zinc-600" />
                     <p className="mt-2 text-xs font-black text-ink dark:text-white uppercase">No Conversations Found</p>
-                    <p className="mt-1 text-[11px] text-inkmuted">
+                    <p className="mt-1 text-[11px] text-inkmuted dark:text-zinc-400">
                       When a candidate applies to your gigs, their active thread appears here.
                     </p>
                   </div>
@@ -399,7 +399,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                       >
                         <div className="flex items-start gap-3">
                           {/* Avatar */}
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-brand font-black text-white text-xs shadow-[1px_1px_0px_#121212]">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-brand font-black text-white text-xs shadow-[1px_1px_0px_#121212]">
                             {applicantName.slice(0, 2).toUpperCase()}
                           </div>
 
@@ -411,7 +411,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                                 </p>
                                 <ShieldCheck size={12} className="text-ok shrink-0" />
                               </div>
-                              <span className="text-[10px] font-semibold text-inkmuted whitespace-nowrap">
+                              <span className="text-[10px] font-semibold text-inkmuted dark:text-zinc-400 whitespace-nowrap">
                                 {c.updated_at ? new Date(c.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now"}
                               </span>
                             </div>
@@ -426,18 +426,18 @@ export default function FloatingChatWidget({ role = "employer" }) {
                                   <Flame size={8} fill="currentColor" /> URGENT
                                 </span>
                               )}
-                              <span className="flex items-center gap-0.5 text-[9px] font-bold text-inkmuted">
+                              <span className="flex items-center gap-0.5 text-[9px] font-bold text-inkmuted dark:text-zinc-400">
                                 <MapPin size={9} className="text-brand" /> {c.area || "Indiranagar"} · {dist}km
                               </span>
                               {c.status && (
-                                <span className="border border-ink/40 bg-sand px-1 py-0.2 text-[8px] font-black uppercase text-ink">
+                                <span className="border border-ink/40 dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-1 py-0.2 text-[8px] font-black uppercase text-ink dark:text-zinc-200">
                                   {c.status}
                                 </span>
                               )}
                             </div>
 
                             {c.last_message && (
-                              <p className="mt-1.5 text-[11px] text-inkmuted/80 dark:text-zinc-500 truncate italic">
+                              <p className="mt-1.5 text-[11px] text-inkmuted/80 dark:text-zinc-400 truncate italic">
                                 &ldquo;{c.last_message}&rdquo;
                               </p>
                             )}
@@ -482,7 +482,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                           const id = selectedConv.freelancer_id || selectedConv.pro_id;
                           if (id) nav(`/pro/${id}`);
                         }}
-                        className="hidden sm:flex items-center gap-1 border border-ink bg-sand px-2.5 py-1 text-[10px] font-black uppercase text-ink hover:bg-white transition"
+                        className="hidden sm:flex items-center gap-1 border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-2.5 py-1 text-[10px] font-black uppercase text-ink dark:text-white hover:bg-white dark:hover:bg-zinc-700 transition"
                       >
                         <User size={11} /> VIEW PROFILE
                       </button>
@@ -492,7 +492,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                   {/* Messages Stream */}
                   <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 bg-[#FAF8F5] dark:bg-[#0E0E10]">
                     {loadingMessages ? (
-                      <div className="py-12 text-center text-xs font-bold text-inkmuted">
+                      <div className="py-12 text-center text-xs font-bold text-inkmuted dark:text-zinc-400">
                         Loading messages…
                       </div>
                     ) : (
@@ -503,7 +503,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                         if (isSystem) {
                           return (
                             <div key={m.id || idx} className="my-2 flex justify-center">
-                              <span className="border border-ink/30 bg-sand/80 px-3 py-1 text-[10px] font-bold text-inkmuted uppercase">
+                              <span className="border border-ink/30 dark:border-zinc-700 bg-sand/80 dark:bg-zinc-800 px-3 py-1 text-[10px] font-bold text-inkmuted dark:text-zinc-300 uppercase">
                                 {m.text}
                               </span>
                             </div>
@@ -516,7 +516,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                             className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                           >
                             <div
-                              className={`max-w-[85%] sm:max-w-[70%] border-2 border-ink p-3 text-xs font-bold shadow-[2px_2px_0px_#121212] ${
+                              className={`max-w-[85%] sm:max-w-[70%] border-2 border-ink dark:border-zinc-700 p-3 text-xs font-bold shadow-[2px_2px_0px_#121212] ${
                                 isMe
                                   ? "bg-brand text-white"
                                   : "bg-white dark:bg-stone-800 text-ink dark:text-white"
@@ -525,7 +525,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                               <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
                               <div
                                 className={`mt-1 flex items-center justify-end gap-1 text-[9px] ${
-                                  isMe ? "text-white/80" : "text-inkmuted"
+                                  isMe ? "text-white/80" : "text-inkmuted dark:text-zinc-400"
                                 }`}
                               >
                                 <span>
@@ -546,12 +546,12 @@ export default function FloatingChatWidget({ role = "employer" }) {
                   {/* Message Input Bar */}
                   <form
                     onSubmit={handleSendMessage}
-                    className="border-t-2 border-ink bg-white dark:bg-[#161618] p-3 sm:p-4"
+                    className="border-t-2 border-ink dark:border-zinc-800 bg-white dark:bg-[#161618] p-3 sm:p-4"
                   >
                     {attachment && (
-                      <div className="mb-2 flex items-center justify-between border border-ink bg-[#FFF3C4] px-3 py-1 text-xs font-black text-ink">
+                      <div className="mb-2 flex items-center justify-between border border-ink dark:border-zinc-700 bg-[#FFF3C4] dark:bg-zinc-800 px-3 py-1 text-xs font-black text-ink dark:text-white">
                         <span>📎 {attachment.name}</span>
-                        <button type="button" onClick={() => setAttachment(null)} className="text-ink hover:text-brand">
+                        <button type="button" onClick={() => setAttachment(null)} className="text-ink dark:text-white hover:text-brand">
                           <X size={14} />
                         </button>
                       </div>
@@ -567,7 +567,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-sand hover:bg-white text-ink transition"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 hover:bg-white dark:hover:bg-zinc-700 text-ink dark:text-white transition"
                         title="Attach file or screenshot (Max 5MB)"
                       >
                         <Paperclip size={16} />
@@ -578,13 +578,13 @@ export default function FloatingChatWidget({ role = "employer" }) {
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
                         placeholder="Type your message… (Press Enter to send)"
-                        className="flex-1 border-2 border-ink bg-white dark:bg-stone-800 px-3.5 py-2 text-xs font-bold text-ink dark:text-white placeholder:text-inkmuted focus:outline-none"
+                        className="flex-1 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs font-bold text-ink dark:text-white placeholder:text-inkmuted dark:placeholder:text-zinc-500 focus:outline-none"
                       />
 
                       <button
                         type="submit"
                         disabled={(!inputMessage.trim() && !attachment) || sending}
-                        className="flex h-10 items-center gap-1.5 border-2 border-ink bg-brand px-4 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50"
+                        className="flex h-10 items-center gap-1.5 border-2 border-ink dark:border-zinc-700 bg-brand px-4 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50"
                       >
                         <Send size={14} />
                         <span className="hidden sm:inline">SEND</span>
@@ -595,8 +595,8 @@ export default function FloatingChatWidget({ role = "employer" }) {
               ) : (
                 /* No Conversation Selected Placeholder */
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#FAF8F5] dark:bg-[#0E0E10]">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-[#FFF3C4] shadow-[3px_3px_0px_#121212]">
-                    <MessagesSquare size={32} className="text-ink" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink dark:border-zinc-700 bg-[#FFF3C4] dark:bg-zinc-800 shadow-[3px_3px_0px_#121212] dark:shadow-[3px_3px_0px_#000]">
+                    <MessagesSquare size={32} className="text-ink dark:text-brand" />
                   </div>
                   <h3 className="mt-4 text-base font-black text-ink dark:text-white uppercase">
                     Select an Applicant Thread
@@ -608,7 +608,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                     <button
                       type="button"
                       onClick={() => setSelectedConv(chats[0])}
-                      className="mt-4 border-2 border-ink bg-brand px-4 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition"
+                      className="mt-4 border-2 border-ink dark:border-zinc-700 bg-brand px-4 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition"
                     >
                       Open First Conversation →
                     </button>

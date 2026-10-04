@@ -177,16 +177,16 @@ export default function Chat() {
     : messages;
 
   return (
-    <div className="flex h-screen w-full flex-col bg-white">
+    <div className="flex h-screen w-full flex-col bg-white dark:bg-[#121212] text-ink dark:text-white">
       {/* HEADER WITH ONLINE STATUS & SEARCH */}
       <div
-        className="flex items-center gap-3 border-b-2 border-ink px-4 py-3 sm:px-8"
+        className="flex items-center gap-3 border-b-2 border-ink dark:border-zinc-800 bg-white dark:bg-[#18181b] px-4 py-3 sm:px-8"
         data-testid="chat-topbar"
       >
         <button
           data-testid="chat-back-btn"
           onClick={() => nav(-1)}
-          className="flex h-10 w-10 items-center justify-center border-2 border-ink hover:bg-sand transition"
+          className="flex h-10 w-10 items-center justify-center border-2 border-ink dark:border-zinc-700 hover:bg-sand dark:hover:bg-zinc-800 dark:text-white transition"
         >
           <ChevronLeft size={22} />
         </button>
@@ -196,17 +196,17 @@ export default function Chat() {
             {(otherName || "?").slice(0, 1).toUpperCase()}
           </div>
           {/* ONLINE INDICATOR */}
-          <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-ok" />
+          <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-zinc-800 bg-ok" />
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-[15px] font-black text-ink">{otherName || "Chat"}</p>
+            <p className="truncate text-[15px] font-black text-ink dark:text-white">{otherName || "Chat"}</p>
             <span className="text-[10px] font-bold text-ok flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-ok animate-pulse" /> Active now
             </span>
           </div>
-          <p className="truncate text-[11px] text-inkmuted font-semibold">{conv?.job_title || ""}</p>
+          <p className="truncate text-[11px] text-inkmuted dark:text-zinc-400 font-semibold">{conv?.job_title || ""}</p>
         </div>
 
         {/* SEARCH IN CHAT BUTTON */}
@@ -215,8 +215,8 @@ export default function Chat() {
             setSearchOpen(!searchOpen);
             if (searchOpen) setSearchQuery("");
           }}
-          className={`flex h-9 w-9 items-center justify-center border-2 border-ink transition ${
-            searchOpen ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+          className={`flex h-9 w-9 items-center justify-center border-2 border-ink dark:border-zinc-700 transition ${
+            searchOpen ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-sand dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700"
           }`}
           title="Search in conversation"
         >
@@ -226,21 +226,21 @@ export default function Chat() {
 
       {/* SEARCH BAR (COLLAPSIBLE) */}
       {searchOpen && (
-        <div className="flex items-center gap-2 border-b-2 border-ink bg-sand px-4 py-2 animate-in fade-in duration-150">
-          <Search size={14} className="text-inkmuted" />
+        <div className="flex items-center gap-2 border-b-2 border-ink dark:border-zinc-800 bg-sand dark:bg-zinc-900 px-4 py-2 animate-in fade-in duration-150">
+          <Search size={14} className="text-inkmuted dark:text-zinc-400" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search messages in this chat…"
-            className="wh-input flex-1 bg-transparent text-xs font-semibold text-ink placeholder:text-inkmuted outline-none"
+            className="wh-input flex-1 bg-transparent text-xs font-semibold text-ink dark:text-white placeholder:text-inkmuted dark:placeholder:text-zinc-500 outline-none"
             autoFocus
           />
           {searchQuery && (
-            <span className="text-[10px] font-extrabold text-inkmuted">
+            <span className="text-[10px] font-extrabold text-inkmuted dark:text-zinc-400">
               {filteredMessages.length} match{filteredMessages.length === 1 ? "" : "es"}
             </span>
           )}
-          <button onClick={() => setSearchQuery("")} className="text-inkmuted hover:text-ink">
+          <button onClick={() => setSearchQuery("")} className="text-inkmuted hover:text-ink dark:text-zinc-400 dark:hover:text-white">
             <X size={14} />
           </button>
         </div>
@@ -248,7 +248,7 @@ export default function Chat() {
 
       {/* STATUS & ACTIONS BAR */}
       <div
-        className="flex items-center gap-2 border-b-2 border-ink bg-sand px-4 py-2 flex-wrap"
+        className="flex items-center gap-2 border-b-2 border-ink dark:border-zinc-800 bg-sand dark:bg-zinc-900 px-4 py-2 flex-wrap"
         data-testid="chat-status-bar"
       >
         <span
@@ -260,7 +260,7 @@ export default function Chat() {
         </span>
 
         {/* Hyperlocal distance badge */}
-        <div className="flex items-center gap-1.5 border border-ink bg-white px-2.5 py-1 text-[10px] font-black text-ink">
+        <div className="flex items-center gap-1.5 border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1 text-[10px] font-black text-ink dark:text-zinc-100">
           <MapPin size={11} className="text-brand" />
           <span>
             {myRole === "employer"
@@ -316,27 +316,27 @@ export default function Chat() {
       />
 
       {/* MESSAGES THREAD */}
-      <div ref={scrollRef} className="wh-scroll flex-1 overflow-y-auto p-4 sm:p-6 bg-sand/30">
+      <div ref={scrollRef} className="wh-scroll flex-1 overflow-y-auto p-4 sm:p-6 bg-sand/30 dark:bg-[#121212]">
         <div
-          className="mb-4 flex items-center gap-2 border-2 border-ink bg-white p-3"
+          className="mb-4 flex items-center gap-2 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 p-3"
           data-testid="chat-privacy-notice"
         >
           <ShieldCheck size={16} className="text-brand shrink-0" />
-          <span className="text-xs font-semibold text-ink">
+          <span className="text-xs font-semibold text-ink dark:text-zinc-200">
             Direct communication is protected. Employer details and phone numbers are shared after hire/unlock.
           </span>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-10">
-            <Loader2 className="animate-spin text-ink" />
+            <Loader2 className="animate-spin text-ink dark:text-white" />
           </div>
         ) : filteredMessages.length === 0 ? (
           <div data-testid="chat-empty" className="my-10 text-center">
-            <p className="text-sm font-black text-ink">
+            <p className="text-sm font-black text-ink dark:text-white">
               {searchQuery ? "No matching messages found." : "Say hello to start the conversation!"}
             </p>
-            <p className="text-xs text-inkmuted mt-1">
+            <p className="text-xs text-inkmuted dark:text-zinc-400 mt-1">
               {searchQuery ? "Try a different search term." : "Pitch your skills or clarify job expectations."}
             </p>
           </div>
@@ -348,7 +348,7 @@ export default function Chat() {
                   <div key={m.message_id} className="my-2 flex justify-center">
                     <div
                       data-testid="system-chat-message"
-                      className="max-w-[90%] sm:max-w-[80%] flex items-center gap-2 border border-ink/30 bg-white/95 dark:bg-zinc-800 px-3.5 py-2 rounded-full text-xs font-bold text-ink dark:text-zinc-200 shadow-sm text-center"
+                      className="max-w-[90%] sm:max-w-[80%] flex items-center gap-2 border border-ink/30 dark:border-zinc-700 bg-white/95 dark:bg-zinc-800 px-3.5 py-2 rounded-full text-xs font-bold text-ink dark:text-zinc-200 shadow-sm text-center"
                     >
                       <Sparkles size={13} className="text-brand shrink-0" />
                       <span className="leading-snug">{m.text}</span>
@@ -360,14 +360,14 @@ export default function Chat() {
               return (
                 <div key={m.message_id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[85%] sm:max-w-[70%] border-2 border-ink px-4 py-2.5 shadow-[2px_2px_0px_#121212] ${
-                      mine ? "bg-brand text-white" : "bg-white text-ink"
+                    className={`max-w-[85%] sm:max-w-[70%] border-2 border-ink dark:border-zinc-700 px-4 py-2.5 shadow-[2px_2px_0px_#121212] ${
+                      mine ? "bg-brand text-white" : "bg-white dark:bg-zinc-800 text-ink dark:text-zinc-100"
                     }`}
                   >
                     <p className="text-sm leading-5 whitespace-pre-wrap">{m.text}</p>
                     <div
                       className={`mt-1.5 flex items-center justify-end gap-1.5 text-[9px] font-bold ${
-                        mine ? "text-[#FFD9C2]" : "text-inkmuted"
+                        mine ? "text-[#FFD9C2]" : "text-inkmuted dark:text-zinc-400"
                       }`}
                     >
                       <span>
@@ -390,8 +390,8 @@ export default function Chat() {
             {/* TYPING INDICATOR */}
             {isTyping && (
               <div className="flex justify-start">
-                <div className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2">
-                  <span className="text-xs font-bold text-inkmuted">{otherName} is typing</span>
+                <div className="flex items-center gap-1.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2">
+                  <span className="text-xs font-bold text-inkmuted dark:text-zinc-400">{otherName} is typing</span>
                   <span className="flex gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-brand animate-bounce" />
                     <span className="h-1.5 w-1.5 rounded-full bg-brand animate-bounce [animation-delay:0.2s]" />
@@ -406,20 +406,20 @@ export default function Chat() {
 
       {/* ATTACHMENT PREVIEW BEFORE SENDING */}
       {attachment && (
-        <div className="flex items-center justify-between border-t-2 border-ink bg-[#FFF3C4] px-4 py-2">
+        <div className="flex items-center justify-between border-t-2 border-ink dark:border-amber-700/80 bg-[#FFF3C4] dark:bg-amber-950/70 px-4 py-2">
           <div className="flex items-center gap-2 overflow-hidden">
             {attachment.type === "image" ? (
               <ImageIcon size={16} className="text-brand shrink-0" />
             ) : (
               <FileText size={16} className="text-brand shrink-0" />
             )}
-            <span className="truncate text-xs font-bold text-ink">
+            <span className="truncate text-xs font-bold text-ink dark:text-amber-200">
               Ready to send: {attachment.name}
             </span>
           </div>
           <button
             onClick={() => setAttachment(null)}
-            className="flex h-5 w-5 items-center justify-center bg-ink text-white"
+            className="flex h-5 w-5 items-center justify-center bg-ink text-white dark:bg-zinc-800 dark:hover:bg-zinc-700"
           >
             <X size={12} />
           </button>
@@ -428,7 +428,7 @@ export default function Chat() {
 
       {/* COMPOSER WITH ATTACHMENT SUPPORT */}
       <div
-        className="flex items-end gap-2 border-t-2 border-ink bg-white p-3"
+        className="flex items-end gap-2 border-t-2 border-ink dark:border-zinc-800 bg-white dark:bg-[#18181b] p-3"
         data-testid="chat-composer"
       >
         <input
@@ -442,10 +442,10 @@ export default function Chat() {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-ink bg-sand hover:bg-[#FFE5D6] transition"
+          className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand hover:bg-[#FFE5D6] dark:bg-zinc-800 dark:hover:bg-zinc-700 transition"
           title="Attach image or file (Max 5MB)"
         >
-          <Paperclip size={18} className="text-ink" />
+          <Paperclip size={18} className="text-ink dark:text-zinc-200" />
         </button>
 
         <textarea
@@ -466,14 +466,14 @@ export default function Chat() {
             }
           }}
           placeholder="Type a message… (Press Enter to send)"
-          className="wh-input min-h-[44px] max-h-28 flex-1 resize-none border-2 border-ink px-3 py-2.5 text-sm text-ink outline-none"
+          className="wh-input min-h-[44px] max-h-28 flex-1 resize-none border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm text-ink dark:text-white dark:placeholder:text-zinc-500 outline-none"
         />
 
         <button
           data-testid="chat-send-btn"
           onClick={send}
           disabled={(!text.trim() && !attachment) || sending}
-          className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-ink bg-ink text-white disabled:opacity-40 hover:bg-brand transition"
+          className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-ink text-white disabled:opacity-40 hover:bg-brand dark:hover:bg-brand transition"
         >
           {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
         </button>
@@ -485,11 +485,11 @@ export default function Chat() {
           data-testid="review-modal"
           className="fixed inset-0 z-40 flex items-center justify-center bg-black/55 p-6"
         >
-          <div className="flex w-full max-w-md flex-col items-center gap-3 border-2 border-ink bg-white p-6">
-            <p className="text-center text-lg font-black text-ink">
+          <div className="flex w-full max-w-md flex-col items-center gap-3 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#18181b] p-6 shadow-xl">
+            <p className="text-center text-lg font-black text-ink dark:text-white">
               Rate {myRole === "employer" ? conv?.freelancer_name : conv?.company_name}
             </p>
-            <p className="text-center text-xs text-inkmuted font-semibold">{conv?.job_title}</p>
+            <p className="text-center text-xs text-inkmuted dark:text-zinc-400 font-semibold">{conv?.job_title}</p>
 
             {/* STAR RATING */}
             <div className="my-2 flex gap-2">
@@ -511,7 +511,7 @@ export default function Chat() {
 
             {/* FIVERR-STYLE REVIEW PROMPT CHIPS */}
             <div className="w-full">
-              <span className="text-[10px] font-black uppercase text-inkmuted">
+              <span className="text-[10px] font-black uppercase text-inkmuted dark:text-zinc-400">
                 QUICK FEEDBACK PROMPTS
               </span>
               <div className="mt-1 flex flex-wrap gap-1.5">
@@ -529,7 +529,7 @@ export default function Chat() {
                         prev ? `${prev} · ${chip}` : chip
                       )
                     }
-                    className="border border-ink bg-sand px-2 py-0.5 text-[10px] font-bold text-ink hover:bg-[#FFE5D6]"
+                    className="border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-ink dark:text-zinc-200 hover:bg-[#FFE5D6] dark:hover:bg-zinc-700"
                   >
                     + {chip}
                   </button>
@@ -543,9 +543,9 @@ export default function Chat() {
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 placeholder="Share your experience (minimum 10 characters recommended)…"
-                className="wh-input min-h-[80px] w-full border-2 border-ink p-3 text-sm text-ink outline-none"
+                className="wh-input min-h-[80px] w-full border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm text-ink dark:text-white dark:placeholder:text-zinc-500 outline-none"
               />
-              <span className="text-[10px] text-inkmuted font-semibold">
+              <span className="text-[10px] text-inkmuted dark:text-zinc-400 font-semibold">
                 {reviewText.length}/500 characters
               </span>
             </div>
@@ -554,14 +554,14 @@ export default function Chat() {
               data-testid="review-submit-btn"
               disabled={rating < 1 || busy}
               onClick={submitReview}
-              className="w-full border-2 border-ink bg-ink py-3 text-[13px] font-black tracking-wider text-white disabled:opacity-50 hover:bg-brand transition"
+              className="w-full border-2 border-ink dark:border-zinc-700 bg-ink dark:bg-brand py-3 text-[13px] font-black tracking-wider text-white disabled:opacity-50 hover:bg-brand transition"
             >
               {busy ? <Loader2 size={16} className="mx-auto animate-spin" /> : "SUBMIT REVIEW"}
             </button>
             <button
               data-testid="review-cancel-btn"
               onClick={() => setReviewOpen(false)}
-              className="text-xs font-bold text-inkmuted hover:text-ink"
+              className="text-xs font-bold text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white"
             >
               Cancel
             </button>

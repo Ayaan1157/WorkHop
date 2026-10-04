@@ -398,30 +398,30 @@ export default function Landing() {
   if (pendingRole && !user) {
     const employer = pendingRole === "employer";
     return (
-      <div className="min-h-screen w-full bg-sand/30 p-4 sm:p-8 lg:p-12">
-        <div className="mx-auto max-w-5xl border-2 border-ink bg-white p-6 shadow-[8px_8px_0px_#121212] sm:p-10">
+      <div className="min-h-screen w-full bg-sand/30 dark:bg-[#101012] p-4 sm:p-8 lg:p-12">
+        <div className="mx-auto max-w-5xl border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#18181b] p-6 shadow-[8px_8px_0px_#121212] dark:shadow-[8px_8px_0px_#E65A1E] sm:p-10">
           
           {/* Header navigation & Role Toggle Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-ink pb-5">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-ink dark:border-zinc-700 pb-5">
             <button
               data-testid="login-back-btn"
               onClick={() => {
                 localStorage.removeItem("workhop_pending_role");
                 setPendingRole(null);
               }}
-              className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-white hover:bg-sand transition"
+              className="flex h-10 w-10 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
             >
               <ChevronLeft size={22} />
             </button>
 
             {/* Interactive Role Switcher Tabs */}
-            <div className="flex items-center gap-2 border-2 border-ink bg-sand p-1">
+            <div className="flex items-center gap-2 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-900 p-1">
               <button
                 type="button"
                 data-testid="switch-role-employer"
                 onClick={() => setPendingRole("employer")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black transition ${
-                  employer ? "bg-ink text-white shadow-[2px_2px_0px_#E65A1E]" : "bg-transparent text-ink hover:bg-white"
+                  employer ? "bg-ink text-white dark:bg-white dark:text-black shadow-[2px_2px_0px_#E65A1E]" : "bg-transparent text-ink dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800"
                 }`}
               >
                 <Users size={14} />
@@ -432,7 +432,7 @@ export default function Landing() {
                 data-testid="switch-role-freelancer"
                 onClick={() => setPendingRole("freelancer")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black transition ${
-                  !employer ? "bg-brand text-white shadow-[2px_2px_0px_#121212]" : "bg-transparent text-ink hover:bg-white"
+                  !employer ? "bg-brand text-white shadow-[2px_2px_0px_#121212]" : "bg-transparent text-ink dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800"
                 }`}
               >
                 <Briefcase size={14} />
@@ -447,14 +447,14 @@ export default function Landing() {
               <div>
                 <Logo />
                 <div className="mt-8">
-                  <span className={`inline-block px-3 py-1 text-[10px] font-black tracking-widest text-white uppercase ${employer ? "bg-ink" : "bg-brand"}`}>
+                  <span className={`inline-block px-3 py-1 text-[10px] font-black tracking-widest text-white uppercase ${employer ? "bg-ink dark:bg-zinc-800" : "bg-brand"}`}>
                     {employer ? "Employer / Client Account" : "Freelancer / Job Seeker Account"}
                   </span>
-                  <h2 className="mt-3 whitespace-pre-line text-3xl sm:text-4xl font-black leading-[1.05] tracking-[-0.02em] text-ink">
+                  <h2 className="mt-3 whitespace-pre-line text-3xl sm:text-4xl font-black leading-[1.05] tracking-[-0.02em] text-ink dark:text-white">
                     {authMode === "signup" ? (employer ? "Create account to\nstart hiring." : "Create account to\nland gigs.") : "Welcome back.\nSign in."}
                   </h2>
                   <div className="mt-3 h-1.5 w-20 bg-brand" />
-                  <p className="mt-5 text-sm leading-6 text-inkmuted">
+                  <p className="mt-5 text-sm leading-6 text-inkmuted dark:text-zinc-400">
                     {employer
                       ? "One account to unlock verified local pros in your block, post custom jobs and chat with candidates in real-time."
                       : "One account to apply to high-paying gigs in your 5km neighborhood, chat with employers and keep 100% of your earnings."}
@@ -462,19 +462,19 @@ export default function Landing() {
                 </div>
               </div>
 
-              <div className="mt-8 border-2 border-ink bg-sand p-4">
-                <p className="text-xs font-black tracking-wider text-ink">✨ YOUR NEXT LOCAL GIG, ONE MINUTE AWAY</p>
-                <p className="mt-1 text-xs text-inkmuted">
+              <div className="mt-8 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-900 p-4">
+                <p className="text-xs font-black tracking-wider text-ink dark:text-white">✨ YOUR NEXT LOCAL GIG, ONE MINUTE AWAY</p>
+                <p className="mt-1 text-xs text-inkmuted dark:text-zinc-400">
                   Hyperlocal verified network · Direct phone numbers · Real-time GPS distance matching
                 </p>
               </div>
             </div>
 
             {/* Right Col: Details & Mobile Number Signup Form (7 Cols) */}
-            <div className="flex flex-col justify-center border-t-2 border-ink pt-6 lg:border-l-2 lg:border-t-0 lg:pl-10 lg:pt-0 lg:col-span-7">
+            <div className="flex flex-col justify-center border-t-2 border-ink dark:border-zinc-700 pt-6 lg:border-l-2 lg:border-t-0 lg:pl-10 lg:pt-0 lg:col-span-7">
               
               {/* Prominent Sign In vs Sign Up Tabs */}
-              <div className="flex border-2 border-ink bg-sand p-1 mb-5">
+              <div className="flex border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-900 p-1 mb-5">
                 <button
                   type="button"
                   data-testid="landing-tab-signin"
@@ -485,8 +485,8 @@ export default function Landing() {
                   }}
                   className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
                     authMode === "signin"
-                      ? "bg-ink text-white shadow-[2px_2px_0px_#121212]"
-                      : "bg-transparent text-ink hover:bg-white"
+                      ? "bg-ink text-white dark:bg-white dark:text-black shadow-[2px_2px_0px_#121212]"
+                      : "bg-transparent text-ink dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800"
                   }`}
                 >
                   🔐 SIGN IN (EXISTING USER)
@@ -502,7 +502,7 @@ export default function Landing() {
                   className={`flex-1 py-2 text-xs font-black tracking-wider transition ${
                     authMode === "signup"
                       ? "bg-brand text-white !text-white shadow-[2px_2px_0px_#121212]"
-                      : "bg-transparent text-ink hover:bg-white"
+                      : "bg-transparent text-ink dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800"
                   }`}
                 >
                   ✨ SIGN UP (NEW USER)
@@ -513,16 +513,16 @@ export default function Landing() {
                 
                 {/* Google Connected Badge with Switch Account Option */}
                 {googleConnected && (
-                  <div className="flex items-center justify-between border-2 border-ink bg-[#FFF3E9] p-2.5 shadow-[2px_2px_0px_#E65A1E]">
+                  <div className="flex items-center justify-between border-2 border-ink dark:border-zinc-700 bg-[#FFF3E9] dark:bg-amber-950/30 p-2.5 shadow-[2px_2px_0px_#E65A1E]">
                     <div className="flex items-center gap-2">
                       <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-xs font-black text-white">
                         {googleAccount?.initials || "G"}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-xs font-black text-ink">
+                        <span className="text-xs font-black text-ink dark:text-white">
                           ✓ Google Linked: <strong className="text-brand">{emailInput}</strong>
                         </span>
-                        <span className="text-[10px] font-semibold text-inkmuted">
+                        <span className="text-[10px] font-semibold text-inkmuted dark:text-zinc-400">
                           Signed in as {nameInput || "Google User"}
                         </span>
                       </div>
@@ -531,7 +531,7 @@ export default function Landing() {
                       type="button"
                       data-testid="landing-switch-google-acc"
                       onClick={() => setGooglePickerOpen(true)}
-                      className="border border-ink bg-white px-2 py-1 text-[10px] font-black text-ink hover:bg-sand transition"
+                      className="border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-1 text-[10px] font-black text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
                     >
                       Switch Account
                     </button>
@@ -542,17 +542,17 @@ export default function Landing() {
                   <>
                     {/* Full Name */}
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
                         Full Name *
                       </label>
-                      <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
-                        <User size={16} className="text-inkmuted mr-2 shrink-0" />
+                      <div className="mt-1 flex items-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                        <User size={16} className="text-inkmuted dark:text-zinc-400 mr-2 shrink-0" />
                         <input
                           data-testid="login-name-input"
                           value={nameInput}
                           onChange={(e) => { setNameInput(e.target.value); setOtpError(null); }}
                           placeholder={employer ? "e.g. Aarav Sharma / TechStudio Lead" : "e.g. Priya Sundaram"}
-                          className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
+                          className="wh-input flex-1 bg-transparent text-sm font-bold text-ink dark:text-white placeholder:text-inkmuted/60 dark:placeholder:text-zinc-500"
                         />
                       </div>
                     </div>
@@ -560,15 +560,15 @@ export default function Landing() {
                     {/* 10-Digit Mobile Phone Number */}
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
                           10-Digit Mobile Phone Number *
                         </label>
                         <span className="text-[10px] font-bold text-brand">
                           {isPhoneValid ? "✓ Valid 10 digits" : "Required for WhatsApp/SMS gig alerts"}
                         </span>
                       </div>
-                      <div className="mt-1 flex items-center border-2 border-ink bg-white shadow-[2px_2px_0px_#121212]">
-                        <span className="flex items-center gap-1 border-r-2 border-ink bg-sand px-3 py-2.5 text-xs font-black text-ink">
+                      <div className="mt-1 flex items-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-[2px_2px_0px_#121212]">
+                        <span className="flex items-center gap-1 border-r-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-3 py-2.5 text-xs font-black text-ink dark:text-zinc-200">
                           🇮🇳 +91
                         </span>
                         <input
@@ -581,7 +581,7 @@ export default function Landing() {
                             setOtpError(null);
                           }}
                           placeholder="98765 43210"
-                          className="wh-input flex-1 bg-transparent px-3 py-2.5 text-sm font-black tracking-wider text-ink placeholder:tracking-normal placeholder:font-normal placeholder:text-inkmuted/60"
+                          className="wh-input flex-1 bg-transparent px-3 py-2.5 text-sm font-black tracking-wider text-ink dark:text-white placeholder:tracking-normal placeholder:font-normal placeholder:text-inkmuted/60 dark:placeholder:text-zinc-500"
                         />
                       </div>
                     </div>
@@ -589,7 +589,7 @@ export default function Landing() {
                     {/* Hyperlocal Area & GPS Selector */}
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
                           Your Neighborhood / Area in Bengaluru *
                         </label>
                         <button
@@ -602,16 +602,16 @@ export default function Landing() {
                           <span>{locStatus === "locating" ? "Locating GPS…" : "📍 Detect Live GPS"}</span>
                         </button>
                       </div>
-                      <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2 shadow-[2px_2px_0px_#121212]">
+                      <div className="mt-1 flex items-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 shadow-[2px_2px_0px_#121212]">
                         <MapPin size={16} className="text-brand mr-2 shrink-0" />
                         <select
                           data-testid="login-area-select"
                           value={areaInput}
                           onChange={(e) => setAreaInput(e.target.value)}
-                          className="wh-input flex-1 bg-transparent text-xs sm:text-sm font-black text-ink focus:outline-none"
+                          className="wh-input flex-1 bg-transparent text-xs sm:text-sm font-black text-ink dark:text-white dark:bg-zinc-900 focus:outline-none"
                         >
                           {BENGALURU_AREAS.map((a) => (
-                            <option key={a.name} value={a.name}>
+                            <option key={a.name} value={a.name} className="dark:bg-zinc-900 text-black dark:text-white">
                               {a.name} ({a.zone} Bengaluru)
                             </option>
                           ))}
@@ -622,33 +622,33 @@ export default function Landing() {
                     {/* Role-Specific Field: Company Name (Employer) OR Primary Skill (Freelancer) */}
                     {employer ? (
                       <div>
-                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
                           Company / Organization Name (Optional)
                         </label>
-                        <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
-                          <Building2 size={16} className="text-inkmuted mr-2 shrink-0" />
+                        <div className="mt-1 flex items-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                          <Building2 size={16} className="text-inkmuted dark:text-zinc-400 mr-2 shrink-0" />
                           <input
                             data-testid="login-company-input"
                             value={companyInput}
                             onChange={(e) => setCompanyInput(e.target.value)}
                             placeholder="e.g. BrewBox Cafe / LedgerLite Studio"
-                            className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
+                            className="wh-input flex-1 bg-transparent text-sm font-bold text-ink dark:text-white placeholder:text-inkmuted/60 dark:placeholder:text-zinc-500"
                           />
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
                           Primary Skill / Trade *
                         </label>
-                        <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                        <div className="mt-1 flex items-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
                           <Sparkles size={16} className="text-brand mr-2 shrink-0" />
                           <input
                             data-testid="login-skill-input"
                             value={skillInput}
                             onChange={(e) => setSkillInput(e.target.value)}
                             placeholder="e.g. Logo & Visual Designer, React Developer"
-                            className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
+                            className="wh-input flex-1 bg-transparent text-sm font-bold text-ink dark:text-white placeholder:text-inkmuted/60 dark:placeholder:text-zinc-500"
                           />
                         </div>
                       </div>
@@ -658,41 +658,41 @@ export default function Landing() {
 
                 {/* Email Address */}
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
                     Email Address *
                   </label>
-                  <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
-                    <Mail size={16} className="text-inkmuted mr-2 shrink-0" />
+                  <div className="mt-1 flex items-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                    <Mail size={16} className="text-inkmuted dark:text-zinc-400 mr-2 shrink-0" />
                     <input
                       data-testid="login-email-input"
                       type="email"
                       value={emailInput}
                       onChange={(e) => { setEmailInput(e.target.value); setOtpError(null); }}
                       placeholder="you@example.com"
-                      className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
+                      className="wh-input flex-1 bg-transparent text-sm font-bold text-ink dark:text-white placeholder:text-inkmuted/60 dark:placeholder:text-zinc-500"
                     />
                   </div>
                 </div>
 
                 {/* Password Field */}
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
                     {authMode === "signup" ? "Create Password (Min 6 chars) *" : "Password *"}
                   </label>
-                  <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
-                    <KeyRound size={16} className="text-inkmuted mr-2 shrink-0" />
+                  <div className="mt-1 flex items-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
+                    <KeyRound size={16} className="text-inkmuted dark:text-zinc-400 mr-2 shrink-0" />
                     <input
                       data-testid="login-password-input"
                       type={showPassword ? "text" : "password"}
                       value={passwordInput}
                       onChange={(e) => { setPasswordInput(e.target.value); setOtpError(null); }}
                       placeholder={authMode === "signup" ? "Create a secure password" : "Enter your password"}
-                      className="wh-input flex-1 bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60"
+                      className="wh-input flex-1 bg-transparent text-sm font-bold text-ink dark:text-white placeholder:text-inkmuted/60 dark:placeholder:text-zinc-500"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-inkmuted hover:text-ink focus:outline-none ml-2"
+                      className="text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white focus:outline-none ml-2"
                     >
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -701,16 +701,16 @@ export default function Landing() {
 
                 {/* Dedicated OTP Verification Card */}
                 {otpStage === "sent" ? (
-                  <div data-testid="otp-block" className="border-2 border-ink bg-sand p-4 shadow-[4px_4px_0px_#121212] animate-in fade-in">
+                  <div data-testid="otp-block" className="border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-900 p-4 shadow-[4px_4px_0px_#121212] animate-in fade-in">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-brand text-white text-sm font-black shrink-0">
+                      <span className="flex h-8 w-8 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-brand text-white text-sm font-black shrink-0">
                         {otpType === "mobile" ? "📱" : "✉️"}
                       </span>
                       <div>
-                        <p className="text-xs font-black uppercase tracking-wider text-ink">
+                        <p className="text-xs font-black uppercase tracking-wider text-ink dark:text-white">
                           {otpType === "mobile" ? "Mobile Phone OTP Verification" : "Email Verification Code"}
                         </p>
-                        <p className="text-[11px] text-inkmuted font-semibold">
+                        <p className="text-[11px] text-inkmuted dark:text-zinc-400 font-semibold">
                           {otpType === "mobile" ? (
                             <>We sent a 6-digit code to <strong className="text-brand">🇮🇳 +91 {phoneDigits}</strong></>
                           ) : (
@@ -721,22 +721,22 @@ export default function Landing() {
                     </div>
 
                     {devOtp && (
-                      <div data-testid="dev-otp-text" className="mt-3 flex items-center justify-between border-2 border-ink bg-[#FFF3C4] px-3 py-2 text-xs font-black text-ink">
+                      <div data-testid="dev-otp-text" className="mt-3 flex items-center justify-between border-2 border-ink dark:border-amber-700 bg-[#FFF3C4] dark:bg-amber-950/60 px-3 py-2 text-xs font-black text-ink dark:text-amber-200">
                         <span>TEST MODE — Your 6-digit {otpType === "mobile" ? "Mobile" : "Email"} OTP:</span>
-                        <span className="font-mono text-sm tracking-widest text-brand bg-white px-2 py-0.5 border border-ink">
+                        <span className="font-mono text-sm tracking-widest text-brand bg-white dark:bg-zinc-900 px-2 py-0.5 border border-ink dark:border-zinc-700">
                           {devOtp}
                         </span>
                       </div>
                     )}
 
-                    <div className="mt-3 flex h-12 items-center gap-2 border-2 border-ink bg-white px-3 shadow-[2px_2px_0px_#121212]">
-                      <KeyRound size={18} className="text-inkmuted shrink-0" />
+                    <div className="mt-3 flex h-12 items-center gap-2 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 shadow-[2px_2px_0px_#121212]">
+                      <KeyRound size={18} className="text-inkmuted dark:text-zinc-400 shrink-0" />
                       <input
                         data-testid="login-otp-input"
                         value={otpInput}
                         onChange={(e) => { setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6)); setOtpError(null); }}
                         placeholder="Enter 6-digit code"
-                        className="wh-input flex-1 bg-transparent text-lg font-black tracking-[0.35em] text-ink placeholder:tracking-normal placeholder:font-bold placeholder:text-sm placeholder:text-inkmuted/50"
+                        className="wh-input flex-1 bg-transparent text-lg font-black tracking-[0.35em] text-ink dark:text-white placeholder:tracking-normal placeholder:font-bold placeholder:text-sm placeholder:text-inkmuted/50 dark:placeholder:text-zinc-500"
                         autoFocus
                       />
                     </div>
@@ -745,12 +745,12 @@ export default function Landing() {
                       data-testid="login-otp-verify-btn"
                       onClick={verifyOtp}
                       disabled={otpLoading || otpInput.trim().length !== 6}
-                      className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-sm font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60"
+                      className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-brand py-3.5 text-sm font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60"
                     >
                       {otpLoading ? <Loader2 size={18} className="animate-spin" /> : "VERIFY OTP & ACTIVATE ACCOUNT"}
                     </button>
 
-                    <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2.5 text-xs">
+                    <div className="mt-3 flex items-center justify-between border-t border-ink/10 dark:border-zinc-800 pt-2.5 text-xs">
                       <button
                         data-testid="login-otp-change-email"
                         onClick={() => { setOtpStage("idle"); setOtpError(null); }}
@@ -762,7 +762,7 @@ export default function Landing() {
                         type="button"
                         disabled={resendCooldown > 0 || otpLoading}
                         onClick={handleResendOtp}
-                        className="font-bold text-ink hover:text-brand hover:underline disabled:opacity-50"
+                        className="font-bold text-ink dark:text-zinc-300 hover:text-brand hover:underline disabled:opacity-50"
                       >
                         {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend OTP"}
                       </button>
@@ -788,8 +788,8 @@ export default function Landing() {
                       data-testid="login-submit-btn"
                       disabled={otpLoading}
                       onClick={authMode === "signup" ? handleSignUp : handleSignIn}
-                      className={`flex w-full items-center justify-center gap-2 border-2 border-ink py-3.5 text-sm font-black text-white shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none ${
-                        employer ? "bg-ink hover:bg-black" : "bg-brand hover:opacity-95"
+                      className={`flex w-full items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 py-3.5 text-sm font-black text-white shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none ${
+                        employer ? "bg-ink dark:bg-zinc-800 hover:bg-black dark:hover:bg-zinc-700" : "bg-brand hover:opacity-95"
                       }`}
                     >
                       {otpLoading ? (
@@ -813,15 +813,15 @@ export default function Landing() {
                       data-testid="login-email-btn"
                       onClick={requestOtp}
                       disabled={otpLoading}
-                      className="flex items-center justify-center gap-2 border-2 border-ink bg-white py-2.5 text-xs font-black text-ink hover:bg-sand disabled:opacity-60 transition"
+                      className="flex items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 py-2.5 text-xs font-black text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-800 disabled:opacity-60 transition"
                     >
                       {otpLoading ? <Loader2 size={16} className="animate-spin" /> : <><Mail size={16} /> {authMode === "signin" ? "Sign In with Email OTP instead" : "Verify with Email OTP"}</>}
                     </button>
 
                     <div className="my-1 flex items-center gap-3">
-                      <div className="h-0.5 flex-1 bg-ink/15" />
-                      <span className="text-[10px] font-black tracking-widest text-inkmuted">OR</span>
-                      <div className="h-0.5 flex-1 bg-ink/15" />
+                      <div className="h-0.5 flex-1 bg-ink/15 dark:bg-white/10" />
+                      <span className="text-[10px] font-black tracking-widest text-inkmuted dark:text-zinc-400">OR</span>
+                      <div className="h-0.5 flex-1 bg-ink/15 dark:bg-white/10" />
                     </div>
 
                     {/* Google Continue */}
@@ -829,7 +829,7 @@ export default function Landing() {
                       type="button"
                       data-testid="login-google-btn"
                       onClick={handleGoogleAuth}
-                      className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-sand py-3 text-xs font-black tracking-wider text-ink shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                      className="flex w-full items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 py-3 text-xs font-black tracking-wider text-ink dark:text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
                     >
                       <svg className="h-4 w-4" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -843,15 +843,15 @@ export default function Landing() {
                 )}
 
                 {otpError && (
-                  <p data-testid="login-error-msg" className="text-xs font-black text-[#C62828] bg-red-50 p-2.5 border border-red-200">
+                  <p data-testid="login-error-msg" className="text-xs font-black text-[#C62828] bg-red-50 dark:bg-rose-950/40 p-2.5 border border-red-200 dark:border-rose-800">
                     ⚠️ {otpError}
                   </p>
                 )}
 
                 {/* Clear switch footer: "Not signed up? Sign up now" or "Already have an account? Sign in" */}
-                <div className="mt-4 border-2 border-dashed border-ink bg-sand/60 p-3.5 text-center">
+                <div className="mt-4 border-2 border-dashed border-ink dark:border-zinc-700 bg-sand/60 dark:bg-zinc-900/60 p-3.5 text-center">
                   {authMode === "signin" ? (
-                    <p className="text-xs text-ink font-bold">
+                    <p className="text-xs text-ink dark:text-zinc-200 font-bold">
                       Not signed up yet?{" "}
                       <button
                         type="button"
@@ -861,13 +861,13 @@ export default function Landing() {
                           setOtpError(null);
                           setOtpStage("idle");
                         }}
-                        className="font-black text-brand underline underline-offset-4 hover:text-ink transition ml-1"
+                        className="font-black text-brand underline underline-offset-4 hover:text-ink dark:hover:text-white transition ml-1"
                       >
                         Sign up now to enter your details →
                       </button>
                     </p>
                   ) : (
-                    <p className="text-xs text-ink font-bold">
+                    <p className="text-xs text-ink dark:text-zinc-200 font-bold">
                       Already have an account?{" "}
                       <button
                         type="button"
@@ -877,7 +877,7 @@ export default function Landing() {
                           setOtpError(null);
                           setOtpStage("idle");
                         }}
-                        className="font-black text-brand underline underline-offset-4 hover:text-ink transition ml-1"
+                        className="font-black text-brand underline underline-offset-4 hover:text-ink dark:hover:text-white transition ml-1"
                       >
                         Sign in with your email &amp; password →
                       </button>
@@ -1171,23 +1171,23 @@ export default function Landing() {
       </section>
 
       {/* Trust & Live Metrics Strip */}
-      <section className="border-b-2 border-ink bg-[#FFF3E9] py-6 sm:py-8 px-4 sm:px-10 lg:px-16">
+      <section className="border-b-2 border-ink dark:border-zinc-800 bg-[#FFF3E9] dark:bg-[#1a140f] py-6 sm:py-8 px-4 sm:px-10 lg:px-16">
         <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
           <div>
-            <p className="text-2xl sm:text-4xl font-black text-black">5 KM</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333]">Hyperlocal Radius</p>
+            <p className="text-2xl sm:text-4xl font-black text-black dark:text-white">5 KM</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Hyperlocal Radius</p>
           </div>
           <div>
-            <p className="text-2xl sm:text-4xl font-black text-black">200+</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333]">Active Bengaluru Gigs</p>
+            <p className="text-2xl sm:text-4xl font-black text-black dark:text-white">200+</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Active Bengaluru Gigs</p>
           </div>
           <div>
             <p className="text-2xl sm:text-4xl font-black text-brand">100%</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333]">Keep Your Earnings</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Keep Your Earnings</p>
           </div>
           <div>
-            <p className="text-2xl sm:text-4xl font-black text-black">1 MIN</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333]">Fast Onboarding</p>
+            <p className="text-2xl sm:text-4xl font-black text-black dark:text-white">1 MIN</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Fast Onboarding</p>
           </div>
         </div>
       </section>

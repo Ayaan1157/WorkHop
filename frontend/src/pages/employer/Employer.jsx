@@ -443,19 +443,19 @@ export default function Employer() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 size={24} className="animate-spin text-brand" />
-            <p className="text-xs font-bold text-inkmuted">Finding verified pros near you…</p>
+            <p className="text-xs font-bold text-inkmuted dark:text-zinc-400">Finding verified pros near you…</p>
           </div>
         ) : (
           <>
             {sorted.length === 0 && (
-              <div data-testid="leads-empty" className="flex flex-col items-center gap-3 border-2 border-ink bg-sand p-8 text-center">
-                <Search size={32} className="text-ink" />
-                <p className="text-base font-black text-ink">
+              <div data-testid="leads-empty" className="flex flex-col items-center gap-3 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1a1a1c] p-8 text-center">
+                <Search size={32} className="text-ink dark:text-zinc-400" />
+                <p className="text-base font-black text-ink dark:text-white">
                   {onlySaved
                     ? "No saved pros yet"
                     : `No pros match "${search.trim() || catFilter}"`}
                 </p>
-                <p className="text-xs text-inkmuted max-w-sm">
+                <p className="text-xs text-inkmuted dark:text-zinc-400 max-w-sm">
                   {onlySaved
                     ? "Bookmark candidate profiles with the heart icon to save them for quick hiring."
                     : "Try adjusting your search keyword or clearing the active filters."}
@@ -463,7 +463,7 @@ export default function Employer() {
                 {onlySaved && (
                   <button
                     onClick={() => setOnlySaved(false)}
-                    className="mt-2 border-2 border-ink bg-ink px-4 py-2 text-xs font-black text-white"
+                    className="mt-2 border-2 border-ink dark:border-zinc-700 bg-ink dark:bg-zinc-800 px-4 py-2 text-xs font-black text-white"
                   >
                     VIEW ALL PROS
                   </button>
@@ -486,26 +486,26 @@ export default function Employer() {
             </div>
 
             {sorted.length > 0 && (
-              <div className="relative my-2 border-2 border-ink p-6 bg-sand shadow-[3px_3px_0px_#121212]" data-testid="unlock-banner">
+              <div className="relative my-2 border-2 border-ink dark:border-zinc-700 p-6 bg-sand dark:bg-zinc-900 shadow-[3px_3px_0px_#121212] dark:shadow-[3px_3px_0px_#000]" data-testid="unlock-banner">
                 <div className="absolute -left-0.5 -top-0.5 h-8 w-8 bg-brand" />
                 <div className="flex items-center gap-2 mb-1">
                   <span className="border border-brand bg-brand px-2 py-0.5 text-[9px] font-black uppercase text-white tracking-wider">
                     ⚡ 100% FREE JOB POSTING
                   </span>
-                  <span className="text-[11px] font-bold text-inkmuted">
+                  <span className="text-[11px] font-bold text-inkmuted dark:text-zinc-400">
                     Bengaluru's Hyperlocal Gig Network
                   </span>
                 </div>
-                <p className="whitespace-pre-line text-2xl font-black leading-tight text-ink">
+                <p className="whitespace-pre-line text-2xl font-black leading-tight text-ink dark:text-white">
                   Hire Bangalore's Top Local Talent{"\n"}Directly &amp; With Zero Middlemen.
                 </p>
-                <p className="mt-2 text-sm text-inkmuted">
+                <p className="mt-2 text-sm text-inkmuted dark:text-zinc-400">
                   Direct contact profiles are protected during launch. Post your gig for free — verified pros within 5km get instant website alerts and apply directly to your dashboard!
                 </p>
                 <button
                   data-testid="unlock-cta-btn"
                   onClick={() => nav("/employer/post-job")}
-                  className="mt-4 flex w-full max-w-md items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-[15px] font-black text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
+                  className="mt-4 flex w-full max-w-md items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-brand py-3.5 text-[15px] font-black text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
                 >
                   <span>POST A GIG FOR FREE (0% PLATFORM FEES) →</span>
                   <ArrowRight size={16} />
@@ -544,7 +544,7 @@ export default function Employer() {
             </button>
 
             {/* LATEST FROM THE BLOG / HIRING PLAYBOOKS SECTION */}
-            <div className="mt-8 pt-8 border-t-2 border-ink">
+            <div className="mt-8 pt-8 border-t-2 border-ink dark:border-zinc-800">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <div>
                   <div className="flex items-center gap-2">
@@ -555,7 +555,7 @@ export default function Employer() {
                       Hiring Playbooks &amp; Local Market Guides
                     </h3>
                   </div>
-                  <p className="text-xs text-inkmuted font-semibold mt-0.5">
+                  <p className="text-xs text-inkmuted dark:text-zinc-400 font-semibold mt-0.5">
                     Insights on 5km radius freelancing, rate cards, and direct WhatsApp recruiting in Bangalore.
                   </p>
                 </div>
@@ -572,14 +572,14 @@ export default function Employer() {
                   <Link
                     key={post.id}
                     to={`/blog/${post.slug}`}
-                    className="flex flex-col justify-between border-2 border-ink bg-white dark:bg-[#161618] p-4 shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:border-brand group"
+                    className="flex flex-col justify-between border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#161618] p-4 shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#000] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:border-brand group"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-1 mb-2">
                         <span className={`border px-1.5 py-0.5 text-[9px] font-black uppercase ${post.categoryColor}`}>
                           {post.category}
                         </span>
-                        <span className="text-[10px] font-bold text-inkmuted">{post.readTime}</span>
+                        <span className="text-[10px] font-bold text-inkmuted dark:text-zinc-400">{post.readTime}</span>
                       </div>
                       <h4 className="text-sm font-black text-ink dark:text-white group-hover:text-brand transition leading-snug line-clamp-2">
                         {post.title}
@@ -588,7 +588,7 @@ export default function Employer() {
                         {post.summary}
                       </p>
                     </div>
-                    <div className="mt-4 pt-2.5 border-t border-ink/10 flex items-center justify-between text-[11px] font-black text-brand">
+                    <div className="mt-4 pt-2.5 border-t border-ink/10 dark:border-zinc-800 flex items-center justify-between text-[11px] font-black text-brand">
                       <span>READ PLAYBOOK</span>
                       <ArrowRight size={12} />
                     </div>
@@ -607,23 +607,23 @@ export default function Employer() {
           onClick={() => setSheetOpen(false)}
         >
           <div
-            className="w-full max-w-2xl border-t-2 border-ink bg-white p-6"
+            className="w-full max-w-2xl border-t-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#161618] p-6 text-ink dark:text-white"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-[10px] font-extrabold tracking-[0.15em] text-inkmuted">
+            <p className="text-[10px] font-extrabold tracking-[0.15em] text-inkmuted dark:text-zinc-400">
               WORKHOP × RAZORPAY
             </p>
-            <p className="text-4xl font-black tracking-tight text-ink">
+            <p className="text-4xl font-black tracking-tight text-ink dark:text-white">
               Pay ₹{coupon?.final_amount ?? 199}
             </p>
-            <p className="mt-1 text-[13px] text-inkmuted">
+            <p className="mt-1 text-[13px] text-inkmuted dark:text-zinc-400">
               One-time unlock for verified leads in your radius.
             </p>
-            <div className="my-4 border-2 border-ink bg-sand p-3">
-              <p className="text-[10px] font-extrabold tracking-wide text-inkmuted">
+            <div className="my-4 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 p-3">
+              <p className="text-[10px] font-extrabold tracking-wide text-inkmuted dark:text-zinc-400">
                 SECURE CHECKOUT
               </p>
-              <p className="mt-1 text-base font-black text-ink">UPI · Cards · Netbanking</p>
+              <p className="mt-1 text-base font-black text-ink dark:text-white">UPI · Cards · Netbanking</p>
             </div>
             <div className="mb-3">
               <CouponInput
@@ -637,7 +637,7 @@ export default function Employer() {
               data-testid="pay-confirm-btn"
               onClick={handlePay}
               disabled={paying}
-              className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-4 text-[15px] font-black text-white disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-ink dark:bg-brand py-4 text-[15px] font-black text-white disabled:opacity-60"
             >
               {paying ? (
                 <>
@@ -647,7 +647,7 @@ export default function Employer() {
                 `Pay ₹${coupon?.final_amount ?? 199} with Razorpay`
               )}
             </button>
-            <p className="mt-2 text-center text-[11px] text-inkmuted">
+            <p className="mt-2 text-center text-[11px] text-inkmuted dark:text-zinc-400">
               🔒 Razorpay Test Mode · Test card 4111 1111 1111 1111
             </p>
           </div>
@@ -680,34 +680,34 @@ const LeadCard = memo(function LeadCard({ lead, unlocked, index, isSaved, onTogg
     <div
       data-testid={`lead-card-${index}`}
       onClick={onClick}
-      className="group relative cursor-pointer border-2 border-ink bg-white p-4 text-left transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[3px_3px_0px_#121212] active:translate-y-0.5"
+      className="group relative cursor-pointer border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#1a1a1c] p-4 text-left transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[3px_3px_0px_#121212] dark:hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5"
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center border-2 border-ink bg-brand font-black tracking-wider text-white text-base">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-brand font-black tracking-wider text-white text-base">
           {lead.initials || (lead.name || "?").slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <p data-testid={`lead-name-${index}`} className="truncate text-[15px] font-black text-ink">
+            <p data-testid={`lead-name-${index}`} className="truncate text-[15px] font-black text-ink dark:text-white">
               {lead.name}
             </p>
             <span className="flex items-center gap-0.5 bg-ok/15 text-ok border border-ok px-1.5 py-0.2 text-[9px] font-black">
               <ShieldCheck size={10} /> VERIFIED
             </span>
           </div>
-          <p className="text-xs text-inkmuted font-semibold truncate">{lead.skill}</p>
+          <p className="text-xs text-inkmuted dark:text-zinc-400 font-semibold truncate">{lead.skill}</p>
         </div>
 
         {/* TOP RIGHT: RATING & SAVE BUTTON */}
         <div className="flex items-center gap-1.5">
-          <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[11px] font-black">
-            <Star size={11} fill="#121212" /> {lead.rating}
+          <span className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-2 py-1 text-[11px] font-black dark:text-zinc-200">
+            <Star size={11} className="fill-[#121212] dark:fill-amber-400" /> {lead.rating}
             {lead.reviews_count ? ` (${lead.reviews_count})` : ""}
           </span>
           <button
             onClick={onToggleSave}
-            className={`flex h-8 w-8 items-center justify-center border border-ink transition ${
-              isSaved ? "bg-[#FFE5D6] text-brand" : "bg-white text-inkmuted hover:text-ink"
+            className={`flex h-8 w-8 items-center justify-center border border-ink dark:border-zinc-700 transition ${
+              isSaved ? "bg-[#FFE5D6] dark:bg-zinc-800 text-brand" : "bg-white dark:bg-zinc-800 text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white"
             }`}
             title={isSaved ? "Saved" : "Save pro"}
           >
@@ -719,13 +719,13 @@ const LeadCard = memo(function LeadCard({ lead, unlocked, index, isSaved, onTogg
       {!!lead.intro && (
         <p
           data-testid={`lead-intro-${index}`}
-          className="mt-2.5 line-clamp-2 text-xs leading-4 text-inkmuted"
+          className="mt-2.5 line-clamp-2 text-xs leading-4 text-inkmuted dark:text-zinc-400"
         >
           {lead.intro}
         </p>
       )}
 
-      <div className="my-3 h-px bg-ink/15" />
+      <div className="my-3 h-px bg-ink/15 dark:bg-zinc-800" />
 
       {/* STATS BADGE CHIPS */}
       <div className="flex flex-wrap gap-1.5" data-testid={`lead-stats-${index}`}>
@@ -739,7 +739,7 @@ const LeadCard = memo(function LeadCard({ lead, unlocked, index, isSaved, onTogg
         <Stat icon={<CheckCheck size={11} />}>{lead.jobs_done || 0} jobs</Stat>
       </div>
 
-      <div className="mt-2.5 flex flex-col gap-1.5 bg-sand/60 p-2.5 border border-ink/20">
+      <div className="mt-2.5 flex flex-col gap-1.5 bg-sand/60 dark:bg-zinc-800/60 p-2.5 border border-ink/20 dark:border-zinc-700">
         <Field
           icon={<span>📞</span>}
           label="PHONE"
@@ -756,12 +756,12 @@ const LeadCard = memo(function LeadCard({ lead, unlocked, index, isSaved, onTogg
         />
       </div>
 
-      <div className="mt-3 flex items-center justify-between pt-1 border-t border-ink/10">
-        <span className="flex items-center gap-1.5 text-[11px] font-black text-inkmuted group-hover:text-brand transition">
+      <div className="mt-3 flex items-center justify-between pt-1 border-t border-ink/10 dark:border-zinc-800">
+        <span className="flex items-center gap-1.5 text-[11px] font-black text-inkmuted dark:text-zinc-400 group-hover:text-brand transition">
           <Lock size={12} className="text-brand" />
           <span>PROFILE PROTECTED · LAUNCH</span>
         </span>
-        <span className="border-2 border-ink bg-brand px-2.5 py-0.5 text-[10px] font-black tracking-wider text-white shadow-[1px_1px_0px_#121212] group-hover:bg-black transition">
+        <span className="border-2 border-ink dark:border-zinc-700 bg-brand px-2.5 py-0.5 text-[10px] font-black tracking-wider text-white shadow-[1px_1px_0px_#121212] group-hover:bg-black transition">
           TAP TO HIRE
         </span>
       </div>
@@ -770,7 +770,7 @@ const LeadCard = memo(function LeadCard({ lead, unlocked, index, isSaved, onTogg
 });
 
 const Stat = ({ icon, children }) => (
-  <span className="flex items-center gap-1 border border-ink/30 bg-sand px-2 py-0.5 text-[10px] font-extrabold text-ink">
+  <span className="flex items-center gap-1 border border-ink/30 dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold text-ink dark:text-zinc-200">
     {icon}
     {children}
   </span>
@@ -779,8 +779,8 @@ const Stat = ({ icon, children }) => (
 const Field = ({ label, value, blur, testID }) => (
   <div className="flex items-center gap-2" data-testid={testID}>
     <div className="relative flex-1 overflow-hidden">
-      <p className="text-[9px] font-bold tracking-wide text-inkmuted">{label}</p>
-      <p className="text-[13px] font-semibold text-ink">{value}</p>
+      <p className="text-[9px] font-bold tracking-wide text-inkmuted dark:text-zinc-400">{label}</p>
+      <p className="text-[13px] font-semibold text-ink dark:text-white">{value}</p>
       {blur && <span className="pointer-events-none absolute inset-0 backdrop-blur-[5px]" />}
     </div>
   </div>

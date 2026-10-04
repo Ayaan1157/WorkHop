@@ -674,12 +674,12 @@ export default function Jobs() {
       )}
 
       {/* View Switcher Tabs: All Gigs vs Saved Bookmarks */}
-      <div className="border-b-2 border-ink bg-white">
+      <div className="border-b-2 border-ink dark:border-zinc-800 bg-white dark:bg-[#121212]">
         <div className="mx-auto flex w-full max-w-[1600px] px-4 sm:px-8">
           <button
             onClick={() => setViewTab("all")}
             className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
-              viewTab === "all" ? "border-brand bg-sand text-ink" : "border-transparent text-inkmuted hover:text-ink"
+              viewTab === "all" ? "border-brand bg-sand dark:bg-zinc-800 text-ink dark:text-white" : "border-transparent text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white"
             }`}
           >
             <span>ALL GIGS ({jobs.length})</span>
@@ -687,42 +687,42 @@ export default function Jobs() {
           <button
             onClick={() => setViewTab("saved")}
             className={`flex items-center gap-1.5 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
-              viewTab === "saved" ? "border-brand bg-sand text-ink" : "border-transparent text-inkmuted hover:text-ink"
+              viewTab === "saved" ? "border-brand bg-sand dark:bg-zinc-800 text-ink dark:text-white" : "border-transparent text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white"
             }`}
           >
-            <Heart size={14} className={savedJobIds.length > 0 ? "text-brand" : "text-inkmuted"} fill={savedJobIds.length > 0 ? "#E65A1E" : "none"} />
+            <Heart size={14} className={savedJobIds.length > 0 ? "text-brand" : "text-inkmuted dark:text-zinc-400"} fill={savedJobIds.length > 0 ? "#E65A1E" : "none"} />
             <span>SAVED ({savedJobIds.length})</span>
           </button>
         </div>
       </div>
 
       {/* Search & Sort & Filter Bar */}
-      <div className="border-b-2 border-ink bg-white dark:bg-[#121212]">
+      <div className="border-b-2 border-ink dark:border-zinc-800 bg-white dark:bg-[#121212]">
         <div className="mx-auto flex w-full max-w-[1600px] flex-col sm:flex-row items-stretch sm:items-center gap-2.5 px-3 py-2.5 sm:px-8">
-          <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-sand dark:bg-[#1f1f1f] px-3 shadow-[1.5px_1.5px_0px_#121212]">
-            <Search size={16} className="text-inkmuted" />
+          <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1f1f1f] px-3 shadow-[1.5px_1.5px_0px_#121212]">
+            <Search size={16} className="text-inkmuted dark:text-zinc-400" />
             <input
               data-testid="jobs-search-input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search gigs — UI design, reels, react, flutter…"
-              className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink dark:text-white placeholder:text-inkmuted"
+              className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink dark:text-white placeholder:text-inkmuted dark:placeholder:text-zinc-500"
             />
             {search && (
-              <button data-testid="search-clear-btn" onClick={() => setSearch("")} className="flex h-5 w-5 items-center justify-center bg-ink">
+              <button data-testid="search-clear-btn" onClick={() => setSearch("")} className="flex h-5 w-5 items-center justify-center bg-ink text-white">
                 <X size={13} className="text-white" />
               </button>
             )}
           </div>
 
           {catFilter !== "ALL" && (
-            <div className="flex items-center gap-1.5 border-2 border-ink bg-[#FFF3C4] px-2.5 py-1 text-xs font-black text-ink shadow-[1.5px_1.5px_0px_#121212]">
+            <div className="flex items-center gap-1.5 border-2 border-ink dark:border-amber-700 bg-[#FFF3C4] dark:bg-amber-950/60 px-2.5 py-1 text-xs font-black text-ink dark:text-amber-200 shadow-[1.5px_1.5px_0px_#121212]">
               <span>Category: {activeFilter?.label || catFilter}</span>
               <button
                 type="button"
                 data-testid="clear-active-cat-btn"
                 onClick={() => setCatFilter("ALL")}
-                className="flex h-4 w-4 items-center justify-center border border-ink bg-white hover:bg-sand transition"
+                className="flex h-4 w-4 items-center justify-center border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
                 title="Clear category filter"
               >
                 <X size={10} />
@@ -732,15 +732,15 @@ export default function Jobs() {
 
           <div className="flex items-center gap-2">
             {/* Sorting Dropdown */}
-            <div className="flex-1 sm:flex-none flex h-10 sm:h-11 items-center justify-between gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 shadow-[1.5px_1.5px_0px_#121212]">
-              <ArrowUpDown size={14} className="text-inkmuted shrink-0" />
+            <div className="flex-1 sm:flex-none flex h-10 sm:h-11 items-center justify-between gap-1.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#1a1a1a] px-3 shadow-[1.5px_1.5px_0px_#121212]">
+              <ArrowUpDown size={14} className="text-inkmuted dark:text-zinc-400 shrink-0" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="bg-transparent text-xs font-black text-ink dark:text-white outline-none cursor-pointer"
               >
                 {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value} className="text-black">{o.label}</option>
+                  <option key={o.value} value={o.value} className="text-black dark:text-white dark:bg-zinc-900">{o.label}</option>
                 ))}
               </select>
             </div>
@@ -749,8 +749,8 @@ export default function Jobs() {
             <button
               data-testid="jobs-filter-btn"
               onClick={() => setFiltersOpen((v) => !v)}
-              className={`flex h-10 sm:h-11 items-center gap-2 border-2 border-ink px-3 sm:px-4 text-xs font-black tracking-wider transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
-                activeFilterCount > 0 ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand"
+              className={`flex h-10 sm:h-11 items-center gap-2 border-2 border-ink dark:border-zinc-700 px-3 sm:px-4 text-xs font-black tracking-wider transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
+                activeFilterCount > 0 ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-800"
               }`}
             >
               <SlidersHorizontal size={15} />
@@ -767,14 +767,14 @@ export default function Jobs() {
 
       {/* Multi-Facet Filter Drawer */}
       <div
-        className={`border-b-2 border-ink bg-sand ${filtersOpen ? "block" : "hidden"}`}
+        className={`border-b-2 border-ink dark:border-zinc-800 bg-sand dark:bg-[#18181b] ${filtersOpen ? "block" : "hidden"}`}
         data-testid="jobs-filters-panel"
       >
         <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 p-4 sm:px-8">
             {/* Category Filter */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[10px] font-black tracking-wider text-inkmuted uppercase">GIG CATEGORY</p>
+                <p className="text-[10px] font-black tracking-wider text-inkmuted dark:text-zinc-400 uppercase">GIG CATEGORY</p>
                 {catFilter !== "ALL" && (
                   <button
                     type="button"
@@ -794,10 +794,10 @@ export default function Jobs() {
                       type="button"
                       data-testid={`filter-cat-${cat.key.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
                       onClick={() => setCatFilter(cat.key)}
-                      className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black transition ${
+                      className={`border-2 border-ink dark:border-zinc-700 px-3 py-1.5 text-[11px] font-black transition ${
                         isSelected
                           ? "bg-ink text-white dark:bg-white dark:text-black shadow-[1.5px_1.5px_0px_#121212]"
-                          : "bg-white text-ink hover:bg-sand"
+                          : "bg-white text-ink hover:bg-sand dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
                       }`}
                     >
                       {cat.key === "ALL" ? "ALL CATEGORIES" : cat.label}
@@ -806,8 +806,8 @@ export default function Jobs() {
                 })}
               </div>
               {catFilter !== "ALL" && activeFilter && activeFilter.cats.length > 1 && (
-                <div className="mt-2 pt-2 border-t border-dashed border-ink/20">
-                  <p className="mb-1 text-[10px] font-bold text-inkmuted uppercase tracking-wider">
+                <div className="mt-2 pt-2 border-t border-dashed border-ink/20 dark:border-zinc-700">
+                  <p className="mb-1 text-[10px] font-bold text-inkmuted dark:text-zinc-400 uppercase tracking-wider">
                     SPECIALIZED SUB-DISCIPLINES (TAP TO FILTER):
                   </p>
                   <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
@@ -818,10 +818,10 @@ export default function Jobs() {
                           key={sub}
                           type="button"
                           onClick={() => setSearch(isSubActive ? "" : sub)}
-                          className={`border border-ink/40 px-2 py-0.5 text-[10px] font-bold transition ${
+                          className={`border border-ink/40 dark:border-zinc-700 px-2 py-0.5 text-[10px] font-bold transition ${
                             isSubActive
                               ? "bg-brand text-white border-ink shadow-[1px_1px_0px_#121212]"
-                              : "bg-sand/60 text-ink dark:bg-[#202020] dark:text-stone-300 hover:bg-sand"
+                              : "bg-sand/60 text-ink dark:bg-[#202020] dark:text-stone-300 hover:bg-sand dark:hover:bg-zinc-800"
                           }`}
                         >
                           {sub}
@@ -833,11 +833,11 @@ export default function Jobs() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-ink/20 pt-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-ink/20 dark:border-zinc-700 pt-3">
               <FilterGroup label="BUDGET (GIG PAY)" options={BUDGETS} value={filters.budget} onPick={(v) => setFilters((p) => ({ ...p, budget: v }))} />
               <FilterGroup label="LOCATION RADIUS" options={DISTS} value={filters.dist} onPick={(v) => setFilters((p) => ({ ...p, dist: v }))} />
               <div>
-                <p className="mb-1.5 text-[10px] font-black tracking-wider text-inkmuted uppercase">EMPLOYER RATING</p>
+                <p className="mb-1.5 text-[10px] font-black tracking-wider text-inkmuted dark:text-zinc-400 uppercase">EMPLOYER RATING</p>
                 <div className="flex flex-wrap gap-2">
                   {[
                     { label: "ALL", value: null },
@@ -847,8 +847,8 @@ export default function Jobs() {
                     <button
                       key={r.label}
                       onClick={() => setFilters((p) => ({ ...p, minRating: r.value }))}
-                      className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black ${
-                        filters.minRating === r.value ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink"
+                      className={`border-2 border-ink dark:border-zinc-700 px-3 py-1.5 text-[11px] font-black ${
+                        filters.minRating === r.value ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink dark:bg-zinc-800 dark:text-zinc-200"
                       }`}
                     >
                       {r.label}
@@ -857,15 +857,15 @@ export default function Jobs() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-between border-t border-ink/20 pt-3">
+            <div className="flex items-center justify-between border-t border-ink/20 dark:border-zinc-700 pt-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={filters.verifiedOnly}
                   onChange={(e) => setFilters((p) => ({ ...p, verifiedOnly: e.target.checked }))}
-                  className="h-4 w-4 border-2 border-ink"
+                  className="h-4 w-4 border-2 border-ink dark:border-zinc-700"
                 />
-                <span className="text-xs font-bold text-ink">Verified Employers Only</span>
+                <span className="text-xs font-bold text-ink dark:text-zinc-200">Verified Employers Only</span>
               </label>
               <button
                 onClick={() => {
@@ -920,63 +920,63 @@ export default function Jobs() {
             data-testid="apply-modal"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b-2 border-ink pb-3">
+            <div className="flex items-center justify-between border-b-2 border-ink dark:border-zinc-700 pb-3">
               <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center border-2 border-ink bg-brand text-white shadow-[1px_1px_0px_#121212]">
+                <span className="flex h-7 w-7 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-brand text-white shadow-[1px_1px_0px_#121212]">
                   <Send size={14} />
                 </span>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-wider text-brand">SUBMIT GIG PROPOSAL</span>
-                  <p className="text-[11px] font-bold text-inkmuted">Hyperlocal Direct Bid &amp; Instant Hire</p>
+                  <p className="text-[11px] font-bold text-inkmuted dark:text-zinc-400">Hyperlocal Direct Bid &amp; Instant Hire</p>
                 </div>
               </div>
-              <button onClick={() => setApplyOpen(false)} className="flex h-7 w-7 items-center justify-center border-2 border-ink bg-white text-ink hover:bg-sand transition">
+              <button onClick={() => setApplyOpen(false)} className="flex h-7 w-7 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition">
                 <X size={16} />
               </button>
             </div>
 
             {/* Job Summary Banner & Full Description */}
-            <div className="mt-3 border-2 border-ink bg-sand p-3.5 shadow-[2px_2px_0px_#121212]" data-testid="apply-modal-job-summary">
-              <div className="flex flex-wrap items-center justify-between gap-1 border-b border-ink/20 pb-2 mb-2.5">
+            <div className="mt-3 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1a1a1c] p-3.5 shadow-[2px_2px_0px_#121212]" data-testid="apply-modal-job-summary">
+              <div className="flex flex-wrap items-center justify-between gap-1 border-b border-ink/20 dark:border-zinc-700 pb-2 mb-2.5">
                 <span className="text-[10px] font-black uppercase tracking-wider text-brand">
                   {activeJob?.category || "GIG OPPORTUNITY"} {activeJob?.company_name ? `· ${activeJob.company_name}` : ""}
                 </span>
                 {activeJob?.employer_name && (
-                  <span className="text-[10px] font-bold text-ink">
-                    Posted by: <span className="font-black">{activeJob.employer_name}</span>
+                  <span className="text-[10px] font-bold text-ink dark:text-zinc-300">
+                    Posted by: <span className="font-black text-ink dark:text-white">{activeJob.employer_name}</span>
                   </span>
                 )}
               </div>
 
-              <h3 className="text-base sm:text-lg font-black text-ink leading-snug">{activeJob?.title}</h3>
+              <h3 className="text-base sm:text-lg font-black text-ink dark:text-white leading-snug">{activeJob?.title}</h3>
 
               <div className="mt-2 flex flex-wrap gap-2">
-                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-black text-ink shadow-[1px_1px_0px_#121212]">
+                <span className="border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-0.5 text-xs font-black text-ink dark:text-zinc-100 shadow-[1px_1px_0px_#121212]">
                   {activeJob?.price_type === "hourly" ? `₹${activeJob?.pay_label}/hr HOURLY` : `₹${activeJob?.pay_label} FIXED`}
                 </span>
-                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-bold text-ink flex items-center gap-1 shadow-[1px_1px_0px_#121212]">
+                <span className="border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-0.5 text-xs font-bold text-ink dark:text-zinc-200 flex items-center gap-1 shadow-[1px_1px_0px_#121212]">
                   <MapPin size={11} className="text-brand" /> Job Area: {activeJob?.area || "Bengaluru"}
                 </span>
-                <span className="border border-ink bg-white px-2 py-0.5 text-xs font-bold text-ink flex items-center gap-1 shadow-[1px_1px_0px_#121212]">
+                <span className="border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-0.5 text-xs font-bold text-ink dark:text-zinc-200 flex items-center gap-1 shadow-[1px_1px_0px_#121212]">
                   <Coins size={11} className="text-brand" /> Base Apply: {activeJob?.credits_to_apply || calculateHopsForJob(activeJob?.pay)} Hops
                 </span>
               </div>
 
               {/* Full Job Description Box */}
               {activeJob?.description && (
-                <div className="mt-3 border-t-2 border-ink/20 pt-2.5">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-ink block mb-1.5 flex items-center gap-1">
+                <div className="mt-3 border-t-2 border-ink/20 dark:border-zinc-700 pt-2.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-ink dark:text-zinc-300 block mb-1.5 flex items-center gap-1">
                     <FileText size={12} className="text-brand" /> FULL JOB DESCRIPTION &amp; SCOPE:
                   </span>
-                  <div className="border-2 border-ink bg-white p-3 shadow-[2px_2px_0px_#121212]">
-                    <p className="text-xs sm:text-sm font-semibold text-ink leading-relaxed whitespace-pre-line" data-testid="apply-modal-job-description">
+                  <div className="border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 shadow-[2px_2px_0px_#121212]">
+                    <p className="text-xs sm:text-sm font-semibold text-ink dark:text-zinc-200 leading-relaxed whitespace-pre-line" data-testid="apply-modal-job-description">
                       {activeJob.description}
                     </p>
                     {activeJob?.keywords && activeJob.keywords.length > 0 && (
-                      <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-ink/15 pt-2">
-                        <span className="text-[9px] font-black uppercase text-ink mr-1">Required Skills:</span>
+                      <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-ink/15 dark:border-zinc-700 pt-2">
+                        <span className="text-[9px] font-black uppercase text-ink dark:text-zinc-300 mr-1">Required Skills:</span>
                         {activeJob.keywords.map((kw, i) => (
-                          <span key={i} className="border border-ink bg-sand px-1.5 py-0.5 text-[10px] font-bold text-ink shadow-[0.5px_0.5px_0px_#121212]">
+                          <span key={i} className="border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-1.5 py-0.5 text-[10px] font-bold text-ink dark:text-zinc-200 shadow-[0.5px_0.5px_0px_#121212]">
                             #{kw}
                           </span>
                         ))}
@@ -988,19 +988,19 @@ export default function Jobs() {
             </div>
 
             {/* ═══════ 1. TERMS & RATE QUOTING (Upwork Terms Screen) ═══════ */}
-            <div className="mt-4 border-2 border-ink bg-white p-3.5 shadow-[2px_2px_0px_#121212]" data-testid="proposal-terms-section">
-              <div className="flex items-center justify-between border-b border-ink/20 pb-2">
+            <div className="mt-4 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#1a1a1c] p-3.5 shadow-[2px_2px_0px_#121212]" data-testid="proposal-terms-section">
+              <div className="flex items-center justify-between border-b border-ink/20 dark:border-zinc-700 pb-2">
                 <div>
                   <span className="text-[10px] font-black uppercase text-brand tracking-wider">TERMS &amp; RATE QUOTE</span>
-                  <h4 className="text-xs font-black text-ink">What is the rate you'd like to bid for this job?</h4>
+                  <h4 className="text-xs font-black text-ink dark:text-white">What is the rate you'd like to bid for this job?</h4>
                 </div>
                 {/* Fixed vs Hourly toggle */}
-                <div className="flex border border-ink bg-sand p-0.5 text-[10px] font-black">
+                <div className="flex border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 p-0.5 text-[10px] font-black">
                   <button
                     type="button"
                     data-testid="rate-type-fixed"
                     onClick={() => setProposedRateType("fixed")}
-                    className={`px-2 py-0.5 transition ${proposedRateType === "fixed" ? "bg-ink text-white" : "text-ink hover:bg-white"}`}
+                    className={`px-2 py-0.5 transition ${proposedRateType === "fixed" ? "bg-ink text-white dark:bg-white dark:text-black" : "text-ink dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700"}`}
                   >
                     Fixed Price
                   </button>
@@ -1008,7 +1008,7 @@ export default function Jobs() {
                     type="button"
                     data-testid="rate-type-hourly"
                     onClick={() => setProposedRateType("hourly")}
-                    className={`px-2 py-0.5 transition ${proposedRateType === "hourly" ? "bg-ink text-white" : "text-ink hover:bg-white"}`}
+                    className={`px-2 py-0.5 transition ${proposedRateType === "hourly" ? "bg-ink text-white dark:bg-white dark:text-black" : "text-ink dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700"}`}
                   >
                     Hourly Rate
                   </button>
@@ -1018,28 +1018,28 @@ export default function Jobs() {
               <div className="mt-3 space-y-2.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <label className="text-xs font-black text-ink">
+                    <label className="text-xs font-black text-ink dark:text-white">
                       {proposedRateType === "fixed" ? "Your Project Quote" : "Your Hourly Rate"}
                     </label>
-                    <p className="text-[10px] text-inkmuted">Total amount client will see on your proposal</p>
+                    <p className="text-[10px] text-inkmuted dark:text-zinc-400">Total amount client will see on your proposal</p>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="relative">
-                      <span className="absolute left-2.5 top-2 text-xs font-black text-ink">₹</span>
+                      <span className="absolute left-2.5 top-2 text-xs font-black text-ink dark:text-zinc-300">₹</span>
                       <input
                         type="number"
                         data-testid="proposed-quote-input"
                         value={proposedQuote}
                         onChange={(e) => setProposedQuote(Math.max(0, Number(e.target.value)))}
-                        className="wh-input h-9 w-32 border-2 border-ink bg-white pl-6 pr-2 text-xs font-black text-ink outline-none"
+                        className="wh-input h-9 w-32 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-6 pr-2 text-xs font-black text-ink dark:text-white outline-none"
                       />
                     </div>
-                    <span className="text-xs font-bold text-inkmuted">{proposedRateType === "fixed" ? "total" : "/hr"}</span>
+                    <span className="text-xs font-bold text-inkmuted dark:text-zinc-400">{proposedRateType === "fixed" ? "total" : "/hr"}</span>
                     <button
                       type="button"
                       data-testid="match-employer-rate-btn"
                       onClick={() => setProposedQuote(activeJob?.pay || 1000)}
-                      className="border border-ink bg-sand px-2 py-2 text-[9px] font-black uppercase text-ink hover:bg-brand hover:text-white transition"
+                      className="border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-2 py-2 text-[9px] font-black uppercase text-ink dark:text-zinc-200 hover:bg-brand hover:text-white transition"
                       title="Match employer's budget"
                     >
                       Match Employer
@@ -1048,7 +1048,7 @@ export default function Jobs() {
                 </div>
 
                 {/* Dual Payment Mode Selection */}
-                <div className="mt-3 pt-3 border-t-2 border-ink/20">
+                <div className="mt-3 pt-3 border-t-2 border-ink/20 dark:border-zinc-700">
                   <PaymentModeSelector
                     quote={proposedQuote}
                     selectedMode={paymentMode}
@@ -1061,15 +1061,15 @@ export default function Jobs() {
             </div>
 
             {/* ═══════ 2. APPLICANT AREA & HYPERLOCAL DISTANCE ═══════ */}
-            <div className="mt-3 border-2 border-ink bg-sand p-3">
+            <div className="mt-3 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1a1a1c] p-3">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-wider text-ink">
+                <span className="text-[10px] font-black uppercase tracking-wider text-ink dark:text-white">
                   YOUR NEIGHBORHOOD / AREA (FOR SUITABILITY)
                 </span>
                 <button
                   type="button"
                   onClick={requestLocation}
-                  className="flex items-center gap-1 border border-ink bg-brand px-2 py-0.5 text-[9px] font-black text-white hover:bg-brand/90 transition active:translate-y-0.5"
+                  className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-brand px-2 py-0.5 text-[9px] font-black text-white hover:bg-brand/90 transition active:translate-y-0.5"
                 >
                   {locStatus === "locating" ? <Loader2 size={10} className="animate-spin" /> : <LocateFixed size={10} />}
                   <span>{locStatus === "locating" ? "DETECTING…" : "USE LIVE GPS"}</span>
@@ -1083,7 +1083,7 @@ export default function Jobs() {
                   setSavedArea(e.target.value);
                 }}
                 placeholder="e.g. Indiranagar, Koramangala, HSR Layout"
-                className="wh-input mt-1.5 h-9 w-full border-2 border-ink bg-white px-3 text-xs font-bold text-ink outline-none"
+                className="wh-input mt-1.5 h-9 w-full border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-xs font-bold text-ink dark:text-white outline-none"
               />
 
               <div className="mt-1.5 flex flex-wrap gap-1">
@@ -1095,8 +1095,8 @@ export default function Jobs() {
                       setApplicantArea(a.name);
                       setSavedArea(a.name);
                     }}
-                    className={`border border-ink px-2 py-0.5 text-[9px] font-black transition ${
-                      applicantArea === a.name ? "bg-ink text-white" : "bg-white text-ink hover:bg-sand"
+                    className={`border border-ink dark:border-zinc-700 px-2 py-0.5 text-[9px] font-black transition ${
+                      applicantArea === a.name ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-sand dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
                     }`}
                   >
                     {a.name}
@@ -1105,8 +1105,8 @@ export default function Jobs() {
               </div>
 
               {activeJob && (
-                <div className="mt-2 flex items-center justify-between border-t border-ink/20 pt-1.5 text-xs font-black">
-                  <span className="flex items-center gap-1 text-ink">
+                <div className="mt-2 flex items-center justify-between border-t border-ink/20 dark:border-zinc-700 pt-1.5 text-xs font-black">
+                  <span className="flex items-center gap-1 text-ink dark:text-zinc-200">
                     <MapPin size={12} className="text-brand" />
                     <span>
                       {applicantArea} → {activeJob.area || "Job"}: <strong>{calculateDistance(applicantArea, activeJob.area || "Bengaluru")} km away</strong>
@@ -1117,7 +1117,7 @@ export default function Jobs() {
                     const suit = getDistanceSuitability(d);
                     return (
                       <span
-                        className="border border-ink px-2 py-0.5 text-[9px] font-black text-white"
+                        className="border border-ink dark:border-zinc-700 px-2 py-0.5 text-[9px] font-black text-white"
                         style={{ backgroundColor: suit.color }}
                       >
                         {suit.badge}
@@ -1129,14 +1129,14 @@ export default function Jobs() {
             </div>
 
             {/* ═══════ 3. COVER LETTER & PDF ATTACHMENT WITH CONTACT SCANNER ═══════ */}
-            <div className="mt-3 border-2 border-ink bg-white p-3.5 shadow-[2px_2px_0px_#121212]" data-testid="cover-letter-section">
+            <div className="mt-3 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#1a1a1c] p-3.5 shadow-[2px_2px_0px_#121212]" data-testid="cover-letter-section">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase tracking-wider text-brand flex items-center gap-1">
                   <FileText size={12} /> COVER LETTER &amp; WORK ATTACHMENTS
                 </span>
-                <span className="text-[10px] font-bold text-inkmuted">{applyNote.length}/500</span>
+                <span className="text-[10px] font-bold text-inkmuted dark:text-zinc-400">{applyNote.length}/500</span>
               </div>
-              <p className="mt-0.5 text-[10px] text-inkmuted">
+              <p className="mt-0.5 text-[10px] text-inkmuted dark:text-zinc-400">
                 Introduce yourself and highlight relevant experience. Direct contact details (phone, email, links, handles) are automatically scanned and prohibited before contract formation.
               </p>
 
@@ -1146,35 +1146,35 @@ export default function Jobs() {
                 onChange={handleNoteChange}
                 placeholder="Hi! I have extensive experience in this area and can deliver clean, high-performance work for this gig..."
                 maxLength={500}
-                className="wh-input mt-2 min-h-[75px] w-full border-2 border-ink bg-white p-2.5 text-xs text-ink font-semibold outline-none"
+                className="wh-input mt-2 min-h-[75px] w-full border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2.5 text-xs text-ink dark:text-white font-semibold outline-none"
               />
 
               {/* PDF Attachment Upload Row */}
               <div className="mt-2.5">
-                <span className="text-[10px] font-black uppercase text-ink tracking-wider">PDF ATTACHMENT (PROPOSAL / RESUME / PORTFOLIO)</span>
+                <span className="text-[10px] font-black uppercase text-ink dark:text-white tracking-wider">PDF ATTACHMENT (PROPOSAL / RESUME / PORTFOLIO)</span>
                 
                 {pdfAttachment ? (
-                  <div className="mt-1.5 flex items-center justify-between border-2 border-ink bg-sand p-2.5 shadow-[1px_1px_0px_#121212]" data-testid="pdf-attached-preview">
+                  <div className="mt-1.5 flex items-center justify-between border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 p-2.5 shadow-[1px_1px_0px_#121212]" data-testid="pdf-attached-preview">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="flex h-7 w-7 items-center justify-center border border-ink bg-brand text-white shrink-0">
+                      <span className="flex h-7 w-7 items-center justify-center border border-ink dark:border-zinc-700 bg-brand text-white shrink-0">
                         <FileText size={14} />
                       </span>
                       <div className="min-w-0 truncate">
-                        <p className="text-xs font-black text-ink truncate">{pdfAttachment.fileName}</p>
-                        <p className="text-[9px] font-bold text-inkmuted">{pdfAttachment.fileSize} · Scanned for compliance</p>
+                        <p className="text-xs font-black text-ink dark:text-white truncate">{pdfAttachment.fileName}</p>
+                        <p className="text-[9px] font-bold text-inkmuted dark:text-zinc-400">{pdfAttachment.fileSize} · Scanned for compliance</p>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={handleRemovePdf}
                       data-testid="remove-pdf-btn"
-                      className="flex items-center gap-1 border border-ink bg-white px-2 py-1 text-[10px] font-black text-danger hover:bg-danger hover:text-white transition shrink-0"
+                      className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-[10px] font-black text-danger hover:bg-danger hover:text-white transition shrink-0"
                     >
                       <Trash2 size={12} /> REMOVE
                     </button>
                   </div>
                 ) : (
-                  <label className="mt-1.5 flex cursor-pointer items-center justify-center gap-2 border-2 border-dashed border-ink bg-sand/60 p-3 hover:bg-sand transition">
+                  <label className="mt-1.5 flex cursor-pointer items-center justify-center gap-2 border-2 border-dashed border-ink dark:border-zinc-700 bg-sand/60 dark:bg-zinc-800/60 p-3 hover:bg-sand dark:hover:bg-zinc-800 transition">
                     <input
                       type="file"
                       accept=".pdf,application/pdf"
@@ -1183,12 +1183,12 @@ export default function Jobs() {
                       data-testid="pdf-upload-input"
                     />
                     {pdfScanning ? (
-                      <div className="flex items-center gap-2 text-xs font-black text-ink">
+                      <div className="flex items-center gap-2 text-xs font-black text-ink dark:text-white">
                         <Loader2 size={14} className="animate-spin text-brand" />
                         <span>Scanning PDF for compliance...</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 text-xs font-black text-ink">
+                      <div className="flex items-center gap-2 text-xs font-black text-ink dark:text-zinc-200">
                         <UploadCloud size={16} className="text-brand" />
                         <span>Upload Proposal / CV (.PDF, Max 5MB) — Auto-scanned for privacy</span>
                       </div>
@@ -1199,18 +1199,18 @@ export default function Jobs() {
 
               {/* Contact Violations Alert Banner */}
               {(textViolations.length > 0 || pdfViolations.length > 0) && (
-                <div className="mt-3 border-2 border-danger bg-[#FFEBEE] p-3 text-xs text-[#C62828] shadow-[2px_2px_0px_#E63946]" data-testid="contact-violations-alert">
+                <div className="mt-3 border-2 border-danger bg-[#FFEBEE] dark:bg-rose-950/40 p-3 text-xs text-[#C62828] dark:text-rose-300 shadow-[2px_2px_0px_#E63946]" data-testid="contact-violations-alert">
                   <div className="flex items-center gap-1.5 font-black text-xs">
                     <AlertTriangle size={15} />
                     <span>Prohibited Contact Details Detected ({textViolations.length + pdfViolations.length})</span>
                   </div>
-                  <p className="mt-1 text-[10px] font-medium text-ink">
+                  <p className="mt-1 text-[10px] font-medium text-ink dark:text-zinc-300">
                     WorkHop prohibits sharing direct phone numbers, email addresses, handles, or off-platform URLs before hire to ensure payment protection and verified contracts.
                   </p>
-                  <ul className="mt-2 space-y-1 bg-white/80 p-2 border border-danger/40 text-[10px] font-mono">
+                  <ul className="mt-2 space-y-1 bg-white/80 dark:bg-zinc-900/80 p-2 border border-danger/40 text-[10px] font-mono">
                     {[...textViolations, ...pdfViolations].map((v, i) => (
                       <li key={i} className="flex items-center gap-1">
-                        <span className="font-bold uppercase text-[#C62828]">[{v.type}]</span> {v.match}
+                        <span className="font-bold uppercase text-[#C62828] dark:text-rose-400">[{v.type}]</span> {v.match}
                       </li>
                     ))}
                   </ul>
@@ -1220,7 +1220,7 @@ export default function Jobs() {
                         type="button"
                         data-testid="auto-redact-btn"
                         onClick={handleAutoRedactNote}
-                        className="flex items-center gap-1 border border-ink bg-danger px-2.5 py-1 text-[10px] font-black text-white hover:bg-black transition shadow-[1px_1px_0px_#121212]"
+                        className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-danger px-2.5 py-1 text-[10px] font-black text-white hover:bg-black transition shadow-[1px_1px_0px_#121212]"
                       >
                         <span>🧹 Auto-Redact Contact Details</span>
                       </button>
@@ -1230,7 +1230,7 @@ export default function Jobs() {
                         type="button"
                         data-testid="remove-violating-pdf-btn"
                         onClick={handleRemovePdf}
-                        className="flex items-center gap-1 border border-ink bg-white px-2 py-1 text-[10px] font-bold text-ink hover:bg-sand transition"
+                        className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-[10px] font-bold text-ink dark:text-white hover:bg-sand transition"
                       >
                         <Trash2 size={11} /> Remove Flagged PDF
                       </button>
@@ -1241,7 +1241,7 @@ export default function Jobs() {
 
               {/* Clean Status Check */}
               {textViolations.length === 0 && pdfViolations.length === 0 && (applyNote.trim() || pdfAttachment) && (
-                <div className="mt-2 flex items-center gap-1.5 text-[10px] font-black text-[#00A86B]" data-testid="scan-clean-badge">
+                <div className="mt-2 flex items-center gap-1.5 text-[10px] font-black text-[#00A86B] dark:text-emerald-400" data-testid="scan-clean-badge">
                   <CheckCircle2 size={13} />
                   <span>Verified Safe: No off-platform contact details detected.</span>
                 </div>
@@ -1249,17 +1249,17 @@ export default function Jobs() {
             </div>
 
             {/* ═══════ 4. PORTFOLIO HIGHLIGHTS (CURATE & HIDE) ═══════ */}
-            <div className="mt-3 border-2 border-ink bg-sand p-3 shadow-[2px_2px_0px_#121212]" data-testid="portfolio-highlights-section">
+            <div className="mt-3 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1a1a1c] p-3 shadow-[2px_2px_0px_#121212]" data-testid="portfolio-highlights-section">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-ink tracking-wider flex items-center gap-1.5">
+                <span className="text-[10px] font-black uppercase text-ink dark:text-white tracking-wider flex items-center gap-1.5">
                   <Sparkles size={12} className="text-brand" />
                   ATTACH PORTFOLIO HIGHLIGHTS (CURATE &amp; HIDE)
                 </span>
-                <span className="text-[10px] font-bold text-inkmuted">
+                <span className="text-[10px] font-bold text-inkmuted dark:text-zinc-400">
                   {portfolioHighlights.filter((p) => p.visible).length} included
                 </span>
               </div>
-              <p className="mt-0.5 text-[10px] text-inkmuted">
+              <p className="mt-0.5 text-[10px] text-inkmuted dark:text-zinc-400">
                 Choose which highlights to attach. You can hide specific projects if you want only relevant samples shown for this gig.
               </p>
 
@@ -1267,17 +1267,17 @@ export default function Jobs() {
                 {portfolioHighlights.map((ph, idx) => (
                   <div
                     key={ph.id || idx}
-                    className={`flex items-center justify-between border-2 border-ink p-2 transition ${
-                      ph.visible ? "bg-white shadow-[1px_1px_0px_#121212]" : "bg-white/50 opacity-60"
+                    className={`flex items-center justify-between border-2 border-ink dark:border-zinc-700 p-2 transition ${
+                      ph.visible ? "bg-white dark:bg-zinc-900 shadow-[1px_1px_0px_#121212]" : "bg-white/50 dark:bg-zinc-900/50 opacity-60"
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={`flex h-6 w-6 items-center justify-center border border-ink text-[10px] font-black shrink-0 ${ph.visible ? "bg-brand text-white" : "bg-sand text-inkmuted"}`}>
+                      <span className={`flex h-6 w-6 items-center justify-center border border-ink dark:border-zinc-700 text-[10px] font-black shrink-0 ${ph.visible ? "bg-brand text-white" : "bg-sand dark:bg-zinc-800 text-inkmuted dark:text-zinc-400"}`}>
                         {idx + 1}
                       </span>
                       <div className="min-w-0 truncate">
-                        <p className="text-xs font-black text-ink truncate">{ph.title}</p>
-                        <p className="text-[9px] font-semibold text-inkmuted">{ph.tag}</p>
+                        <p className="text-xs font-black text-ink dark:text-white truncate">{ph.title}</p>
+                        <p className="text-[9px] font-semibold text-inkmuted dark:text-zinc-400">{ph.tag}</p>
                       </div>
                     </div>
 
@@ -1289,10 +1289,10 @@ export default function Jobs() {
                           prev.map((item, i) => (i === idx ? { ...item, visible: !item.visible } : item))
                         );
                       }}
-                      className={`flex items-center gap-1 border border-ink px-2 py-1 text-[9px] font-black transition shrink-0 ${
+                      className={`flex items-center gap-1 border border-ink dark:border-zinc-700 px-2 py-1 text-[9px] font-black transition shrink-0 ${
                         ph.visible
-                          ? "bg-[#E5F8EE] text-[#00875A] hover:bg-[#D4F4E4]"
-                          : "bg-sand text-inkmuted hover:bg-white"
+                          ? "bg-[#E5F8EE] dark:bg-emerald-950/40 text-[#00875A] dark:text-emerald-400 hover:bg-[#D4F4E4]"
+                          : "bg-sand dark:bg-zinc-800 text-inkmuted dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-700"
                       }`}
                     >
                       {ph.visible ? (
@@ -1312,34 +1312,34 @@ export default function Jobs() {
               {/* Add Custom Highlight Inline */}
               <div className="mt-2">
                 {showAddHighlight ? (
-                  <div className="border border-ink bg-white p-2">
-                    <p className="text-[10px] font-black uppercase text-ink">Add Work Sample Highlight</p>
+                  <div className="border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2">
+                    <p className="text-[10px] font-black uppercase text-ink dark:text-white">Add Work Sample Highlight</p>
                     <div className="mt-1 flex flex-col sm:flex-row gap-1.5">
                       <input
                         placeholder="Project title (e.g. Fintech Mobile App)"
                         value={newHighlightTitle}
                         onChange={(e) => setNewHighlightTitle(e.target.value)}
-                        className="wh-input h-7 flex-1 border border-ink px-2 text-xs font-semibold text-ink outline-none"
+                        className="wh-input h-7 flex-1 border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 text-xs font-semibold text-ink dark:text-white outline-none"
                       />
                       <input
                         placeholder="Tag (e.g. React / Figma)"
                         value={newHighlightTag}
                         onChange={(e) => setNewHighlightTag(e.target.value)}
-                        className="wh-input h-7 w-full sm:w-28 border border-ink px-2 text-xs font-semibold text-ink outline-none"
+                        className="wh-input h-7 w-full sm:w-28 border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 text-xs font-semibold text-ink dark:text-white outline-none"
                       />
                     </div>
                     <div className="mt-2 flex gap-1.5">
                       <button
                         type="button"
                         onClick={handleAddHighlight}
-                        className="border border-ink bg-brand px-2 py-1 text-[10px] font-black text-white hover:bg-black transition"
+                        className="border border-ink dark:border-zinc-700 bg-brand px-2 py-1 text-[10px] font-black text-white hover:bg-black transition"
                       >
                         Add Highlight
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowAddHighlight(false)}
-                        className="border border-ink bg-sand px-2 py-1 text-[10px] font-bold text-ink"
+                        className="border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-2 py-1 text-[10px] font-bold text-ink dark:text-zinc-300"
                       >
                         Cancel
                       </button>
@@ -1359,14 +1359,14 @@ export default function Jobs() {
 
             {/* ═══════ 5. UPWORK-STYLE PROPOSAL BOOSTING (LIVE BIDDING) ═══════ */}
             {activeJob && (
-              <div className="mt-3 border-2 border-ink bg-[#FFF9E6] p-3 shadow-[2px_2px_0px_#121212]" data-testid="proposal-boost-section">
-                <div className="flex items-center justify-between border-b border-ink/20 pb-2">
+              <div className="mt-3 border-2 border-ink dark:border-amber-900/40 bg-[#FFF9E6] dark:bg-amber-950/20 p-3 shadow-[2px_2px_0px_#121212]" data-testid="proposal-boost-section">
+                <div className="flex items-center justify-between border-b border-ink/20 dark:border-zinc-700 pb-2">
                   <div>
                     <span className="flex items-center gap-1 text-[10px] font-black uppercase text-brand tracking-wider">
                       <Rocket size={13} />
                       BOOST YOUR PROPOSAL (OPTIONAL)
                     </span>
-                    <p className="text-[10px] text-inkmuted">Place a bid to move your proposal to the top of the client's list.</p>
+                    <p className="text-[10px] text-inkmuted dark:text-zinc-400">Place a bid to move your proposal to the top of the client's list.</p>
                   </div>
                   <button
                     type="button"
@@ -1385,23 +1385,23 @@ export default function Jobs() {
                     { rank: "3rd Place", bid: Math.max(4, Math.floor((modalLeaderboard?.topBid || 10) * 0.4)), medal: "🥉" },
                     { rank: "4th Place", bid: 2, medal: "🎖️" },
                   ].map((slot, i) => (
-                    <div key={i} className="border border-ink bg-white p-1.5">
-                      <span className="text-[9px] font-black text-inkmuted">{slot.medal} {slot.rank}</span>
-                      <p className="text-xs font-black text-ink">{slot.bid} Hops</p>
+                    <div key={i} className="border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1.5">
+                      <span className="text-[9px] font-black text-inkmuted dark:text-zinc-400">{slot.medal} {slot.rank}</span>
+                      <p className="text-xs font-black text-ink dark:text-white">{slot.bid} Hops</p>
                     </div>
                   ))}
                 </div>
 
                 {/* Recommendation banner */}
-                <div className="mt-2.5 flex items-center justify-between border border-ink bg-white p-2 text-xs">
-                  <span className="flex items-center gap-1 font-bold text-ink text-[11px]">
+                <div className="mt-2.5 flex items-center justify-between border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2 text-xs">
+                  <span className="flex items-center gap-1 font-bold text-ink dark:text-zinc-200 text-[11px]">
                     <Flame size={13} className="text-brand" />
                     Bid {Math.max(1, (modalLeaderboard?.topBid || 10) + 1)} Hops or higher to take 1st place!
                   </span>
                   <button
                     type="button"
                     onClick={() => setBoostCredits(Math.max(1, (modalLeaderboard?.topBid || 10) + 1))}
-                    className="border border-ink bg-brand px-2 py-0.5 text-[9px] font-black text-white hover:bg-black transition"
+                    className="border border-ink dark:border-zinc-700 bg-brand px-2 py-0.5 text-[9px] font-black text-white hover:bg-black transition"
                   >
                     BID FOR #1
                   </button>
@@ -1409,12 +1409,12 @@ export default function Jobs() {
 
                 {/* Stepper counter */}
                 <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <span className="text-xs font-black text-ink">Your Boost Bid:</span>
+                  <span className="text-xs font-black text-ink dark:text-white">Your Boost Bid:</span>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => setBoostCredits((b) => Math.max(0, b - 1))}
-                      className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-white font-black text-ink hover:bg-sand transition"
+                      className="flex h-8 w-8 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 font-black text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
                     >
                       <Minus size={14} />
                     </button>
@@ -1422,12 +1422,12 @@ export default function Jobs() {
                       type="number"
                       value={boostCredits}
                       onChange={(e) => setBoostCredits(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                      className="wh-input h-8 w-16 border-2 border-ink bg-white text-center text-xs font-black text-ink outline-none"
+                      className="wh-input h-8 w-16 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 text-center text-xs font-black text-ink dark:text-white outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setBoostCredits((b) => b + 1)}
-                      className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-white font-black text-ink hover:bg-sand transition"
+                      className="flex h-8 w-8 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 font-black text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
                     >
                       <Plus size={14} />
                     </button>
@@ -1438,8 +1438,8 @@ export default function Jobs() {
                           type="button"
                           data-testid={`boost-option-${pts}`}
                           onClick={() => setBoostCredits(pts)}
-                          className={`border border-ink px-2 py-1 text-[10px] font-black transition ${
-                            boostCredits === pts ? "bg-brand text-white" : "bg-white text-ink hover:bg-sand"
+                          className={`border border-ink dark:border-zinc-700 px-2 py-1 text-[10px] font-black transition ${
+                            boostCredits === pts ? "bg-brand text-white" : "bg-white dark:bg-zinc-800 text-ink dark:text-zinc-200 hover:bg-sand dark:hover:bg-zinc-700"
                           }`}
                         >
                           {pts === 0 ? "Standard" : `+${pts}`}
@@ -1453,21 +1453,21 @@ export default function Jobs() {
 
             {/* ═══════ 6. HOPS COST & WALLET BALANCE SUMMARY ═══════ */}
             {activeJob && (
-              <div className="mt-3 flex items-center justify-between border-2 border-ink bg-sand p-3 shadow-[2px_2px_0px_#121212]">
+              <div className="mt-3 flex items-center justify-between border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1a1a1c] p-3 shadow-[2px_2px_0px_#121212]">
                 <div>
-                  <span className="text-[10px] font-black uppercase text-inkmuted tracking-wider">TOTAL REQUIRED</span>
-                  <p className="text-sm font-black text-ink flex items-center gap-1">
+                  <span className="text-[10px] font-black uppercase text-inkmuted dark:text-zinc-400 tracking-wider">TOTAL REQUIRED</span>
+                  <p className="text-sm font-black text-ink dark:text-white flex items-center gap-1">
                     <Coins size={15} className="text-brand" />
                     {(activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits} Hops
-                    <span className="text-[10px] font-semibold text-inkmuted">
+                    <span className="text-[10px] font-semibold text-inkmuted dark:text-zinc-400">
                       ({activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)} base + {boostCredits} boost) · ₹{((activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits) * 15}
                     </span>
                   </p>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-[10px] font-black uppercase text-inkmuted tracking-wider">YOUR BALANCE</span>
-                  <p className="text-sm font-black text-ink" data-testid="apply-current-balance">
+                  <span className="text-[10px] font-black uppercase text-inkmuted dark:text-zinc-400 tracking-wider">YOUR BALANCE</span>
+                  <p className="text-sm font-black text-ink dark:text-white" data-testid="apply-current-balance">
                     {wallet.balance} Hops (₹{wallet.balance * 15})
                   </p>
                 </div>
@@ -1482,7 +1482,7 @@ export default function Jobs() {
 
             {/* Insufficient Hops Banner & CTA */}
             {activeJob && wallet.balance < ((activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits) && (
-              <div className="mt-3 border-2 border-ink bg-[#FFEBEE] p-3 text-xs font-black text-[#C62828] shadow-[2px_2px_0px_#C62828]">
+              <div className="mt-3 border-2 border-ink dark:border-rose-800 bg-[#FFEBEE] dark:bg-rose-950/40 p-3 text-xs font-black text-[#C62828] dark:text-rose-300 shadow-[2px_2px_0px_#C62828]">
                 <p className="flex items-center gap-1.5">
                   <Lock size={14} />
                   Insufficient Hops ({wallet.balance} available, {(activeJob.credits_to_apply || calculateHopsForJob(activeJob.pay)) + boostCredits} required).
@@ -1491,7 +1491,7 @@ export default function Jobs() {
                   type="button"
                   data-testid="insufficient-credits-cta"
                   onClick={() => setCreditsModalOpen(true)}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 border-2 border-ink bg-brand py-2.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] transition hover:bg-black"
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 border-2 border-ink dark:border-zinc-700 bg-brand py-2.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] transition hover:bg-black"
                 >
                   <Coins size={14} /> TOP UP HOPS (₹15/HOP) OR SUBSCRIBE →
                 </button>
@@ -1549,7 +1549,7 @@ export default function Jobs() {
                 </button>
               )
             )}
-            <p className="mt-2 text-center text-[11px] text-inkmuted">Dual payment choice: Protected Escrow or Direct Settlement. Employer sees your proposal instantly.</p>
+            <p className="mt-2 text-center text-[11px] text-inkmuted dark:text-zinc-400">Dual payment choice: Protected Escrow or Direct Settlement. Employer sees your proposal instantly.</p>
           </div>
         </div>
       )}
@@ -1623,14 +1623,14 @@ export default function Jobs() {
 function FilterGroup({ label, options, value, onPick }) {
   return (
     <div>
-      <p className="mb-1.5 text-[10px] font-black tracking-wider text-inkmuted uppercase">{label}</p>
+      <p className="mb-1.5 text-[10px] font-black tracking-wider text-inkmuted dark:text-zinc-400 uppercase">{label}</p>
       <div className="flex flex-wrap gap-2">
         {options.map((o) => (
           <button
             key={o.label}
             onClick={() => onPick(o.value)}
-            className={`border-2 border-ink px-3 py-1.5 text-[11px] font-black transition ${
-              value === o.value ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-sand"
+            className={`border-2 border-ink dark:border-zinc-700 px-3 py-1.5 text-[11px] font-black transition ${
+              value === o.value ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white text-ink hover:bg-sand dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
             }`}
           >
             {o.label}
@@ -1648,7 +1648,7 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
   return (
     <div
       data-testid={`job-card-${index}`}
-      className="group flex flex-col justify-between border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0px_#121212]"
+      className="group flex flex-col justify-between border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#1a1a1c] p-4 shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0px_#121212]"
     >
       <div>
         {/* Top Badges Row */}
@@ -1666,32 +1666,32 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
             <span className="border border-ink bg-brand px-2 py-0.5 text-[10px] font-black text-white uppercase">
               {job.category || "Gig"}
             </span>
-            <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-0.5 text-[10px] font-bold text-ink">
+            <span className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-ink dark:text-zinc-200">
               <MapPin size={10} className="text-brand" /> {job.distance_km ?? 0.5} km away
             </span>
             {/* Credit Cost Badge */}
             <span
               data-testid={`credit-cost-badge-${index}`}
-              className="border border-ink bg-[#FFF3C4] px-2 py-0.5 text-[10px] font-black text-ink flex items-center gap-1 shadow-[1px_1px_0px_#121212]"
+              className="border border-ink dark:border-amber-700 bg-[#FFF3C4] dark:bg-amber-950/60 px-2 py-0.5 text-[10px] font-black text-ink dark:text-amber-200 flex items-center gap-1 shadow-[1px_1px_0px_#121212]"
             >
               <Coins size={10} className="text-brand" /> {creditsCost} {creditsCost === 1 ? "HOP" : "HOPS"}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold text-inkmuted">
+            <span className="text-[10px] font-semibold text-inkmuted dark:text-zinc-400">
               {(job.posted_minutes_ago ?? 25) < 60 ? `${job.posted_minutes_ago ?? 25}m ago` : `${Math.round((job.posted_minutes_ago ?? 120) / 60)}h ago`}
             </span>
             {/* Bookmark heart button */}
             <button
               data-testid={`job-save-btn-${index}`}
               onClick={onToggleSave}
-              className="flex h-7 w-7 items-center justify-center border border-ink bg-white hover:bg-sand transition"
+              className="flex h-7 w-7 items-center justify-center border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-sand dark:hover:bg-zinc-700 transition"
               title={isSaved ? "Remove from saved" : "Save gig"}
             >
               <Heart
                 size={14}
-                className={isSaved ? "text-brand" : "text-inkmuted"}
+                className={isSaved ? "text-brand" : "text-inkmuted dark:text-zinc-400"}
                 fill={isSaved ? "#E65A1E" : "none"}
               />
             </button>
@@ -1699,13 +1699,13 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
         </div>
 
         {/* Title */}
-        <h3 className="mt-3 text-base font-black leading-tight text-ink group-hover:text-brand transition">
+        <h3 className="mt-3 text-base font-black leading-tight text-ink dark:text-white group-hover:text-brand transition">
           {job.title}
         </h3>
 
         {/* Description Snippet & Full Toggle */}
         <div className="mt-2">
-          <p className={`text-xs leading-5 text-inkmuted ${descExpanded ? "whitespace-pre-line text-ink font-medium" : "line-clamp-2"}`}>
+          <p className={`text-xs leading-5 text-inkmuted dark:text-zinc-400 ${descExpanded ? "whitespace-pre-line text-ink dark:text-zinc-200 font-medium" : "line-clamp-2"}`}>
             {job.description}
           </p>
           {job.description && job.description.length > 70 && (
@@ -1724,16 +1724,16 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
         </div>
 
         {/* Employer Info & Rating */}
-        <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2.5">
+        <div className="mt-3 flex items-center justify-between border-t border-ink/10 dark:border-zinc-800 pt-2.5">
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black text-ink">{job.company_name}</span>
+              <span className="text-xs font-black text-ink dark:text-white">{job.company_name}</span>
               {job.verified_employer && (
                 <ShieldCheck size={13} className="text-ok" title="Verified Local Employer" />
               )}
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-inkmuted">
-              <span className="flex items-center gap-0.5 text-ink font-bold">
+            <div className="flex items-center gap-2 text-[11px] text-inkmuted dark:text-zinc-400">
+              <span className="flex items-center gap-0.5 text-ink dark:text-zinc-200 font-bold">
                 <Star size={11} fill="#E65A1E" className="text-brand" /> {job.employer_rating || "4.9"}
               </span>
               <span>•</span>
@@ -1746,7 +1746,7 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
             type="button"
             data-testid={`view-leaderboard-btn-${index}`}
             onClick={onOpenLeaderboard}
-            className="flex items-center gap-1 border border-ink bg-sand hover:bg-white px-2 py-1 text-[9px] font-black uppercase text-ink shadow-[1px_1px_0px_#121212] transition"
+            className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 hover:bg-white dark:hover:bg-zinc-700 px-2 py-1 text-[9px] font-black uppercase text-ink dark:text-zinc-200 shadow-[1px_1px_0px_#121212] transition"
             title="View proposal bidding leaderboard"
           >
             <Trophy size={11} className="text-brand" />
@@ -1756,10 +1756,10 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
       </div>
 
       {/* Bottom Pay & Action Row */}
-      <div className="mt-4 flex items-center justify-between border-t-2 border-ink pt-3">
+      <div className="mt-4 flex items-center justify-between border-t-2 border-ink dark:border-zinc-700 pt-3">
         <div>
-          <span className="text-[9px] font-black tracking-wider text-inkmuted uppercase">FIXED PAY</span>
-          <p className="text-base font-black text-ink">
+          <span className="text-[9px] font-black tracking-wider text-inkmuted dark:text-zinc-400 uppercase">FIXED PAY</span>
+          <p className="text-base font-black text-ink dark:text-white">
             ₹{job.pay_label || (job.pay ? Number(job.pay).toLocaleString("en-IN") : "Fixed")}
           </p>
         </div>
@@ -1769,7 +1769,7 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
             <button
               data-testid={`job-message-btn-${index}`}
               onClick={onMessage}
-              className="flex items-center gap-1.5 border-2 border-ink bg-white px-4 py-2 text-xs font-black tracking-wider text-ink hover:bg-sand transition"
+              className="flex items-center gap-1.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 text-xs font-black tracking-wider text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
             >
               <MessagesSquare size={14} />
               <span>MESSAGE</span>
