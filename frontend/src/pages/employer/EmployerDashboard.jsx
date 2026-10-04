@@ -19,6 +19,7 @@ import { getDistanceSuitability } from "@/lib/locationAreas";
 import ApplicantLeaderboardModal from "@/components/ApplicantLeaderboardModal";
 import CompleteJobReviewModal from "@/components/CompleteJobReviewModal";
 import EditModal from "@/components/EditModal";
+import EditJobModal from "@/components/EditJobModal";
 import ProfileLockedModal from "@/components/ProfileLockedModal";
 
 const labelCls = "text-xs font-semibold text-inkmuted dark:text-[#888] mb-1.5 block";
@@ -64,6 +65,7 @@ export default function EmployerDashboard() {
   const [editForm, setEditForm] = useState({ companyName, employerName, area, phone, industry, bio, gstNumber });
   const [leaderboardJob, setLeaderboardJob] = useState(null);
   const [reviewJob, setReviewJob] = useState(null);
+  const [editingJob, setEditingJob] = useState(null);
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
   const [selectedLockedPro, setSelectedLockedPro] = useState(null);
   const [jobs, setJobs] = useState([]);
@@ -560,11 +562,22 @@ export default function EmployerDashboard() {
                               <span className="text-xs text-inkmuted dark:text-[#888]">
                                 {j.area} · Posted {j.posted_minutes_ago || 10}m ago
                               </span>
+                              {j.updated_at && (
+                                <span className="text-[10px] font-bold text-inkmuted dark:text-zinc-400 bg-sand dark:bg-zinc-800 border border-ink/10 dark:border-zinc-700 px-1.5 py-0.2 rounded">
+                                  Edited
+                                </span>
+                              )}
                             </div>
 
                             <h3 className="text-base font-bold text-ink dark:text-white mt-1.5">
                               {j.title}
                             </h3>
+
+                            {j.description && (
+                              <p className="mt-1.5 text-xs text-inkmuted dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                                {j.description}
+                              </p>
+                            )}
 
                             <div className="mt-2 flex items-center gap-3 text-xs text-inkmuted dark:text-[#888] flex-wrap">
                               <span className="text-ink dark:text-white font-bold text-sm">
@@ -583,6 +596,17 @@ export default function EmployerDashboard() {
 
                           {/* Quick Action Buttons for this Job */}
                           <div className="flex items-center gap-2 w-full md:w-auto shrink-0 flex-wrap">
+                            <button
+                              type="button"
+                              data-testid={`edit-job-btn-${j.id}`}
+                              onClick={() => setEditingJob(j)}
+                              className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition shadow-sm"
+                              title="Edit this gig's salary budget, description, category, and location"
+                            >
+                              <Pencil size={13} className="text-[#E65A1E]" />
+                              <span>EDIT GIG</span>
+                            </button>
+
                             {j.is_completed || j.status === "completed" ? (
                               <span className="inline-flex items-center gap-1 rounded-lg border border-ok/30 bg-ok/10 text-ok px-3 py-2 text-xs font-bold">
                                 <CheckCircle2 size={13} /> COMPLETED &amp; REVIEWED
@@ -959,6 +983,19 @@ export default function EmployerDashboard() {
             employerName={companyName || employerName}
             onSuccess={() => {
               loadDashboardData();
+            }}
+          />
+        )}
+
+        {/* ═══════════ EDIT JOB MODAL ═══════════ */}
+        {editingJob && (
+          <EditJobModal
+            isOpen={Boolean(editingJob)}
+            onClose={() => setEditingJob(null)}
+            job={editingJob}
+            onSuccess={() => {
+              loadDashboardData();
+              setEditingJob(null);
             }}
           />
         )}

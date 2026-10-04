@@ -368,6 +368,56 @@ export function postCustomJob(jobData) {
   return newJob;
 }
 
+export function updateCustomJob(jobId, updates) {
+  const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  const existingIdx = custom.findIndex((j) => String(j.id) === String(jobId));
+
+  const pay = updates.pay !== undefined && updates.pay !== "" ? Number(updates.pay) : undefined;
+  const creditsToApply = pay !== undefined ? calculateHopsForJob(pay) : undefined;
+  const payLabel = pay !== undefined ? `₹${pay.toLocaleString("en-IN")}` : undefined;
+
+  let updatedJob = null;
+
+  if (existingIdx >= 0) {
+    const prev = custom[existingIdx];
+    updatedJob = {
+      ...prev,
+      ...updates,
+      ...(pay !== undefined ? { pay, pay_label: payLabel, credits_to_apply: creditsToApply } : {}),
+      category: updates.category || updates.bucket || prev.category,
+      bucket: updates.bucket || updates.category || prev.bucket,
+      updated_at: new Date().toISOString(),
+    };
+    custom[existingIdx] = updatedJob;
+  } else {
+    // Check if it's in base/seed jobs
+    const all = getStoredJobs();
+    const base = all.find((j) => String(j.id) === String(jobId));
+    if (base) {
+      updatedJob = {
+        ...base,
+        ...updates,
+        ...(pay !== undefined ? { pay, pay_label: payLabel, credits_to_apply: creditsToApply } : {}),
+        category: updates.category || updates.bucket || base.category,
+        bucket: updates.bucket || updates.category || base.bucket,
+        updated_at: new Date().toISOString(),
+      };
+      custom.unshift(updatedJob);
+    } else {
+      updatedJob = {
+        id: jobId,
+        ...updates,
+        ...(pay !== undefined ? { pay, pay_label: payLabel, credits_to_apply: creditsToApply } : {}),
+        updated_at: new Date().toISOString(),
+      };
+      custom.unshift(updatedJob);
+    }
+  }
+
+  localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify(custom));
+  return updatedJob;
+}
+
 // 3. Bookmarking / Saved Items
 export function getSavedJobIds() {
   try {

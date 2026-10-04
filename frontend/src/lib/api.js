@@ -3,6 +3,7 @@ import {
   getLeadById,
   getStoredJobs,
   postCustomJob,
+  updateCustomJob,
   getStoredCatalog,
   getStoredMapPins,
   getStoredUser,
@@ -78,11 +79,25 @@ function mockRouter(path, method = "GET", body = null) {
   }
 
   // 2. Jobs / Gigs
+  if (cleanPath.startsWith("/jobs/") && method === "GET") {
+    const parts = cleanPath.split("/");
+    const jobId = parts[2];
+    const jobs = getStoredJobs();
+    return jobs.find((j) => String(j.id) === String(jobId)) || null;
+  }
+  if ((cleanPath === "/employer/jobs" || (cleanPath.startsWith("/employer/") && cleanPath.endsWith("/jobs"))) && method === "GET") {
+    return getStoredJobs();
+  }
   if (cleanPath.startsWith("/jobs") && method === "GET") {
     return getStoredJobs();
   }
   if (cleanPath === "/employer/jobs" && method === "POST") {
     return postCustomJob(body);
+  }
+  if (cleanPath.startsWith("/employer/jobs/") && (method === "PUT" || method === "PATCH")) {
+    const parts = cleanPath.split("/");
+    const jobId = parts[3];
+    return updateCustomJob(jobId, body || {});
   }
   if (cleanPath.includes("/post-credits")) {
     const u = getStoredUser();

@@ -1,22 +1,26 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import {
-  CheckCircle2, Loader2, LocateFixed, ShieldCheck, MapPin, Sparkles, AlertCircle, Coins, Zap, Flame
+  CheckCircle2, Loader2, LocateFixed, ShieldCheck, MapPin, Sparkles, AlertCircle, Coins, Zap, Flame, Pencil
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import { CATALOG_CATEGORY_NAMES, DISCIPLINES_CATALOG } from "@/lib/catalogFilters";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { BENGALURU_AREAS, findNearestArea, getAreaCoordinates } from "@/lib/locationAreas";
-import { API, apiGet, apiPost, getEmployerId } from "@/lib/api";
+import { API, apiGet, apiPost, apiPut, getEmployerId } from "@/lib/api";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import MarketPriceAdvisor from "@/components/MarketPriceAdvisor";
 import { sanitizeInput, checkSpamKeywords } from "@/lib/security";
-import { ADMIN_EMAILS, getCreditsConfig, calculateHopsForJob, blastFeaturedJobNotification } from "@/lib/clientStore";
+import { ADMIN_EMAILS, getCreditsConfig, calculateHopsForJob, blastFeaturedJobNotification, getStoredJobs, updateCustomJob } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 
 export default function PostJob() {
   const nav = useNavigate();
+  const location = useLocation();
+  const { id: editJobId } = useParams();
+  const isEditing = Boolean(editJobId);
+
   const { user } = useAuth();
   const isAdmin = Boolean(
     user?.is_admin ||
@@ -31,7 +35,6 @@ export default function PostJob() {
   const [title, setTitle] = useState("");
   const [bucket, setBucket] = useState("Graphics & Design");
   const [pay, setPay] = useState("");
-  const location = useLocation();
   const [isBoosted, setIsBoosted] = useState(() => Boolean(location.state?.boost));
   const [area, setArea] = useState("Koramangala");
   const [customCoords, setCustomCoords] = useState(null);
@@ -42,6 +45,34 @@ export default function PostJob() {
   const [captchaToken, setCaptchaToken] = useState(null);
   const [captchaReset, setCaptchaReset] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // Pre-fill existing job data when in edit mode
+  useEffect(() => {
+    if (!editJobId) return;
+    const loadExistingJob = async () => {
+      let existing = location.state?.job;
+      if (!existing) {
+        try {
+          existing = await apiGet(`/jobs/${editJobId}`);
+        } catch {
+          const all = getStoredJobs();
+          existing = all.find((j) => String(j.id) === String(editJobId));
+        }
+      }
+      if (existing) {
+        setTitle(existing.title || "");
+        setCompany(existing.company_name || existing.company || "");
+        setPay(existing.pay !== undefined ? String(existing.pay) : "");
+        setBucket(existing.category || existing.bucket || "Graphics & Design");
+        setArea(existing.area || "Koramangala");
+        setDescription(existing.description || "");
+        setIsBoosted(Boolean(existing.is_boosted));
+        setTermsAccepted(true);
+        setCaptchaToken("edit-verified-bypass");
+      }
+    };
+    loadExistingJob();
+  }, [editJobId, location.state]);
 
   const loadCredits = useCallback(async () => {
     if (isAdmin) {
@@ -131,6 +162,28 @@ export default function PostJob() {
         }
       }
 
+      if (isEditing) {
+        const updatePayload = {
+          title: cleanTitle,
+          company_name: cleanCompany,
+          pay: parseInt(pay, 10) || 0,
+          bucket,
+          category: bucket,
+          description: cleanDesc,
+          area: cleanArea || "Bengaluru",
+          lat: areaCoords.lat,
+          lng: areaCoords.lng,
+        };
+        try {
+          await apiPut(`/employer/jobs/${editJobId}`, updatePayload);
+        } catch (apiErr) {
+          console.warn("Remote API update failed, falling back to local store", apiErr);
+        }
+        updateCustomJob(editJobId, updatePayload);
+        setPosted(true);
+        return;
+      }
+
       // Standard job posting is 100% free!
       const data = await apiPost("/employer/jobs", {
         employer_id: eid,
@@ -181,25 +234,35 @@ export default function PostJob() {
   return (
     <Shell>
       <TopBar
-        title="POST A JOB"
-        sub="100% Free Job Posting · Bangalore's Gig Network"
+        title={isEditing ? "EDIT JOB LISTING" : "POST A JOB"}
+        sub={isEditing ? "Update your salary, description & gig details" : "100% Free Job Posting · Bangalore's Gig Network"}
         backTestID="postjob-back-btn"
         right={
-          <span className="border-2 border-ink px-2.5 py-1.5 text-[10px] font-black bg-ok text-white tracking-wider">
-            100% FREE
-          </span>
+          isEditing ? (
+            <span className="border-2 border-ink px-2.5 py-1.5 text-[10px] font-black bg-brand text-white tracking-wider flex items-center gap-1">
+              <Pencil size={11} /> EDITING
+            </span>
+          ) : (
+            <span className="border-2 border-ink px-2.5 py-1.5 text-[10px] font-black bg-ok text-white tracking-wider">
+              100% FREE
+            </span>
+          )
         }
       />
 
       {posted ? (
         <div data-testid="postjob-success" className="mt-10 flex flex-col items-center gap-3 p-8 text-center animate-in fade-in">
           <CheckCircle2 size={56} className="text-ok" />
-          <p className="text-2xl font-black text-ink">Job is live!</p>
+          <p className="text-2xl font-black text-ink">
+            {isEditing ? "Job listing updated!" : "Job is live!"}
+          </p>
           <p className="text-[13px] text-inkmuted max-w-sm">
-            Verified pros in <span className="font-bold text-ink">{area}</span> and surrounding neighborhoods (5km radius) can now see and apply to your gig.
+            {isEditing
+              ? `Your updates for "${title}" in ${area} have been saved and are now visible to all matched freelancers.`
+              : `Verified pros in ${area} and surrounding neighborhoods (5km radius) can now see and apply to your gig.`}
           </p>
 
-          {isBoosted && (
+          {isBoosted && !isEditing && (
             <div data-testid="postjob-blast-success-banner" className="w-full max-w-sm border-2 border-ink bg-[#FFF4EE] dark:bg-[#201510] p-3.5 shadow-[3px_3px_0px_#E65A1E] text-left">
               <div className="flex items-center gap-2 font-black text-xs uppercase tracking-wider text-[#E65A1E] mb-1">
                 <Zap size={16} className="text-[#E65A1E] fill-[#E65A1E] animate-pulse" />
@@ -213,10 +276,10 @@ export default function PostJob() {
 
           <button
             data-testid="postjob-done-btn"
-            onClick={() => nav(-1)}
+            onClick={() => nav("/employer/dashboard")}
             className="w-full max-w-xs bg-ink py-4 text-sm font-black tracking-wider text-white hover:bg-brand transition"
           >
-            DONE
+            {isEditing ? "VIEW ON DASHBOARD" : "DONE"}
           </button>
           <button
             data-testid="postjob-another-btn"

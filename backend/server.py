@@ -869,8 +869,10 @@ async def list_jobs(freelancer_id: Optional[str] = None, bucket: Optional[str] =
     custom = await db.custom_jobs.find({}, {"_id": 0}).to_list(500)
     custom.sort(key=lambda j: j.get("created_at", ""), reverse=True)
     now = datetime.now(timezone.utc)
+    custom_ids = {j["id"] for j in custom if "id" in j}
+    deduped_seeds = [s for s in SEED_JOBS if s.get("id") not in custom_ids]
 
-    for job in custom + SEED_JOBS:
+    for job in custom + deduped_seeds:
         if bucket and job["bucket"].lower() != bucket.lower():
             continue
         pay = int(job.get("pay", 1000))
@@ -3828,6 +3830,27 @@ class PostJobRequest(BaseModel):
     is_boosted: bool = False
 
 
+class UpdateJobRequest(BaseModel):
+    title: Optional[str] = None
+    company_name: Optional[str] = None
+    bucket: Optional[str] = None
+    category: Optional[str] = None
+    pay: Optional[int] = None
+    description: Optional[str] = None
+    area: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+
+
+CATALOG_TO_BUCKET = {
+    "Graphics & Design": "Creative", "Programming & Tech": "Tech",
+    "Digital Marketing": "Marketing", "Writing & Translation": "Creative",
+    "Video & Animation": "Creative", "AI Services": "Tech",
+    "Music & Audio": "Creative", "Business": "Ops", "Consulting": "Ops",
+    "Creative": "Creative", "Tech": "Tech", "Marketing": "Marketing", "Ops": "Ops",
+}
+
+
 async def _post_credits(employer_id: str) -> dict:
     purchases = await db.plan_purchases.find({"employer_id": employer_id}, {"_id": 0}).to_list(200)
     credits = 0
@@ -3847,15 +3870,7 @@ async def employer_post_credits(employer_id: str):
 
 @api_router.post("/employer/jobs", response_model=Job)
 async def post_job(req: PostJobRequest):
-    # Accept the 9 catalog categories (new UI) plus legacy buckets.
-    catalog_to_bucket = {
-        "Graphics & Design": "Creative", "Programming & Tech": "Tech",
-        "Digital Marketing": "Marketing", "Writing & Translation": "Creative",
-        "Video & Animation": "Creative", "AI Services": "Tech",
-        "Music & Audio": "Creative", "Business": "Ops", "Consulting": "Ops",
-        "Creative": "Creative", "Tech": "Tech", "Marketing": "Marketing", "Ops": "Ops",
-    }
-    if req.bucket not in catalog_to_bucket:
+    if req.bucket not in CATALOG_TO_BUCKET:
         raise HTTPException(status_code=400, detail="Invalid category.")
     if not req.title.strip() or not req.description.strip() or not req.company_name.strip():
         raise HTTPException(status_code=400, detail="Title, company and description are required.")
@@ -3879,7 +3894,7 @@ async def post_job(req: PostJobRequest):
         "id": job_id,
         "title": req.title.strip()[:120],
         "category": req.bucket,
-        "bucket": catalog_to_bucket[req.bucket],
+        "bucket": CATALOG_TO_BUCKET[req.bucket],
         "pay": req.pay,
         "pay_label": f"₹{req.pay:,} fixed",
         "credits_to_apply": credits_to_apply,
@@ -3891,7 +3906,7 @@ async def post_job(req: PostJobRequest):
         "area": req.area.strip()[:40] or "Bengaluru",
         "lat": lat,
         "lng": lng,
-        "description": req.description.strip()[:600],
+        "description": req.description.strip()[:1200],
         "keywords": [req.bucket.lower(), req.title.strip().lower()],
     }
     await db.custom_jobs.insert_one({
@@ -3914,9 +3929,116 @@ async def post_job(req: PostJobRequest):
     return Job(**job)
 
 
+@api_router.put("/employer/jobs/{job_id}", response_model=Job)
+@api_router.patch("/employer/jobs/{job_id}", response_model=Job)
+async def update_job(job_id: str, req: UpdateJobRequest):
+    """Allows employers to edit their job listing: salary/budget, description, title, category, area, etc."""
+    job = await db.custom_jobs.find_one({"$or": [{"id": job_id}, {"_id": job_id}]})
+    if not job:
+        seed = next((j for j in SEED_JOBS if j.get("id") == job_id), None)
+        if not seed:
+            raise HTTPException(status_code=404, detail="Job listing not found.")
+        job = dict(seed)
+        job["_id"] = job_id
+        job["employer_id"] = "seed_override"
+        job["created_at"] = _now_iso()
+
+    updates = {}
+    if req.title is not None and req.title.strip():
+        updates["title"] = req.title.strip()[:120]
+    if req.company_name is not None and req.company_name.strip():
+        updates["company_name"] = req.company_name.strip()[:60]
+    cat = req.category or req.bucket
+    if cat is not None and cat.strip():
+        cat = cat.strip()
+        if cat in CATALOG_TO_BUCKET:
+            updates["category"] = cat
+            updates["bucket"] = CATALOG_TO_BUCKET[cat]
+    if req.pay is not None:
+        if req.pay < 500:
+            raise HTTPException(status_code=400, detail="Pay must be at least ₹500.")
+        updates["pay"] = req.pay
+        updates["pay_label"] = f"₹{req.pay:,} fixed"
+        updates["credits_to_apply"] = calculate_hops_for_job(req.pay)
+    if req.description is not None and req.description.strip():
+        updates["description"] = req.description.strip()[:1200]
+    if req.area is not None and req.area.strip():
+        updates["area"] = req.area.strip()[:40]
+    if req.lat is not None:
+        updates["lat"] = req.lat
+    if req.lng is not None:
+        updates["lng"] = req.lng
+
+    new_cat = updates.get("category", job.get("category", "General"))
+    new_title = updates.get("title", job.get("title", ""))
+    updates["keywords"] = [new_cat.lower(), new_title.lower()]
+    updates["updated_at"] = _now_iso()
+
+    await db.custom_jobs.update_one(
+        {"$or": [{"id": job_id}, {"_id": job_id}]},
+        {"$set": updates},
+        upsert=True
+    )
+
+    # If featured blast exists, update title/pay/area as well
+    await db.featured_blasts.update_many(
+        {"job_id": job_id},
+        {"$set": {k: v for k, v in updates.items() if k in ["title", "company_name", "pay", "area", "lat", "lng"]}}
+    )
+
+    updated_doc = await db.custom_jobs.find_one({"$or": [{"id": job_id}, {"_id": job_id}]}, {"_id": 0})
+    return Job(**{k: v for k, v in updated_doc.items() if k in Job.model_fields})
+
+
+@api_router.get("/jobs/{job_id}", response_model=Job)
+async def get_job_by_id(job_id: str):
+    doc = await db.custom_jobs.find_one({"$or": [{"id": job_id}, {"_id": job_id}]}, {"_id": 0})
+    if not doc:
+        seed = next((j for j in SEED_JOBS if j.get("id") == job_id), None)
+        if seed:
+            doc = dict(seed)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    pay = int(doc.get("pay", 1000))
+    credits_to_apply = doc.get("credits_to_apply") or calculate_hops_for_job(pay)
+    return Job(
+        id=doc["id"],
+        title=doc["title"],
+        category=doc.get("category", doc.get("bucket", "General")),
+        bucket=doc.get("bucket", "Creative"),
+        pay=pay,
+        pay_label=doc.get("pay_label", f"₹{pay:,} fixed"),
+        distance_km=float(doc.get("distance_km", 1.0)),
+        posted_minutes_ago=int(doc.get("posted_minutes_ago", 1)),
+        company_name=doc.get("company_name", "Company"),
+        area=doc.get("area", "Bengaluru"),
+        description=doc.get("description", ""),
+        keywords=doc.get("keywords", []),
+        credits_to_apply=credits_to_apply,
+        is_boosted=bool(doc.get("is_boosted", False)),
+        boost_expires_at=doc.get("boost_expires_at"),
+    )
+
+
 @api_router.get("/employer/{employer_id}/jobs", response_model=List[Job])
 async def employer_jobs(employer_id: str):
     docs = await db.custom_jobs.find({"employer_id": employer_id}, {"_id": 0}).to_list(200)
+    docs.sort(key=lambda j: j.get("created_at", ""), reverse=True)
+    return [Job(**{k: v for k, v in d.items() if k in Job.model_fields}) for d in docs]
+
+
+@api_router.get("/employer/jobs", response_model=List[Job])
+async def list_employer_jobs(request: Request, employer_id: Optional[str] = None):
+    query = {}
+    if employer_id:
+        query["employer_id"] = employer_id
+    else:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            sess = await db.user_sessions.find_one({"session_token": auth_header.split(" ", 1)[1].strip()})
+            if sess and sess.get("user_id"):
+                query["employer_id"] = sess["user_id"]
+    docs = await db.custom_jobs.find(query, {"_id": 0}).to_list(200)
     docs.sort(key=lambda j: j.get("created_at", ""), reverse=True)
     return [Job(**{k: v for k, v in d.items() if k in Job.model_fields}) for d in docs]
 
