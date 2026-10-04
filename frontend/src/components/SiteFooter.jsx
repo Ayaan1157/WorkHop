@@ -109,6 +109,11 @@ export default function SiteFooter() {
                   Browse Categories
                 </Link>
               </li>
+              <li>
+                <Link to="/reviews" className="hover:text-white transition">
+                  Client Reviews &amp; Stories
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -157,6 +162,14 @@ export default function SiteFooter() {
                   Community Guidelines
                 </Link>
               </li>
+              <li>
+                <Link to="/reviews" className="hover:text-white transition flex items-center gap-1.5">
+                  <span>Verified Reviews</span>
+                  <span className="border border-brand/50 bg-brand/20 px-1 py-0.2 text-[9px] font-black text-brand uppercase">
+                    ★ 4.9
+                  </span>
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -194,6 +207,10 @@ export default function SiteFooter() {
         <div className="mt-10 sm:mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-stone-400 font-medium text-center sm:text-left">
           <p>© 2026 WorkHop Technologies Pvt. Ltd. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-stone-400">
+            <Link to="/reviews" className="hover:text-white transition underline underline-offset-2 font-bold text-stone-300">
+              ★ 1,400+ Verified Reviews
+            </Link>
+            <span className="hidden xs:inline">·</span>
             <Link to="/grievance" className="hover:text-white transition underline underline-offset-2 font-bold text-brand">
               ⚖️ Grievance Redressal
             </Link>

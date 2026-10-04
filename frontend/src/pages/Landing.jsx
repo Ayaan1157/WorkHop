@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   ChevronLeft, Mail, KeyRound, ArrowRight, LogOut, UserCircle2, Loader2,
   MapPin, ShieldCheck, Zap, Sparkles, PlusCircle, CheckCircle, Navigation, Users, Briefcase,
-  User, Building2, LocateFixed, CheckCircle2, Eye, EyeOff, Sun, Moon, Menu, X
+  User, Building2, LocateFixed, CheckCircle2, Eye, EyeOff, Sun, Moon, Menu, X, Star
 } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -926,6 +926,7 @@ export default function Landing() {
                 { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs", forRole: "freelancer" },
                 { label: "LIVE MAP", path: "/map", testId: "nav-map" },
                 { label: "CATEGORIES", path: "/categories", testId: "nav-categories" },
+                { label: "REVIEWS", path: "/reviews", testId: "nav-reviews" },
                 { label: "PLANS", path: "/employer/plans", testId: "nav-plans" },
               ].filter((link) => {
                 if (!user) return true;
@@ -1037,6 +1038,7 @@ export default function Landing() {
                   { label: "FIND GIGS", path: "/freelancer/jobs", forRole: "freelancer" },
                   { label: "LIVE MAP", path: "/map" },
                   { label: "CATEGORIES", path: "/categories" },
+                  { label: "REVIEWS", path: "/reviews" },
                   { label: "PLANS", path: "/employer/plans" },
                 ].filter((link) => {
                   if (!user) return true;
@@ -1228,6 +1230,182 @@ export default function Landing() {
             <p className="mt-1.5 text-xs leading-5 text-inkmuted dark:text-stone-400">
               Transparent 1 Hop = ₹15 bidding. Direct client payments with zero platform commission taken from your earnings.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Verified Community Reviews Section */}
+      <section id="reviews" className="border-b-2 border-ink bg-[#FAFAF8] dark:bg-[#151515] py-12 sm:py-16 px-4 sm:px-10 lg:px-16 transition-colors">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b-2 border-ink dark:border-white/10">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 border border-brand/40 bg-brand/10 dark:bg-brand/20 px-3 py-1 text-xs font-black uppercase tracking-wider text-brand mb-3">
+              <Star size={14} fill="#E65A1E" className="text-brand" />
+              <span>VERIFIED BENGALURU REVIEWS</span>
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-black text-ink dark:text-white leading-tight">
+              Real gigs. Real founders. Real Bangalore talent.
+            </h2>
+            <p className="mt-2 text-xs sm:text-sm text-inkmuted dark:text-stone-400 font-medium">
+              Over 1,400+ gigs completed across Indiranagar, Koramangala, HSR Layout, and Whitefield with a 4.9★ rating.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/reviews"
+              className="inline-flex items-center gap-2 border-2 border-ink bg-brand px-5 py-3 text-xs sm:text-sm font-black uppercase text-white shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 active:translate-x-1 active:translate-y-1"
+            >
+              <span>VIEW ALL 1,400+ REVIEWS</span>
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+
+        {/* 3 Featured Review Cards */}
+        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+          
+          {/* Card 1 */}
+          <div className="border-2 border-ink bg-white dark:bg-[#1C1C1C] p-6 shadow-[3px_3px_0px_#121212] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={15} fill="#E65A1E" className="text-brand" />
+                  ))}
+                </div>
+                <span className="border border-green-600 bg-green-500/10 dark:bg-green-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-green-700 dark:text-green-400">
+                  VERIFIED GIG
+                </span>
+              </div>
+              
+              <h4 className="text-sm font-black text-ink dark:text-white">
+                "Delivered ahead of schedule. Pixel-perfect Tailwind &amp; flawless mobile responsiveness."
+              </h4>
+              <p className="mt-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
+                Outstanding communication on WhatsApp. Escrow milestone settlement was released instantly upon sign-off.
+              </p>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-stone-200 dark:border-white/10">
+              <div className="flex items-center justify-between text-xs">
+                <div>
+                  <p className="font-black text-ink dark:text-white">Siddharth Rao</p>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">UrbanKrafts • Indiranagar (0.8km)</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-black text-brand">₹28,000</span>
+                  <p className="text-[10px] text-stone-400">Escrow Settled</p>
+                </div>
+              </div>
+              <div className="mt-2 text-[11px] text-stone-500 dark:text-stone-400 bg-sand dark:bg-[#252525] p-2 border border-ink/20">
+                Worked with: <span className="font-bold text-ink dark:text-stone-200">Karthik Raja</span> (UI/UX)
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div className="border-2 border-ink bg-white dark:bg-[#1C1C1C] p-6 shadow-[3px_3px_0px_#121212] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={15} fill="#E65A1E" className="text-brand" />
+                  ))}
+                </div>
+                <span className="border border-brand/40 bg-brand/10 dark:bg-brand/20 px-2 py-0.5 text-[10px] font-black uppercase text-brand">
+                  0% PLATFORM FEE
+                </span>
+              </div>
+              
+              <h4 className="text-sm font-black text-ink dark:text-white">
+                "Super responsive and understands the Bengaluru cafe aesthetic perfectly."
+              </h4>
+              <p className="mt-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
+                Sent 3 strong creative directions within 24 hours. Settled directly via UPI without any platform fee cuts.
+              </p>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-stone-200 dark:border-white/10">
+              <div className="flex items-center justify-between text-xs">
+                <div>
+                  <p className="font-black text-ink dark:text-white">Karan Somani</p>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">BrewBlock • Koramangala (1.2km)</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-black text-brand">₹16,000</span>
+                  <p className="text-[10px] text-stone-400">Direct Pay</p>
+                </div>
+              </div>
+              <div className="mt-2 text-[11px] text-stone-500 dark:text-stone-400 bg-sand dark:bg-[#252525] p-2 border border-ink/20">
+                Worked with: <span className="font-bold text-ink dark:text-stone-200">Sneha Rao</span> (Brand Designer)
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="border-2 border-ink bg-white dark:bg-[#1C1C1C] p-6 shadow-[3px_3px_0px_#121212] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={15} fill="#E65A1E" className="text-brand" />
+                  ))}
+                </div>
+                <span className="border border-green-600 bg-green-500/10 dark:bg-green-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-green-700 dark:text-green-400">
+                  VERIFIED GIG
+                </span>
+              </div>
+              
+              <h4 className="text-sm font-black text-ink dark:text-white">
+                "Accurate architectural dielines and quick kickoff at an HSR Layout cafe."
+              </h4>
+              <p className="mt-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
+                Quick 10-minute kickoff at an HSR cafe to align on elevations. WorkHop's 5km matching made it seamless.
+              </p>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-stone-200 dark:border-white/10">
+              <div className="flex items-center justify-between text-xs">
+                <div>
+                  <p className="font-black text-ink dark:text-white">Anita Jayaram</p>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">LedgerLite • HSR Layout (1.5km)</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-black text-brand">₹32,000</span>
+                  <p className="text-[10px] text-stone-400">Escrow Settled</p>
+                </div>
+              </div>
+              <div className="mt-2 text-[11px] text-stone-500 dark:text-stone-400 bg-sand dark:bg-[#252525] p-2 border border-ink/20">
+                Worked with: <span className="font-bold text-ink dark:text-stone-200">Rahul Verma</span> (CAD Drafter)
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom Banner */}
+        <div className="mt-8 border-2 border-ink bg-brand/10 dark:bg-brand/20 p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-black text-ink dark:text-white uppercase tracking-wide">
+              Have you completed a gig with a Bengaluru freelancer or client?
+            </p>
+            <p className="text-xs text-stone-600 dark:text-stone-300 mt-0.5">
+              Leave verified feedback and help build the most transparent hyperlocal network in Bangalore.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <Link
+              to="/reviews"
+              className="border-2 border-ink bg-white dark:bg-[#222] text-ink dark:text-white px-4 py-2.5 text-xs font-black uppercase hover:bg-stone-100 transition shadow-[2px_2px_0px_#121212]"
+            >
+              Browse All Reviews
+            </Link>
+            <Link
+              to="/reviews"
+              className="border-2 border-ink bg-brand text-white px-4 py-2.5 text-xs font-black uppercase hover:bg-black transition shadow-[2px_2px_0px_#121212]"
+            >
+              ★ Leave A Review
+            </Link>
           </div>
         </div>
       </section>

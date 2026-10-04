@@ -9,6 +9,7 @@ import Legal from "@/pages/Legal";
 import Support from "@/pages/Support";
 import Grievance from "@/pages/Grievance";
 import Blog from "@/pages/Blog";
+import Reviews from "@/pages/Reviews";
 import LiveMap from "@/pages/LiveMap";
 import Admin from "@/pages/Admin";
 import Chat from "@/pages/Chat";
@@ -54,6 +55,7 @@ function App() {
             <Route path="/categories" element={<Categories />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<Blog />} />
+            <Route path="/reviews" element={<Reviews />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="/support" element={<Support />} />
             <Route path="/grievance" element={<Grievance />} />
