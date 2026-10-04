@@ -235,7 +235,9 @@ export default function FreelancerProfile() {
     try {
       const data = await apiGet(`/freelancer/${freelancerId}/full-profile`);
       if (data && typeof data === "object") {
-        setProfile((prev) => ({ ...prev, ...data }));
+        const cleaned = { ...data };
+        delete cleaned.upwork_url;
+        setProfile((prev) => ({ ...prev, ...cleaned, upwork_url: "" }));
       }
     } catch {
       /* use default */
@@ -357,8 +359,10 @@ export default function FreelancerProfile() {
     closeEdit();
   };
 
-  const saveLinkedAccounts = (github_url, github_username, upwork_url) => {
-    persist({ ...profile, github_url, github_username, upwork_url });
+  const saveLinkedAccounts = (github_url, github_username) => {
+    const updated = { ...profile, github_url, github_username, upwork_url: "" };
+    delete updated.upwork_url;
+    persist(updated);
     closeEdit();
   };
 
@@ -632,7 +636,6 @@ export default function FreelancerProfile() {
                   openEdit("linked", {
                     github_url: profile.github_url,
                     github_username: profile.github_username,
-                    upwork_url: profile.upwork_url,
                   })
                 }
               >
@@ -647,23 +650,8 @@ export default function FreelancerProfile() {
                     <span>{profile.github_username || "GitHub"}</span>
                     <ExternalLink size={12} className="text-inkmuted dark:text-[#555]" />
                   </a>
-                ) : null}
-                {profile.upwork_url ? (
-                  <a
-                    href={profile.upwork_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-ink dark:text-[#ccc] hover:text-[#E65A1E] transition mt-1"
-                  >
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#E65A1E] text-white text-[8px] font-bold">
-                      U
-                    </span>
-                    <span>Upwork</span>
-                    <ExternalLink size={12} className="text-inkmuted dark:text-[#555]" />
-                  </a>
-                ) : null}
-                {!profile.github_url && !profile.upwork_url && (
-                  <p className="text-xs text-inkmuted dark:text-[#555] italic">Link your accounts</p>
+                ) : (
+                  <p className="text-xs text-inkmuted dark:text-[#555] italic">Link your GitHub account</p>
                 )}
               </SidebarSection>
             </aside>
@@ -1603,8 +1591,7 @@ export default function FreelancerProfile() {
         onSave={() =>
           saveLinkedAccounts(
             editData?.github_url,
-            editData?.github_username,
-            editData?.upwork_url
+            editData?.github_username
           )
         }
       >
@@ -1640,26 +1627,6 @@ export default function FreelancerProfile() {
                   className={inputCls}
                 />
               </div>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-lg bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222]">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E65A1E] text-white text-[10px] font-bold">
-                U
-              </span>
-              <span className="text-sm font-semibold text-ink dark:text-white">Upwork</span>
-            </div>
-            <div>
-              <p className={labelCls}>Upwork Profile URL</p>
-              <input
-                value={editData?.upwork_url || ""}
-                onChange={(e) =>
-                  setEditData((d) => ({ ...d, upwork_url: e.target.value }))
-                }
-                placeholder="https://www.upwork.com/freelancers/~yourid"
-                className={inputCls}
-              />
             </div>
           </div>
         </div>

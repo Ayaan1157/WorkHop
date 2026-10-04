@@ -653,7 +653,7 @@ export function getProfileCompletion(user) {
     { key: "skills", label: "Skills Listed (3+ recommended)", completed: profile.skills.length >= 3, weight: 10 },
     { key: "description", label: "Professional Bio Written", completed: !!(profile.description && profile.description.length > 20), weight: 10 },
     { key: "languages", label: "Languages Added", completed: profile.languages.length > 0, weight: 7 },
-    { key: "linked", label: "Linked Accounts (GitHub/Upwork)", completed: !!(profile.github_url || profile.upwork_url), weight: 7 },
+    { key: "linked", label: "Linked Accounts (GitHub)", completed: !!profile.github_url, weight: 7 },
   ];
   const percentage = checks.reduce((acc, curr) => (curr.completed ? acc + curr.weight : acc), 0);
   return { percentage, checks };
@@ -1341,7 +1341,6 @@ export function getDefaultFreelancerProfile() {
     // Linked Accounts
     github_url: "",
     github_username: "",
-    upwork_url: "",
 
     // Availability
     hours_per_week: "More than 30 hrs/week",
@@ -1425,7 +1424,9 @@ export function getFreelancerProfile() {
   const raw = localStorage.getItem(FREELANCER_PROFILE_KEY);
   if (raw) {
     try {
-      return { ...getDefaultFreelancerProfile(), ...JSON.parse(raw) };
+      const parsed = JSON.parse(raw);
+      delete parsed.upwork_url;
+      return { ...getDefaultFreelancerProfile(), ...parsed, upwork_url: "" };
     } catch {
       /* ignore */
     }
@@ -1434,8 +1435,10 @@ export function getFreelancerProfile() {
 }
 
 export function saveFreelancerProfile(profile) {
-  localStorage.setItem(FREELANCER_PROFILE_KEY, JSON.stringify(profile));
-  return profile;
+  const cleaned = { ...profile };
+  delete cleaned.upwork_url;
+  localStorage.setItem(FREELANCER_PROFILE_KEY, JSON.stringify(cleaned));
+  return cleaned;
 }
 
 // 12. Site Settings & Broadcast Banner

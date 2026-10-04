@@ -312,9 +312,9 @@ export default function Onboarding() {
             <div className="flex flex-wrap gap-2">{["English", "Hindi", "Kannada", "Tamil", "Telugu", "Malayalam"].map((l) => { const on = langs.includes(l); return <button key={l} data-testid={`lang-chip-${l.toLowerCase()}`} onClick={() => state.paid && setLangs((p) => on ? p.filter((x) => x !== l) : [...p, l])} className={chip(on)}>{l.toUpperCase()}</button>; })}</div>
             <Labeled label="Short Intro — employers see this before unlocking you" testID="intro-input" value={intro} onChange={(v) => setIntro(v.slice(0, 400))} placeholder="e.g. Logo designer with 5 yrs experience…" disabled={!state.paid} multiline />
 
-            {/* FIVERR & UPWORK PROFILE IMPORT */}
+            {/* FIVERR PROFILE IMPORT */}
             <div className="border-2 border-ink p-3.5 bg-white shadow-[2px_2px_0px_#121212]">
-              <p className={fieldLabel}>DO YOU HAVE A FIVERR OR UPWORK PROFILE?</p>
+              <p className={fieldLabel}>DO YOU HAVE A FIVERR PROFILE?</p>
               <p className="text-[11px] text-inkmuted mt-0.5 mb-2.5">
                 Transfer your existing ratings &amp; review count to show a verified badge on your WorkHop profile and rank higher.
               </p>
@@ -322,7 +322,12 @@ export default function Onboarding() {
                 <button
                   type="button"
                   data-testid="external-yes-btn"
-                  onClick={() => state.paid && setHasExternal(true)}
+                  onClick={() => {
+                    if (state.paid) {
+                      setHasExternal(true);
+                      setExtPlatform("fiverr");
+                    }
+                  }}
                   className={`flex-1 py-2 text-xs font-black border-2 border-ink transition ${
                     hasExternal === true ? "bg-ink text-white shadow-[1.5px_1.5px_0px_#121212]" : "bg-white text-ink hover:bg-sand"
                   }`}
@@ -350,28 +355,18 @@ export default function Onboarding() {
                     <p className="text-[11px] font-black tracking-wider text-ink uppercase">TRANSFER YOUR RATING &amp; REVIEWS</p>
                   </div>
 
-                  <div className="flex gap-2 mt-1">
-                    {["fiverr", "upwork"].map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        data-testid={`ext-platform-${p}`}
-                        onClick={() => setExtPlatform(p)}
-                        className={`flex-1 py-2 border-2 border-ink text-xs font-black uppercase transition ${
-                          extPlatform === p ? "bg-brand text-white shadow-[1.5px_1.5px_0px_#121212]" : "bg-white text-ink hover:bg-sand"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    ))}
+                  <div className="mt-1">
+                    <span className="border-2 border-ink bg-brand text-white px-3 py-1.5 text-xs font-black uppercase inline-block shadow-[1.5px_1.5px_0px_#121212]">
+                      Fiverr
+                    </span>
                   </div>
 
                   <Labeled
-                    label={`Your ${extPlatform === "fiverr" ? "Fiverr" : "Upwork"} Profile URL`}
+                    label="Your Fiverr Profile URL"
                     testID="ext-url-input"
                     value={extUrl}
                     onChange={setExtUrl}
-                    placeholder={extPlatform === "fiverr" ? "https://www.fiverr.com/username" : "https://www.upwork.com/freelancers/~01xxxx"}
+                    placeholder="https://www.fiverr.com/username"
                     disabled={!state.paid}
                   />
 
@@ -411,7 +406,7 @@ export default function Onboarding() {
             </div>
 
             <Labeled label="LinkedIn Profile URL (Optional)" testID="linkedin-input" value={linkedin} onChange={setLinkedin} placeholder="linkedin.com/in/yourname" disabled={!state.paid} />
-            <Labeled label="Professional Website, Behance or Linktree (Optional if Fiverr/Upwork provided)" testID="portfolio-input" value={portfolio} onChange={setPortfolio} placeholder="yourportfolio.com" disabled={!state.paid} />
+            <Labeled label="Professional Website, Behance or Linktree (Optional if Fiverr provided)" testID="portfolio-input" value={portfolio} onChange={setPortfolio} placeholder="yourportfolio.com" disabled={!state.paid} />
           </Step>
 
           {/* STEP 4 */}
