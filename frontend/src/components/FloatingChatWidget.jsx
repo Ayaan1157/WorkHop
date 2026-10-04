@@ -125,14 +125,18 @@ export default function FloatingChatWidget({ role = "employer" }) {
     const text = inputMessage.trim();
     if ((!text && !attachment) || sending || !selectedConv) return;
 
-    // Screen message text for phone numbers or emails
+    const isConvHired = selectedConv?.status === "hired" || selectedConv?.status === "completed";
+
+    // Screen message text for phone numbers or emails before hiring
     if (text) {
       const textScan = scanText(text);
       if (textScan?.hasViolations) {
-        alert(
-          `Message blocked: Contact details detected (${textScan.violations.map((v) => v.label).join(", ")}). For safety and contract protection, sharing phone numbers or emails is not permitted.`
-        );
-        return;
+        if (!isConvHired) {
+          alert(
+            `Message blocked: Contact details detected (${textScan.violations.map((v) => v.label).join(", ")}).\n\nPhone numbers and contacts cannot be shared before hiring. Once the candidate is hired, direct phone numbers and contacts can be exchanged freely!`
+          );
+          return;
+        }
       }
     }
 
@@ -172,14 +176,18 @@ export default function FloatingChatWidget({ role = "employer" }) {
       return;
     }
 
-    // Screen attachment for contact info (phone numbers, emails, external links)
-    const scanRes = await scanUploadFile(file);
-    if (scanRes?.hasViolations) {
-      alert(
-        `Attachment blocked: Prohibited contact info detected (${scanRes.violations.map((v) => v.label).join(", ")}). Sharing phone numbers, emails, or personal contacts is not allowed.`
-      );
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
+    const isConvHired = selectedConv?.status === "hired" || selectedConv?.status === "completed";
+
+    // Screen attachment for contact info before hiring
+    if (!isConvHired) {
+      const scanRes = await scanUploadFile(file);
+      if (scanRes?.hasViolations) {
+        alert(
+          `Attachment blocked: Phone numbers/contact details detected (${scanRes.violations.map((v) => v.label).join(", ")}).\n\nSharing contacts before hiring is prohibited. Please hire the pro first to unlock contact sharing.`
+        );
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
     }
 
     setAttachment({
@@ -476,6 +484,20 @@ export default function FloatingChatWidget({ role = "employer" }) {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {role === "employer" && selectedConv.status !== "hired" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsOpen(false);
+                            const convId = selectedConv.conversation_id || selectedConv.id;
+                            nav(`/chat/${convId}?role=employer`);
+                          }}
+                          className="flex items-center gap-1 border-2 border-ink bg-brand px-3 py-1 text-[11px] font-black uppercase text-white shadow-[1.5px_1.5px_0px_#121212] hover:bg-black transition animate-pulse"
+                          title="Open chat to hire and unlock direct phone numbers"
+                        >
+                          <Sparkles size={12} /> HIRE PRO
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
@@ -577,7 +599,11 @@ export default function FloatingChatWidget({ role = "employer" }) {
                         type="text"
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
-                        placeholder="Type your message… (Press Enter to send)"
+                        placeholder={
+                          selectedConv?.status === "hired" || selectedConv?.status === "completed"
+                            ? "Type your message… (Phone & WhatsApp unlocked)"
+                            : "Type your message… (Phone numbers unlocked after hiring)"
+                        }
                         className="flex-1 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs font-bold text-ink dark:text-white placeholder:text-inkmuted dark:placeholder:text-zinc-500 focus:outline-none"
                       />
 

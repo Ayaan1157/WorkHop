@@ -2759,10 +2759,17 @@ async def send_message(conversation_id: str, req: SendMessageRequest):
     text = (req.text or "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
-    if _check_contact_violations(text):
+    # Contact details enforcement: blocked before hire, allowed once hired
+    is_hired = conv.get("status") in ("hired", "completed")
+    if not is_hired:
+        deal = await db.deals.find_one({"conversation_id": conversation_id})
+        if deal and deal.get("status") in ("funded", "acknowledged", "in_progress", "submitted", "work_submitted", "work_confirmed", "approved", "completed"):
+            is_hired = True
+
+    if not is_hired and _check_contact_violations(text):
         raise HTTPException(
             status_code=400,
-            detail="Sharing phone numbers or email addresses in chat messages is prohibited on WorkHop."
+            detail="Sharing phone numbers or contact details is prohibited before hiring. Please hire the freelancer to unlock phone number sharing."
         )
     message_id = str(uuid.uuid4())
     created_at = _now_iso()
@@ -2793,6 +2800,110 @@ async def send_message(conversation_id: str, req: SendMessageRequest):
         except Exception as pe:
             logger.warning(f"Could not log push notification: {pe}")
     return ChatMessage(**msg)
+
+
+class HireInChatRequest(BaseModel):
+    agreed_amount_paise: Optional[int] = None
+    payment_mode: Optional[str] = "escrow"
+
+
+@api_router.post("/chats/{conversation_id}/hire")
+async def hire_in_chat(conversation_id: str, req: HireInChatRequest = Body(default=None)):
+    """Hires a freelancer directly from the top of the chat box and unlocks phone number sharing."""
+    conv = await db.conversations.find_one({"_id": conversation_id})
+    if not conv:
+        conv = await db.conversations.find_one({"conversation_id": conversation_id})
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+
+    now_iso = _now_iso()
+    await db.conversations.update_one(
+        {"_id": conv["_id"]},
+        {"$set": {"status": "hired", "hired_at": now_iso}}
+    )
+
+    deal = await db.deals.find_one({"conversation_id": conversation_id})
+    mode = req.payment_mode if req and req.payment_mode in ("escrow", "direct") else "escrow"
+    new_deal_status = "funded" if mode == "escrow" else "acknowledged"
+
+    if deal:
+        upd = {
+            "status": new_deal_status,
+            "employer_ack_at": now_iso,
+            "updated_at": now_iso,
+        }
+        if req and req.agreed_amount_paise and req.agreed_amount_paise > 0:
+            upd["agreed_amount_paise"] = req.agreed_amount_paise
+            upd["freelancer_net_paise"] = req.agreed_amount_paise - int(round(req.agreed_amount_paise * deal.get("commission_rate", 0.05)))
+        await db.deals.update_one({"deal_id": deal["deal_id"]}, {"$set": upd})
+        deal_id = deal["deal_id"]
+    else:
+        deal_id = f"deal_{uuid.uuid4().hex[:12]}"
+        agreed_paise = req.agreed_amount_paise if req and req.agreed_amount_paise else 1500000
+        commission_rate = 0.05 if mode == "escrow" else 0.0
+        commission_paise = int(round(agreed_paise * commission_rate))
+        deal_doc = {
+            "_id": deal_id,
+            "deal_id": deal_id,
+            "conversation_id": conversation_id,
+            "job_id": conv.get("job_id", ""),
+            "job_title": conv.get("job_title", "Gig"),
+            "employer_id": conv.get("company_name", "employer"),
+            "employer_name": conv.get("company_name", "Employer"),
+            "freelancer_id": conv.get("freelancer_id", ""),
+            "freelancer_name": conv.get("freelancer_name", "Verified Pro"),
+            "payment_mode": mode,
+            "agreed_amount_paise": agreed_paise,
+            "commission_rate": commission_rate,
+            "commission_paise": commission_paise,
+            "freelancer_net_paise": agreed_paise - commission_paise,
+            "status": new_deal_status,
+            "employer_ack_at": now_iso,
+            "created_at": now_iso,
+            "updated_at": now_iso,
+        }
+        await db.deals.insert_one(deal_doc)
+
+    await _create_deal_event(
+        deal_id=deal_id,
+        conversation_id=conversation_id,
+        actor_role="employer",
+        event_type="hired",
+        title="🎉 Freelancer Hired!",
+        description=f"Employer hired {conv.get('freelancer_name', 'the talent')}. Direct phone number & contact sharing is now officially unlocked!",
+    )
+
+    system_msg_id = str(uuid.uuid4())
+    system_msg = {
+        "_id": system_msg_id,
+        "message_id": system_msg_id,
+        "conversation_id": conversation_id,
+        "sender_role": "system",
+        "text": f"🎉 Employer has officially hired {conv.get('freelancer_name', 'the Pro')}! Phone number and direct WhatsApp sharing is now unlocked for both parties.",
+        "created_at": now_iso,
+    }
+    await db.messages.insert_one(system_msg)
+
+    try:
+        await db.push_logs.insert_one({
+            "_id": str(uuid.uuid4()),
+            "title": "🎉 You've Been Hired!",
+            "body": f"Employer {conv.get('company_name', 'Client')} officially hired you! Phone numbers & direct contacts are unlocked.",
+            "url": f"/chat/{conversation_id}?role=freelancer",
+            "category": "hired_alerts",
+            "recipient_id": conv.get("freelancer_id"),
+            "conversation_id": conversation_id,
+            "created_at": now_iso,
+        })
+    except Exception as pe:
+        logger.warning(f"Push log error: {pe}")
+
+    return {
+        "ok": True,
+        "status": "hired",
+        "message": "Freelancer successfully hired! Phone numbers are now unlocked.",
+        "deal_status": new_deal_status,
+    }
 
 
 # ============== Map pins (OpenStreetMap, Bengaluru) ==============

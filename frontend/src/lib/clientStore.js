@@ -1312,6 +1312,33 @@ export function getStoredChats() {
   ];
 }
 
+export function setStoredChatStatus(conversationId, status) {
+  try {
+    const raw = localStorage.getItem(CHATS_KEY) || "[]";
+    const chats = JSON.parse(raw);
+    let found = false;
+    const updated = chats.map((c) => {
+      if (c.id === conversationId || c.conversation_id === conversationId) {
+        found = true;
+        return { ...c, status, updated_at: new Date().toISOString() };
+      }
+      return c;
+    });
+    if (!found && conversationId) {
+      updated.push({
+        id: conversationId,
+        conversation_id: conversationId,
+        status,
+        updated_at: new Date().toISOString(),
+      });
+    }
+    localStorage.setItem(CHATS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [];
+  }
+}
+
 // 11. Full Freelancer Profile (Upwork-style)
 export function getDefaultFreelancerProfile() {
   return {

@@ -46,6 +46,7 @@ import {
   getStoredGrievances,
   saveGrievanceTicket,
   updateGrievanceStatus,
+  setStoredChatStatus,
 } from "./clientStore";
 import { sendBrowserPushNotification, sendTestPushNotification } from "./pushNotifications";
 
@@ -495,10 +496,26 @@ function mockRouter(path, method = "GET", body = null) {
     }
     return { id: `m-${Date.now()}`, sender_role: body?.sender_role || "user", text: body?.text, created_at: new Date().toISOString() };
   }
+  if (cleanPath.includes("/hire") && method === "POST") {
+    const parts = cleanPath.split("/");
+    const convId = parts[2];
+    setStoredChatStatus(convId, "hired");
+    try {
+      sendBrowserPushNotification({
+        title: "🎉 You've Been Hired!",
+        body: "The employer has officially hired you! Direct phone number and contact sharing is now unlocked.",
+        category: "hired_alerts",
+        url: `/chat/${convId}?role=freelancer`,
+        tag: `hired-${convId}`,
+      });
+    } catch {}
+    return { ok: true, status: "hired", conversation_id: convId, message: "Freelancer successfully hired!" };
+  }
   if (cleanPath.includes("/status") && method === "POST") {
     if (body?.status === "hired") {
       try {
         const convId = cleanPath.split("/")[2];
+        setStoredChatStatus(convId, "hired");
         sendBrowserPushNotification({
           title: "🎉 You've Been Hired!",
           body: "An employer accepted your proposal and funded milestone escrow!",
