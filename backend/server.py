@@ -570,6 +570,12 @@ def _mask_phone(phone: str) -> str:
     return "+91 XXXXX XXXXX"
 
 
+_NUMBER_WORDS = {
+    "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
+    "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9",
+}
+
+
 def _check_contact_violations(text: str) -> bool:
     if not text:
         return False
@@ -582,16 +588,32 @@ def _check_contact_violations(text: str) -> bool:
     if email_re.search(text):
         return True
 
-    # Check phones (10 digits)
+    # Normalize spelled out number words
+    word_pattern = re.compile(r'\b(zero|one|two|three|four|five|six|seven|eight|nine)\b', re.I)
+    normalized = word_pattern.sub(lambda m: _NUMBER_WORDS.get(m.group(0).lower(), m.group(0)), text)
+
+    # Check phones (10 digits) across both original and normalized
     phone_re = re.compile(r'(?:(?:\+?91|0)[\s.-]?)?(?:(?:\(\d{1,5}\)[\s.-]?)|\d[\s.-]?){9,14}\d')
-    for m in phone_re.finditer(text):
-        digits = re.sub(r'\D', '', m.group(0))
-        if digits.startswith('91') and len(digits) == 12:
-            digits = digits[2:]
-        elif digits.startswith('0') and len(digits) == 11:
-            digits = digits[1:]
-        if len(digits) == 10:
-            return True
+    for target in (text, normalized):
+        for m in phone_re.finditer(target):
+            digits = re.sub(r'\D', '', m.group(0))
+            if digits.startswith('91') and len(digits) == 12:
+                digits = digits[2:]
+            elif digits.startswith('0') and len(digits) == 11:
+                digits = digits[1:]
+            if len(digits) == 10:
+                return True
+            if len(digits) > 10:
+                for i in range(len(digits) - 9):
+                    sub = digits[i:i+10]
+                    if sub[0] in '6789':
+                        return True
+
+    # Check social / direct app indicators (WhatsApp, Telegram)
+    social_re = re.compile(r'\b(whatsapp|telegram|wa\.me|t\.me)\b', re.I)
+    if social_re.search(text) and re.search(r'\d{5,}', text):
+        return True
+
     return False
 
 

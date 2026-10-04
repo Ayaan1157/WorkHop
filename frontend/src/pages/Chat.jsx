@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ChevronLeft, Send, ShieldCheck, Star, Loader2, CheckCheck,
@@ -8,7 +8,7 @@ import {
 import DealTracker from "@/components/DealTracker";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import { API, apiGet, apiPost } from "@/lib/api";
-import { scanText, scanUploadFile } from "@/lib/contactScanner";
+import { scanText, scanUploadFile, redactViolations } from "@/lib/contactScanner";
 
 export default function Chat() {
   const nav = useNavigate();
@@ -48,6 +48,19 @@ export default function Chat() {
     conv?.status === "completed" ||
     (deal && ["funded", "acknowledged", "in_progress", "submitted", "work_submitted", "work_confirmed", "approved", "completed"].includes(deal.status))
   );
+
+  // Real-time contact detection while typing before hiring
+  const contactViolation = useMemo(() => {
+    if (isHired || !text.trim()) return null;
+    const scan = scanText(text.trim());
+    if (scan?.hasViolations) {
+      return (
+        scan.violations.find((v) => v.type === "phone" || v.type === "social") ||
+        scan.violations[0]
+      );
+    }
+    return null;
+  }, [text, isHired]);
 
   // Hire flow states
   const [hireModalOpen, setHireModalOpen] = useState(false);
@@ -268,17 +281,35 @@ export default function Chat() {
           <p className="truncate text-[11px] text-inkmuted dark:text-zinc-400 font-semibold">{conv?.job_title || ""}</p>
         </div>
 
-        {/* HIRE BUTTON ON TOP OF THE CHAT BOX (WHEN EMPLOYER & NOT YET HIRED) */}
-        {myRole === "employer" && !isHired && (
+        {/* HIRE BUTTON ON TOP OF THE CHAT BOX */}
+        {myRole === "employer" && !isHired ? (
           <button
             data-testid="chat-top-hire-btn"
             onClick={() => setHireModalOpen(true)}
-            className="flex items-center gap-1.5 border-2 border-ink bg-brand px-3.5 sm:px-5 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5 animate-pulse shrink-0"
-            title="Hire freelancer to unlock direct phone numbers & contract"
+            className="flex items-center gap-1.5 sm:gap-2 border-2 border-ink bg-[#E65A1E] hover:bg-black px-3.5 sm:px-5 py-2 text-xs sm:text-sm font-black uppercase text-white shadow-[2.5px_2.5px_0px_#121212] transition active:translate-y-0.5 shrink-0"
+            title="Hire freelancer to unlock phone numbers and start gig contract"
           >
-            <Sparkles size={14} className="text-white" />
-            <span>HIRE PRO</span>
+            <Sparkles size={15} className="text-white animate-spin" />
+            <span>HIRE PRO {hirePay ? `· ₹${Number(hirePay).toLocaleString("en-IN")}` : ""}</span>
           </button>
+        ) : isHired ? (
+          <div
+            data-testid="chat-top-hired-badge"
+            className="flex items-center gap-1.5 border-2 border-ink bg-[#E5F8EE] dark:bg-[#153424] px-3 py-1.5 text-xs font-black uppercase text-ok shadow-[2px_2px_0px_#121212] shrink-0"
+          >
+            <CheckCircle2 size={15} />
+            <span>HIRED · PHONE UNLOCKED</span>
+          </div>
+        ) : (
+          <div
+            data-testid="chat-top-awaiting-badge"
+            className="flex items-center gap-1.5 border-2 border-ink bg-sand dark:bg-zinc-800 px-3 py-1.5 text-[11px] font-black uppercase text-ink dark:text-zinc-200 shadow-[1.5px_1.5px_0px_#121212] shrink-0"
+            title="Phone numbers will unlock when employer clicks Hire Pro"
+          >
+            <Lock size={12} className="text-amber-600" />
+            <span className="hidden sm:inline">STEP 1: AWAITING HIRE</span>
+            <span className="sm:hidden">AWAITING HIRE</span>
+          </div>
         )}
 
         {/* SEARCH IN CHAT BUTTON */}
@@ -398,11 +429,16 @@ export default function Chat() {
           ))}
       </div>
 
-      {/* PINNED WORKHOP DEAL TRACKER */}
+      {/* PINNED WORKHOP DEAL TRACKER & 5-STEP PROCESS */}
       <DealTracker
         deal={deal}
         events={dealEvents}
         myRole={myRole}
+        isHired={isHired}
+        otherName={otherName}
+        jobTitle={conv?.job_title}
+        defaultPay={hirePay}
+        onOpenHire={() => setHireModalOpen(true)}
         onDealUpdated={(newDeal, newEvents) => {
           setDeal(newDeal);
           setDealEvents(newEvents || []);
@@ -483,7 +519,9 @@ export default function Chat() {
                       mine ? "bg-brand text-white" : "bg-white dark:bg-zinc-800 text-ink dark:text-zinc-100"
                     }`}
                   >
-                    <p className="text-sm leading-5 whitespace-pre-wrap">{m.text}</p>
+                    <p className="text-sm leading-5 whitespace-pre-wrap">
+                      {!isHired ? redactViolations(m.text) : m.text}
+                    </p>
                     <div
                       className={`mt-1.5 flex items-center justify-end gap-1.5 text-[9px] font-bold ${
                         mine ? "text-[#FFD9C2]" : "text-inkmuted dark:text-zinc-400"
@@ -542,6 +580,30 @@ export default function Chat() {
           >
             <X size={12} />
           </button>
+        </div>
+      )}
+
+      {/* REAL-TIME CONTACT VIOLATION WARNING BEFORE HIRING */}
+      {contactViolation && !isHired && (
+        <div
+          data-testid="contact-violation-alert"
+          className="flex items-center justify-between gap-3 border-t-2 border-amber-600 bg-amber-50 dark:bg-amber-950/90 px-4 py-2.5 text-xs font-bold text-amber-950 dark:text-amber-200 animate-in fade-in"
+        >
+          <div className="flex items-center gap-2">
+            <Lock size={16} className="text-amber-700 dark:text-amber-400 shrink-0" />
+            <span>
+              🔒 Phone numbers cannot be shared before hiring ({contactViolation.label}). Click <strong>"HIRE PRO"</strong> at the top of the chat box to hire first and unlock contact sharing!
+            </span>
+          </div>
+          {myRole === "employer" && (
+            <button
+              type="button"
+              onClick={() => setHireModalOpen(true)}
+              className="border-2 border-ink bg-brand px-3 py-1 text-[11px] font-black uppercase text-white shadow-[1.5px_1.5px_0px_#121212] hover:bg-black transition shrink-0"
+            >
+              Hire Pro Now
+            </button>
+          )}
         </div>
       )}
 
@@ -613,10 +675,25 @@ export default function Chat() {
         <button
           data-testid="chat-send-btn"
           onClick={send}
-          disabled={(!text.trim() && !attachment) || sending}
-          className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-ink text-white disabled:opacity-40 hover:bg-brand dark:hover:bg-brand transition"
+          disabled={(!text.trim() && !attachment) || sending || (Boolean(contactViolation) && !isHired)}
+          title={
+            Boolean(contactViolation) && !isHired
+              ? "Phone numbers locked before hiring. Click Hire Pro at the top to unlock."
+              : "Send message"
+          }
+          className={`flex h-11 w-11 shrink-0 items-center justify-center border-2 border-ink dark:border-zinc-700 transition ${
+            Boolean(contactViolation) && !isHired
+              ? "bg-amber-500 text-white cursor-not-allowed"
+              : "bg-ink text-white disabled:opacity-40 hover:bg-brand dark:hover:bg-brand"
+          }`}
         >
-          {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+          {sending ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : Boolean(contactViolation) && !isHired ? (
+            <Lock size={18} />
+          ) : (
+            <Send size={18} />
+          )}
         </button>
       </div>
 

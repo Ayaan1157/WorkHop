@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import {
   ShieldCheck, AlertTriangle, Clock, CheckCircle2, ChevronDown, ChevronUp,
-  ExternalLink, Loader2, ArrowRight, X, AlertCircle, Sparkles, Send, Flag
+  ExternalLink, Loader2, ArrowRight, X, AlertCircle, Sparkles, Send, Flag, Lock
 } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { fundDealEscrow } from "@/hooks/usePayments";
@@ -18,6 +18,11 @@ export default function DealTracker({
   myRole = "freelancer",
   onDealUpdated,
   onOpenReview,
+  onOpenHire,
+  isHired = false,
+  defaultPay = 15000,
+  otherName = "Candidate",
+  jobTitle = "Bengaluru Gig",
 }) {
   const [expandedLog, setExpandedLog] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -194,7 +199,139 @@ export default function DealTracker({
     }
   };
 
-  if (!deal) return null;
+  if (!deal) {
+    const preHireSteps = [
+      { label: "Scope & Chat", sub: "Discuss & Align" },
+      { label: "Hire Pro", sub: "Terms & Contract" },
+      { label: "Fund / Work", sub: "Phone Unlocked" },
+      { label: "Submit Work", sub: "72h review" },
+      { label: "Payout & Done", sub: "Complete & Review" },
+    ];
+
+    return (
+      <div
+        data-testid="deal-tracker"
+        className="border-b-2 border-ink bg-white dark:bg-zinc-900 transition-all font-sans"
+      >
+        {/* 1. TOP HEADER BAR: Pre-Hire Badge, Status, Budget & Hire Button */}
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 bg-[#FAF7F2] dark:bg-zinc-950 border-b border-ink/10 dark:border-white/10">
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              data-testid="deal-mode-badge"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider bg-ink text-white rounded shadow-sm"
+            >
+              <Clock size={13} className="text-brand" /> Step 1: Pre-Hire Scoping
+            </span>
+
+            <span
+              data-testid="deal-status-badge"
+              className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border rounded bg-white text-ink border-ink/30 dark:bg-zinc-800 dark:text-zinc-200"
+            >
+              Applied / Scoping
+            </span>
+
+            <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 border border-amber-300 rounded">
+              <Lock size={10} /> Phone numbers locked until hired
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 text-xs">
+            <div>
+              <span className="text-[10px] text-inkmuted dark:text-zinc-400 block uppercase font-bold">
+                Agreed / Proposed Pay
+              </span>
+              <span className="font-black text-ink dark:text-white text-sm">
+                ₹{Number(defaultPay || 15000).toLocaleString("en-IN")}
+              </span>
+            </div>
+
+            {myRole === "employer" && (
+              <button
+                type="button"
+                data-testid="prehire-header-hire-btn"
+                onClick={onOpenHire}
+                className="flex items-center gap-1.5 border-2 border-ink bg-brand px-3 py-1.5 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
+                title="Hire pro to lock terms and unlock direct phone numbers"
+              >
+                <Sparkles size={13} />
+                <span>HIRE PRO</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 2. RESPONSIVE 5-STEP STEPPER */}
+        <div className="px-2 py-3 sm:px-6 overflow-x-auto">
+          <div className="flex items-center justify-between w-full min-w-0">
+            {preHireSteps.map((s, idx) => {
+              const isCurrent = idx === 0;
+
+              return (
+                <React.Fragment key={idx}>
+                  <div className="flex flex-col items-center text-center px-0.5 sm:px-1 flex-1 min-w-0">
+                    <div
+                      className={`flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full text-[10px] sm:text-xs font-black transition-all border-2 shrink-0 ${
+                        isCurrent
+                          ? "bg-[#E65A1E] text-white border-[#E65A1E] ring-2 ring-[#E65A1E]/30"
+                          : "bg-sand text-inkmuted border-ink/20 dark:bg-zinc-800 dark:text-zinc-500"
+                      }`}
+                    >
+                      {idx + 1}
+                    </div>
+                    <span
+                      className={`mt-1 sm:mt-1.5 text-[8.5px] sm:text-[11px] font-black uppercase tracking-tight max-w-[56px] sm:max-w-none truncate sm:whitespace-normal ${
+                        isCurrent
+                          ? "text-[#E65A1E]"
+                          : "text-inkmuted dark:text-zinc-500"
+                      }`}
+                      title={s.label}
+                    >
+                      {s.label}
+                    </span>
+                    <span className="text-[9px] text-inkmuted dark:text-zinc-400 hidden sm:block">
+                      {s.sub}
+                    </span>
+                  </div>
+                  {idx < preHireSteps.length - 1 && (
+                    <div
+                      className="h-[2px] sm:h-[3px] flex-1 -mt-3.5 sm:-mt-4 transition-all min-w-[6px] sm:min-w-[12px] bg-ink/15 dark:bg-white/10"
+                    />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 3. CONTEXTUAL "WHAT HAPPENS NOW?" + DYNAMIC ACTIONS */}
+        <div className="px-4 py-2.5 sm:px-6 bg-sand/40 dark:bg-zinc-900 border-t border-ink/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-start gap-2 flex-1">
+            <Clock size={16} className="text-[#E65A1E] shrink-0 mt-0.5" />
+            <p
+              data-testid="deal-guidance-text"
+              className="text-xs text-ink dark:text-zinc-200 font-semibold leading-relaxed"
+            >
+              {myRole === "employer"
+                ? `👉 Step 1 of 5 (Scope & Chat): Phone numbers are locked. Discuss deliverables and budget with ${otherName}. When ready, click 'HIRE PRO' above to initiate the contract and instantly unlock direct phone number & WhatsApp exchange.`
+                : `👉 Step 1 of 5 (Scope & Chat): Phone numbers are locked before hiring. Clarify deliverables with the client. Phone numbers and WhatsApp will unlock automatically as soon as the employer clicks 'HIRE PRO'.`}
+            </p>
+          </div>
+
+          {myRole === "employer" && (
+            <button
+              type="button"
+              data-testid="prehire-guidance-hire-btn"
+              onClick={onOpenHire}
+              className="flex items-center justify-center gap-1.5 border-2 border-ink bg-brand px-3.5 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition shrink-0 active:translate-y-0.5"
+            >
+              <Sparkles size={14} />
+              <span>HIRE PRO NOW (₹{Number(defaultPay || 15000).toLocaleString("en-IN")})</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
