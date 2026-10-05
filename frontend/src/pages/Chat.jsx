@@ -116,6 +116,7 @@ export default function Chat() {
       loadDeal();
     }, 3000);
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, loadMessages, loadDeal, myRole]);
 
   useEffect(() => {
