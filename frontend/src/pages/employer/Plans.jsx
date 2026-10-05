@@ -559,37 +559,80 @@ export default function Plans() {
                 </div>
               </div>
 
-              {/* TRANSPARENT UPWORK COMPARISON BOX */}
-              <div className="border-2 border-ink bg-sand/30 dark:bg-[#1a1a1a] p-5 sm:p-7 shadow-[4px_4px_0px_#121212]">
-                <div className="flex items-center gap-2 mb-3">
-                  <ShieldCheck size={20} className="text-brand" />
-                  <h4 className="text-sm font-black uppercase text-ink dark:text-white tracking-wide">
-                    Why WorkHop 1 Hop = ₹15 is 3× Cheaper Than Upwork
-                  </h4>
+              {/* TRANSPARENT UPWORK COMPARISON BOX (ENLARGED & PROMINENT) */}
+              <div className="border-3 border-ink bg-sand/40 dark:bg-[#18181a] p-6 sm:p-8 md:p-10 my-8 sm:my-10 shadow-[6px_6px_0px_#121212] dark:shadow-[6px_6px_0px_#E65A1E]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b-2 border-ink/20 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-ink bg-brand text-white shadow-[2px_2px_0px_#121212]">
+                      <ShieldCheck size={24} />
+                    </span>
+                    <div>
+                      <h4 className="text-base sm:text-xl md:text-2xl font-black uppercase text-ink dark:text-white tracking-tight">
+                        Why WorkHop 1 Hop = ₹15 is 3× Cheaper Than Upwork
+                      </h4>
+                      <p className="text-xs sm:text-sm font-semibold text-inkmuted dark:text-stone-300 mt-0.5">
+                        Real transparent breakdown of proposal fees and contract commissions in Bengaluru.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="self-start sm:self-auto border-2 border-ink bg-white dark:bg-zinc-800 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-ink dark:text-white shadow-[1.5px_1.5px_0px_#121212]">
+                    ZERO COMMISSIONS
+                  </span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold text-ink dark:text-stone-300">
-                  <div className="border-2 border-ink bg-white dark:bg-[#222] p-4">
-                    <p className="font-black text-inkmuted dark:text-stone-400 mb-1 uppercase text-[10px]">
-                      International Platforms (Upwork, Fiverr)
-                    </p>
-                    <p className="text-red-600 font-bold mb-1">
-                      ✗ $0.15 (~₹13) per connect PLUS 10% to 20% commission on your total contract earnings.
-                    </p>
-                    <p className="text-[11px] text-inkmuted dark:text-stone-400">
-                      On a ₹50,000 project, you lose ₹5,000 to ₹10,000 in platform cuts.
-                    </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-7">
+                  {/* LEFT: International Platforms */}
+                  <div className="flex flex-col justify-between border-2 border-ink bg-white dark:bg-[#202022] p-5 sm:p-7 shadow-[3px_3px_0px_#121212]">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-inkmuted dark:text-stone-400">
+                          International Platforms (Upwork, Fiverr)
+                        </span>
+                        <span className="border border-red-500/50 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 px-2 py-0.5 text-[10px] font-black uppercase">
+                          Heavy Cuts
+                        </span>
+                      </div>
+
+                      <p className="text-sm sm:text-base font-black text-red-600 dark:text-red-400 leading-snug mb-3">
+                        ✗ $0.15 (~₹13) per connect PLUS 10% to 20% commission on your total contract earnings.
+                      </p>
+
+                      <p className="text-xs sm:text-sm text-inkmuted dark:text-stone-300 font-medium leading-relaxed">
+                        On a ₹50,000 project, you lose <strong className="text-red-600 dark:text-red-400 font-black">₹5,000 to ₹10,000</strong> in platform cuts and currency conversion fees.
+                      </p>
+                    </div>
+
+                    <div className="mt-5 pt-3.5 border-t border-ink/15 dark:border-white/10 flex items-center justify-between text-xs">
+                      <span className="font-bold text-inkmuted dark:text-stone-400">Platform Cut on Invoices:</span>
+                      <span className="font-black text-sm text-red-600 dark:text-red-400">10% – 20% + Paid Bids</span>
+                    </div>
                   </div>
 
-                  <div className="border-2 border-ink bg-[#FFF9E6] dark:bg-[#241c0e] p-4 ring-2 ring-brand">
-                    <p className="font-black text-brand mb-1 uppercase text-[10px]">
-                      WorkHop Bengaluru Gig Network
-                    </p>
-                    <p className="text-ok font-bold mb-1">
-                      ✓ Fixed 1 Hop = ₹15 with ZERO (0%) commission on your client invoices.
-                    </p>
-                    <p className="text-[11px] text-inkmuted dark:text-stone-400">
-                      On a ₹50,000 project, you keep all ₹50,000 directly via WhatsApp/UPI.
-                    </p>
+                  {/* RIGHT: WorkHop Bengaluru Gig Network */}
+                  <div className="flex flex-col justify-between border-3 border-ink bg-[#FFF9E6] dark:bg-[#251f12] p-5 sm:p-7 ring-2 ring-brand shadow-[4px_4px_0px_#E65A1E]">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-brand">
+                          WorkHop Bengaluru Gig Network
+                        </span>
+                        <span className="border border-ink bg-brand text-white px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-[1px_1px_0px_#121212]">
+                          ★ 100% Retained
+                        </span>
+                      </div>
+
+                      <p className="text-sm sm:text-base font-black text-ok leading-snug mb-3">
+                        ✓ Fixed 1 Hop = ₹15 with ZERO (0%) commission on your client invoices.
+                      </p>
+
+                      <p className="text-xs sm:text-sm text-ink dark:text-stone-200 font-medium leading-relaxed">
+                        On a ₹50,000 project, you keep <strong className="text-ok font-black text-base">all ₹50,000</strong> directly via WhatsApp / UPI without platform deductions.
+                      </p>
+                    </div>
+
+                    <div className="mt-5 pt-3.5 border-t border-ink/15 dark:border-white/10 flex items-center justify-between text-xs">
+                      <span className="font-bold text-inkmuted dark:text-stone-400">Platform Cut on Invoices:</span>
+                      <span className="font-black text-sm text-ok">₹0 (Keep 100% of Earnings)</span>
+                    </div>
                   </div>
                 </div>
               </div>
