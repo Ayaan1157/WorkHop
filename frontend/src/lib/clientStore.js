@@ -1345,6 +1345,58 @@ export function setStoredChatStatus(conversationId, status) {
   }
 }
 
+export function getOrCreateChatWithCandidate(candidate) {
+  if (!candidate) return "conv-demo-1";
+  try {
+    const raw = localStorage.getItem(CHATS_KEY) || "[]";
+    const chats = JSON.parse(raw);
+    const existing = chats.find(
+      (c) =>
+        (candidate.id && String(c.freelancer_id) === String(candidate.id)) ||
+        (candidate.name && c.freelancer_name?.toLowerCase() === candidate.name?.toLowerCase())
+    );
+    if (existing) {
+      return existing.id || existing.conversation_id;
+    }
+    const user = getStoredUser();
+    const convId = `conv-${candidate.id || Date.now()}`;
+    const newChat = {
+      id: convId,
+      conversation_id: convId,
+      job_id: `lead-inquiry-${candidate.id}`,
+      job_title: `${candidate.skill || "Freelance Consultation"}`,
+      company_name: user?.company_name || "Hyperlocal Co.",
+      employer_name: user?.name || "Verified Employer",
+      freelancer_name: candidate.name,
+      freelancer_id: candidate.id,
+      status: "applied",
+      milestone_step: 1,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_message: `Hi ${candidate.name}! I saw your verified profile on the WorkHop map. Let's discuss a gig.`,
+    };
+    chats.unshift(newChat);
+    localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+
+    const msgsKey = `workhop_messages_${convId}`;
+    const initialMessages = [
+      {
+        id: `msg-${Date.now()}`,
+        conversation_id: convId,
+        sender_role: "employer",
+        sender_name: user?.name || "Verified Employer",
+        text: `Hi ${candidate.name}! I found your profile on the WorkHop Live Map for "${candidate.skill || "freelance work"}". Are you available for a gig in Bengaluru?`,
+        created_at: new Date().toISOString(),
+      },
+    ];
+    localStorage.setItem(msgsKey, JSON.stringify(initialMessages));
+
+    return convId;
+  } catch {
+    return `conv-${candidate.id || "1"}`;
+  }
+}
+
 // 11. Full Freelancer Profile (Upwork-style)
 export function getDefaultFreelancerProfile() {
   return {

@@ -8,6 +8,8 @@ import {
 import { Shell, TopBar, Spinner } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
 import ProfileLockedModal from "@/components/ProfileLockedModal";
+import FreelancerProfileModal from "@/components/FreelancerProfileModal";
+import JobDetailsModal from "@/components/JobDetailsModal";
 import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
 import {
   BENGALURU_AREAS,
@@ -52,6 +54,12 @@ export default function LiveMap() {
   const [mobileTab, setMobileTab] = useState("map"); // "map" | "list" for mobile viewports
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
   const [selectedLockedPro, setSelectedLockedPro] = useState(null);
+
+  // Interactive Modals for Live Pin Selection
+  const [selectedPro, setSelectedPro] = useState(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [selectedGig, setSelectedGig] = useState(null);
+  const [gigModalOpen, setGigModalOpen] = useState(false);
 
   // Auto-request location on mount to center around closest real location
   useEffect(() => {
@@ -106,6 +114,7 @@ export default function LiveMap() {
 
       const dist = distanceKm(activeLoc, organicCoords);
       return {
+        ...l,
         id: String(l.id || `lead-${idx}`),
         kind: "candidate",
         name: l.name,
@@ -119,9 +128,10 @@ export default function LiveMap() {
         lat: organicCoords.lat,
         lng: organicCoords.lng,
         distance_km: Math.round(dist * 10) / 10,
+        area: l.area || selectedArea || "Bengaluru",
       };
     });
-  }, [leads, userLocation]);
+  }, [leads, userLocation, selectedArea]);
 
   // Compute organic coordinates and dynamic distances for Open Gigs (Jobs)
   const processedJobs = useMemo(() => {
@@ -136,6 +146,7 @@ export default function LiveMap() {
 
       const dist = distanceKm(activeLoc, organicCoords);
       return {
+        ...j,
         id: String(j.id || `job-${idx}`),
         kind: "job",
         title: j.title,
@@ -210,6 +221,7 @@ export default function LiveMap() {
         rating: f.rating,
         rate_hr: f.rate_hr,
         category: f.bucket,
+        pro: f,
       }));
     } else {
       // Show Open Gigs to Freelancers
@@ -224,6 +236,7 @@ export default function LiveMap() {
         lng: j.lng,
         distance_km: j.distance_km,
         category: j.category,
+        job: j,
       }));
     }
   }, [viewMode, filteredFreelancers, filteredJobs]);
@@ -234,6 +247,26 @@ export default function LiveMap() {
       setUserLocation({ lat: item.lat, lng: item.lng });
     }
     setMobileTab("map");
+
+    if (viewMode === "employer" || item.kind === "candidate") {
+      const pro =
+        filteredFreelancers.find((f) => String(f.id) === String(item.id)) ||
+        leads.find((l) => String(l.id) === String(item.id)) ||
+        item.pro;
+      if (pro) {
+        setSelectedPro(pro);
+        setProfileModalOpen(true);
+      }
+    } else if (viewMode === "freelancer" || item.kind === "job") {
+      const gig =
+        filteredJobs.find((j) => String(j.id) === String(item.id)) ||
+        jobs.find((j) => String(j.id) === String(item.id)) ||
+        item.job;
+      if (gig) {
+        setSelectedGig(gig);
+        setGigModalOpen(true);
+      }
+    }
   };
 
   return (
@@ -607,7 +640,11 @@ export default function LiveMap() {
                       <div
                         key={pro.id}
                         data-testid={`nearby-candidate-${pro.id}`}
-                        className={`flex flex-col gap-2.5 border-2 border-ink p-3.5 transition ${
+                        onClick={() => {
+                          setSelectedPro(pro);
+                          setProfileModalOpen(true);
+                        }}
+                        className={`cursor-pointer flex flex-col gap-2.5 border-2 border-ink p-3.5 transition ${
                           isSelected
                             ? "bg-[#FFF3E9] dark:bg-[#251710] shadow-[3px_3px_0px_#E65A1E]"
                             : "bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] hover:translate-x-0.5"
@@ -660,21 +697,29 @@ export default function LiveMap() {
                         {/* Action Buttons */}
                         <div className="grid grid-cols-2 gap-2 pt-1">
                           <button
-                            onClick={() => handleSelectPin(pro)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPinId(pro.id);
+                              if (pro.lat && pro.lng) {
+                                setUserLocation({ lat: pro.lat, lng: pro.lng });
+                              }
+                              setMobileTab("map");
+                            }}
                             className="flex items-center justify-center gap-1 border border-ink bg-sand dark:bg-[#2a2a2a] py-1.5 text-[11px] font-black text-ink dark:text-white hover:bg-stone/30 transition"
                           >
                             <Eye size={12} />
                             <span>Show on Map</span>
                           </button>
                           <button
-                            onClick={() => {
-                              setSelectedLockedPro(pro);
-                              setLockedModalOpen(true);
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPro(pro);
+                              setProfileModalOpen(true);
                             }}
                             className="flex items-center justify-center gap-1 border border-ink bg-brand py-1.5 text-[11px] font-black text-white shadow-[1.5px_1.5px_0px_#121212] hover:opacity-90 transition"
                           >
-                            <Lock size={11} />
-                            <span>Invite &amp; Hire</span>
+                            <User size={11} />
+                            <span>View Profile</span>
                           </button>
                         </div>
                       </div>
@@ -706,7 +751,11 @@ export default function LiveMap() {
                       <div
                         key={gig.id}
                         data-testid={`nearby-gig-${gig.id}`}
-                        className={`flex flex-col gap-2.5 border-2 border-ink p-3.5 transition ${
+                        onClick={() => {
+                          setSelectedGig(gig);
+                          setGigModalOpen(true);
+                        }}
+                        className={`cursor-pointer flex flex-col gap-2.5 border-2 border-ink p-3.5 transition ${
                           isSelected
                             ? "bg-[#E6F4EA] dark:bg-[#11291E] shadow-[3px_3px_0px_#059669]"
                             : "bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] hover:translate-x-0.5"
@@ -753,19 +802,30 @@ export default function LiveMap() {
                         {/* Action Buttons */}
                         <div className="grid grid-cols-2 gap-2 pt-1">
                           <button
-                            onClick={() => handleSelectPin(gig)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPinId(gig.id);
+                              if (gig.lat && gig.lng) {
+                                setUserLocation({ lat: gig.lat, lng: gig.lng });
+                              }
+                              setMobileTab("map");
+                            }}
                             className="flex items-center justify-center gap-1 border border-ink bg-sand dark:bg-[#2a2a2a] py-1.5 text-[11px] font-black text-ink dark:text-white hover:bg-stone/30 transition"
                           >
                             <Eye size={12} />
                             <span>Show on Map</span>
                           </button>
-                          <Link
-                            to="/freelancer/jobs"
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedGig(gig);
+                              setGigModalOpen(true);
+                            }}
                             className="flex items-center justify-center gap-1 border border-ink bg-[#059669] py-1.5 text-[11px] font-black text-white shadow-[1.5px_1.5px_0px_#121212] hover:opacity-90 transition text-center"
                           >
-                            <span>Apply Now</span>
+                            <span>View &amp; Apply</span>
                             <ArrowUpRight size={12} />
-                          </Link>
+                          </button>
                         </div>
                       </div>
                     );
@@ -802,6 +862,16 @@ export default function LiveMap() {
 
         </div>
       </div>
+      <FreelancerProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        pro={selectedPro}
+      />
+      <JobDetailsModal
+        isOpen={gigModalOpen}
+        onClose={() => setGigModalOpen(false)}
+        job={selectedGig}
+      />
       <ProfileLockedModal
         isOpen={lockedModalOpen}
         onClose={() => setLockedModalOpen(false)}

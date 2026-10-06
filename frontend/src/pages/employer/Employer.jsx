@@ -13,6 +13,7 @@ import CouponInput from "@/components/CouponInput";
 import { ProCardSkeleton } from "@/components/Skeletons";
 import BoostPreviewModal from "@/components/BoostPreviewModal";
 import ProfileLockedModal from "@/components/ProfileLockedModal";
+import FreelancerProfileModal from "@/components/FreelancerProfileModal";
 import FloatingChatWidget from "@/components/FloatingChatWidget";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
@@ -46,12 +47,19 @@ export default function Employer() {
   const [boostModalOpen, setBoostModalOpen] = useState(false);
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
   const [selectedLockedPro, setSelectedLockedPro] = useState(null);
+  const [selectedPro, setSelectedPro] = useState(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [coupon, setCoupon] = useState(null);
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
   const [showMap, setShowMap] = useState(true);
   const [radarRadius, setRadarRadius] = useState(2);
   const { startPayment } = useRazorpay();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
+
+  const handleCardClick = (lead) => {
+    setSelectedPro(lead);
+    setProfileModalOpen(true);
+  };
 
   useEffect(() => {
     requestLocation();
@@ -166,6 +174,10 @@ export default function Employer() {
           height="100%"
           radiusKm={radarRadius}
           onRadiusChange={setRadarRadius}
+          onSelectPin={(pin) => {
+            const lead = sorted.find((l) => String(l.id) === String(pin.id));
+            if (lead) handleCardClick(lead);
+          }}
         />
         <button
           data-testid="leads-near-me-btn"
@@ -185,7 +197,7 @@ export default function Employer() {
         </button>
       </div>
     );
-  }, [showMap, mapPins, coords, locStatus, requestLocation, radarRadius]);
+  }, [showMap, mapPins, coords, locStatus, requestLocation, radarRadius, sorted]);
 
   return (
     <Shell>
@@ -668,6 +680,12 @@ export default function Employer() {
         isOpen={lockedModalOpen}
         onClose={() => setLockedModalOpen(false)}
         pro={selectedLockedPro}
+      />
+      {/* FREELANCER PROFILE MODAL */}
+      <FreelancerProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        pro={selectedPro}
       />
       {/* FLOATING CIRCULAR CHAT WIDGET (Bottom Right) */}
       <FloatingChatWidget role="employer" />

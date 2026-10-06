@@ -31,14 +31,14 @@ export default function PostJob() {
   const { coords, status: locStatus, requestLocation } = useUserLocation();
 
   const [credits, setCredits] = useState(null);
-  const [company, setCompany] = useState("");
-  const [title, setTitle] = useState("");
-  const [bucket, setBucket] = useState("Graphics & Design");
-  const [pay, setPay] = useState("");
+  const [company, setCompany] = useState(() => location.state?.prefillCompany || "");
+  const [title, setTitle] = useState(() => location.state?.prefillTitle || "");
+  const [bucket, setBucket] = useState(() => location.state?.prefillCategory || "Graphics & Design");
+  const [pay, setPay] = useState(() => (location.state?.prefillPay ? String(location.state.prefillPay) : ""));
   const [isBoosted, setIsBoosted] = useState(() => Boolean(location.state?.boost));
-  const [area, setArea] = useState("Koramangala");
+  const [area, setArea] = useState(() => location.state?.prefillArea || "Koramangala");
   const [customCoords, setCustomCoords] = useState(null);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(() => location.state?.prefillDescription || "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [posted, setPosted] = useState(false);

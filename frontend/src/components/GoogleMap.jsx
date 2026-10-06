@@ -421,9 +421,9 @@ export default function GoogleMap({
                 : ""
             }
             <div style="display:flex;gap:4px;margin-top:6px;">
-              <a href="/employer/post-job" style="display:block;width:100%;text-align:center;background:#E65A1E;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:0 2px 8px rgba(0,0,0,0.15);letter-spacing:0.05em;">
-                POST GIG TO HIRE (FREE) →
-              </a>
+              <button type="button" class="wh-map-popup-profile-btn" data-pin-id="${escapeHtml(p.id)}" style="cursor:pointer;width:100%;text-align:center;background:#E65A1E;color:#fff;font-size:10px;font-weight:900;padding:6px 8px;border:1.5px solid #121212;box-shadow:0 2px 8px rgba(0,0,0,0.15);letter-spacing:0.05em;font-family:Archivo,sans-serif;">
+                VIEW FULL PROFILE →
+              </button>
             </div>
           </div>
         `;
@@ -439,9 +439,9 @@ export default function GoogleMap({
             <p style="font-size:13px;font-weight:900;color:#121212;margin:2px 0;">${titleEsc}</p>
             <p style="font-size:11px;color:#555;margin:0 0 6px 0;">🏢 ${p.company_name || subEsc}</p>
             <div style="display:flex;gap:4px;margin-top:6px;">
-              <a href="/freelancer/jobs" style="display:block;width:100%;text-align:center;background:#059669;color:#fff;font-size:10px;font-weight:900;padding:5px 8px;text-decoration:none;border:1.5px solid #121212;box-shadow:0 2px 8px rgba(0,0,0,0.15);letter-spacing:0.05em;">
+              <button type="button" class="wh-map-popup-profile-btn" data-pin-id="${escapeHtml(p.id)}" style="cursor:pointer;width:100%;text-align:center;background:#059669;color:#fff;font-size:10px;font-weight:900;padding:6px 8px;border:1.5px solid #121212;box-shadow:0 2px 8px rgba(0,0,0,0.15);letter-spacing:0.05em;font-family:Archivo,sans-serif;">
                 VIEW GIG & APPLY →
-              </a>
+              </button>
             </div>
           </div>
         `;
@@ -477,6 +477,28 @@ export default function GoogleMap({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pinsSig, userLocation?.lat, userLocation?.lng, selectedPinId, onSelectPin]);
+
+  // Handle clicks inside Leaflet popups
+  useEffect(() => {
+    const el = elRef.current;
+    if (!el) return;
+    const handlePopupClick = (e) => {
+      const btn = e.target.closest(".wh-map-popup-profile-btn");
+      if (btn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const pinId = btn.getAttribute("data-pin-id");
+        const found = pins.find((pi) => String(pi.id) === String(pinId));
+        if (found && onSelectPin) {
+          onSelectPin(found);
+        }
+      }
+    };
+    el.addEventListener("click", handlePopupClick);
+    return () => {
+      el.removeEventListener("click", handlePopupClick);
+    };
+  }, [pins, onSelectPin]);
 
   // Recenter on user
   const handleRecenter = () => {
