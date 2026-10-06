@@ -105,6 +105,21 @@ export const KEYWORD_TAXONOMY = [
           "AutoCAD 2D", "Floor plan", "Architectural drafting", "Layout plan",
           "Structural drawing", "Interior floorplan", "Working drawing", "AutoCAD drafter", "Blueprint", "AutoCAD"
         ]
+      },
+      {
+        name: "Invitations, Wedding Cards & Event Stationery",
+        keywords: [
+          "Invitation", "Wedding card", "Wedding invite", "E-invite", "Save the date",
+          "Greeting card", "Stationery", "Card design", "Invitation card", "Digital invite",
+          "Kannada wedding card", "Event invite"
+        ]
+      },
+      {
+        name: "3D Product Modeling, Jewelry & Industrial Visualization",
+        keywords: [
+          "Product design", "3D product modeling", "Jewelry design", "Jewellery", "3D render",
+          "Product render", "3D visualization", "Industrial design", "Keyshot", "Blender"
+        ]
       }
     ]
   },
@@ -181,6 +196,20 @@ export const KEYWORD_TAXONOMY = [
         keywords: [
           "Domain setup", "DNS record", "MX record", "SSL certificate",
           "Cloudflare", "Web hosting", "Business email", "Google Workspace setup"
+        ]
+      },
+      {
+        name: "DevOps, Cloud Infrastructure & CI/CD",
+        keywords: [
+          "DevOps", "Terraform", "Docker", "Kubernetes", "AWS", "Cloud engineer",
+          "CI/CD", "Infrastructure as code", "GCP", "Azure", "Ansible", "Linux"
+        ]
+      },
+      {
+        name: "Web3, Blockchain & Smart Contracts",
+        keywords: [
+          "Web3 developer", "Smart contract", "Solidity", "Blockchain developer",
+          "Crypto", "Ethereum", "DApp", "DeFi", "NFT"
         ]
       }
     ]
@@ -259,6 +288,13 @@ export const KEYWORD_TAXONOMY = [
           "Google Analytics (GA4)", "Ad performance audit", "Conversion tracking",
           "Pixel setup", "Marketing ROI", "CAC reduction"
         ]
+      },
+      {
+        name: "E-Commerce Marketing & Marketplace Advertising",
+        keywords: [
+          "Ecommerce marketing", "Google Merchant Center", "Google Shopping", "Amazon ads",
+          "Flipkart ads", "Marketplace ads", "Product ads", "E-commerce marketing", "ROAS"
+        ]
       }
     ]
   },
@@ -334,6 +370,13 @@ export const KEYWORD_TAXONOMY = [
         keywords: [
           "Press release", "PR writer", "Media kit", "Media statement",
           "Company announcement", "Press kit"
+        ]
+      },
+      {
+        name: "Academic, SOP & University Admissions Writing",
+        keywords: [
+          "Academic writing", "SOP writer", "Statement of purpose", "LOR", "Admissions essay",
+          "College application", "Visa SOP", "Study abroad writing", "SOP"
         ]
       }
     ]
@@ -418,6 +461,13 @@ export const KEYWORD_TAXONOMY = [
         keywords: [
           "Explainer video", "2D animation", "Isometric animation", "Whiteboard animation",
           "Animated video", "Product explainer"
+        ]
+      },
+      {
+        name: "Wedding, Event & Celebration Videography",
+        keywords: [
+          "Wedding video", "Pre-wedding shoot", "Wedding montage", "Wedding teaser",
+          "Event video", "Highlight reel", "Cinematic wedding", "Event videography"
         ]
       }
     ]
@@ -757,6 +807,13 @@ export const KEYWORD_TAXONOMY = [
           "D2C consultant", "E-commerce audit", "Store conversion audit",
           "Funnel review", "Retail strategist"
         ]
+      },
+      {
+        name: "Cybersecurity, Compliance & ISO Certification Consulting",
+        keywords: [
+          "Cybersecurity consulting", "ISO 27001", "Compliance consulting", "Security audit",
+          "SOC2", "GDPR compliance", "Cybersecurity", "Compliance audit", "VAPT", "Information security"
+        ]
       }
     ]
   },
@@ -813,6 +870,20 @@ export const KEYWORD_TAXONOMY = [
           "Brand stall", "Kiosk setup", "Popup store",
           "Experiential marketing", "Mall activation", "Flea market stall"
         ]
+      },
+      {
+        name: "Fitness, Gym & Sports Photography / Videography",
+        keywords: [
+          "Fitness photography", "Gym photography", "Sports photography", "Fitness shoot",
+          "Brand photography", "Commercial photography", "Gym photographer"
+        ]
+      },
+      {
+        name: "Event Emcee, Anchoring & Live Hosting",
+        keywords: [
+          "Event anchor", "Emcee", "Event emcee", "Corporate anchor", "Kannada emcee",
+          "Stage host", "Wedding emcee", "Event host"
+        ]
       }
     ]
   }
@@ -834,14 +905,8 @@ const RAW_SUBDISCIPLINE_KEYWORDS = Object.fromEntries(
 
 export const SUBDISCIPLINE_KEYWORDS = {
   ...RAW_SUBDISCIPLINE_KEYWORDS,
+  // Graphics & Design
   "Architectural and interior design floor plan": RAW_SUBDISCIPLINE_KEYWORDS["Architectural & Interior Design Floor Plan"] || [],
-  "Subtitle Styling & Captioning": RAW_SUBDISCIPLINE_KEYWORDS["Subtitle Styling & Captions"] || [],
-  "Typing & Data Entry": RAW_SUBDISCIPLINE_KEYWORDS["Typing, Data Entry & Document Processing"] || [],
-  "Telecaller & Inside Sales": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
-  "Typing": RAW_SUBDISCIPLINE_KEYWORDS["Typing, Data Entry & Document Processing"] || [],
-  "Telecaller": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
-  "Data Entry": RAW_SUBDISCIPLINE_KEYWORDS["Typing, Data Entry & Document Processing"] || [],
-  "Telecalling": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
   "Fashion, Apparel & Textile Design": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
   "Fashion": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
   "Fashion Design": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
@@ -849,6 +914,112 @@ export const SUBDISCIPLINE_KEYWORDS = {
   "Embroidery": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
   "Embroidery Design": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
   "Textile Design": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
+  "Logo": RAW_SUBDISCIPLINE_KEYWORDS["Logo & Visual Identity Design"] || [],
+  "Branding": RAW_SUBDISCIPLINE_KEYWORDS["Logo & Visual Identity Design"] || [],
+  "Packaging": RAW_SUBDISCIPLINE_KEYWORDS["Packaging, Label & Box Design"] || [],
+  "UI/UX": RAW_SUBDISCIPLINE_KEYWORDS["UI/UX Interface Design (Figma)"] || [],
+  "Figma": RAW_SUBDISCIPLINE_KEYWORDS["UI/UX Interface Design (Figma)"] || [],
+  "3D Rendering": RAW_SUBDISCIPLINE_KEYWORDS["3D Architectural Rendering & Interior Visualization"] || [],
+  "Illustration": RAW_SUBDISCIPLINE_KEYWORDS["Vector Illustration & Icon Design"] || [],
+  "AutoCAD": RAW_SUBDISCIPLINE_KEYWORDS["Architectural & Interior Design Floor Plan"] || [],
+  "Invitations": RAW_SUBDISCIPLINE_KEYWORDS["Invitations, Wedding Cards & Event Stationery"] || [],
+  "Invitation": RAW_SUBDISCIPLINE_KEYWORDS["Invitations, Wedding Cards & Event Stationery"] || [],
+  "Wedding Card": RAW_SUBDISCIPLINE_KEYWORDS["Invitations, Wedding Cards & Event Stationery"] || [],
+  "Product Design": RAW_SUBDISCIPLINE_KEYWORDS["3D Product Modeling, Jewelry & Industrial Visualization"] || [],
+
+  // Tech & Code
+  "Frontend": RAW_SUBDISCIPLINE_KEYWORDS["Frontend Web Development (React, HTML/CSS, JS)"] || [],
+  "React": RAW_SUBDISCIPLINE_KEYWORDS["Frontend Web Development (React, HTML/CSS, JS)"] || [],
+  "Backend": RAW_SUBDISCIPLINE_KEYWORDS["Backend Development & API Integrations"] || [],
+  "Node.js": RAW_SUBDISCIPLINE_KEYWORDS["Backend Development & API Integrations"] || [],
+  "Mobile App": RAW_SUBDISCIPLINE_KEYWORDS["Mobile App Development (Flutter, React Native)"] || [],
+  "Flutter": RAW_SUBDISCIPLINE_KEYWORDS["Mobile App Development (Flutter, React Native)"] || [],
+  "Shopify": RAW_SUBDISCIPLINE_KEYWORDS["Shopify & E-Commerce Store Setup"] || [],
+  "WordPress": RAW_SUBDISCIPLINE_KEYWORDS["WordPress Website Building & Customization"] || [],
+  "Webflow": RAW_SUBDISCIPLINE_KEYWORDS["No-Code Website Building (Framer, Webflow, Softr)"] || [],
+  "Framer": RAW_SUBDISCIPLINE_KEYWORDS["No-Code Website Building (Framer, Webflow, Softr)"] || [],
+  "Web Scraping": RAW_SUBDISCIPLINE_KEYWORDS["Custom Web Scrapers & Data Extraction"] || [],
+  "DevOps": RAW_SUBDISCIPLINE_KEYWORDS["DevOps, Cloud Infrastructure & CI/CD"] || [],
+  "Web3": RAW_SUBDISCIPLINE_KEYWORDS["Web3, Blockchain & Smart Contracts"] || [],
+  "Blockchain": RAW_SUBDISCIPLINE_KEYWORDS["Web3, Blockchain & Smart Contracts"] || [],
+
+  // Marketing
+  "Local SEO": RAW_SUBDISCIPLINE_KEYWORDS["Local SEO & Google Business Profile Optimization"] || [],
+  "GMB": RAW_SUBDISCIPLINE_KEYWORDS["Local SEO & Google Business Profile Optimization"] || [],
+  "Meta Ads": RAW_SUBDISCIPLINE_KEYWORDS["Hyperlocal Meta Ads (Instagram/Facebook 3–5km Radius)"] || [],
+  "Instagram Ads": RAW_SUBDISCIPLINE_KEYWORDS["Hyperlocal Meta Ads (Instagram/Facebook 3–5km Radius)"] || [],
+  "Google Ads": RAW_SUBDISCIPLINE_KEYWORDS["Google Search & Display Ads"] || [],
+  "PPC": RAW_SUBDISCIPLINE_KEYWORDS["Google Search & Display Ads"] || [],
+  "Social Media": RAW_SUBDISCIPLINE_KEYWORDS["Social Media Account Management"] || [],
+  "WhatsApp Marketing": RAW_SUBDISCIPLINE_KEYWORDS["WhatsApp Funnels & Broadcast Marketing"] || [],
+  "Influencer Marketing": RAW_SUBDISCIPLINE_KEYWORDS["Influencer Outreach & Local Campaign Management"] || [],
+  "Email Marketing": RAW_SUBDISCIPLINE_KEYWORDS["Email Marketing Campaigns & Automations"] || [],
+  "Ecommerce Marketing": RAW_SUBDISCIPLINE_KEYWORDS["E-Commerce Marketing & Marketplace Advertising"] || [],
+
+  // Writing
+  "Scriptwriting": RAW_SUBDISCIPLINE_KEYWORDS["Instagram Reel & Ad Scriptwriting"] || [],
+  "Copywriting": RAW_SUBDISCIPLINE_KEYWORDS["Landing Page & Website Copywriting"] || [],
+  "SEO Writing": RAW_SUBDISCIPLINE_KEYWORDS["SEO Blog & Article Writing"] || [],
+  "Kannada Translation": RAW_SUBDISCIPLINE_KEYWORDS["Vernacular Translation & Content Adaptation (Kannada, Hindi)"] || [],
+  "Proofreading": RAW_SUBDISCIPLINE_KEYWORDS["Proofreading, Copy Editing & Formatting"] || [],
+  "Academic Writing": RAW_SUBDISCIPLINE_KEYWORDS["Academic, SOP & University Admissions Writing"] || [],
+  "SOP": RAW_SUBDISCIPLINE_KEYWORDS["Academic, SOP & University Admissions Writing"] || [],
+
+  // Video
+  "Reels": RAW_SUBDISCIPLINE_KEYWORDS["Short-Form Video Editing (Reels, Shorts, TikTok)"] || [],
+  "Short-Form Video": RAW_SUBDISCIPLINE_KEYWORDS["Short-Form Video Editing (Reels, Shorts, TikTok)"] || [],
+  "YouTube Video": RAW_SUBDISCIPLINE_KEYWORDS["YouTube & Long-Form Video Editing"] || [],
+  "Color Grading": RAW_SUBDISCIPLINE_KEYWORDS["Color Grading & Correction"] || [],
+  "Motion Graphics": RAW_SUBDISCIPLINE_KEYWORDS["Motion Graphics & VFX"] || [],
+  "Subtitle Styling & Captioning": RAW_SUBDISCIPLINE_KEYWORDS["Subtitle Styling & Captions"] || [],
+  "Drone Video": RAW_SUBDISCIPLINE_KEYWORDS["Drone Videography & Aerial Footage"] || [],
+  "Explainer Video": RAW_SUBDISCIPLINE_KEYWORDS["Explainer Video Animation (2D/3D)"] || [],
+  "Wedding Video": RAW_SUBDISCIPLINE_KEYWORDS["Wedding, Event & Celebration Videography"] || [],
+
+  // AI Services
+  "Prompt Engineering": RAW_SUBDISCIPLINE_KEYWORDS["AI Prompt Engineering & Workflow Setup"] || [],
+  "Chatbot": RAW_SUBDISCIPLINE_KEYWORDS["Custom AI Chatbot Development (WhatsApp / Web)"] || [],
+  "Zapier": RAW_SUBDISCIPLINE_KEYWORDS["Automated Workflow Integrations (Make.com, Zapier)"] || [],
+  "AI Art": RAW_SUBDISCIPLINE_KEYWORDS["AI Image & Visual Asset Generation (Midjourney/SD)"] || [],
+  "Voiceover Cloning": RAW_SUBDISCIPLINE_KEYWORDS["AI Voiceover & Audio Cloning Setup"] || [],
+  "AI Agents": RAW_SUBDISCIPLINE_KEYWORDS["Custom AI Agent Development"] || [],
+
+  // Music & Audio
+  "Audio Mixing": RAW_SUBDISCIPLINE_KEYWORDS["Audio Mixing & Sound Mastering"] || [],
+  "Podcast Audio": RAW_SUBDISCIPLINE_KEYWORDS["Podcast Audio Editing & Post-Production"] || [],
+  "Voiceover": RAW_SUBDISCIPLINE_KEYWORDS["Voiceover Recording (English, Kannada, Hindi)"] || [],
+  "Kannada Voiceover": RAW_SUBDISCIPLINE_KEYWORDS["Voiceover Recording (English, Kannada, Hindi)"] || [],
+  "Sound Design": RAW_SUBDISCIPLINE_KEYWORDS["Sound Design & Foley FX"] || [],
+  "Jingle": RAW_SUBDISCIPLINE_KEYWORDS["Custom Jingles & Brand Audio Idents"] || [],
+
+  // Business
+  "Typing & Data Entry": RAW_SUBDISCIPLINE_KEYWORDS["Typing, Data Entry & Document Processing"] || [],
+  "Typing": RAW_SUBDISCIPLINE_KEYWORDS["Typing, Data Entry & Document Processing"] || [],
+  "Data Entry": RAW_SUBDISCIPLINE_KEYWORDS["Typing, Data Entry & Document Processing"] || [],
+  "Telecaller & Inside Sales": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
+  "Telecaller": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
+  "Telecalling": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
+  "Bookkeeping": RAW_SUBDISCIPLINE_KEYWORDS["Invoicing & Local GST Bookkeeping Support"] || [],
+  "Virtual Assistant": RAW_SUBDISCIPLINE_KEYWORDS["Virtual Assistance & Email Management"] || [],
+  "Excel": RAW_SUBDISCIPLINE_KEYWORDS["Spreadsheet Setup & Data Organization (Excel/Airtable)"] || [],
+  "POS Setup": RAW_SUBDISCIPLINE_KEYWORDS["POS System Setup for Retail & Cafes"] || [],
+
+  // Consulting
+  "Brand Strategy": RAW_SUBDISCIPLINE_KEYWORDS["Brand Strategy & Positioning Advisory"] || [],
+  "Business Strategy": RAW_SUBDISCIPLINE_KEYWORDS["Business Model & Pricing Strategy"] || [],
+  "Cafe Consulting": RAW_SUBDISCIPLINE_KEYWORDS["Cafe & Restaurant Launch Consulting"] || [],
+  "Interior Consulting": RAW_SUBDISCIPLINE_KEYWORDS["Interior Design Material & Concept Consulting"] || [],
+  "GTM Strategy": RAW_SUBDISCIPLINE_KEYWORDS["Go-To-Market (GTM) Strategy"] || [],
+  "Cybersecurity": RAW_SUBDISCIPLINE_KEYWORDS["Cybersecurity, Compliance & ISO Certification Consulting"] || [],
+  "Cybersecurity Consulting": RAW_SUBDISCIPLINE_KEYWORDS["Cybersecurity, Compliance & ISO Certification Consulting"] || [],
+
+  // Hyperlocal
+  "Wall Mural": RAW_SUBDISCIPLINE_KEYWORDS["Wall Mural & Graffiti Concept Design"] || [],
+  "Neon Signs": RAW_SUBDISCIPLINE_KEYWORDS["Custom Acrylic & Neon Signboard Design"] || [],
+  "Real Estate Drone Tour": RAW_SUBDISCIPLINE_KEYWORDS["Real Estate Drone Mapping & 3D Tours"] || [],
+  "Fitness Photography": RAW_SUBDISCIPLINE_KEYWORDS["Fitness, Gym & Sports Photography / Videography"] || [],
+  "Emcee": RAW_SUBDISCIPLINE_KEYWORDS["Event Emcee, Anchoring & Live Hosting"] || [],
+  "Event Anchor": RAW_SUBDISCIPLINE_KEYWORDS["Event Emcee, Anchoring & Live Hosting"] || [],
 };
 
 // Fast search: build an inverted index mapping lowercased keywords and tokens
@@ -919,15 +1090,17 @@ export function searchTaxonomy(query) {
   return matches;
 }
 
-// Semantic Synonym Clusters connecting uncommon/niche skills to broader industry search tags
+// Semantic Synonym Clusters connecting uncommon/niche skills to broader industry search tags across all 10 categories
 export const SKILL_SYNONYM_CLUSTERS = [
+  // ═══════════ 1. GRAPHICS & DESIGN ═══════════
   {
+    category: "Graphics & Design",
     name: "Fashion, Apparel & Textile Crafts",
     triggers: [
       "embroidery", "aari", "zari", "zardozi", "chikankari", "needlework",
       "textile", "apparel", "garment", "fashion", "boutique", "pattern making",
       "pattern maker", "tailor", "tailoring", "saree", "lehenga", "couture", "fabric",
-      "dressmaker", "fashion illustration", "fashion stylist"
+      "dressmaker", "fashion illustration", "fashion stylist", "ethnic wear"
     ],
     expandedTags: [
       "fashion", "fashion design", "fashion designer", "embroidery design",
@@ -938,73 +1111,923 @@ export const SKILL_SYNONYM_CLUSTERS = [
     ]
   },
   {
-    name: "Crafts, Murals & Physical Art",
+    category: "Graphics & Design",
+    name: "Physical Art, Murals, Crafts & Sculpture",
     triggers: [
       "pottery", "ceramics", "resin", "clay", "sculpture", "calligraphy",
       "lettering", "typography", "mural", "graffiti", "wall art", "sketching",
-      "origami", "painting"
+      "origami", "painting", "canvas painting", "fine art", "wood carving", "mosaic"
     ],
     expandedTags: [
       "crafts", "handmade", "art & craft", "fine art", "pottery", "ceramics",
       "calligraphy", "lettering", "typography", "wall muralist", "wall art",
-      "mural painter", "custom art"
+      "mural painter", "custom art", "sculptor", "street art"
     ]
   },
   {
-    name: "Beauty, Styling & Bridal Services",
+    category: "Graphics & Design",
+    name: "Brand Identity, Logo & Packaging Design",
     triggers: [
-      "mehendi", "henna", "mehndi", "bridal", "makeup", "hairstylist",
-      "hair styling", "saree draping", "nail art", "cosmetology", "makeover"
+      "logo", "branding", "brand identity", "brand guidelines", "brand book",
+      "packaging", "dieline", "box design", "label design", "pouch", "monogram",
+      "minimalist logo", "mascot", "menu design", "brochure", "flyer", "pamphlet",
+      "standee", "business card", "print collateral"
     ],
     expandedTags: [
-      "beauty", "styling", "bridal makeup", "mehendi artist", "henna artist",
-      "makeover", "saree draping", "hairstyling", "event styling"
+      "logo designer", "brand identity", "minimalist logo", "packaging design",
+      "dieline", "label design", "product packaging", "brand guidelines",
+      "menu card", "brochure", "print designer", "branding kit", "vector logo"
     ]
   },
   {
-    name: "Drone & Aerial Cinematography",
+    category: "Graphics & Design",
+    name: "UI/UX, Product Design & Figma Prototyping",
     triggers: [
-      "drone", "aerial", "fpv", "quadcopter", "dji", "flycam", "cinematography"
+      "figma", "ui", "ux", "ui/ux", "user interface", "user experience", "wireframe",
+      "prototype", "app design", "mobile ui", "web ui", "user flow", "design system",
+      "interaction design", "responsive design", "product designer"
     ],
     expandedTags: [
-      "drone videography", "drone pilot", "aerial video", "aerial footage",
-      "fpv drone", "videographer", "video post-production", "real estate drone"
+      "ui designer", "ux designer", "ui/ux", "figma prototype", "app design",
+      "web ui", "wireframes", "user flow", "mobile interface", "responsive web design",
+      "product design", "design system"
     ]
   },
   {
-    name: "Audio, Voice & Sound Design",
-    triggers: [
-      "voiceover", "voice over", "vo artist", "dubbing", "narration", "foley",
-      "sound design", "podcast", "audio mixing", "mastering", "jingle"
-    ],
-    expandedTags: [
-      "voiceover", "audio", "voiceover artist", "dubbing", "sound design",
-      "audio mixing", "podcast editor", "sound engineer", "narration"
-    ]
-  },
-  {
-    name: "CAD, Architecture & 3D Fabrication",
+    category: "Graphics & Design",
+    name: "CAD Drafting, 3D Architecture & Spatial Visualization",
     triggers: [
       "autocad", "cad", "revit", "sketchup", "lumion", "3ds max", "floor plan",
-      "drafting", "3d printing", "industrial design", "interior design"
+      "drafting", "3d printing", "industrial design", "interior design", "v-ray",
+      "architectural drawing", "blueprint", "spatial layout", "elevation", "working drawing"
     ],
     expandedTags: [
       "autocad 2d", "floor plan", "architectural drafting", "architectural visualization",
-      "3d rendering", "interior design", "cad drafter", "blueprint"
+      "3d rendering", "interior design", "cad drafter", "blueprint", "sketchup",
+      "lumion", "spatial layout", "elevation"
     ]
   },
   {
-    name: "Typing, Data Processing & Transcription",
+    category: "Graphics & Design",
+    name: "3D Product Modeling, Jewelry & Industrial Visualization",
+    triggers: [
+      "jewelry", "jewellery", "product render", "product modeling", "keyshot",
+      "blender render", "3d jewelry render", "product design", "industrial design",
+      "product visualization", "3d model", "3d modeling", "rhino", "cad jewelry"
+    ],
+    expandedTags: [
+      "product design", "3d product modeling", "jewelry design", "3d rendering",
+      "product rendering", "3d visualization", "industrial design", "keyshot",
+      "3d modeling", "blender"
+    ]
+  },
+  {
+    category: "Graphics & Design",
+    name: "Vector Illustration, Character Design & Digital Art",
+    triggers: [
+      "illustration", "illustrator", "vector artist", "character design",
+      "digital art", "doodle", "caricature", "mascot", "comic artist", "anime",
+      "storyboard", "icon design", "flat illustration", "concept artist"
+    ],
+    expandedTags: [
+      "custom illustration", "vector artist", "flat illustration", "custom icons",
+      "character design", "digital illustration", "doodle artist", "graphic illustration",
+      "illustrator", "mascot design"
+    ]
+  },
+  {
+    category: "Graphics & Design",
+    name: "Invitations, Wedding Cards & Event Stationery",
+    triggers: [
+      "invitation", "wedding card", "wedding invite", "e-invite", "save the date",
+      "greeting card", "stationery", "card design", "shadi card", "kannada wedding card",
+      "digital invite", "event invite", "invitation card"
+    ],
+    expandedTags: [
+      "invitation", "invitation design", "wedding card", "wedding invitation",
+      "wedding invite", "event invite", "e-invite", "stationery design",
+      "save the date", "card design", "graphic design"
+    ]
+  },
+
+  // ═══════════ 2. TECH & CODE ═══════════
+  {
+    category: "Tech & Code",
+    name: "Frontend Web Development & Modern JavaScript",
+    triggers: [
+      "react", "react.js", "next.js", "nextjs", "vue", "vue.js", "angular",
+      "svelte", "tailwind", "tailwind css", "javascript", "typescript", "frontend",
+      "front-end", "html/css", "html5", "css3", "web developer", "landing page code",
+      "responsive website"
+    ],
+    expandedTags: [
+      "frontend developer", "react.js", "tailwind css", "javascript", "typescript",
+      "html5/css3", "next.js", "web developer", "responsive frontend", "react dev",
+      "frontend engineer", "frontend"
+    ]
+  },
+  {
+    category: "Tech & Code",
+    name: "Backend, APIs & Server Architectures",
+    triggers: [
+      "node.js", "nodejs", "express", "express.js", "python", "django", "fastapi",
+      "flask", "nestjs", "golang", "go dev", "rest api", "graphql", "microservices",
+      "backend", "server setup", "api integration", "webhooks", "sql", "postgresql",
+      "mongodb", "prisma", "orm"
+    ],
+    expandedTags: [
+      "backend developer", "node.js", "python", "rest api", "database integration",
+      "express.js", "server setup", "backend engineer", "webhooks", "api integration",
+      "microservices", "backend"
+    ]
+  },
+  {
+    category: "Tech & Code",
+    name: "Mobile App Development (iOS & Android)",
+    triggers: [
+      "flutter", "react native", "swift", "kotlin", "ios app", "android app",
+      "mobile developer", "app store", "play store", "cross platform", "apk build",
+      "mobile engineer", "mobile application", "flutter bloc", "mobile app"
+    ],
+    expandedTags: [
+      "mobile app developer", "flutter", "react native", "ios app", "android app",
+      "cross-platform", "app store deploy", "apk build", "mobile developer",
+      "mobile engineer", "mobile app"
+    ]
+  },
+  {
+    category: "Tech & Code",
+    name: "E-Commerce & CMS Platforms (Shopify, WordPress, Webflow, Framer)",
+    triggers: [
+      "shopify", "liquid", "shopify liquid", "woocommerce", "wordpress", "elementor", "divi",
+      "webflow", "framer", "no-code", "nocode", "softr", "wix", "squarespace",
+      "ecommerce", "e-commerce", "d2c website", "online store", "product catalog"
+    ],
+    expandedTags: [
+      "shopify store", "d2c website", "e-commerce builder", "webflow developer",
+      "framer website", "wordpress developer", "elementor", "no-code dev",
+      "woocommerce", "online shop setup", "landing page builder", "ecommerce", "e-commerce"
+    ]
+  },
+  {
+    category: "Tech & Code",
+    name: "Web Scraping, Automation & Data Crawling",
+    triggers: [
+      "selenium", "puppeteer", "playwright", "beautifulsoup", "bs4", "scrapy",
+      "scraper", "web scraping", "data extraction", "crawler", "lead scraper",
+      "browser automation", "data harvesting", "python automation"
+    ],
+    expandedTags: [
+      "web scraping", "python scraper", "beautifulsoup", "selenium",
+      "data extraction", "lead scraper", "web automation", "data crawler",
+      "puppeteer", "web scraper"
+    ]
+  },
+  {
+    category: "Tech & Code",
+    name: "DevOps, Cloud, Hosting & Server Administration",
+    triggers: [
+      "docker", "kubernetes", "k8s", "aws", "ec2", "s3", "azure", "gcp",
+      "cloudflare", "nginx", "apache", "linux", "sysadmin", "ssl", "dns",
+      "domain setup", "ci/cd", "devops", "cloud engineer", "hosting migration",
+      "terraform", "ansible", "jenkins", "helm", "iac", "infrastructure as code"
+    ],
+    expandedTags: [
+      "domain setup", "dns record", "ssl certificate", "cloudflare", "web hosting",
+      "devops", "cloud engineer", "docker", "server setup", "sysadmin",
+      "terraform", "infrastructure as code", "ci/cd", "aws", "kubernetes"
+    ]
+  },
+  {
+    category: "Tech & Code",
+    name: "Web3, Blockchain & Smart Contracts",
+    triggers: [
+      "solidity", "smart contract", "ethereum", "web3", "crypto", "defi",
+      "nft", "token", "hardhat", "truffle", "metamask", "rust blockchain",
+      "dapp", "blockchain developer", "blockchain"
+    ],
+    expandedTags: [
+      "web3 developer", "smart contract", "solidity", "blockchain developer",
+      "crypto", "ethereum", "dapp developer", "defi", "blockchain", "web3"
+    ]
+  },
+
+  // ═══════════ 3. MARKETING ═══════════
+  {
+    category: "Marketing",
+    name: "Meta Ads, Paid Social & Instagram Growth",
+    triggers: [
+      "meta ads", "facebook ads", "fb ads", "instagram ads", "ad manager",
+      "cbo", "roas", "retargeting", "pixel", "fb pixel", "paid social",
+      "hyperlocal ads", "lead gen ads", "meta buyer", "social media marketing"
+    ],
+    expandedTags: [
+      "instagram ads", "facebook ads", "local ad campaign", "radius targeting",
+      "lead gen ads", "meta ads manager", "hyperlocal ads", "ad manager",
+      "performance marketing", "roas optimization", "social media marketing"
+    ]
+  },
+  {
+    category: "Marketing",
+    name: "Google Search, Display & Performance Max Ads",
+    triggers: [
+      "google ads", "ppc", "google adwords", "search ads", "display ads",
+      "pmax", "performance max", "google shopping", "sem", "keyword bidding",
+      "roas", "google search campaign"
+    ],
+    expandedTags: [
+      "google ads", "ppc specialist", "search campaign", "google display",
+      "keyword bidding", "adwords expert", "roas optimization", "sem", "ppc"
+    ]
+  },
+  {
+    category: "Marketing",
+    name: "E-Commerce Marketing, Google Shopping & Marketplace Ads",
+    triggers: [
+      "google merchant center", "merchant center", "google shopping", "amazon ads",
+      "flipkart ads", "marketplace ads", "ecommerce ads", "e-commerce ads",
+      "ecommerce marketing", "e-commerce marketing", "product ads", "catalog ads"
+    ],
+    expandedTags: [
+      "ecommerce marketing", "e-commerce marketing", "google shopping",
+      "google merchant center", "marketplace ads", "amazon advertising",
+      "performance marketing", "product ads", "ecommerce growth"
+    ]
+  },
+  {
+    category: "Marketing",
+    name: "Local SEO, Google Business Profile & Map Ranking",
+    triggers: [
+      "local seo", "google business profile", "gmb", "google maps", "map ranking",
+      "gmb optimization", "local citations", "nearby ranking", "nap audit",
+      "local search", "map pack"
+    ],
+    expandedTags: [
+      "local seo", "google business profile", "map ranking", "gmb optimization",
+      "nearby business seo", "local citation", "google maps ranking", "gmb"
+    ]
+  },
+  {
+    category: "Marketing",
+    name: "Organic SEO, Content Marketing & Link Building",
+    triggers: [
+      "seo", "organic seo", "technical seo", "on-page seo", "backlinks",
+      "link building", "semrush", "ahrefs", "keyword research", "seo audit",
+      "search engine optimization", "page rank"
+    ],
+    expandedTags: [
+      "organic seo", "technical seo", "seo audit", "keyword research",
+      "backlink building", "on-page seo", "seo specialist", "organic traffic"
+    ]
+  },
+  {
+    category: "Marketing",
+    name: "WhatsApp Funnels & Broadcast Messaging",
+    triggers: [
+      "wati", "interakt", "aisensy", "whatsapp marketing", "whatsapp broadcast",
+      "whatsapp api", "bulk whatsapp", "message campaign", "whatsapp automation",
+      "sms marketing"
+    ],
+    expandedTags: [
+      "whatsapp marketing", "wati", "interakt", "whatsapp broadcast",
+      "customer engagement", "whatsapp api", "bulk whatsapp", "message campaign",
+      "whatsapp automation"
+    ]
+  },
+  {
+    category: "Marketing",
+    name: "Influencer Marketing & Creator Collaborations",
+    triggers: [
+      "influencer", "influencer marketing", "creator outreach", "ugc creator",
+      "micro influencer", "barter collab", "gifting campaign", "brand partnership",
+      "bangalore influencers", "creator management"
+    ],
+    expandedTags: [
+      "influencer marketing", "bangalore influencers", "creator outreach",
+      "micro-influencer", "ugc creator", "brand collaboration", "gifting campaign",
+      "influencer campaign"
+    ]
+  },
+  {
+    category: "Marketing",
+    name: "Email Marketing, Newsletters & Retention Automations",
+    triggers: [
+      "klaviyo", "mailchimp", "activecampaign", "email marketing", "drip campaign",
+      "newsletter", "cold email", "email automation", "email flows", "sales sequence",
+      "retention marketing"
+    ],
+    expandedTags: [
+      "email marketing", "mailchimp", "klaviyo", "newsletter setup",
+      "drip campaign", "email automation", "sales sequence", "cold email",
+      "retention marketing"
+    ]
+  },
+
+  // ═══════════ 4. WRITING ═══════════
+  {
+    category: "Writing",
+    name: "Video, Reel & Short-Form Scriptwriting",
+    triggers: [
+      "reel script", "hook writer", "short video script", "ad copy", "tiktok script",
+      "youtube script", "youtube scriptwriter", "video scriptwriter", "viral script",
+      "video copy", "storyboard writing", "scriptwriting", "scriptwriter"
+    ],
+    expandedTags: [
+      "reel script", "hook writer", "short video script", "ad copy",
+      "video scriptwriter", "tiktok script", "viral script writer", "scriptwriter",
+      "scriptwriting", "youtube script"
+    ]
+  },
+  {
+    category: "Writing",
+    name: "Landing Page Copywriting & Conversion Sales Copy",
+    triggers: [
+      "landing page copy", "website copy", "sales copy", "sales letter", "conversion copy",
+      "copywriter", "ux writing", "headline writer", "cta copy", "funnel copy",
+      "website writer", "copywriting"
+    ],
+    expandedTags: [
+      "website copy", "landing page copy", "sales copy", "ux writing",
+      "headline writer", "conversion copywriter", "website writer", "copywriting"
+    ]
+  },
+  {
+    category: "Writing",
+    name: "SEO Blog, Article & Long-Form Content Writing",
+    triggers: [
+      "seo content", "blog writer", "article writing", "content writer", "organic seo blog",
+      "keyword-rich blog", "long-form content", "ghostwriter", "thought leadership",
+      "grant proposal writing", "proposal writing", "proposal"
+    ],
+    expandedTags: [
+      "seo content", "blog writer", "article writing", "content writer",
+      "organic seo", "keyword-rich blog", "long-form content", "content writing",
+      "proposal", "grant proposal", "proposal writing"
+    ]
+  },
+  {
+    category: "Writing",
+    name: "Academic, SOP & University Admissions Writing",
+    triggers: [
+      "sop", "sop writer", "statement of purpose", "lor", "letter of recommendation",
+      "admission essay", "admissions essay", "visa sop", "academic writing",
+      "college application", "university essay", "study abroad", "personal statement"
+    ],
+    expandedTags: [
+      "academic writing", "sop writer", "statement of purpose", "lor writing",
+      "admissions essay", "college application essay", "study abroad writing",
+      "sop", "academic essay"
+    ]
+  },
+  {
+    category: "Writing",
+    name: "Vernacular Content & Regional Translations (Kannada, Hindi)",
+    triggers: [
+      "kannada", "hindi", "translator", "translation", "kannada translation",
+      "kannada writer", "hindi translator", "hindi writer", "regional content",
+      "english to kannada", "kannada copy", "vernacular writer", "localization",
+      "language adaptation", "regional"
+    ],
+    expandedTags: [
+      "kannada translation", "hindi translator", "regional content", "english to kannada",
+      "localization", "vernacular writer", "kannada content", "kannada writer",
+      "hindi content"
+    ]
+  },
+  {
+    category: "Writing",
+    name: "Menu Descriptions, F&B & E-Commerce Catalog Copy",
+    triggers: [
+      "zomato description", "swiggy copy", "menu copy", "menu description",
+      "restaurant menu writer", "product description", "ecommerce copy", "catalog writing"
+    ],
+    expandedTags: [
+      "product copy", "menu description", "swiggy menu copy", "zomato description",
+      "e-commerce writer", "catalogue writer", "zomato menu editor", "swiggy copy"
+    ]
+  },
+  {
+    category: "Writing",
+    name: "PR, Press Releases & Corporate Storytelling",
+    triggers: [
+      "press release", "pr writer", "media kit", "brand story", "about us page",
+      "founder note", "mission vision", "press statement", "company announcement"
+    ],
+    expandedTags: [
+      "press release", "pr writer", "media kit", "media statement",
+      "company announcement", "brand story", "about us page", "brand narrative"
+    ]
+  },
+
+  // ═══════════ 5. VIDEO ═══════════
+  {
+    category: "Video",
+    name: "Short-Form Video Editing (Reels, Shorts, TikTok)",
+    triggers: [
+      "reel editor", "short-form editor", "capcut", "capcut editor", "capcut reels",
+      "instagram reel", "tiktok video", "vertical video", "alex hormozi captions",
+      "reels", "shorts editor", "viral reels", "premiere pro reels", "short form video"
+    ],
+    expandedTags: [
+      "reel editor", "short-form editor", "capcut editor", "premiere pro",
+      "vertical video", "instagram reel", "alex hormozi style captions", "capcut",
+      "reels", "shorts", "short form video"
+    ]
+  },
+  {
+    category: "Video",
+    name: "Color Grading & Cinematic Post-Production",
+    triggers: [
+      "colorist", "color grading", "davinci resolve", "davinci color grading",
+      "luts", "cinematic look", "footage correction", "video colorist", "log correction"
+    ],
+    expandedTags: [
+      "colorist", "color grading", "davinci resolve", "luts",
+      "video colorist", "cinematic look", "footage correction", "color correction"
+    ]
+  },
+  {
+    category: "Video",
+    name: "Motion Graphics, VFX & Explainer Animations",
+    triggers: [
+      "motion graphics", "after effects", "vfx", "2d motion", "title animation",
+      "explainer video", "2d animation", "whiteboard animation", "lower thirds",
+      "video intro", "blender animation"
+    ],
+    expandedTags: [
+      "motion graphics", "after effects", "vfx artist", "2d motion design",
+      "title animation", "video intro", "explainer video", "2d animation",
+      "animated video"
+    ]
+  },
+  {
+    category: "Video",
+    name: "Drone Videography & Aerial Cinematography",
+    triggers: [
+      "drone", "aerial", "fpv", "fpv drone", "quadcopter", "dji", "flycam",
+      "cinematography", "real estate drone", "aerial video", "aerial shot", "drone operator"
+    ],
+    expandedTags: [
+      "drone videography", "drone pilot", "aerial video", "aerial footage",
+      "fpv drone", "videographer", "video post-production", "real estate drone",
+      "drone operator"
+    ]
+  },
+  {
+    category: "Video",
+    name: "Wedding, Event & Celebration Videography",
+    triggers: [
+      "wedding video", "pre-wedding", "wedding montage", "wedding teaser",
+      "event video", "highlight reel", "wedding film", "birthday video", "party shoot",
+      "wedding video montage"
+    ],
+    expandedTags: [
+      "wedding video", "wedding videographer", "pre-wedding shoot", "event video",
+      "wedding teaser", "highlight reel", "cinematic wedding", "event videography"
+    ]
+  },
+  {
+    category: "Video",
+    name: "Food, Cafe & Retail Space Video Shoots",
+    triggers: [
+      "food videographer", "cafe video shoot", "restaurant reel", "ambiance video",
+      "menu shoot", "culinary videography", "hospitality video", "cafe reel"
+    ],
+    expandedTags: [
+      "food videographer", "cafe video shoot", "restaurant reel", "ambiance video",
+      "menu shoot", "culinary videography", "food video"
+    ]
+  },
+
+  // ═══════════ 6. AI SERVICES ═══════════
+  {
+    category: "AI Services",
+    name: "AI Prompt Engineering & GenAI Workflows",
+    triggers: [
+      "prompt engineer", "prompt engineering", "chatgpt prompt", "midjourney prompt",
+      "midjourney prompt engineering", "system prompt", "llm prompting", "ai workflow",
+      "prompting", "genai"
+    ],
+    expandedTags: [
+      "prompt engineer", "chatgpt prompt", "midjourney prompt", "system prompt",
+      "llm prompting", "ai workflow", "prompting", "genai consultant", "prompt engineering"
+    ]
+  },
+  {
+    category: "AI Services",
+    name: "Custom AI Chatbots & Customer Assistants",
+    triggers: [
+      "ai chatbot", "custom bot", "voiceflow", "botpress", "manychat",
+      "whatsapp ai bot", "customer support bot", "openai bot", "chat bot",
+      "langchain rag development", "rag chatbot", "chatbot"
+    ],
+    expandedTags: [
+      "ai chatbot", "custom bot", "voiceflow", "manychat", "openai api",
+      "whatsapp ai bot", "customer support bot", "botpress", "chatbot"
+    ]
+  },
+  {
+    category: "AI Services",
+    name: "Automated Workflow Integrations (Make.com, Zapier, n8n)",
+    triggers: [
+      "make.com", "zapier", "n8n", "workflow automation", "no-code automation",
+      "api sync", "webhook automation", "business automation"
+    ],
+    expandedTags: [
+      "make.com expert", "zapier automation", "workflow builder", "business automation",
+      "no-code automation", "api sync", "zapier", "make.com", "n8n"
+    ]
+  },
+  {
+    category: "AI Services",
+    name: "AI Image, Concept & Visual Generation",
+    triggers: [
+      "midjourney", "stable diffusion", "comfyui", "controlnet", "ai art",
+      "custom ai imagery", "ai visual asset", "ai artist", "concept generation"
+    ],
+    expandedTags: [
+      "midjourney artist", "stable diffusion", "ai art", "custom ai imagery",
+      "concept generation", "controlnet", "midjourney", "ai image generation"
+    ]
+  },
+  {
+    category: "AI Services",
+    name: "AI Voiceover, Speech Synthesis & Audio Cloning",
+    triggers: [
+      "elevenlabs", "voice cloning", "audio cloning", "ai voiceover",
+      "text to speech", "tts", "voice synthesis", "ai voice artist",
+      "whisper transcription", "whisper transcription fine-tuning", "voice ai"
+    ],
+    expandedTags: [
+      "ai voiceover", "elevenlabs", "audio cloning", "voice synthesis",
+      "text to speech", "ai voice artist", "ai audio", "voice ai", "whisper"
+    ]
+  },
+  {
+    category: "AI Services",
+    name: "Custom LLM Engineering, RAG & Fine-Tuning",
+    triggers: [
+      "rag", "langchain", "llamaindex", "vector database", "pinecone",
+      "chroma", "embeddings", "fine-tuning", "custom llm", "openai api"
+    ],
+    expandedTags: [
+      "openai api", "fine-tuning", "rag architecture", "langchain",
+      "vector database", "custom llm", "embeddings", "llm engineer"
+    ]
+  },
+  {
+    category: "AI Services",
+    name: "AI Avatars & Synthetic Video (HeyGen, Synthesia)",
+    triggers: [
+      "heygen", "synthesia", "d-id", "ai avatar", "virtual presenter",
+      "ai spokesperson", "ai video creation", "synthetic video"
+    ],
+    expandedTags: [
+      "heygen", "synthesia", "ai avatar video", "virtual presenter",
+      "ai spokesperson", "ai video creation"
+    ]
+  },
+
+  // ═══════════ 7. MUSIC & AUDIO ═══════════
+  {
+    category: "Music & Audio",
+    name: "Voiceover Recording (English, Kannada, Hindi)",
+    triggers: [
+      "voiceover", "voice over", "vo artist", "dubbing", "narration",
+      "kannada vo", "hindi voice", "accent voiceover", "kannada voiceover",
+      "kannada voiceover artist", "voice actor", "audiobook narrator"
+    ],
+    expandedTags: [
+      "voiceover artist", "vo artist", "kannada vo", "hindi voice",
+      "accent voiceover", "dubbing", "narration", "kannada voiceover", "vo", "voiceover"
+    ]
+  },
+  {
+    category: "Music & Audio",
+    name: "Audio Mixing, Sound Mastering & Production",
+    triggers: [
+      "sound engineer", "audio mixing", "mastering", "logic pro",
+      "ableton", "ableton live", "track mixing", "studio engineer", "fl studio",
+      "mixing and mastering", "audio engineer"
+    ],
+    expandedTags: [
+      "sound engineer", "audio mixing", "mastering", "logic pro",
+      "ableton live", "track mixing", "studio engineer", "music producer", "audio engineer"
+    ]
+  },
+  {
+    category: "Music & Audio",
+    name: "Podcast Audio Editing, Clean-up & Noise Removal",
+    triggers: [
+      "podcast editor", "audio cleanup", "podcast audio", "izotope rx",
+      "noise removal", "noise reduction", "audio restoration", "echo reduction",
+      "voice balancing", "podcast noise reduction"
+    ],
+    expandedTags: [
+      "podcast editor", "audio cleanup", "podcast audio", "izotope rx",
+      "noise removal", "audio restoration", "echo reduction", "podcast producer",
+      "audio clean-up", "noise reduction"
+    ]
+  },
+  {
+    category: "Music & Audio",
+    name: "Sound Design, Foley FX & Game Audio",
+    triggers: [
+      "sound design", "foley", "foley artist", "sound effects", "sfx",
+      "game audio", "film sound design", "audio fx"
+    ],
+    expandedTags: [
+      "sound design", "foley artist", "sound effects", "sfx",
+      "game audio", "film sound design", "audio fx"
+    ]
+  },
+  {
+    category: "Music & Audio",
+    name: "Custom Jingles & Brand Sonic Idents",
+    triggers: [
+      "sonic branding", "audio logo", "jingle creator", "brand theme",
+      "audio ident", "commercial jingle", "radio ad music"
+    ],
+    expandedTags: [
+      "sonic branding", "audio logo", "jingle creator", "brand theme",
+      "audio ident", "commercial jingle", "jingle"
+    ]
+  },
+
+  // ═══════════ 8. BUSINESS ═══════════
+  {
+    category: "Business",
+    name: "Typing, Data Entry & Document Processing",
     triggers: [
       "typing", "data entry", "transcription", "typist", "copy typing",
-      "form filling", "telecaller", "telecalling", "bpo", "inside sales"
+      "form filling", "document typing", "kannada typing", "english typing",
+      "hindi typing", "pdf to word", "speed typing", "offline typing",
+      "spreadsheet typing", "typing operator", "kannada data entry typing"
     ],
     expandedTags: [
       "typing", "data entry", "transcription", "typist", "document typing",
-      "telecaller", "inside sales", "customer calling", "bpo caller"
+      "kannada typing", "copy typing", "form filling", "data processing",
+      "typing operator", "typing & data entry"
+    ]
+  },
+  {
+    category: "Business",
+    name: "Telecaller, Inside Sales & Customer Calling",
+    triggers: [
+      "telecaller", "telecalling", "inside sales", "outbound calling",
+      "inbound calling", "bpo caller", "cold calling", "lead qualification",
+      "appointment setter", "telesales", "customer calling", "phone sales",
+      "call center", "bpo"
+    ],
+    expandedTags: [
+      "telecaller", "telecalling", "inside sales", "outbound calling",
+      "bpo caller", "cold calling", "appointment setter", "telesales executive",
+      "customer calling", "telemarketing", "call center executive", "telecaller & inside sales"
+    ]
+  },
+  {
+    category: "Business",
+    name: "Invoicing, Bookkeeping & GST Support (Tally, Zoho Books)",
+    triggers: [
+      "tally", "tally prime", "zoho books", "gst invoice", "bookkeeping",
+      "billing support", "accounting assistant", "e-way bill", "gst filing",
+      "tally prime bookkeeping", "gst accounting"
+    ],
+    expandedTags: [
+      "tally", "gst invoice", "bookkeeping", "billing support",
+      "accounting assistant", "zoho books", "tally prime", "accountant",
+      "gst accounting"
+    ]
+  },
+  {
+    category: "Business",
+    name: "Virtual Assistance & Administrative Management",
+    triggers: [
+      "virtual assistant", "va", "executive assistant", "calendar scheduling",
+      "email management", "admin assistant", "administrative support"
+    ],
+    expandedTags: [
+      "virtual assistant", "executive assistant", "email management",
+      "calendar scheduling", "admin assistant", "va", "administrative support"
+    ]
+  },
+  {
+    category: "Business",
+    name: "Spreadsheets, Excel Formulas & Data Architecture",
+    triggers: [
+      "excel formulas", "google sheets", "pivot tables", "airtable", "vlookup",
+      "spreadsheet expert", "excel macros", "data organization"
+    ],
+    expandedTags: [
+      "excel formulas", "google sheets", "pivot tables", "airtable base",
+      "data organization", "spreadsheet expert", "excel", "google sheets"
+    ]
+  },
+  {
+    category: "Business",
+    name: "Pitch Decks, Investor Presentations & Fundraising",
+    triggers: [
+      "pitch deck", "investor presentation", "fundraising", "startup pitch",
+      "pitch deck designer", "investor deck", "vc pitch", "angel pitch", "seed pitch",
+      "pitch deck investor presentation"
+    ],
+    expandedTags: [
+      "pitch deck", "fundraising", "investor presentation", "startup deck",
+      "investor deck", "pitch deck designer", "business presentation", "fundraising deck"
+    ]
+  },
+  {
+    category: "Business",
+    name: "POS Setup & Retail Billing (Petpooja, Billing Systems)",
+    triggers: [
+      "petpooja", "pos setup", "retail billing system", "restaurant pos",
+      "billing software", "menu configuration", "pos machine"
+    ],
+    expandedTags: [
+      "petpooja", "pos setup", "retail billing system", "restaurant pos",
+      "menu configuration", "billing software", "pos billing"
+    ]
+  },
+
+  // ═══════════ 9. CONSULTING ═══════════
+  {
+    category: "Consulting",
+    name: "Brand Strategy, Market Positioning & Advisory",
+    triggers: [
+      "brand strategist", "brand positioning", "brand consultant",
+      "value proposition", "market positioning", "brand architecture"
+    ],
+    expandedTags: [
+      "brand strategist", "position strategy", "brand consultant",
+      "market positioning", "value proposition", "brand strategy"
+    ]
+  },
+  {
+    category: "Consulting",
+    name: "Business Model, Pricing & Financial Unit Economics",
+    triggers: [
+      "business consultant", "pricing model", "monetization plan", "revenue strategy",
+      "cost sheet", "unit economics", "financial forecast", "budgeting", "financial consultant",
+      "business strategy"
+    ],
+    expandedTags: [
+      "business consultant", "monetization plan", "pricing model",
+      "revenue strategy", "financial consultant", "cost sheet", "unit economics",
+      "business strategy"
+    ]
+  },
+  {
+    category: "Consulting",
+    name: "Cafe, Restaurant & Cloud Kitchen Launch Advisory",
+    triggers: [
+      "cafe launch", "restaurant advisor", "food business consultant",
+      "cloud kitchen setup", "kitchen workflow", "menu engineering",
+      "restaurant cloud kitchen menu consulting", "f&b consulting"
+    ],
+    expandedTags: [
+      "food business consultant", "cloud kitchen setup", "restaurant advisor",
+      "cafe launch", "kitchen workflow", "cafe consultant", "f&b consulting"
+    ]
+  },
+  {
+    category: "Consulting",
+    name: "Interior Design Concept, Material & Space Planning Consulting",
+    triggers: [
+      "interior consultant", "material selection", "space planner", "layout audit",
+      "moodboard review", "vastu layout", "fluted paneling", "spatial consultant"
+    ],
+    expandedTags: [
+      "interior consultant", "material selection", "space planner",
+      "floor plan review", "spatial consultant", "interior design consultant"
+    ]
+  },
+  {
+    category: "Consulting",
+    name: "Go-To-Market (GTM) Strategy & Product Launch",
+    triggers: [
+      "gtm", "gtm strategist", "product launch plan", "market entry", "launch strategy",
+      "campaign planner", "go-to-market", "launch", "product launch",
+      "gtm market entry roadmap", "market entry roadmap"
+    ],
+    expandedTags: [
+      "gtm strategist", "product launch plan", "market entry",
+      "launch strategy", "campaign planner", "gtm strategy",
+      "business strategy", "go-to-market", "strategic consulting"
+    ]
+  },
+  {
+    category: "Consulting",
+    name: "Cybersecurity, Compliance & ISO Certification Consulting",
+    triggers: [
+      "iso", "iso 27001", "iso certification", "soc2", "soc 2", "hipaa", "gdpr",
+      "compliance", "audit compliance", "security audit", "cybersecurity",
+      "vapt", "information security", "cybersecurity consulting", "iso 27001 audit compliance"
+    ],
+    expandedTags: [
+      "cybersecurity consulting", "iso 27001", "compliance consulting",
+      "security audit", "soc2 compliance", "gdpr compliance", "cybersecurity",
+      "compliance audit", "it compliance"
+    ]
+  },
+
+  // ═══════════ 10. HYPERLOCAL SPECIALIZED (BANGALORE FOCUS) ═══════════
+  {
+    category: "Hyperlocal Specialized (Bangalore Focus)",
+    name: "Wall Murals, Street Art & Cafe Graffiti",
+    triggers: [
+      "wall muralist", "wall art", "cafe graffiti", "mural painter",
+      "street art", "interior wall painting", "mural artist", "canvas artist",
+      "cafe wall muralist indiranagar", "wall mural"
+    ],
+    expandedTags: [
+      "wall muralist", "wall art", "cafe graffiti", "mural painter",
+      "street art", "interior wall painting", "mural artist", "wall painting",
+      "wall mural"
+    ]
+  },
+  {
+    category: "Hyperlocal Specialized (Bangalore Focus)",
+    name: "Custom Neon, LED & Acrylic Signboards",
+    triggers: [
+      "neon sign", "led sign", "acrylic letter", "storefront sign",
+      "custom light sign", "shopboard", "glow sign", "3d letters"
+    ],
+    expandedTags: [
+      "neon sign", "led sign", "acrylic letter",
+      "storefront sign", "custom light sign", "shopboard", "signboard design"
+    ]
+  },
+  {
+    category: "Hyperlocal Specialized (Bangalore Focus)",
+    name: "Regional Language Voiceover & Local Adaptations",
+    triggers: [
+      "local adaptation", "kannada localization", "regional dubbing",
+      "local accent", "bangalore vernacular", "kannada vo", "kannada dialect"
+    ],
+    expandedTags: [
+      "local adaptation", "kannada localization", "regional dubbing",
+      "local accent", "bangalore vernacular", "kannada vo"
+    ]
+  },
+  {
+    category: "Hyperlocal Specialized (Bangalore Focus)",
+    name: "Live Event Video Coverage & Same-Day Reels",
+    triggers: [
+      "live event reel", "same-day reel", "event creator",
+      "on-field reel maker", "real-time video", "same day edit"
+    ],
+    expandedTags: [
+      "live event reel", "same-day reel", "event creator",
+      "on-field reel maker", "real-time video", "event video"
+    ]
+  },
+  {
+    category: "Hyperlocal Specialized (Bangalore Focus)",
+    name: "Real Estate Drone Mapping & 3D Walkthrough Tours",
+    triggers: [
+      "3d walkthrough", "property drone tour", "villa mapping", "villa",
+      "plot mapping", "real estate video", "aerial property tour", "drone mapper",
+      "3d tour", "walkthrough", "drone mapping"
+    ],
+    expandedTags: [
+      "3d walkthrough", "property drone tour", "villa mapping",
+      "plot mapping", "real estate video", "drone mapping"
+    ]
+  },
+  {
+    category: "Hyperlocal Specialized (Bangalore Focus)",
+    name: "Fitness, Gym & Sports Photography / Videography",
+    triggers: [
+      "gym", "fitness", "workout", "crossfit", "sports photography",
+      "gym shoot", "fitness photographer", "bodybuilding", "trainer shoot",
+      "fitness video", "gym photographer", "gym brand photographer koramangala",
+      "fitness photography"
+    ],
+    expandedTags: [
+      "fitness photography", "gym photography", "sports photography",
+      "fitness photoshoot", "brand photography", "commercial photography",
+      "fitness", "gym photographer"
+    ]
+  },
+  {
+    category: "Hyperlocal Specialized (Bangalore Focus)",
+    name: "Event Emcee, Anchoring & Live Hosting",
+    triggers: [
+      "emcee", "anchor", "event emcee", "event anchor", "corporate anchor",
+      "kannada emcee", "wedding emcee", "stage host", "mc", "master of ceremonies",
+      "kannada emcee anchor"
+    ],
+    expandedTags: [
+      "event anchor", "emcee", "event emcee", "corporate anchor",
+      "stage host", "kannada anchor", "master of ceremonies", "event host"
     ]
   }
 ];
+
+// Normalizes strings for resilient punctuation and hyphen matching
+function norm(str) {
+  return (str || "").toLowerCase().replace(/[-_]/g, "").trim();
+}
 
 /**
  * Expands any raw skill string into a normalized list of relevant tags,
@@ -1019,9 +2042,8 @@ export function expandSkillKeywords(skill, category = "") {
 
   // 1. Literal phrase and word tokens
   resultSet.add(rawLower);
-  rawLower.split(/[\s,+/&_-]+/).forEach((token) => {
-    if (token.length > 2) resultSet.add(token);
-  });
+  const skillTokens = rawLower.split(/[\s,+/&_-]+/).filter((t) => t.length > 2);
+  skillTokens.forEach((token) => resultSet.add(token));
 
   // 2. Category normalized
   if (category && typeof category === "string") {
@@ -1036,12 +2058,16 @@ export function expandSkillKeywords(skill, category = "") {
         rawLower === trigLower ||
         rawLower.includes(trigLower) ||
         trigLower.includes(rawLower) ||
-        rawLower.split(/\s+/).some((w) => w === trigLower)
+        skillTokens.some((t) => t === trigLower || trigLower === t)
       );
     });
 
     if (isTriggered) {
-      cluster.expandedTags.forEach((tag) => resultSet.add(tag.toLowerCase()));
+      cluster.expandedTags.forEach((tag) => {
+        const tl = tag.toLowerCase();
+        resultSet.add(tl);
+        if (tl.includes("-")) resultSet.add(tl.replace(/-/g, ""));
+      });
     }
   }
 
@@ -1076,8 +2102,9 @@ export function matchLeadToTaxonomy(lead, query) {
   if (!query || typeof query !== "string") return true;
   const q = query.trim().toLowerCase();
   if (!q) return true;
+  const qNorm = norm(q);
 
-  // 1. Direct fields check with guards against empty strings
+  // 1. Direct fields check with guards against empty strings & hyphen normalization
   const skill = (lead.skill || "").toLowerCase().trim();
   const name = (lead.name || "").toLowerCase().trim();
   const portfolio = (lead.portfolio || "").toLowerCase().trim();
@@ -1085,11 +2112,11 @@ export function matchLeadToTaxonomy(lead, query) {
   const leadKeywords = (lead.keywords || []).map((k) => String(k).toLowerCase().trim());
 
   if (
-    (skill && (skill === q || skill.includes(q))) ||
-    (name && (name === q || name.includes(q))) ||
-    (portfolio && (portfolio === q || portfolio.includes(q))) ||
-    (bucket && (bucket === q || bucket.includes(q))) ||
-    leadKeywords.some((k) => k && (k === q || k.includes(q) || q.includes(k)))
+    (skill && (skill === q || norm(skill).includes(qNorm))) ||
+    (name && (name === q || norm(name).includes(qNorm))) ||
+    (portfolio && (portfolio === q || norm(portfolio).includes(qNorm))) ||
+    (bucket && (bucket === q || norm(bucket).includes(qNorm))) ||
+    leadKeywords.some((k) => k && (k === q || norm(k).includes(qNorm) || qNorm.includes(norm(k))))
   ) {
     return true;
   }
@@ -1108,7 +2135,7 @@ export function matchLeadToTaxonomy(lead, query) {
     const matchKwSet = new Set(match.allKeywords.map((k) => k.toLowerCase()));
     if (
       leadKeywords.some(
-        (lk) => lk && (matchKwSet.has(lk) || match.allKeywords.some((ak) => ak.toLowerCase().includes(lk) || lk.includes(ak.toLowerCase())))
+        (lk) => lk && (matchKwSet.has(lk) || match.allKeywords.some((ak) => norm(ak).includes(norm(lk)) || norm(lk).includes(norm(ak))))
       )
     ) {
       return true;
@@ -1119,7 +2146,7 @@ export function matchLeadToTaxonomy(lead, query) {
       skill &&
       match.allKeywords.some((ak) => {
         const akl = ak.toLowerCase();
-        return skill === akl || skill.includes(akl) || akl.includes(skill);
+        return skill === akl || norm(skill).includes(norm(akl)) || norm(akl).includes(norm(skill));
       })
     ) {
       return true;
@@ -1128,7 +2155,7 @@ export function matchLeadToTaxonomy(lead, query) {
 
   // 3. Synonym & Semantic Cluster Expansion on the lead's skill
   const expandedLeadTags = expandSkillKeywords(lead.skill, lead.category || lead.bucket);
-  if (expandedLeadTags.some((tag) => tag === q || tag.includes(q) || q.includes(tag))) {
+  if (expandedLeadTags.some((tag) => tag === q || norm(tag).includes(qNorm) || qNorm.includes(norm(tag)))) {
     return true;
   }
 
@@ -1136,18 +2163,19 @@ export function matchLeadToTaxonomy(lead, query) {
   const tokens = q.split(/\s+/).filter((t) => t.length > 1);
   if (tokens.length > 1) {
     const allTokensMatch = tokens.every((token) => {
+      const tNorm = norm(token);
       return (
-        (skill && skill.includes(token)) ||
-        (name && name.includes(token)) ||
-        leadKeywords.some((k) => k && k.includes(token)) ||
-        expandedLeadTags.some((k) => k && k.includes(token)) ||
+        (skill && norm(skill).includes(tNorm)) ||
+        (name && norm(name).includes(tNorm)) ||
+        leadKeywords.some((k) => k && norm(k).includes(tNorm)) ||
+        expandedLeadTags.some((k) => k && norm(k).includes(tNorm)) ||
         searchTaxonomy(token).some((m) =>
-          (skill && (skill.includes(m.subdiscipline.toLowerCase()) || m.subdiscipline.toLowerCase().includes(skill))) ||
+          (skill && (norm(skill).includes(norm(m.subdiscipline)) || norm(m.subdiscipline).includes(norm(skill)))) ||
           m.allKeywords.some(
             (ak) =>
-              ak.toLowerCase().includes(token) &&
+              norm(ak).includes(tNorm) &&
               (skill.includes(m.category.toLowerCase()) ||
-                leadKeywords.some((lk) => m.allKeywords.map((x) => x.toLowerCase()).includes(lk)))
+                leadKeywords.some((lk) => m.allKeywords.map((x) => norm(x)).includes(norm(lk))))
           )
         )
       );
@@ -1165,6 +2193,7 @@ export function matchJobToTaxonomy(job, query) {
   if (!query || typeof query !== "string") return true;
   const q = query.trim().toLowerCase();
   if (!q) return true;
+  const qNorm = norm(q);
 
   const title = (job.title || "").toLowerCase();
   const desc = (job.description || "").toLowerCase();
@@ -1175,12 +2204,12 @@ export function matchJobToTaxonomy(job, query) {
 
   // Direct check
   if (
-    title.includes(q) ||
-    desc.includes(q) ||
-    category.includes(q) ||
-    bucket.includes(q) ||
-    company.includes(q) ||
-    jobKeywords.some((k) => k.includes(q) || q.includes(k))
+    norm(title).includes(qNorm) ||
+    norm(desc).includes(qNorm) ||
+    norm(category).includes(qNorm) ||
+    norm(bucket).includes(qNorm) ||
+    norm(company).includes(qNorm) ||
+    jobKeywords.some((k) => norm(k).includes(qNorm) || qNorm.includes(norm(k)))
   ) {
     return true;
   }
@@ -1200,14 +2229,14 @@ export function matchJobToTaxonomy(job, query) {
       return true;
     }
 
-    if (match.allKeywords.some((kw) => title.includes(kw.toLowerCase()) || desc.includes(kw.toLowerCase()))) {
+    if (match.allKeywords.some((kw) => norm(title).includes(norm(kw)) || norm(desc).includes(norm(kw)))) {
       return true;
     }
   }
 
   // Semantic cluster check on job title & category
   const expandedJobTags = expandSkillKeywords(job.title, job.category || job.bucket);
-  if (expandedJobTags.some((tag) => tag === q || tag.includes(q) || q.includes(tag))) {
+  if (expandedJobTags.some((tag) => tag === q || norm(tag).includes(qNorm) || qNorm.includes(norm(tag)))) {
     return true;
   }
 

@@ -619,88 +619,1999 @@ def _check_contact_violations(text: str) -> bool:
 
 SKILL_SYNONYM_CLUSTERS = [
     {
+        "category": "Graphics & Design",
         "name": "Fashion, Apparel & Textile Crafts",
         "triggers": [
-            "embroidery", "aari", "zari", "zardozi", "chikankari", "needlework",
-            "textile", "apparel", "garment", "fashion", "boutique", "pattern making",
-            "pattern maker", "tailor", "tailoring", "saree", "lehenga", "couture", "fabric",
-            "dressmaker", "fashion illustration", "fashion stylist",
+            "embroidery",
+            "aari",
+            "zari",
+            "zardozi",
+            "chikankari",
+            "needlework",
+            "textile",
+            "apparel",
+            "garment",
+            "fashion",
+            "boutique",
+            "pattern making",
+            "pattern maker",
+            "tailor",
+            "tailoring",
+            "saree",
+            "lehenga",
+            "couture",
+            "fabric",
+            "dressmaker",
+            "fashion illustration",
+            "fashion stylist",
+            "ethnic wear"
         ],
         "tags": [
-            "fashion", "fashion design", "fashion designer", "embroidery design",
-            "embroidery", "textile design", "textile", "apparel design", "apparel",
-            "garment design", "clothing design", "pattern maker", "pattern making",
-            "ethnic wear", "couture", "boutique designer", "aari work", "zari embroidery",
-            "hand embroidery", "fabric design", "couture design",
-        ],
+            "fashion",
+            "fashion design",
+            "fashion designer",
+            "embroidery design",
+            "embroidery",
+            "textile design",
+            "textile",
+            "apparel design",
+            "apparel",
+            "garment design",
+            "clothing design",
+            "pattern maker",
+            "pattern making",
+            "ethnic wear",
+            "couture",
+            "boutique designer",
+            "aari work",
+            "zari embroidery",
+            "hand embroidery",
+            "fabric design",
+            "couture design"
+        ]
     },
     {
-        "name": "Crafts, Murals & Physical Art",
+        "category": "Graphics & Design",
+        "name": "Physical Art, Murals, Crafts & Sculpture",
         "triggers": [
-            "pottery", "ceramics", "resin", "clay", "sculpture", "calligraphy",
-            "lettering", "typography", "mural", "graffiti", "wall art", "sketching",
-            "origami", "painting",
+            "pottery",
+            "ceramics",
+            "resin",
+            "clay",
+            "sculpture",
+            "calligraphy",
+            "lettering",
+            "typography",
+            "mural",
+            "graffiti",
+            "wall art",
+            "sketching",
+            "origami",
+            "painting",
+            "canvas painting",
+            "fine art",
+            "wood carving",
+            "mosaic"
         ],
         "tags": [
-            "crafts", "handmade", "art & craft", "fine art", "pottery", "ceramics",
-            "calligraphy", "lettering", "typography", "wall muralist", "wall art",
-            "mural painter", "custom art",
-        ],
+            "crafts",
+            "handmade",
+            "art & craft",
+            "fine art",
+            "pottery",
+            "ceramics",
+            "calligraphy",
+            "lettering",
+            "typography",
+            "wall muralist",
+            "wall art",
+            "mural painter",
+            "custom art",
+            "sculptor",
+            "street art"
+        ]
     },
     {
-        "name": "Beauty, Styling & Bridal Services",
+        "category": "Graphics & Design",
+        "name": "Brand Identity, Logo & Packaging Design",
         "triggers": [
-            "mehendi", "henna", "mehndi", "bridal", "makeup", "hairstylist",
-            "hair styling", "saree draping", "nail art", "cosmetology", "makeover",
+            "logo",
+            "branding",
+            "brand identity",
+            "brand guidelines",
+            "brand book",
+            "packaging",
+            "dieline",
+            "box design",
+            "label design",
+            "pouch",
+            "monogram",
+            "minimalist logo",
+            "mascot",
+            "menu design",
+            "brochure",
+            "flyer",
+            "pamphlet",
+            "standee",
+            "business card",
+            "print collateral"
         ],
         "tags": [
-            "beauty", "styling", "bridal makeup", "mehendi artist", "henna artist",
-            "makeover", "saree draping", "hairstyling", "event styling",
-        ],
+            "logo designer",
+            "brand identity",
+            "minimalist logo",
+            "packaging design",
+            "dieline",
+            "label design",
+            "product packaging",
+            "brand guidelines",
+            "menu card",
+            "brochure",
+            "print designer",
+            "branding kit",
+            "vector logo"
+        ]
     },
     {
-        "name": "Drone & Aerial Cinematography",
+        "category": "Graphics & Design",
+        "name": "UI/UX, Product Design & Figma Prototyping",
         "triggers": [
-            "drone", "aerial", "fpv", "quadcopter", "dji", "flycam", "cinematography",
+            "figma",
+            "ui",
+            "ux",
+            "ui/ux",
+            "user interface",
+            "user experience",
+            "wireframe",
+            "prototype",
+            "app design",
+            "mobile ui",
+            "web ui",
+            "user flow",
+            "design system",
+            "interaction design",
+            "responsive design",
+            "product designer"
         ],
         "tags": [
-            "drone videography", "drone pilot", "aerial video", "aerial footage",
-            "fpv drone", "videographer", "video post-production", "real estate drone",
-        ],
+            "ui designer",
+            "ux designer",
+            "ui/ux",
+            "figma prototype",
+            "app design",
+            "web ui",
+            "wireframes",
+            "user flow",
+            "mobile interface",
+            "responsive web design",
+            "product design",
+            "design system"
+        ]
     },
     {
-        "name": "Audio, Voice & Sound Design",
+        "category": "Graphics & Design",
+        "name": "CAD Drafting, 3D Architecture & Spatial Visualization",
         "triggers": [
-            "voiceover", "voice over", "vo artist", "dubbing", "narration", "foley",
-            "sound design", "podcast", "audio mixing", "mastering", "jingle",
+            "autocad",
+            "cad",
+            "revit",
+            "sketchup",
+            "lumion",
+            "3ds max",
+            "floor plan",
+            "drafting",
+            "3d printing",
+            "industrial design",
+            "interior design",
+            "v-ray",
+            "architectural drawing",
+            "blueprint",
+            "spatial layout",
+            "elevation",
+            "working drawing"
         ],
         "tags": [
-            "voiceover", "audio", "voiceover artist", "dubbing", "sound design",
-            "audio mixing", "podcast editor", "sound engineer", "narration",
-        ],
+            "autocad 2d",
+            "floor plan",
+            "architectural drafting",
+            "architectural visualization",
+            "3d rendering",
+            "interior design",
+            "cad drafter",
+            "blueprint",
+            "sketchup",
+            "lumion",
+            "spatial layout",
+            "elevation"
+        ]
     },
     {
-        "name": "CAD, Architecture & 3D Fabrication",
+        "category": "Graphics & Design",
+        "name": "3D Product Modeling, Jewelry & Industrial Visualization",
         "triggers": [
-            "autocad", "cad", "revit", "sketchup", "lumion", "3ds max", "floor plan",
-            "drafting", "3d printing", "industrial design", "interior design",
+            "jewelry",
+            "jewellery",
+            "product render",
+            "product modeling",
+            "keyshot",
+            "blender render",
+            "3d jewelry render",
+            "product design",
+            "industrial design",
+            "product visualization",
+            "3d model",
+            "3d modeling",
+            "rhino",
+            "cad jewelry"
         ],
         "tags": [
-            "autocad 2d", "floor plan", "architectural drafting", "architectural visualization",
-            "3d rendering", "interior design", "cad drafter", "blueprint",
-        ],
+            "product design",
+            "3d product modeling",
+            "jewelry design",
+            "3d rendering",
+            "product rendering",
+            "3d visualization",
+            "industrial design",
+            "keyshot",
+            "3d modeling",
+            "blender"
+        ]
     },
     {
-        "name": "Typing, Data Processing & Transcription",
+        "category": "Graphics & Design",
+        "name": "Vector Illustration, Character Design & Digital Art",
         "triggers": [
-            "typing", "data entry", "transcription", "typist", "copy typing",
-            "form filling", "telecaller", "telecalling", "bpo", "inside sales",
+            "illustration",
+            "illustrator",
+            "vector artist",
+            "character design",
+            "digital art",
+            "doodle",
+            "caricature",
+            "mascot",
+            "comic artist",
+            "anime",
+            "storyboard",
+            "icon design",
+            "flat illustration",
+            "concept artist"
         ],
         "tags": [
-            "typing", "data entry", "transcription", "typist", "document typing",
-            "telecaller", "inside sales", "customer calling", "bpo caller",
-        ],
+            "custom illustration",
+            "vector artist",
+            "flat illustration",
+            "custom icons",
+            "character design",
+            "digital illustration",
+            "doodle artist",
+            "graphic illustration",
+            "illustrator",
+            "mascot design"
+        ]
     },
+    {
+        "category": "Graphics & Design",
+        "name": "Invitations, Wedding Cards & Event Stationery",
+        "triggers": [
+            "invitation",
+            "wedding card",
+            "wedding invite",
+            "e-invite",
+            "save the date",
+            "greeting card",
+            "stationery",
+            "card design",
+            "shadi card",
+            "kannada wedding card",
+            "digital invite",
+            "event invite",
+            "invitation card"
+        ],
+        "tags": [
+            "invitation",
+            "invitation design",
+            "wedding card",
+            "wedding invitation",
+            "wedding invite",
+            "event invite",
+            "e-invite",
+            "stationery design",
+            "save the date",
+            "card design",
+            "graphic design"
+        ]
+    },
+    {
+        "category": "Tech & Code",
+        "name": "Frontend Web Development & Modern JavaScript",
+        "triggers": [
+            "react",
+            "react.js",
+            "next.js",
+            "nextjs",
+            "vue",
+            "vue.js",
+            "angular",
+            "svelte",
+            "tailwind",
+            "tailwind css",
+            "javascript",
+            "typescript",
+            "frontend",
+            "front-end",
+            "html/css",
+            "html5",
+            "css3",
+            "web developer",
+            "landing page code",
+            "responsive website"
+        ],
+        "tags": [
+            "frontend developer",
+            "react.js",
+            "tailwind css",
+            "javascript",
+            "typescript",
+            "html5/css3",
+            "next.js",
+            "web developer",
+            "responsive frontend",
+            "react dev",
+            "frontend engineer",
+            "frontend"
+        ]
+    },
+    {
+        "category": "Tech & Code",
+        "name": "Backend, APIs & Server Architectures",
+        "triggers": [
+            "node.js",
+            "nodejs",
+            "express",
+            "express.js",
+            "python",
+            "django",
+            "fastapi",
+            "flask",
+            "nestjs",
+            "golang",
+            "go dev",
+            "rest api",
+            "graphql",
+            "microservices",
+            "backend",
+            "server setup",
+            "api integration",
+            "webhooks",
+            "sql",
+            "postgresql",
+            "mongodb",
+            "prisma",
+            "orm"
+        ],
+        "tags": [
+            "backend developer",
+            "node.js",
+            "python",
+            "rest api",
+            "database integration",
+            "express.js",
+            "server setup",
+            "backend engineer",
+            "webhooks",
+            "api integration",
+            "microservices",
+            "backend"
+        ]
+    },
+    {
+        "category": "Tech & Code",
+        "name": "Mobile App Development (iOS & Android)",
+        "triggers": [
+            "flutter",
+            "react native",
+            "swift",
+            "kotlin",
+            "ios app",
+            "android app",
+            "mobile developer",
+            "app store",
+            "play store",
+            "cross platform",
+            "apk build",
+            "mobile engineer",
+            "mobile application",
+            "flutter bloc",
+            "mobile app"
+        ],
+        "tags": [
+            "mobile app developer",
+            "flutter",
+            "react native",
+            "ios app",
+            "android app",
+            "cross-platform",
+            "app store deploy",
+            "apk build",
+            "mobile developer",
+            "mobile engineer",
+            "mobile app"
+        ]
+    },
+    {
+        "category": "Tech & Code",
+        "name": "E-Commerce & CMS Platforms (Shopify, WordPress, Webflow, Framer)",
+        "triggers": [
+            "shopify",
+            "liquid",
+            "shopify liquid",
+            "woocommerce",
+            "wordpress",
+            "elementor",
+            "divi",
+            "webflow",
+            "framer",
+            "no-code",
+            "nocode",
+            "softr",
+            "wix",
+            "squarespace",
+            "ecommerce",
+            "e-commerce",
+            "d2c website",
+            "online store",
+            "product catalog"
+        ],
+        "tags": [
+            "shopify store",
+            "d2c website",
+            "e-commerce builder",
+            "webflow developer",
+            "framer website",
+            "wordpress developer",
+            "elementor",
+            "no-code dev",
+            "woocommerce",
+            "online shop setup",
+            "landing page builder",
+            "ecommerce",
+            "e-commerce"
+        ]
+    },
+    {
+        "category": "Tech & Code",
+        "name": "Web Scraping, Automation & Data Crawling",
+        "triggers": [
+            "selenium",
+            "puppeteer",
+            "playwright",
+            "beautifulsoup",
+            "bs4",
+            "scrapy",
+            "scraper",
+            "web scraping",
+            "data extraction",
+            "crawler",
+            "lead scraper",
+            "browser automation",
+            "data harvesting",
+            "python automation"
+        ],
+        "tags": [
+            "web scraping",
+            "python scraper",
+            "beautifulsoup",
+            "selenium",
+            "data extraction",
+            "lead scraper",
+            "web automation",
+            "data crawler",
+            "puppeteer",
+            "web scraper"
+        ]
+    },
+    {
+        "category": "Tech & Code",
+        "name": "DevOps, Cloud, Hosting & Server Administration",
+        "triggers": [
+            "docker",
+            "kubernetes",
+            "k8s",
+            "aws",
+            "ec2",
+            "s3",
+            "azure",
+            "gcp",
+            "cloudflare",
+            "nginx",
+            "apache",
+            "linux",
+            "sysadmin",
+            "ssl",
+            "dns",
+            "domain setup",
+            "ci/cd",
+            "devops",
+            "cloud engineer",
+            "hosting migration",
+            "terraform",
+            "ansible",
+            "jenkins",
+            "helm",
+            "iac",
+            "infrastructure as code"
+        ],
+        "tags": [
+            "domain setup",
+            "dns record",
+            "ssl certificate",
+            "cloudflare",
+            "web hosting",
+            "devops",
+            "cloud engineer",
+            "docker",
+            "server setup",
+            "sysadmin",
+            "terraform",
+            "infrastructure as code",
+            "ci/cd",
+            "aws",
+            "kubernetes"
+        ]
+    },
+    {
+        "category": "Tech & Code",
+        "name": "Web3, Blockchain & Smart Contracts",
+        "triggers": [
+            "solidity",
+            "smart contract",
+            "ethereum",
+            "web3",
+            "crypto",
+            "defi",
+            "nft",
+            "token",
+            "hardhat",
+            "truffle",
+            "metamask",
+            "rust blockchain",
+            "dapp",
+            "blockchain developer",
+            "blockchain"
+        ],
+        "tags": [
+            "web3 developer",
+            "smart contract",
+            "solidity",
+            "blockchain developer",
+            "crypto",
+            "ethereum",
+            "dapp developer",
+            "defi",
+            "blockchain",
+            "web3"
+        ]
+    },
+    {
+        "category": "Marketing",
+        "name": "Meta Ads, Paid Social & Instagram Growth",
+        "triggers": [
+            "meta ads",
+            "facebook ads",
+            "fb ads",
+            "instagram ads",
+            "ad manager",
+            "cbo",
+            "roas",
+            "retargeting",
+            "pixel",
+            "fb pixel",
+            "paid social",
+            "hyperlocal ads",
+            "lead gen ads",
+            "meta buyer",
+            "social media marketing"
+        ],
+        "tags": [
+            "instagram ads",
+            "facebook ads",
+            "local ad campaign",
+            "radius targeting",
+            "lead gen ads",
+            "meta ads manager",
+            "hyperlocal ads",
+            "ad manager",
+            "performance marketing",
+            "roas optimization",
+            "social media marketing"
+        ]
+    },
+    {
+        "category": "Marketing",
+        "name": "Google Search, Display & Performance Max Ads",
+        "triggers": [
+            "google ads",
+            "ppc",
+            "google adwords",
+            "search ads",
+            "display ads",
+            "pmax",
+            "performance max",
+            "google shopping",
+            "sem",
+            "keyword bidding",
+            "roas",
+            "google search campaign"
+        ],
+        "tags": [
+            "google ads",
+            "ppc specialist",
+            "search campaign",
+            "google display",
+            "keyword bidding",
+            "adwords expert",
+            "roas optimization",
+            "sem",
+            "ppc"
+        ]
+    },
+    {
+        "category": "Marketing",
+        "name": "E-Commerce Marketing, Google Shopping & Marketplace Ads",
+        "triggers": [
+            "google merchant center",
+            "merchant center",
+            "google shopping",
+            "amazon ads",
+            "flipkart ads",
+            "marketplace ads",
+            "ecommerce ads",
+            "e-commerce ads",
+            "ecommerce marketing",
+            "e-commerce marketing",
+            "product ads",
+            "catalog ads"
+        ],
+        "tags": [
+            "ecommerce marketing",
+            "e-commerce marketing",
+            "google shopping",
+            "google merchant center",
+            "marketplace ads",
+            "amazon advertising",
+            "performance marketing",
+            "product ads",
+            "ecommerce growth"
+        ]
+    },
+    {
+        "category": "Marketing",
+        "name": "Local SEO, Google Business Profile & Map Ranking",
+        "triggers": [
+            "local seo",
+            "google business profile",
+            "gmb",
+            "google maps",
+            "map ranking",
+            "gmb optimization",
+            "local citations",
+            "nearby ranking",
+            "nap audit",
+            "local search",
+            "map pack"
+        ],
+        "tags": [
+            "local seo",
+            "google business profile",
+            "map ranking",
+            "gmb optimization",
+            "nearby business seo",
+            "local citation",
+            "google maps ranking",
+            "gmb"
+        ]
+    },
+    {
+        "category": "Marketing",
+        "name": "Organic SEO, Content Marketing & Link Building",
+        "triggers": [
+            "seo",
+            "organic seo",
+            "technical seo",
+            "on-page seo",
+            "backlinks",
+            "link building",
+            "semrush",
+            "ahrefs",
+            "keyword research",
+            "seo audit",
+            "search engine optimization",
+            "page rank"
+        ],
+        "tags": [
+            "organic seo",
+            "technical seo",
+            "seo audit",
+            "keyword research",
+            "backlink building",
+            "on-page seo",
+            "seo specialist",
+            "organic traffic"
+        ]
+    },
+    {
+        "category": "Marketing",
+        "name": "WhatsApp Funnels & Broadcast Messaging",
+        "triggers": [
+            "wati",
+            "interakt",
+            "aisensy",
+            "whatsapp marketing",
+            "whatsapp broadcast",
+            "whatsapp api",
+            "bulk whatsapp",
+            "message campaign",
+            "whatsapp automation",
+            "sms marketing"
+        ],
+        "tags": [
+            "whatsapp marketing",
+            "wati",
+            "interakt",
+            "whatsapp broadcast",
+            "customer engagement",
+            "whatsapp api",
+            "bulk whatsapp",
+            "message campaign",
+            "whatsapp automation"
+        ]
+    },
+    {
+        "category": "Marketing",
+        "name": "Influencer Marketing & Creator Collaborations",
+        "triggers": [
+            "influencer",
+            "influencer marketing",
+            "creator outreach",
+            "ugc creator",
+            "micro influencer",
+            "barter collab",
+            "gifting campaign",
+            "brand partnership",
+            "bangalore influencers",
+            "creator management"
+        ],
+        "tags": [
+            "influencer marketing",
+            "bangalore influencers",
+            "creator outreach",
+            "micro-influencer",
+            "ugc creator",
+            "brand collaboration",
+            "gifting campaign",
+            "influencer campaign"
+        ]
+    },
+    {
+        "category": "Marketing",
+        "name": "Email Marketing, Newsletters & Retention Automations",
+        "triggers": [
+            "klaviyo",
+            "mailchimp",
+            "activecampaign",
+            "email marketing",
+            "drip campaign",
+            "newsletter",
+            "cold email",
+            "email automation",
+            "email flows",
+            "sales sequence",
+            "retention marketing"
+        ],
+        "tags": [
+            "email marketing",
+            "mailchimp",
+            "klaviyo",
+            "newsletter setup",
+            "drip campaign",
+            "email automation",
+            "sales sequence",
+            "cold email",
+            "retention marketing"
+        ]
+    },
+    {
+        "category": "Writing",
+        "name": "Video, Reel & Short-Form Scriptwriting",
+        "triggers": [
+            "reel script",
+            "hook writer",
+            "short video script",
+            "ad copy",
+            "tiktok script",
+            "youtube script",
+            "youtube scriptwriter",
+            "video scriptwriter",
+            "viral script",
+            "video copy",
+            "storyboard writing",
+            "scriptwriting",
+            "scriptwriter"
+        ],
+        "tags": [
+            "reel script",
+            "hook writer",
+            "short video script",
+            "ad copy",
+            "video scriptwriter",
+            "tiktok script",
+            "viral script writer",
+            "scriptwriter",
+            "scriptwriting",
+            "youtube script"
+        ]
+    },
+    {
+        "category": "Writing",
+        "name": "Landing Page Copywriting & Conversion Sales Copy",
+        "triggers": [
+            "landing page copy",
+            "website copy",
+            "sales copy",
+            "sales letter",
+            "conversion copy",
+            "copywriter",
+            "ux writing",
+            "headline writer",
+            "cta copy",
+            "funnel copy",
+            "website writer",
+            "copywriting"
+        ],
+        "tags": [
+            "website copy",
+            "landing page copy",
+            "sales copy",
+            "ux writing",
+            "headline writer",
+            "conversion copywriter",
+            "website writer",
+            "copywriting"
+        ]
+    },
+    {
+        "category": "Writing",
+        "name": "SEO Blog, Article & Long-Form Content Writing",
+        "triggers": [
+            "seo content",
+            "blog writer",
+            "article writing",
+            "content writer",
+            "organic seo blog",
+            "keyword-rich blog",
+            "long-form content",
+            "ghostwriter",
+            "thought leadership",
+            "grant proposal writing",
+            "proposal writing",
+            "proposal"
+        ],
+        "tags": [
+            "seo content",
+            "blog writer",
+            "article writing",
+            "content writer",
+            "organic seo",
+            "keyword-rich blog",
+            "long-form content",
+            "content writing",
+            "proposal",
+            "grant proposal",
+            "proposal writing"
+        ]
+    },
+    {
+        "category": "Writing",
+        "name": "Academic, SOP & University Admissions Writing",
+        "triggers": [
+            "sop",
+            "sop writer",
+            "statement of purpose",
+            "lor",
+            "letter of recommendation",
+            "admission essay",
+            "admissions essay",
+            "visa sop",
+            "academic writing",
+            "college application",
+            "university essay",
+            "study abroad",
+            "personal statement"
+        ],
+        "tags": [
+            "academic writing",
+            "sop writer",
+            "statement of purpose",
+            "lor writing",
+            "admissions essay",
+            "college application essay",
+            "study abroad writing",
+            "sop",
+            "academic essay"
+        ]
+    },
+    {
+        "category": "Writing",
+        "name": "Vernacular Content & Regional Translations (Kannada, Hindi)",
+        "triggers": [
+            "kannada",
+            "hindi",
+            "translator",
+            "translation",
+            "kannada translation",
+            "kannada writer",
+            "hindi translator",
+            "hindi writer",
+            "regional content",
+            "english to kannada",
+            "kannada copy",
+            "vernacular writer",
+            "localization",
+            "language adaptation",
+            "regional"
+        ],
+        "tags": [
+            "kannada translation",
+            "hindi translator",
+            "regional content",
+            "english to kannada",
+            "localization",
+            "vernacular writer",
+            "kannada content",
+            "kannada writer",
+            "hindi content"
+        ]
+    },
+    {
+        "category": "Writing",
+        "name": "Menu Descriptions, F&B & E-Commerce Catalog Copy",
+        "triggers": [
+            "zomato description",
+            "swiggy copy",
+            "menu copy",
+            "menu description",
+            "restaurant menu writer",
+            "product description",
+            "ecommerce copy",
+            "catalog writing"
+        ],
+        "tags": [
+            "product copy",
+            "menu description",
+            "swiggy menu copy",
+            "zomato description",
+            "e-commerce writer",
+            "catalogue writer",
+            "zomato menu editor",
+            "swiggy copy"
+        ]
+    },
+    {
+        "category": "Writing",
+        "name": "PR, Press Releases & Corporate Storytelling",
+        "triggers": [
+            "press release",
+            "pr writer",
+            "media kit",
+            "brand story",
+            "about us page",
+            "founder note",
+            "mission vision",
+            "press statement",
+            "company announcement"
+        ],
+        "tags": [
+            "press release",
+            "pr writer",
+            "media kit",
+            "media statement",
+            "company announcement",
+            "brand story",
+            "about us page",
+            "brand narrative"
+        ]
+    },
+    {
+        "category": "Video",
+        "name": "Short-Form Video Editing (Reels, Shorts, TikTok)",
+        "triggers": [
+            "reel editor",
+            "short-form editor",
+            "capcut",
+            "capcut editor",
+            "capcut reels",
+            "instagram reel",
+            "tiktok video",
+            "vertical video",
+            "alex hormozi captions",
+            "reels",
+            "shorts editor",
+            "viral reels",
+            "premiere pro reels",
+            "short form video"
+        ],
+        "tags": [
+            "reel editor",
+            "short-form editor",
+            "capcut editor",
+            "premiere pro",
+            "vertical video",
+            "instagram reel",
+            "alex hormozi style captions",
+            "capcut",
+            "reels",
+            "shorts",
+            "short form video"
+        ]
+    },
+    {
+        "category": "Video",
+        "name": "Color Grading & Cinematic Post-Production",
+        "triggers": [
+            "colorist",
+            "color grading",
+            "davinci resolve",
+            "davinci color grading",
+            "luts",
+            "cinematic look",
+            "footage correction",
+            "video colorist",
+            "log correction"
+        ],
+        "tags": [
+            "colorist",
+            "color grading",
+            "davinci resolve",
+            "luts",
+            "video colorist",
+            "cinematic look",
+            "footage correction",
+            "color correction"
+        ]
+    },
+    {
+        "category": "Video",
+        "name": "Motion Graphics, VFX & Explainer Animations",
+        "triggers": [
+            "motion graphics",
+            "after effects",
+            "vfx",
+            "2d motion",
+            "title animation",
+            "explainer video",
+            "2d animation",
+            "whiteboard animation",
+            "lower thirds",
+            "video intro",
+            "blender animation"
+        ],
+        "tags": [
+            "motion graphics",
+            "after effects",
+            "vfx artist",
+            "2d motion design",
+            "title animation",
+            "video intro",
+            "explainer video",
+            "2d animation",
+            "animated video"
+        ]
+    },
+    {
+        "category": "Video",
+        "name": "Drone Videography & Aerial Cinematography",
+        "triggers": [
+            "drone",
+            "aerial",
+            "fpv",
+            "fpv drone",
+            "quadcopter",
+            "dji",
+            "flycam",
+            "cinematography",
+            "real estate drone",
+            "aerial video",
+            "aerial shot",
+            "drone operator"
+        ],
+        "tags": [
+            "drone videography",
+            "drone pilot",
+            "aerial video",
+            "aerial footage",
+            "fpv drone",
+            "videographer",
+            "video post-production",
+            "real estate drone",
+            "drone operator"
+        ]
+    },
+    {
+        "category": "Video",
+        "name": "Wedding, Event & Celebration Videography",
+        "triggers": [
+            "wedding video",
+            "pre-wedding",
+            "wedding montage",
+            "wedding teaser",
+            "event video",
+            "highlight reel",
+            "wedding film",
+            "birthday video",
+            "party shoot",
+            "wedding video montage"
+        ],
+        "tags": [
+            "wedding video",
+            "wedding videographer",
+            "pre-wedding shoot",
+            "event video",
+            "wedding teaser",
+            "highlight reel",
+            "cinematic wedding",
+            "event videography"
+        ]
+    },
+    {
+        "category": "Video",
+        "name": "Food, Cafe & Retail Space Video Shoots",
+        "triggers": [
+            "food videographer",
+            "cafe video shoot",
+            "restaurant reel",
+            "ambiance video",
+            "menu shoot",
+            "culinary videography",
+            "hospitality video",
+            "cafe reel"
+        ],
+        "tags": [
+            "food videographer",
+            "cafe video shoot",
+            "restaurant reel",
+            "ambiance video",
+            "menu shoot",
+            "culinary videography",
+            "food video"
+        ]
+    },
+    {
+        "category": "AI Services",
+        "name": "AI Prompt Engineering & GenAI Workflows",
+        "triggers": [
+            "prompt engineer",
+            "prompt engineering",
+            "chatgpt prompt",
+            "midjourney prompt",
+            "midjourney prompt engineering",
+            "system prompt",
+            "llm prompting",
+            "ai workflow",
+            "prompting",
+            "genai"
+        ],
+        "tags": [
+            "prompt engineer",
+            "chatgpt prompt",
+            "midjourney prompt",
+            "system prompt",
+            "llm prompting",
+            "ai workflow",
+            "prompting",
+            "genai consultant",
+            "prompt engineering"
+        ]
+    },
+    {
+        "category": "AI Services",
+        "name": "Custom AI Chatbots & Customer Assistants",
+        "triggers": [
+            "ai chatbot",
+            "custom bot",
+            "voiceflow",
+            "botpress",
+            "manychat",
+            "whatsapp ai bot",
+            "customer support bot",
+            "openai bot",
+            "chat bot",
+            "langchain rag development",
+            "rag chatbot",
+            "chatbot"
+        ],
+        "tags": [
+            "ai chatbot",
+            "custom bot",
+            "voiceflow",
+            "manychat",
+            "openai api",
+            "whatsapp ai bot",
+            "customer support bot",
+            "botpress",
+            "chatbot"
+        ]
+    },
+    {
+        "category": "AI Services",
+        "name": "Automated Workflow Integrations (Make.com, Zapier, n8n)",
+        "triggers": [
+            "make.com",
+            "zapier",
+            "n8n",
+            "workflow automation",
+            "no-code automation",
+            "api sync",
+            "webhook automation",
+            "business automation"
+        ],
+        "tags": [
+            "make.com expert",
+            "zapier automation",
+            "workflow builder",
+            "business automation",
+            "no-code automation",
+            "api sync",
+            "zapier",
+            "make.com",
+            "n8n"
+        ]
+    },
+    {
+        "category": "AI Services",
+        "name": "AI Image, Concept & Visual Generation",
+        "triggers": [
+            "midjourney",
+            "stable diffusion",
+            "comfyui",
+            "controlnet",
+            "ai art",
+            "custom ai imagery",
+            "ai visual asset",
+            "ai artist",
+            "concept generation"
+        ],
+        "tags": [
+            "midjourney artist",
+            "stable diffusion",
+            "ai art",
+            "custom ai imagery",
+            "concept generation",
+            "controlnet",
+            "midjourney",
+            "ai image generation"
+        ]
+    },
+    {
+        "category": "AI Services",
+        "name": "AI Voiceover, Speech Synthesis & Audio Cloning",
+        "triggers": [
+            "elevenlabs",
+            "voice cloning",
+            "audio cloning",
+            "ai voiceover",
+            "text to speech",
+            "tts",
+            "voice synthesis",
+            "ai voice artist",
+            "whisper transcription",
+            "whisper transcription fine-tuning",
+            "voice ai"
+        ],
+        "tags": [
+            "ai voiceover",
+            "elevenlabs",
+            "audio cloning",
+            "voice synthesis",
+            "text to speech",
+            "ai voice artist",
+            "ai audio",
+            "voice ai",
+            "whisper"
+        ]
+    },
+    {
+        "category": "AI Services",
+        "name": "Custom LLM Engineering, RAG & Fine-Tuning",
+        "triggers": [
+            "rag",
+            "langchain",
+            "llamaindex",
+            "vector database",
+            "pinecone",
+            "chroma",
+            "embeddings",
+            "fine-tuning",
+            "custom llm",
+            "openai api"
+        ],
+        "tags": [
+            "openai api",
+            "fine-tuning",
+            "rag architecture",
+            "langchain",
+            "vector database",
+            "custom llm",
+            "embeddings",
+            "llm engineer"
+        ]
+    },
+    {
+        "category": "AI Services",
+        "name": "AI Avatars & Synthetic Video (HeyGen, Synthesia)",
+        "triggers": [
+            "heygen",
+            "synthesia",
+            "d-id",
+            "ai avatar",
+            "virtual presenter",
+            "ai spokesperson",
+            "ai video creation",
+            "synthetic video"
+        ],
+        "tags": [
+            "heygen",
+            "synthesia",
+            "ai avatar video",
+            "virtual presenter",
+            "ai spokesperson",
+            "ai video creation"
+        ]
+    },
+    {
+        "category": "Music & Audio",
+        "name": "Voiceover Recording (English, Kannada, Hindi)",
+        "triggers": [
+            "voiceover",
+            "voice over",
+            "vo artist",
+            "dubbing",
+            "narration",
+            "kannada vo",
+            "hindi voice",
+            "accent voiceover",
+            "kannada voiceover",
+            "kannada voiceover artist",
+            "voice actor",
+            "audiobook narrator"
+        ],
+        "tags": [
+            "voiceover artist",
+            "vo artist",
+            "kannada vo",
+            "hindi voice",
+            "accent voiceover",
+            "dubbing",
+            "narration",
+            "kannada voiceover",
+            "vo",
+            "voiceover"
+        ]
+    },
+    {
+        "category": "Music & Audio",
+        "name": "Audio Mixing, Sound Mastering & Production",
+        "triggers": [
+            "sound engineer",
+            "audio mixing",
+            "mastering",
+            "logic pro",
+            "ableton",
+            "ableton live",
+            "track mixing",
+            "studio engineer",
+            "fl studio",
+            "mixing and mastering",
+            "audio engineer"
+        ],
+        "tags": [
+            "sound engineer",
+            "audio mixing",
+            "mastering",
+            "logic pro",
+            "ableton live",
+            "track mixing",
+            "studio engineer",
+            "music producer",
+            "audio engineer"
+        ]
+    },
+    {
+        "category": "Music & Audio",
+        "name": "Podcast Audio Editing, Clean-up & Noise Removal",
+        "triggers": [
+            "podcast editor",
+            "audio cleanup",
+            "podcast audio",
+            "izotope rx",
+            "noise removal",
+            "noise reduction",
+            "audio restoration",
+            "echo reduction",
+            "voice balancing",
+            "podcast noise reduction"
+        ],
+        "tags": [
+            "podcast editor",
+            "audio cleanup",
+            "podcast audio",
+            "izotope rx",
+            "noise removal",
+            "audio restoration",
+            "echo reduction",
+            "podcast producer",
+            "audio clean-up",
+            "noise reduction"
+        ]
+    },
+    {
+        "category": "Music & Audio",
+        "name": "Sound Design, Foley FX & Game Audio",
+        "triggers": [
+            "sound design",
+            "foley",
+            "foley artist",
+            "sound effects",
+            "sfx",
+            "game audio",
+            "film sound design",
+            "audio fx"
+        ],
+        "tags": [
+            "sound design",
+            "foley artist",
+            "sound effects",
+            "sfx",
+            "game audio",
+            "film sound design",
+            "audio fx"
+        ]
+    },
+    {
+        "category": "Music & Audio",
+        "name": "Custom Jingles & Brand Sonic Idents",
+        "triggers": [
+            "sonic branding",
+            "audio logo",
+            "jingle creator",
+            "brand theme",
+            "audio ident",
+            "commercial jingle",
+            "radio ad music"
+        ],
+        "tags": [
+            "sonic branding",
+            "audio logo",
+            "jingle creator",
+            "brand theme",
+            "audio ident",
+            "commercial jingle",
+            "jingle"
+        ]
+    },
+    {
+        "category": "Business",
+        "name": "Typing, Data Entry & Document Processing",
+        "triggers": [
+            "typing",
+            "data entry",
+            "transcription",
+            "typist",
+            "copy typing",
+            "form filling",
+            "document typing",
+            "kannada typing",
+            "english typing",
+            "hindi typing",
+            "pdf to word",
+            "speed typing",
+            "offline typing",
+            "spreadsheet typing",
+            "typing operator",
+            "kannada data entry typing"
+        ],
+        "tags": [
+            "typing",
+            "data entry",
+            "transcription",
+            "typist",
+            "document typing",
+            "kannada typing",
+            "copy typing",
+            "form filling",
+            "data processing",
+            "typing operator",
+            "typing & data entry"
+        ]
+    },
+    {
+        "category": "Business",
+        "name": "Telecaller, Inside Sales & Customer Calling",
+        "triggers": [
+            "telecaller",
+            "telecalling",
+            "inside sales",
+            "outbound calling",
+            "inbound calling",
+            "bpo caller",
+            "cold calling",
+            "lead qualification",
+            "appointment setter",
+            "telesales",
+            "customer calling",
+            "phone sales",
+            "call center",
+            "bpo"
+        ],
+        "tags": [
+            "telecaller",
+            "telecalling",
+            "inside sales",
+            "outbound calling",
+            "bpo caller",
+            "cold calling",
+            "appointment setter",
+            "telesales executive",
+            "customer calling",
+            "telemarketing",
+            "call center executive",
+            "telecaller & inside sales"
+        ]
+    },
+    {
+        "category": "Business",
+        "name": "Invoicing, Bookkeeping & GST Support (Tally, Zoho Books)",
+        "triggers": [
+            "tally",
+            "tally prime",
+            "zoho books",
+            "gst invoice",
+            "bookkeeping",
+            "billing support",
+            "accounting assistant",
+            "e-way bill",
+            "gst filing",
+            "tally prime bookkeeping",
+            "gst accounting"
+        ],
+        "tags": [
+            "tally",
+            "gst invoice",
+            "bookkeeping",
+            "billing support",
+            "accounting assistant",
+            "zoho books",
+            "tally prime",
+            "accountant",
+            "gst accounting"
+        ]
+    },
+    {
+        "category": "Business",
+        "name": "Virtual Assistance & Administrative Management",
+        "triggers": [
+            "virtual assistant",
+            "va",
+            "executive assistant",
+            "calendar scheduling",
+            "email management",
+            "admin assistant",
+            "administrative support"
+        ],
+        "tags": [
+            "virtual assistant",
+            "executive assistant",
+            "email management",
+            "calendar scheduling",
+            "admin assistant",
+            "va",
+            "administrative support"
+        ]
+    },
+    {
+        "category": "Business",
+        "name": "Spreadsheets, Excel Formulas & Data Architecture",
+        "triggers": [
+            "excel formulas",
+            "google sheets",
+            "pivot tables",
+            "airtable",
+            "vlookup",
+            "spreadsheet expert",
+            "excel macros",
+            "data organization"
+        ],
+        "tags": [
+            "excel formulas",
+            "google sheets",
+            "pivot tables",
+            "airtable base",
+            "data organization",
+            "spreadsheet expert",
+            "excel",
+            "google sheets"
+        ]
+    },
+    {
+        "category": "Business",
+        "name": "Pitch Decks, Investor Presentations & Fundraising",
+        "triggers": [
+            "pitch deck",
+            "investor presentation",
+            "fundraising",
+            "startup pitch",
+            "pitch deck designer",
+            "investor deck",
+            "vc pitch",
+            "angel pitch",
+            "seed pitch",
+            "pitch deck investor presentation"
+        ],
+        "tags": [
+            "pitch deck",
+            "fundraising",
+            "investor presentation",
+            "startup deck",
+            "investor deck",
+            "pitch deck designer",
+            "business presentation",
+            "fundraising deck"
+        ]
+    },
+    {
+        "category": "Business",
+        "name": "POS Setup & Retail Billing (Petpooja, Billing Systems)",
+        "triggers": [
+            "petpooja",
+            "pos setup",
+            "retail billing system",
+            "restaurant pos",
+            "billing software",
+            "menu configuration",
+            "pos machine"
+        ],
+        "tags": [
+            "petpooja",
+            "pos setup",
+            "retail billing system",
+            "restaurant pos",
+            "menu configuration",
+            "billing software",
+            "pos billing"
+        ]
+    },
+    {
+        "category": "Consulting",
+        "name": "Brand Strategy, Market Positioning & Advisory",
+        "triggers": [
+            "brand strategist",
+            "brand positioning",
+            "brand consultant",
+            "value proposition",
+            "market positioning",
+            "brand architecture"
+        ],
+        "tags": [
+            "brand strategist",
+            "position strategy",
+            "brand consultant",
+            "market positioning",
+            "value proposition",
+            "brand strategy"
+        ]
+    },
+    {
+        "category": "Consulting",
+        "name": "Business Model, Pricing & Financial Unit Economics",
+        "triggers": [
+            "business consultant",
+            "pricing model",
+            "monetization plan",
+            "revenue strategy",
+            "cost sheet",
+            "unit economics",
+            "financial forecast",
+            "budgeting",
+            "financial consultant",
+            "business strategy"
+        ],
+        "tags": [
+            "business consultant",
+            "monetization plan",
+            "pricing model",
+            "revenue strategy",
+            "financial consultant",
+            "cost sheet",
+            "unit economics",
+            "business strategy"
+        ]
+    },
+    {
+        "category": "Consulting",
+        "name": "Cafe, Restaurant & Cloud Kitchen Launch Advisory",
+        "triggers": [
+            "cafe launch",
+            "restaurant advisor",
+            "food business consultant",
+            "cloud kitchen setup",
+            "kitchen workflow",
+            "menu engineering",
+            "restaurant cloud kitchen menu consulting",
+            "f&b consulting"
+        ],
+        "tags": [
+            "food business consultant",
+            "cloud kitchen setup",
+            "restaurant advisor",
+            "cafe launch",
+            "kitchen workflow",
+            "cafe consultant",
+            "f&b consulting"
+        ]
+    },
+    {
+        "category": "Consulting",
+        "name": "Interior Design Concept, Material & Space Planning Consulting",
+        "triggers": [
+            "interior consultant",
+            "material selection",
+            "space planner",
+            "layout audit",
+            "moodboard review",
+            "vastu layout",
+            "fluted paneling",
+            "spatial consultant"
+        ],
+        "tags": [
+            "interior consultant",
+            "material selection",
+            "space planner",
+            "floor plan review",
+            "spatial consultant",
+            "interior design consultant"
+        ]
+    },
+    {
+        "category": "Consulting",
+        "name": "Go-To-Market (GTM) Strategy & Product Launch",
+        "triggers": [
+            "gtm",
+            "gtm strategist",
+            "product launch plan",
+            "market entry",
+            "launch strategy",
+            "campaign planner",
+            "go-to-market",
+            "launch",
+            "product launch",
+            "gtm market entry roadmap",
+            "market entry roadmap"
+        ],
+        "tags": [
+            "gtm strategist",
+            "product launch plan",
+            "market entry",
+            "launch strategy",
+            "campaign planner",
+            "gtm strategy",
+            "business strategy",
+            "go-to-market",
+            "strategic consulting"
+        ]
+    },
+    {
+        "category": "Consulting",
+        "name": "Cybersecurity, Compliance & ISO Certification Consulting",
+        "triggers": [
+            "iso",
+            "iso 27001",
+            "iso certification",
+            "soc2",
+            "soc 2",
+            "hipaa",
+            "gdpr",
+            "compliance",
+            "audit compliance",
+            "security audit",
+            "cybersecurity",
+            "vapt",
+            "information security",
+            "cybersecurity consulting",
+            "iso 27001 audit compliance"
+        ],
+        "tags": [
+            "cybersecurity consulting",
+            "iso 27001",
+            "compliance consulting",
+            "security audit",
+            "soc2 compliance",
+            "gdpr compliance",
+            "cybersecurity",
+            "compliance audit",
+            "it compliance"
+        ]
+    },
+    {
+        "category": "Hyperlocal Specialized (Bangalore Focus)",
+        "name": "Wall Murals, Street Art & Cafe Graffiti",
+        "triggers": [
+            "wall muralist",
+            "wall art",
+            "cafe graffiti",
+            "mural painter",
+            "street art",
+            "interior wall painting",
+            "mural artist",
+            "canvas artist",
+            "cafe wall muralist indiranagar",
+            "wall mural"
+        ],
+        "tags": [
+            "wall muralist",
+            "wall art",
+            "cafe graffiti",
+            "mural painter",
+            "street art",
+            "interior wall painting",
+            "mural artist",
+            "wall painting",
+            "wall mural"
+        ]
+    },
+    {
+        "category": "Hyperlocal Specialized (Bangalore Focus)",
+        "name": "Custom Neon, LED & Acrylic Signboards",
+        "triggers": [
+            "neon sign",
+            "led sign",
+            "acrylic letter",
+            "storefront sign",
+            "custom light sign",
+            "shopboard",
+            "glow sign",
+            "3d letters"
+        ],
+        "tags": [
+            "neon sign",
+            "led sign",
+            "acrylic letter",
+            "storefront sign",
+            "custom light sign",
+            "shopboard",
+            "signboard design"
+        ]
+    },
+    {
+        "category": "Hyperlocal Specialized (Bangalore Focus)",
+        "name": "Regional Language Voiceover & Local Adaptations",
+        "triggers": [
+            "local adaptation",
+            "kannada localization",
+            "regional dubbing",
+            "local accent",
+            "bangalore vernacular",
+            "kannada vo",
+            "kannada dialect"
+        ],
+        "tags": [
+            "local adaptation",
+            "kannada localization",
+            "regional dubbing",
+            "local accent",
+            "bangalore vernacular",
+            "kannada vo"
+        ]
+    },
+    {
+        "category": "Hyperlocal Specialized (Bangalore Focus)",
+        "name": "Live Event Video Coverage & Same-Day Reels",
+        "triggers": [
+            "live event reel",
+            "same-day reel",
+            "event creator",
+            "on-field reel maker",
+            "real-time video",
+            "same day edit"
+        ],
+        "tags": [
+            "live event reel",
+            "same-day reel",
+            "event creator",
+            "on-field reel maker",
+            "real-time video",
+            "event video"
+        ]
+    },
+    {
+        "category": "Hyperlocal Specialized (Bangalore Focus)",
+        "name": "Real Estate Drone Mapping & 3D Walkthrough Tours",
+        "triggers": [
+            "3d walkthrough",
+            "property drone tour",
+            "villa mapping",
+            "villa",
+            "plot mapping",
+            "real estate video",
+            "aerial property tour",
+            "drone mapper",
+            "3d tour",
+            "walkthrough",
+            "drone mapping"
+        ],
+        "tags": [
+            "3d walkthrough",
+            "property drone tour",
+            "villa mapping",
+            "plot mapping",
+            "real estate video",
+            "drone mapping"
+        ]
+    },
+    {
+        "category": "Hyperlocal Specialized (Bangalore Focus)",
+        "name": "Fitness, Gym & Sports Photography / Videography",
+        "triggers": [
+            "gym",
+            "fitness",
+            "workout",
+            "crossfit",
+            "sports photography",
+            "gym shoot",
+            "fitness photographer",
+            "bodybuilding",
+            "trainer shoot",
+            "fitness video",
+            "gym photographer",
+            "gym brand photographer koramangala",
+            "fitness photography"
+        ],
+        "tags": [
+            "fitness photography",
+            "gym photography",
+            "sports photography",
+            "fitness photoshoot",
+            "brand photography",
+            "commercial photography",
+            "fitness",
+            "gym photographer"
+        ]
+    },
+    {
+        "category": "Hyperlocal Specialized (Bangalore Focus)",
+        "name": "Event Emcee, Anchoring & Live Hosting",
+        "triggers": [
+            "emcee",
+            "anchor",
+            "event emcee",
+            "event anchor",
+            "corporate anchor",
+            "kannada emcee",
+            "wedding emcee",
+            "stage host",
+            "mc",
+            "master of ceremonies",
+            "kannada emcee anchor"
+        ],
+        "tags": [
+            "event anchor",
+            "emcee",
+            "event emcee",
+            "corporate anchor",
+            "stage host",
+            "kannada anchor",
+            "master of ceremonies",
+            "event host"
+        ]
+    }
 ]
 
 
@@ -709,13 +2620,17 @@ def expand_skill_keywords(skill: str, category: str = "") -> List[str]:
         return [category.lower()] if category else []
     raw = skill.strip().lower()
     res = set([raw])
-    for w in re.split(r"[\s,+/&_-]+", raw):
-        if len(w) > 2:
-            res.add(w)
+    tokens = [w for w in re.split(r"[\s,+/&_-]+", raw) if len(w) > 2]
+    for w in tokens:
+        res.add(w)
     if category:
         res.add(category.strip().lower())
     for cluster in SKILL_SYNONYM_CLUSTERS:
-        if any(trig in raw or raw in trig for trig in cluster["triggers"]):
+        matched = any(
+            trig in raw or raw in trig or any(token == trig or trig == token for token in tokens)
+            for trig in cluster["triggers"]
+        )
+        if matched:
             for tag in cluster["tags"]:
                 res.add(tag)
     return list(res)
