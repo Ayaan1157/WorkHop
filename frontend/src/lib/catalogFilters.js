@@ -16,6 +16,7 @@ export const DISCIPLINES_CATALOG = [
       "UI/UX Interface Design (Figma)",
       "3D Architectural Rendering & Interior Visualization",
       "Merch & Apparel Graphics",
+      "Fashion, Apparel & Textile Design",
       "Signage, Banners & Environmental Graphics",
       "Architectural and interior design floor plan",
       "Artist",
@@ -323,7 +324,7 @@ export const LEAD_CATEGORY_FILTERS = [
     label: "GRAPHICS & DESIGN",
     cats: [
       "Brand & Logo Designer", "Graphic Designer", "Illustrator / Digital Artist", "UI/UX Designer", "Packaging & Label Designer", "Interior Designer", "Fashion Designer", "Landscape Designer", "Architectural 3D Visualizer / SketchUp Modeler", "AutoCAD Draftsman", "Product Photographer",
-      "Logo & Visual Identity Design", "Brand Style Guides & Visual Systems", "Packaging, Label & Box Design", "Menu, Flyer & Print Collateral Design", "Social Media Posts, Stories & Banners", "Vector Illustration & Icon Design", "Pitch Deck & Investor Presentation Design", "UI/UX Interface Design (Figma)", "3D Architectural Rendering & Interior Visualization", "Merch & Apparel Graphics", "Signage, Banners & Environmental Graphics", "Architectural and interior design floor plan",
+      "Logo & Visual Identity Design", "Brand Style Guides & Visual Systems", "Packaging, Label & Box Design", "Menu, Flyer & Print Collateral Design", "Social Media Posts, Stories & Banners", "Vector Illustration & Icon Design", "Pitch Deck & Investor Presentation Design", "UI/UX Interface Design (Figma)", "3D Architectural Rendering & Interior Visualization", "Merch & Apparel Graphics", "Fashion, Apparel & Textile Design", "Embroidery Design", "Textile Design", "Signage, Banners & Environmental Graphics", "Architectural and interior design floor plan",
       "Wall Mural & Graffiti Concept Design", "Custom Acrylic & Neon Signboard Design",
       "Artist", "Mural Artist", "Model Making", "Fine Artist", "Wall Mural Artist", "Architectural Model Making"
     ],
@@ -403,6 +404,8 @@ export {
   KEYWORD_TAXONOMY,
   FLAT_SUBDISCIPLINES,
   SUBDISCIPLINE_KEYWORDS,
+  SKILL_SYNONYM_CLUSTERS,
+  expandSkillKeywords,
   searchTaxonomy,
   matchLeadToTaxonomy,
   matchJobToTaxonomy,

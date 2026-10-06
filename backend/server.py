@@ -617,6 +617,110 @@ def _check_contact_violations(text: str) -> bool:
     return False
 
 
+SKILL_SYNONYM_CLUSTERS = [
+    {
+        "name": "Fashion, Apparel & Textile Crafts",
+        "triggers": [
+            "embroidery", "aari", "zari", "zardozi", "chikankari", "needlework",
+            "textile", "apparel", "garment", "fashion", "boutique", "pattern making",
+            "pattern maker", "tailor", "tailoring", "saree", "lehenga", "couture", "fabric",
+            "dressmaker", "fashion illustration", "fashion stylist",
+        ],
+        "tags": [
+            "fashion", "fashion design", "fashion designer", "embroidery design",
+            "embroidery", "textile design", "textile", "apparel design", "apparel",
+            "garment design", "clothing design", "pattern maker", "pattern making",
+            "ethnic wear", "couture", "boutique designer", "aari work", "zari embroidery",
+            "hand embroidery", "fabric design", "couture design",
+        ],
+    },
+    {
+        "name": "Crafts, Murals & Physical Art",
+        "triggers": [
+            "pottery", "ceramics", "resin", "clay", "sculpture", "calligraphy",
+            "lettering", "typography", "mural", "graffiti", "wall art", "sketching",
+            "origami", "painting",
+        ],
+        "tags": [
+            "crafts", "handmade", "art & craft", "fine art", "pottery", "ceramics",
+            "calligraphy", "lettering", "typography", "wall muralist", "wall art",
+            "mural painter", "custom art",
+        ],
+    },
+    {
+        "name": "Beauty, Styling & Bridal Services",
+        "triggers": [
+            "mehendi", "henna", "mehndi", "bridal", "makeup", "hairstylist",
+            "hair styling", "saree draping", "nail art", "cosmetology", "makeover",
+        ],
+        "tags": [
+            "beauty", "styling", "bridal makeup", "mehendi artist", "henna artist",
+            "makeover", "saree draping", "hairstyling", "event styling",
+        ],
+    },
+    {
+        "name": "Drone & Aerial Cinematography",
+        "triggers": [
+            "drone", "aerial", "fpv", "quadcopter", "dji", "flycam", "cinematography",
+        ],
+        "tags": [
+            "drone videography", "drone pilot", "aerial video", "aerial footage",
+            "fpv drone", "videographer", "video post-production", "real estate drone",
+        ],
+    },
+    {
+        "name": "Audio, Voice & Sound Design",
+        "triggers": [
+            "voiceover", "voice over", "vo artist", "dubbing", "narration", "foley",
+            "sound design", "podcast", "audio mixing", "mastering", "jingle",
+        ],
+        "tags": [
+            "voiceover", "audio", "voiceover artist", "dubbing", "sound design",
+            "audio mixing", "podcast editor", "sound engineer", "narration",
+        ],
+    },
+    {
+        "name": "CAD, Architecture & 3D Fabrication",
+        "triggers": [
+            "autocad", "cad", "revit", "sketchup", "lumion", "3ds max", "floor plan",
+            "drafting", "3d printing", "industrial design", "interior design",
+        ],
+        "tags": [
+            "autocad 2d", "floor plan", "architectural drafting", "architectural visualization",
+            "3d rendering", "interior design", "cad drafter", "blueprint",
+        ],
+    },
+    {
+        "name": "Typing, Data Processing & Transcription",
+        "triggers": [
+            "typing", "data entry", "transcription", "typist", "copy typing",
+            "form filling", "telecaller", "telecalling", "bpo", "inside sales",
+        ],
+        "tags": [
+            "typing", "data entry", "transcription", "typist", "document typing",
+            "telecaller", "inside sales", "customer calling", "bpo caller",
+        ],
+    },
+]
+
+
+def expand_skill_keywords(skill: str, category: str = "") -> List[str]:
+    if not skill:
+        return [category.lower()] if category else []
+    raw = skill.strip().lower()
+    res = set([raw])
+    for w in re.split(r"[\s,+/&_-]+", raw):
+        if len(w) > 2:
+            res.add(w)
+    if category:
+        res.add(category.strip().lower())
+    for cluster in SKILL_SYNONYM_CLUSTERS:
+        if any(trig in raw or raw in trig for trig in cluster["triggers"]):
+            for tag in cluster["tags"]:
+                res.add(tag)
+    return list(res)
+
+
 def _freelancer_to_lead(doc: dict, unlocked: bool = False) -> Lead:
     name = doc.get("full_name") or "Verified Pro"
     initials = "".join(w[0] for w in name.split()[:2]).upper() or "VP"
@@ -635,6 +739,9 @@ def _freelancer_to_lead(doc: dict, unlocked: bool = False) -> Lead:
     ext_rating = doc.get("external_rating")
     raw_phone = doc.get("phone") or ""
     phone = raw_phone if unlocked else _mask_phone(raw_phone)
+    expanded = expand_skill_keywords(skill, doc.get("category") or "Graphics & Design")
+    existing_kw = doc.get("keywords") or []
+    merged_kw = list(set([k.lower() for k in existing_kw] + expanded))
     return Lead(
         id=doc["freelancer_id"],
         initials=initials,
@@ -655,7 +762,7 @@ def _freelancer_to_lead(doc: dict, unlocked: bool = False) -> Lead:
         external_rating_source=doc.get("external_platform") or "",
         lat=lat if lat is not None else 12.9716,
         lng=lng if lng is not None else 77.5946,
-        keywords=[w.lower() for w in skill.split()] + [skill],
+        keywords=merged_kw,
     )
 
 
@@ -770,6 +877,7 @@ async def freelancer_submit(req: FinalSubmitRequest):
         updates["skill"] = req.skill.strip()[:60]
     if req.category.strip():
         updates["category"] = req.category.strip()[:40]
+    updates["keywords"] = expand_skill_keywords(req.skill, req.category)
     if req.lat is not None and req.lng is not None:
         updates["lat"] = req.lat
         updates["lng"] = req.lng
@@ -850,6 +958,11 @@ async def update_freelancer_profile(freelancer_id: str, req: ProfileUpdateReques
         updates["skill"] = str(updates["skill"]).strip()[:60]
     if "category" in updates:
         updates["category"] = str(updates["category"]).strip()[:40]
+    if "skill" in updates or "category" in updates:
+        existing_doc = await db.freelancers.find_one({"_id": freelancer_id}) or {}
+        sk = updates.get("skill") or existing_doc.get("skill") or ""
+        cat = updates.get("category") or existing_doc.get("category") or ""
+        updates["keywords"] = expand_skill_keywords(sk, cat)
     if "intro" in updates:
         updates["intro"] = str(updates["intro"]).strip()[:400]
     if "linkedin_url" in updates:
@@ -4249,6 +4362,7 @@ CATALOG = [
         "UI/UX Interface Design (Figma)",
         "3D Architectural Rendering & Interior Visualization",
         "Merch & Apparel Graphics",
+        "Fashion, Apparel & Textile Design",
         "Signage, Banners & Environmental Graphics",
         "Architectural and interior design floor plan",
         "Artist",

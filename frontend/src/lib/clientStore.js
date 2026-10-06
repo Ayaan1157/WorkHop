@@ -3,6 +3,7 @@ import jobsSeed from "@/data/jobs.json";
 import { DISCIPLINES_CATALOG } from "@/lib/catalogFilters";
 import { getAreaCoordinates, calculateDistance } from "@/lib/locationAreas";
 import { sendBrowserPushNotification } from "@/lib/pushNotifications";
+import { expandSkillKeywords } from "@/lib/keywordTaxonomy";
 
 const CUSTOM_JOBS_KEY = "workhop_custom_jobs";
 const USER_KEY = "workhop_user_data";
@@ -107,7 +108,12 @@ export function getStoredLeads() {
     phone: isUnlocked ? lead.phone : maskPhone(lead.phone),
     is_unlocked: isUnlocked,
     portfolio: lead.portfolio || `${(lead.name || "pro").toLowerCase().replace(/[^a-z]/g, "")}.in`,
-    keywords: lead.keywords || [lead.skill],
+    keywords: Array.from(
+      new Set([
+        ...(lead.keywords || [lead.skill]),
+        ...expandSkillKeywords(lead.skill, lead.category || lead.bucket)
+      ])
+    ),
     bucket: lead.bucket || "Creative",
     category: lead.category || lead.bucket || "Graphics & Design",
     area: lead.area || "Bengaluru",
@@ -1464,6 +1470,13 @@ export function getFreelancerProfile() {
 export function saveFreelancerProfile(profile) {
   const cleaned = { ...profile };
   delete cleaned.upwork_url;
+  const skillsToExpand = [
+    cleaned.title,
+    cleaned.skill,
+    ...(Array.isArray(cleaned.skills) ? cleaned.skills : []),
+  ].filter(Boolean).join(" ");
+  cleaned.search_tags = expandSkillKeywords(skillsToExpand, cleaned.category || cleaned.bucket || "Graphics & Design");
+  cleaned.keywords = cleaned.search_tags;
   localStorage.setItem(FREELANCER_PROFILE_KEY, JSON.stringify(cleaned));
   return cleaned;
 }

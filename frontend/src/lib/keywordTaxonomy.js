@@ -81,6 +81,18 @@ export const KEYWORD_TAXONOMY = [
         ]
       },
       {
+        name: "Fashion, Apparel & Textile Design",
+        keywords: [
+          "Fashion", "Fashion designer", "Fashion design", "Embroidery design",
+          "Embroidery", "Textile design", "Apparel design", "Garment design",
+          "Clothing designer", "Pattern maker", "Pattern making", "Ethnic wear",
+          "Couture", "Boutique designer", "Aari work", "Zari embroidery",
+          "Zardozi", "Fabric printing", "Costume design", "Fashion stylist",
+          "Saree designer", "Lehenga design", "Fashion illustration", "CAD fashion",
+          "Textile artist", "Hand embroidery", "Couture design", "Chikankari", "Needlework"
+        ]
+      },
+      {
         name: "Signage, Banners & Environmental Graphics",
         keywords: [
           "Flex banner", "Signboard design", "Wall graphics", "Office branding",
@@ -830,6 +842,13 @@ export const SUBDISCIPLINE_KEYWORDS = {
   "Telecaller": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
   "Data Entry": RAW_SUBDISCIPLINE_KEYWORDS["Typing, Data Entry & Document Processing"] || [],
   "Telecalling": RAW_SUBDISCIPLINE_KEYWORDS["Telecaller, Inside Sales & Customer Calling"] || [],
+  "Fashion, Apparel & Textile Design": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
+  "Fashion": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
+  "Fashion Design": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
+  "Fashion Designer": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
+  "Embroidery": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
+  "Embroidery Design": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
+  "Textile Design": RAW_SUBDISCIPLINE_KEYWORDS["Fashion, Apparel & Textile Design"] || [],
 };
 
 // Fast search: build an inverted index mapping lowercased keywords and tokens
@@ -900,71 +919,236 @@ export function searchTaxonomy(query) {
   return matches;
 }
 
+// Semantic Synonym Clusters connecting uncommon/niche skills to broader industry search tags
+export const SKILL_SYNONYM_CLUSTERS = [
+  {
+    name: "Fashion, Apparel & Textile Crafts",
+    triggers: [
+      "embroidery", "aari", "zari", "zardozi", "chikankari", "needlework",
+      "textile", "apparel", "garment", "fashion", "boutique", "pattern making",
+      "pattern maker", "tailor", "tailoring", "saree", "lehenga", "couture", "fabric",
+      "dressmaker", "fashion illustration", "fashion stylist"
+    ],
+    expandedTags: [
+      "fashion", "fashion design", "fashion designer", "embroidery design",
+      "embroidery", "textile design", "textile", "apparel design", "apparel",
+      "garment design", "clothing design", "pattern maker", "pattern making",
+      "ethnic wear", "couture", "boutique designer", "aari work", "zari embroidery",
+      "hand embroidery", "fabric design", "couture design"
+    ]
+  },
+  {
+    name: "Crafts, Murals & Physical Art",
+    triggers: [
+      "pottery", "ceramics", "resin", "clay", "sculpture", "calligraphy",
+      "lettering", "typography", "mural", "graffiti", "wall art", "sketching",
+      "origami", "painting"
+    ],
+    expandedTags: [
+      "crafts", "handmade", "art & craft", "fine art", "pottery", "ceramics",
+      "calligraphy", "lettering", "typography", "wall muralist", "wall art",
+      "mural painter", "custom art"
+    ]
+  },
+  {
+    name: "Beauty, Styling & Bridal Services",
+    triggers: [
+      "mehendi", "henna", "mehndi", "bridal", "makeup", "hairstylist",
+      "hair styling", "saree draping", "nail art", "cosmetology", "makeover"
+    ],
+    expandedTags: [
+      "beauty", "styling", "bridal makeup", "mehendi artist", "henna artist",
+      "makeover", "saree draping", "hairstyling", "event styling"
+    ]
+  },
+  {
+    name: "Drone & Aerial Cinematography",
+    triggers: [
+      "drone", "aerial", "fpv", "quadcopter", "dji", "flycam", "cinematography"
+    ],
+    expandedTags: [
+      "drone videography", "drone pilot", "aerial video", "aerial footage",
+      "fpv drone", "videographer", "video post-production", "real estate drone"
+    ]
+  },
+  {
+    name: "Audio, Voice & Sound Design",
+    triggers: [
+      "voiceover", "voice over", "vo artist", "dubbing", "narration", "foley",
+      "sound design", "podcast", "audio mixing", "mastering", "jingle"
+    ],
+    expandedTags: [
+      "voiceover", "audio", "voiceover artist", "dubbing", "sound design",
+      "audio mixing", "podcast editor", "sound engineer", "narration"
+    ]
+  },
+  {
+    name: "CAD, Architecture & 3D Fabrication",
+    triggers: [
+      "autocad", "cad", "revit", "sketchup", "lumion", "3ds max", "floor plan",
+      "drafting", "3d printing", "industrial design", "interior design"
+    ],
+    expandedTags: [
+      "autocad 2d", "floor plan", "architectural drafting", "architectural visualization",
+      "3d rendering", "interior design", "cad drafter", "blueprint"
+    ]
+  },
+  {
+    name: "Typing, Data Processing & Transcription",
+    triggers: [
+      "typing", "data entry", "transcription", "typist", "copy typing",
+      "form filling", "telecaller", "telecalling", "bpo", "inside sales"
+    ],
+    expandedTags: [
+      "typing", "data entry", "transcription", "typist", "document typing",
+      "telecaller", "inside sales", "customer calling", "bpo caller"
+    ]
+  }
+];
+
+/**
+ * Expands any raw skill string into a normalized list of relevant tags,
+ * semantic synonyms, subdiscipline matches, and category terms.
+ */
+export function expandSkillKeywords(skill, category = "") {
+  if (!skill || typeof skill !== "string") return [];
+  const rawLower = skill.trim().toLowerCase();
+  if (!rawLower) return [];
+
+  const resultSet = new Set();
+
+  // 1. Literal phrase and word tokens
+  resultSet.add(rawLower);
+  rawLower.split(/[\s,+/&_-]+/).forEach((token) => {
+    if (token.length > 2) resultSet.add(token);
+  });
+
+  // 2. Category normalized
+  if (category && typeof category === "string") {
+    resultSet.add(category.trim().toLowerCase());
+  }
+
+  // 3. Synonym Clusters lookup
+  for (const cluster of SKILL_SYNONYM_CLUSTERS) {
+    const isTriggered = cluster.triggers.some((trig) => {
+      const trigLower = trig.toLowerCase();
+      return (
+        rawLower === trigLower ||
+        rawLower.includes(trigLower) ||
+        trigLower.includes(rawLower) ||
+        rawLower.split(/\s+/).some((w) => w === trigLower)
+      );
+    });
+
+    if (isTriggered) {
+      cluster.expandedTags.forEach((tag) => resultSet.add(tag.toLowerCase()));
+    }
+  }
+
+  // 4. Keyword Taxonomy cross-reference
+  for (const cat of KEYWORD_TAXONOMY) {
+    for (const sub of cat.subdisciplines) {
+      const subNameLower = sub.name.toLowerCase();
+      const matched = sub.keywords.some((kw) => {
+        const kwLower = kw.toLowerCase();
+        return rawLower === kwLower || (kwLower.length > 5 && rawLower.includes(kwLower)) || (rawLower.length > 5 && kwLower.includes(rawLower));
+      });
+
+      if (matched || (subNameLower.length > 5 && (subNameLower === rawLower || rawLower.includes(subNameLower) || subNameLower.includes(rawLower)))) {
+        resultSet.add(cat.category.toLowerCase());
+        resultSet.add(sub.name.toLowerCase());
+      }
+    }
+  }
+
+  return Array.from(resultSet);
+}
+
 /**
  * Intelligent Freelancer Profile Query Matcher.
  * Matches candidate leads by:
  * 1. Direct match on name, skill, portfolio, or existing keywords.
  * 2. Keyword Taxonomy Expansion: colloquial terms (e.g. "AutoCAD", "Framer dev", "Kannada VO", "Zomato menu editor")
  *    map to the exact right profiles.
+ * 3. Semantic Synonym Clusters: bridges uncommon skills (e.g. "embroidery design") to umbrella queries (e.g. "fashion").
  */
 export function matchLeadToTaxonomy(lead, query) {
   if (!query || typeof query !== "string") return true;
   const q = query.trim().toLowerCase();
   if (!q) return true;
 
-  // 1. Direct fields check
-  const skill = (lead.skill || "").toLowerCase();
-  const name = (lead.name || "").toLowerCase();
-  const portfolio = (lead.portfolio || "").toLowerCase();
-  const bucket = (lead.bucket || "").toLowerCase();
-  const leadKeywords = (lead.keywords || []).map((k) => String(k).toLowerCase());
+  // 1. Direct fields check with guards against empty strings
+  const skill = (lead.skill || "").toLowerCase().trim();
+  const name = (lead.name || "").toLowerCase().trim();
+  const portfolio = (lead.portfolio || "").toLowerCase().trim();
+  const bucket = (lead.bucket || "").toLowerCase().trim();
+  const leadKeywords = (lead.keywords || []).map((k) => String(k).toLowerCase().trim());
 
   if (
-    skill.includes(q) ||
-    name.includes(q) ||
-    portfolio.includes(q) ||
-    bucket.includes(q) ||
-    leadKeywords.some((k) => k.includes(q) || q.includes(k))
+    (skill && (skill === q || skill.includes(q))) ||
+    (name && (name === q || name.includes(q))) ||
+    (portfolio && (portfolio === q || portfolio.includes(q))) ||
+    (bucket && (bucket === q || bucket.includes(q))) ||
+    leadKeywords.some((k) => k && (k === q || k.includes(q) || q.includes(k)))
   ) {
     return true;
   }
 
-  // 2. Query expansion via taxonomy index
-  // Check if any subdiscipline matched by query links to this lead
+  // 2. Query expansion via taxonomy index & bidirectional matching
   const taxonomyMatches = searchTaxonomy(q);
   for (const match of taxonomyMatches) {
     const subLower = match.subdiscipline.toLowerCase();
-    const catLower = match.category.toLowerCase();
 
-    // If candidate's skill or bucket corresponds to this subdiscipline
-    if (
-      skill.includes(subLower) ||
-      subLower.includes(skill) ||
-      bucket.includes(catLower) ||
-      catLower.includes(bucket)
-    ) {
+    // If candidate's skill corresponds to this subdiscipline
+    if (skill && (skill.includes(subLower) || subLower.includes(skill))) {
       return true;
     }
 
     // Check if candidate keywords intersect with matched taxonomy keywords
     const matchKwSet = new Set(match.allKeywords.map((k) => k.toLowerCase()));
-    if (leadKeywords.some((lk) => matchKwSet.has(lk) || match.allKeywords.some((ak) => ak.toLowerCase().includes(lk) || lk.includes(ak.toLowerCase())))) {
+    if (
+      leadKeywords.some(
+        (lk) => lk && (matchKwSet.has(lk) || match.allKeywords.some((ak) => ak.toLowerCase().includes(lk) || lk.includes(ak.toLowerCase())))
+      )
+    ) {
+      return true;
+    }
+
+    // Bidirectional: Check if candidate skill contains or is contained in any keyword of this matched subdiscipline
+    if (
+      skill &&
+      match.allKeywords.some((ak) => {
+        const akl = ak.toLowerCase();
+        return skill === akl || skill.includes(akl) || akl.includes(skill);
+      })
+    ) {
       return true;
     }
   }
 
-  // 3. Multi-word search tokenization
+  // 3. Synonym & Semantic Cluster Expansion on the lead's skill
+  const expandedLeadTags = expandSkillKeywords(lead.skill, lead.category || lead.bucket);
+  if (expandedLeadTags.some((tag) => tag === q || tag.includes(q) || q.includes(tag))) {
+    return true;
+  }
+
+  // 4. Multi-word search tokenization
   const tokens = q.split(/\s+/).filter((t) => t.length > 1);
   if (tokens.length > 1) {
     const allTokensMatch = tokens.every((token) => {
       return (
-        skill.includes(token) ||
-        name.includes(token) ||
-        leadKeywords.some((k) => k.includes(token)) ||
+        (skill && skill.includes(token)) ||
+        (name && name.includes(token)) ||
+        leadKeywords.some((k) => k && k.includes(token)) ||
+        expandedLeadTags.some((k) => k && k.includes(token)) ||
         searchTaxonomy(token).some((m) =>
-          skill.includes(m.subdiscipline.toLowerCase()) ||
-          m.subdiscipline.toLowerCase().includes(skill) ||
-          m.allKeywords.some((ak) => ak.toLowerCase().includes(token) && (skill.includes(m.category.toLowerCase()) || leadKeywords.some((lk) => m.allKeywords.map(x=>x.toLowerCase()).includes(lk))))
+          (skill && (skill.includes(m.subdiscipline.toLowerCase()) || m.subdiscipline.toLowerCase().includes(skill))) ||
+          m.allKeywords.some(
+            (ak) =>
+              ak.toLowerCase().includes(token) &&
+              (skill.includes(m.category.toLowerCase()) ||
+                leadKeywords.some((lk) => m.allKeywords.map((x) => x.toLowerCase()).includes(lk)))
+          )
         )
       );
     });
@@ -975,7 +1159,7 @@ export function matchLeadToTaxonomy(lead, query) {
 }
 
 /**
- * Intelligent Job / Gig Query Matcher using the keyword taxonomy.
+ * Intelligent Job / Gig Query Matcher using the keyword taxonomy and semantic clusters.
  */
 export function matchJobToTaxonomy(job, query) {
   if (!query || typeof query !== "string") return true;
@@ -1019,6 +1203,12 @@ export function matchJobToTaxonomy(job, query) {
     if (match.allKeywords.some((kw) => title.includes(kw.toLowerCase()) || desc.includes(kw.toLowerCase()))) {
       return true;
     }
+  }
+
+  // Semantic cluster check on job title & category
+  const expandedJobTags = expandSkillKeywords(job.title, job.category || job.bucket);
+  if (expandedJobTags.some((tag) => tag === q || tag.includes(q) || q.includes(tag))) {
+    return true;
   }
 
   return false;
