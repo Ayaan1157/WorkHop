@@ -5,6 +5,11 @@ Allow: /map
 Allow: /employer
 Allow: /freelancer/jobs
 Allow: /employer/plans
+Allow: /blog
+Allow: /blog/*
+Allow: /pro/*
+Allow: /reviews
+Allow: /grievance
 Allow: /legal
 Allow: /support
 

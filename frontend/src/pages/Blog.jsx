@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Shell, TopBar, EmptyBlock } from "@/components/kit";
 import { BLOG_POSTS, getBlogPostBySlug, getRelatedBlogPosts } from "@/data/blogPosts";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Blog() {
   const { slug } = useParams();
@@ -41,14 +42,35 @@ export default function Blog() {
 
   const featuredPost = BLOG_POSTS[0];
 
-  // Dynamic document title for SEO
-  useEffect(() => {
-    if (currentPost) {
-      document.title = `${currentPost.title} | WorkHop Blog`;
-    } else {
-      document.title = "WorkHop Blog: Bengaluru's Hyperlocal Gig & Hiring Guides (SEO)";
-    }
-  }, [currentPost]);
+  usePageMeta({
+    title: currentPost ? currentPost.metaTitle || currentPost.title : "WorkHop Blog · Bengaluru Hyperlocal Freelancing Guides",
+    description: currentPost ? currentPost.metaDescription || currentPost.summary : "Comprehensive guides on Bengaluru's 5km hyperlocal freelance ecosystem, hiring velocity, pricing benchmarks, and milestone protection.",
+    canonical: currentPost ? `https://workhop.in/blog/${currentPost.slug}` : "https://workhop.in/blog",
+    ogTitle: currentPost ? currentPost.title : "WorkHop Blog · Bengaluru Hyperlocal Guides",
+    ogDescription: currentPost ? currentPost.summary : "Hyperlocal hiring guides, Bangalore freelance pricing, and radar rankings.",
+    ogImage: currentPost?.coverImage || "https://workhop.in/workhop-logo.png",
+    ogType: currentPost ? "article" : "website",
+    jsonLd: currentPost ? {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": currentPost.title,
+      "description": currentPost.summary,
+      "image": currentPost.coverImage,
+      "datePublished": "2026-09-24",
+      "author": {
+        "@type": "Person",
+        "name": currentPost.author?.name || "WorkHop Editorial"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "WorkHop",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://workhop.in/workhop-logo.png"
+        }
+      }
+    } : null,
+  });
 
   const handleShare = () => {
     if (navigator.share) {

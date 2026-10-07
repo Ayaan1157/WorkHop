@@ -23,8 +23,17 @@ import { apiGet, getEmployerId } from "@/lib/api";
 import { getSavedProIds, toggleSavePro, ADMIN_EMAILS } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { matchLeadToTaxonomy, searchTaxonomy } from "@/lib/keywordTaxonomy";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Employer() {
+  usePageMeta({
+    title: "Hire Verified Freelancers Nearby in Bengaluru · WorkHop",
+    description: "Browse verified local designers, developers, video editors, and experts within 5km in Bengaluru. Instant call, direct WhatsApp chat, no commission fees.",
+    canonical: "https://workhop.in/employer",
+    ogTitle: "Hire Top Local Freelancers in Bengaluru · WorkHop",
+    ogDescription: "Discover portfolio-verified professionals near you. Real-time availability, direct hire.",
+  });
+
   const nav = useNavigate();
   const { user } = useAuth();
   const isAdmin = Boolean(

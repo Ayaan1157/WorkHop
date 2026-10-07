@@ -6,8 +6,17 @@ import { CATEGORY_VISUALS } from "@/lib/catalogFilters";
 import { getStoredCatalog } from "@/lib/clientStore";
 import { SUBDISCIPLINE_KEYWORDS, searchTaxonomy } from "@/lib/keywordTaxonomy";
 import { apiGet } from "@/lib/api";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Categories() {
+  usePageMeta({
+    title: "Browse Freelance Categories & Skills Taxonomy · WorkHop",
+    description: "Explore 11+ freelance categories, 150+ subdisciplines and 300+ local skill keywords across design, tech, video, marketing, and business in Bengaluru.",
+    canonical: "https://workhop.in/categories",
+    ogTitle: "Freelance Service Directory & Skills Taxonomy · WorkHop",
+    ogDescription: "Find verified freelancers by category or search through Bangalore's comprehensive local skills taxonomy.",
+  });
+
   const nav = useNavigate();
   const [catalog, setCatalog] = useState(() => getStoredCatalog());
   const [open, setOpen] = useState(null);

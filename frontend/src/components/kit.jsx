@@ -587,7 +587,7 @@ export function MobileBottomNav() {
 }
 
 // Sticky page header bar with optional back button + right slot
-export function TopBar({ title, sub, right, onBack, backTestID = "topbar-back-btn", borderBottom = true }) {
+export function TopBar({ title, sub, right, onBack, backTestID = "topbar-back-btn", borderBottom = true, as: HeadingTag = "h2" }) {
   const nav = useNavigate();
   return (
     <div className={`sticky top-0 z-20 w-full bg-white dark:bg-[#121212] ${borderBottom ? "border-b-2 border-ink" : ""}`}>
@@ -603,9 +603,9 @@ export function TopBar({ title, sub, right, onBack, backTestID = "topbar-back-bt
           </button>
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-sm sm:text-base md:text-lg font-black tracking-tight text-ink dark:text-white">
+          <HeadingTag className="truncate text-sm sm:text-base md:text-lg font-black tracking-tight text-ink dark:text-white">
             {title}
-          </h1>
+          </HeadingTag>
           {sub && (
             <p className="truncate text-[10px] sm:text-[11px] font-semibold text-inkmuted dark:text-zinc-300">
               {sub}

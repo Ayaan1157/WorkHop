@@ -41,6 +41,7 @@ import {
 } from "@/lib/clientStore";
 import { scanText, redactViolations, scanPdfFile } from "@/lib/contactScanner";
 import { useAuth } from "@/context/AuthContext";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const BUDGETS = [
   { label: "ALL BUDGETS", value: null },
@@ -66,6 +67,14 @@ const SORT_OPTIONS = [
 ];
 
 export default function Jobs() {
+  usePageMeta({
+    title: "Freelance Gigs Near You in Bengaluru (5km Radius) · WorkHop",
+    description: "Explore verified freelance jobs within 5km in Bengaluru. Design, development, photography, videography, marketing and writing gigs. Apply directly, keep 100% payout.",
+    canonical: "https://workhop.in/freelancer/jobs",
+    ogTitle: "Hyperlocal Gigs in Bengaluru · WorkHop",
+    ogDescription: "Apply to high-paying local gigs in Koramangala, Indiranagar, HSR, Whitefield. Milestone escrow protected.",
+  });
+
   const nav = useNavigate();
   const { user } = useAuth();
   const isAdmin = Boolean(

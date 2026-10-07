@@ -23,8 +23,17 @@ import { apiGet } from "@/lib/api";
 import FALLBACK_LEADS from "@/data/leads.json";
 import FALLBACK_JOBS from "@/data/jobs.json";
 import { matchLeadToTaxonomy, matchJobToTaxonomy } from "@/lib/keywordTaxonomy";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function LiveMap() {
+  usePageMeta({
+    title: "Live Hyperlocal Map · Freelancers & Gigs Nearby · WorkHop",
+    description: "Explore Bangalore's live talent radar. Discover verified freelancers and open gigs within 5km of your exact neighborhood with real-time distance tracking.",
+    canonical: "https://workhop.in/map",
+    ogTitle: "Live Radar Map · WorkHop Bengaluru",
+    ogDescription: "See live freelancers and gigs around Koramangala, Indiranagar, HSR Layout on an interactive map.",
+  });
+
   const nav = useNavigate();
   const { user } = useAuth();
   const { coords: gpsCoords, status: locStatus, requestLocation } = useUserLocation();

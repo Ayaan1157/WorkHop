@@ -16,8 +16,17 @@ import RecaptchaWidget from "@/components/RecaptchaWidget";
 import GoogleAccountPicker from "@/components/GoogleAccountPicker";
 import SiteFooter from "@/components/SiteFooter";
 import { Logo } from "@/components/kit";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Landing() {
+  usePageMeta({
+    title: "WorkHop · Your Next Local Gig, One Minute Away (Bengaluru)",
+    description: "Connect with verified freelance experts within 5km in Bengaluru. Instant call, direct WhatsApp chat, zero middlemen, 100% earnings.",
+    canonical: "https://workhop.in/",
+    ogTitle: "WorkHop · Hyperlocal Freelance Marketplace Bengaluru",
+    ogDescription: "Hire top freelancers within 5km or get local gigs in Koramangala, Indiranagar, HSR Layout and across Bangalore.",
+  });
+
   const nav = useNavigate();
   const { user, loading, login, logout, adoptSession, signupWithDetails, passwordLoginAuth } = useAuth();
   const { isDark, toggleTheme } = useTheme();

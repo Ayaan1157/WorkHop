@@ -533,12 +533,14 @@ export function getRegisteredUsers() {
 export function saveRegisteredUser(email, password, profile = {}) {
   if (!email) return;
   const users = getRegisteredUsers();
-  users[email.trim().toLowerCase()] = {
+  const cleanEmail = email.trim().toLowerCase();
+  users[cleanEmail] = {
     ...profile,
-    email: email.trim().toLowerCase(),
-    password: password || "123456",
+    email: cleanEmail,
     updated_at: new Date().toISOString(),
   };
+  // Security: Never persist plaintext passwords in client localStorage
+  delete users[cleanEmail].password;
   localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
 }
 
@@ -562,7 +564,8 @@ export function passwordLogin(email, password, fallbackRole = "freelancer") {
 
   // Admin check
   if (isUserAdmin(cleanEmail)) {
-    if (password === "123456789") {
+    const adminSecret = process.env.REACT_APP_ADMIN_PASSWORD || "ZenithAdmin@2026Secure";
+    if (password === adminSecret) {
       const session = createMockSession(cleanEmail, {
         name: "Zenith Developers (Admin)",
         role: "employer",
@@ -588,8 +591,8 @@ export function passwordLogin(email, password, fallbackRole = "freelancer") {
   // Determine user's saved role: if they registered as freelancer, use freelancer!
   const actualRole = existing?.role || fallbackRole || "freelancer";
 
-  // Save/Update registered user
-  saveRegisteredUser(cleanEmail, password, {
+  // Save/Update registered user (scrubbing raw password)
+  saveRegisteredUser(cleanEmail, null, {
     ...(existing || {}),
     role: actualRole,
   });

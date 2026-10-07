@@ -14,6 +14,7 @@ import { useRazorpay } from "@/hooks/usePayments";
 import { apiGet, getEmployerId } from "@/lib/api";
 import { ADMIN_EMAILS } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const Blur = () => <span className="pointer-events-none absolute inset-0 backdrop-blur-[6px]" />;
 
@@ -34,6 +35,43 @@ export default function Pro() {
   const [coupon, setCoupon] = useState(null);
   const [activeTab, setActiveTab] = useState("overview"); // overview | reviews | skills | history
   const { startPayment } = useRazorpay();
+
+  usePageMeta({
+    title: pro ? `${pro.name} · ${pro.skill} in Bengaluru` : "Freelancer Profile · WorkHop",
+    description: pro
+      ? `${pro.name} is a verified ${pro.skill} based in Bengaluru (${pro.rating || "5.0"}★ rating, ${pro.jobs_done || 0} gigs completed). Connect directly on WorkHop.`
+      : "View verified freelancer portfolio, ratings, and rates on WorkHop.",
+    canonical: `https://workhop.in/pro/${id}`,
+    ogTitle: pro ? `${pro.name} · ${pro.skill}` : "WorkHop Freelancer",
+    ogDescription: pro
+      ? `Hire ${pro.name} for ${pro.skill} in Bengaluru. Hyperlocal talent, verified reviews, direct chats.`
+      : "Freelancer profile on WorkHop.",
+    jsonLd: pro
+      ? {
+          "@context": "https://schema.org",
+          "@type": "ProfilePage",
+          "mainEntity": {
+            "@type": "Person",
+            "name": pro.name,
+            "jobTitle": pro.skill,
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Bengaluru",
+              "addressCountry": "IN",
+            },
+            ...(pro.rating
+              ? {
+                  "aggregateRating": {
+                    "@type": "AggregateRating",
+                    "ratingValue": pro.rating,
+                    "reviewCount": reviews.length || pro.jobs_done || 1,
+                  },
+                }
+              : {}),
+          },
+        }
+      : null,
+  });
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });

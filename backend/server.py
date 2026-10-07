@@ -55,6 +55,32 @@ def _check_rate_limit(key: str, max_requests: int = 5, window_seconds: int = 60)
     _RATE_LIMIT_STORE[key] = history
 
 
+def _hash_password(raw_password: str) -> str:
+    """PBKDF2-HMAC-SHA256 password hashing with a cryptographically secure 16-byte salt."""
+    salt = secrets.token_bytes(16)
+    iterations = 100_000
+    derived = hashlib.pbkdf2_hmac("sha256", raw_password.encode("utf-8"), salt, iterations)
+    return f"pbkdf2:sha256:{iterations}${salt.hex()}${derived.hex()}"
+
+
+def _verify_password(raw_password: str, stored_hash: str) -> bool:
+    """Verifies a password against a PBKDF2 hash using constant-time comparison."""
+    if not stored_hash or not stored_hash.startswith("pbkdf2:sha256:"):
+        return False
+    try:
+        parts = stored_hash.split("$")
+        if len(parts) != 3:
+            return False
+        meta, salt_hex, hash_hex = parts
+        iterations = int(meta.split(":")[2])
+        salt = bytes.fromhex(salt_hex)
+        expected = bytes.fromhex(hash_hex)
+        derived = hashlib.pbkdf2_hmac("sha256", raw_password.encode("utf-8"), salt, iterations)
+        return hmac.compare_digest(derived, expected)
+    except Exception:
+        return False
+
+
 # ============== Models ==============
 class Lead(BaseModel):
     id: str
@@ -3790,6 +3816,12 @@ async def create_payment_order(req: CreateOrderRequest):
     if req.coupon_code and req.coupon_code.strip():
         coupon = await _get_valid_coupon(req.coupon_code, req.product)
         discount_paise = _discount_paise(coupon, amount)
+        coupon_code = coupon.get("_id") or req.coupon_code.strip().upper()
+        amount = max(0, amount - discount_paise)
+        # Razorpay minimum charge requirement: if non-zero, must be at least 100 paise (₹1)
+        if 0 < amount < 100:
+            amount = 100
+
     if amount <= 0:
         order_id = f"free_order_{uuid.uuid4().hex[:12]}"
         paid_at = _now_iso()
@@ -4025,7 +4057,15 @@ async def auth_login(req: LoginRequest):
 
     # Check credentials for admin access
     if email in ADMIN_EMAILS:
-        if req.password == "123456789":
+        admin_pass = os.environ.get("ADMIN_PASSWORD", "ZenithAdmin@2026Secure")
+        admin_pass_hash = os.environ.get("ADMIN_PASSWORD_HASH")
+        is_admin_valid = False
+        if admin_pass_hash and _verify_password(req.password, admin_pass_hash):
+            is_admin_valid = True
+        elif admin_pass and hmac.compare_digest(req.password.strip(), admin_pass.strip()):
+            is_admin_valid = True
+
+        if is_admin_valid:
             user = await db.users.find_one({"email": email}, {"_id": 0})
             if not user:
                 user = {
@@ -4055,16 +4095,31 @@ async def auth_login(req: LoginRequest):
             raise HTTPException(status_code=401, detail="Invalid admin password.")
 
     # General user login
-    user = await db.users.find_one({"email": email}, {"_id": 0})
+    user = await db.users.find_one({"email": email})
     if user:
-        if user.get("password") and user.get("password") != req.password:
-            raise HTTPException(status_code=401, detail="Incorrect password. Please check your credentials.")
+        stored_hash = user.get("password_hash")
+        legacy_pass = user.get("password")
+        if stored_hash:
+            if not _verify_password(req.password, stored_hash):
+                raise HTTPException(status_code=401, detail="Incorrect password. Please check your credentials.")
+        elif legacy_pass:
+            if not hmac.compare_digest(legacy_pass, req.password):
+                raise HTTPException(status_code=401, detail="Incorrect password. Please check your credentials.")
+            # Transparent migration: upgrade plaintext password to PBKDF2 hash & unset plaintext password
+            new_hash = _hash_password(req.password)
+            await db.users.update_one(
+                {"email": email},
+                {"$set": {"password_hash": new_hash}, "$unset": {"password": ""}}
+            )
+            user["password_hash"] = new_hash
+            user.pop("password", None)
     else:
+        new_hash = _hash_password(req.password)
         user = {
             "user_id": f"user_{uuid.uuid4().hex[:12]}",
             "email": email,
             "name": email.split("@")[0].replace(".", " ").title(),
-            "password": req.password,
+            "password_hash": new_hash,
             "picture": None,
             "created_at": _now_iso(),
         }
@@ -4158,9 +4213,8 @@ async def _issue_otp(email: str) -> dict:
     """
     sent = await _send_email(email, f"{otp} is your WorkHop verification code", html)
     resp = {"ok": True, "sent": sent, "cooldown_seconds": 60}
-    env_name = os.environ.get("ENVIRONMENT", "development").lower()
-    if not sent and env_name not in ("production", "prod"):
-        # Email service unavailable — surface the code so the flow isn't blocked (dev/test only).
+    # Security: Never leak OTP in API responses unless explicitly running test suites with TESTING=1
+    if os.environ.get("TESTING") == "1":
         resp["dev_otp"] = otp
     return resp
 
@@ -4776,11 +4830,15 @@ async def admin_get_chat_messages(conversation_id: str, request: Request):
 
 # ============== In-app Chat (freelancer ↔ employer) ==============
 @api_router.get("/chats", response_model=List[Conversation])
-async def list_chats(freelancer_id: Optional[str] = None):
-    """Freelancer inbox (pass freelancer_id) or employer inbox (no filter — demo)."""
-    q = {"freelancer_id": freelancer_id} if freelancer_id else {}
-    docs = await db.conversations.find(q, {"_id": 0}).to_list(500)
-    docs.sort(key=lambda d: d.get("last_message_at") or d["created_at"], reverse=True)
+async def list_chats(freelancer_id: Optional[str] = None, employer_id: Optional[str] = None):
+    """Freelancer inbox (pass freelancer_id) or employer inbox (pass employer_id)."""
+    q = {}
+    if freelancer_id:
+        q["freelancer_id"] = freelancer_id
+    elif employer_id:
+        q["employer_id"] = employer_id
+    docs = await db.conversations.find(q, {"_id": 0}).limit(200).to_list(200)
+    docs.sort(key=lambda d: d.get("last_message_at") or d.get("created_at") or "", reverse=True)
     return [Conversation(**d) for d in docs]
 
 
@@ -4788,14 +4846,22 @@ async def list_chats(freelancer_id: Optional[str] = None):
 async def get_chat(conversation_id: str):
     doc = await db.conversations.find_one({"_id": conversation_id}, {"_id": 0})
     if not doc:
+        doc = await db.conversations.find_one({"conversation_id": conversation_id}, {"_id": 0})
+    if not doc:
         raise HTTPException(status_code=404, detail="Conversation not found.")
     return Conversation(**doc)
 
 
 @api_router.get("/chats/{conversation_id}/messages", response_model=List[ChatMessage])
 async def list_messages(conversation_id: str):
-    docs = await db.messages.find({"conversation_id": conversation_id}, {"_id": 0}).to_list(1000)
-    docs.sort(key=lambda d: d["created_at"])
+    conv = await db.conversations.find_one({"_id": conversation_id}, {"_id": 0})
+    if not conv:
+        conv = await db.conversations.find_one({"conversation_id": conversation_id}, {"_id": 0})
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+    target_id = conv.get("conversation_id") or conversation_id
+    docs = await db.messages.find({"conversation_id": target_id}, {"_id": 0}).limit(1000).to_list(1000)
+    docs.sort(key=lambda d: d.get("created_at") or "")
     return [ChatMessage(**d) for d in docs]
 
 
@@ -5244,10 +5310,14 @@ async def razorpay_escrow_webhook(request: Request):
     signature = request.headers.get("X-Razorpay-Signature", "")
     webhook_secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET")
 
-    if webhook_secret and signature:
+    if webhook_secret:
+        if not signature:
+            raise HTTPException(status_code=400, detail="Missing webhook signature")
         expected = hmac.new(webhook_secret.encode(), body_bytes, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, signature):
             raise HTTPException(status_code=400, detail="Invalid webhook signature")
+    elif os.environ.get("ENVIRONMENT", "").lower() in ("production", "prod"):
+        raise HTTPException(status_code=500, detail="Razorpay webhook secret not configured in production")
 
     try:
         payload = json.loads(body_bytes.decode())
@@ -6433,12 +6503,16 @@ else:
         "http://127.0.0.1:3000",
         "https://localhost:3000",
         "http://localhost:5173",
+        "https://work-hop.com",
+        "https://www.work-hop.com",
+        "https://workhop.in",
+        "https://www.workhop.in",
     ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origin_regex=r"^https:\/\/(workhop|workhop-[a-zA-Z0-9_-]+)\.vercel\.app$|^https:\/\/(www\.)?workhop\.in$|^http:\/\/localhost:\d+$|^http:\/\/127\.0\.0\.1:\d+$",
+    allow_origin_regex=r"^https:\/\/(workhop|workhop-[a-zA-Z0-9_-]+)\.vercel\.app$|^https:\/\/(www\.)?workhop\.in$|^https:\/\/(www\.)?work-hop\.com$|^http:\/\/localhost:\d+$|^http:\/\/127\.0\.0\.1:\d+$",
     allow_origins=allowed_origins,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
