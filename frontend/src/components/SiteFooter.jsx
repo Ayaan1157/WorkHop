@@ -39,15 +39,17 @@ export default function SiteFooter() {
 
             {/* LinkedIn */}
             <a
-              href="https://linkedin.com"
+              href="https://www.linkedin.com/in/workhop"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="LinkedIn"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-white/80 hover:border-white hover:text-white hover:bg-white/10 transition"
+              aria-label="LinkedIn (WorkHop)"
+              title="Follow WorkHop on LinkedIn (linkedin.com/in/workhop)"
+              className="flex items-center gap-2 rounded-full border border-white/20 px-3 py-1.5 text-xs text-white/90 hover:border-white hover:text-white hover:bg-white/10 transition"
             >
               <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                 <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
               </svg>
+              <span className="font-bold">in/workhop</span>
             </a>
 
             {/* Instagram */}
@@ -168,6 +170,16 @@ export default function SiteFooter() {
                 </a>
               </li>
               <li>
+                <a
+                  href="https://www.linkedin.com/in/workhop"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition flex items-center gap-1 text-stone-300 hover:text-white"
+                >
+                  <span>LinkedIn: in/workhop ↗</span>
+                </a>
+              </li>
+              <li>
                 <Link to="/legal" className="hover:text-white transition">
                   Community Guidelines
                 </Link>
@@ -214,7 +226,7 @@ export default function SiteFooter() {
         </div>
 
         {/* Official Contact Strip */}
-        <div className="mt-8 sm:mt-10 pt-5 pb-1 border-t border-white/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="mt-8 sm:mt-10 pt-5 pb-1 border-t border-white/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-black uppercase tracking-wider text-brand">MAIN EMAIL:</span>
             <a
@@ -222,7 +234,7 @@ export default function SiteFooter() {
               className="font-bold text-white hover:text-brand transition flex items-center gap-1"
             >
               <span>connect@work-hop.com</span>
-              <span className="text-[10px] text-stone-400 font-normal">· General Inquiries &amp; Partnerships</span>
+              <span className="text-[10px] text-stone-400 font-normal">· General &amp; Partnerships</span>
             </a>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -232,7 +244,18 @@ export default function SiteFooter() {
               className="font-bold text-white hover:text-brand transition flex items-center gap-1"
             >
               <span>help@work-hop.com</span>
-              <span className="text-[10px] text-stone-400 font-normal">· Grievances, Disputes &amp; Support</span>
+              <span className="text-[10px] text-stone-400 font-normal">· Support &amp; Grievances</span>
+            </a>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-black uppercase tracking-wider text-brand">LINKEDIN:</span>
+            <a
+              href="https://www.linkedin.com/in/workhop"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-white hover:text-brand transition flex items-center gap-1"
+            >
+              <span>linkedin.com/in/workhop ↗</span>
             </a>
           </div>
         </div>

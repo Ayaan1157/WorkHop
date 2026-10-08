@@ -268,11 +268,11 @@ function SiteControlsTab({ adminFetch }) {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Main Email */}
           <div>
             <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-              Main Platform Email (General &amp; Partnerships) *
+              Main Platform Email *
             </label>
             <input
               type="email"
@@ -287,7 +287,7 @@ function SiteControlsTab({ adminFetch }) {
           {/* Complaint Email */}
           <div>
             <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-              Official Complaints &amp; Disputes Email *
+              Complaints &amp; Disputes Email *
             </label>
             <input
               type="email"
@@ -297,6 +297,21 @@ function SiteControlsTab({ adminFetch }) {
               className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
             />
             <p className="mt-1 text-[9px] text-inkmuted">Default: help@work-hop.com</p>
+          </div>
+
+          {/* Official LinkedIn URL */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Official LinkedIn Profile URL
+            </label>
+            <input
+              type="url"
+              value={settings.linkedin_url || "https://www.linkedin.com/in/workhop"}
+              onChange={(e) => setSettings({ ...settings, linkedin_url: e.target.value })}
+              placeholder="https://www.linkedin.com/in/workhop"
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+            />
+            <p className="mt-1 text-[9px] text-inkmuted">Default: www.linkedin.com/in/workhop</p>
           </div>
         </div>
       </div>

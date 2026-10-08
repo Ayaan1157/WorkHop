@@ -166,14 +166,33 @@ export default function Support() {
                 <span className="truncate">{MAIN_EMAIL}</span>
               </p>
               <p className="mt-0.5 text-[10px] text-inkmuted font-medium">Partnerships, business connections, and general platform inquiries.</p>
+              <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold text-ink">
+                <span className="text-inkmuted uppercase tracking-wider">LinkedIn:</span>
+                <a
+                  href="https://www.linkedin.com/in/workhop"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand hover:underline flex items-center gap-0.5 font-black"
+                >
+                  linkedin.com/in/workhop ↗
+                </a>
+              </div>
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
               <a
                 data-testid="main-email-mailto-btn"
                 href={`mailto:${MAIN_EMAIL}?subject=WorkHop General Inquiry`}
                 className="inline-flex items-center justify-center border-2 border-ink bg-ink text-white px-3 py-1.5 text-[10px] font-black hover:bg-brand transition shadow-[1px_1px_0px_#121212]"
               >
                 CONNECT WITH US →
+              </a>
+              <a
+                href="https://www.linkedin.com/in/workhop"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center border-2 border-ink bg-white text-ink px-2.5 py-1.5 text-[10px] font-black hover:bg-black hover:text-white transition shadow-[1px_1px_0px_#121212]"
+              >
+                LINKEDIN ↗
               </a>
             </div>
           </div>
