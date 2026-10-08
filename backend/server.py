@@ -4512,6 +4512,10 @@ DEFAULT_SITE_SETTINGS = {
     "quota_boost_fee": 149,
     "auto_approve_pros": False,
     "direct_chat_enabled": True,
+    # Official Platform Contacts
+    "main_email": "connect@work-hop.com",
+    "complaint_email": "help@work-hop.com",
+    "support_email": "help@work-hop.com",
     # Statutory Grievance Redressal & Nodal Officer (IT Rules 2021 & DPDP Act 2023)
     "grievance_officer_name": "Alia Mansoor",
     "grievance_officer_designation": "Nodal officer",
@@ -6420,7 +6424,9 @@ async def list_employer_jobs(request: Request, employer_id: Optional[str] = None
 
 
 # ============== Complaints / Support ==============
-SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "manarastudio22@gmail.com")
+MAIN_EMAIL = os.environ.get("MAIN_EMAIL", "connect@work-hop.com")
+COMPLAINT_EMAIL = os.environ.get("COMPLAINT_EMAIL", "help@work-hop.com")
+SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", COMPLAINT_EMAIL)
 EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "WorkHop")
 SMTP_HOST = os.environ.get("SMTP_HOST", "")
 
@@ -6451,7 +6457,7 @@ async def send_complaint_email(complaint: dict) -> None:
     <p>{c_message}</p>
     <p><em>Submitted at {c_time}</em></p>
     """
-    await _send_email(SUPPORT_EMAIL, f"[WorkHop Complaint] {c_subject}", html_content)
+    await _send_email(COMPLAINT_EMAIL, f"[WorkHop Complaint] {c_subject}", html_content)
 
 
 class ComplaintRequest(BaseModel):
@@ -6476,7 +6482,13 @@ async def create_complaint(req: ComplaintRequest, background_tasks: BackgroundTa
     }
     await db.complaints.insert_one(doc)
     background_tasks.add_task(send_complaint_email, doc)
-    return {"ok": True, "complaint_id": cid, "support_email": SUPPORT_EMAIL}
+    return {
+        "ok": True,
+        "complaint_id": cid,
+        "support_email": COMPLAINT_EMAIL,
+        "complaint_email": COMPLAINT_EMAIL,
+        "main_email": MAIN_EMAIL,
+    }
 
 
 # ============== Bengaluru Optimized Category Catalog ==============

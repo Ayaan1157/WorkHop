@@ -1715,6 +1715,11 @@ export function getDefaultSiteSettings() {
     auto_approve_pros: false,
     direct_chat_enabled: true,
 
+    // Official Platform Contacts
+    main_email: "connect@work-hop.com",
+    complaint_email: "help@work-hop.com",
+    support_email: "help@work-hop.com",
+
     // Statutory Grievance Redressal & Nodal Officer (IT Rules 2021 & DPDP Act 2023)
     grievance_officer_name: "Alia Mansoor",
     grievance_officer_designation: "Nodal officer",

@@ -7,7 +7,9 @@ import { apiPost } from "@/lib/api";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import { sanitizeInput, checkSpamKeywords, checkRateLimit } from "@/lib/security";
 
-const SUPPORT_EMAIL = "manarastudio22@gmail.com";
+const COMPLAINT_EMAIL = "help@work-hop.com";
+const MAIN_EMAIL = "connect@work-hop.com";
+const SUPPORT_EMAIL = COMPLAINT_EMAIL;
 
 const FAQS = [
   {
@@ -36,7 +38,7 @@ const FAQS = [
   },
   {
     q: "How do refunds and billing disputes work?",
-    a: "All payments are processed securely via RBI-authorized payment partner Razorpay. Unused Hops roll over indefinitely. If you encounter any billing discrepancy, duplicate transaction, or technical issue, raise a ticket below or email support at manarastudio22@gmail.com, and we resolve it within 24 to 48 hours.",
+    a: "All payments are processed securely via RBI-authorized payment partner Razorpay. Unused Hops roll over indefinitely. If you encounter any billing discrepancy, duplicate transaction, or technical issue, raise a ticket below or email complaints directly to help@work-hop.com (for general inquiries reach connect@work-hop.com), and we resolve it within 24 to 48 hours.",
   },
 ];
 
@@ -132,18 +134,58 @@ export default function Support() {
           </div>
         </div>
 
-        <p className="mb-0.5 mt-4 text-[11px] font-black tracking-[0.15em] text-ink">RAISE A COMPLAINT</p>
-        <div className="flex items-center gap-2 border-2 border-ink bg-sand p-3">
-          <Mail size={16} className="text-brand" />
-          <span className="flex-1 text-xs font-extrabold text-ink">{SUPPORT_EMAIL}</span>
-          <a data-testid="support-mailto-btn" href={`mailto:${SUPPORT_EMAIL}?subject=WorkHop Complaint`} className="border border-ink bg-brand px-3 py-1.5 text-[10px] font-black text-white">EMAIL US</a>
+        <p className="mb-0.5 mt-4 text-[11px] font-black tracking-[0.15em] text-ink">OFFICIAL CONTACT CHANNELS</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {/* Complaint Email Box */}
+          <div className="flex flex-col justify-between border-2 border-ink bg-[#FFF4ED] p-3.5 shadow-[2px_2px_0px_#121212]">
+            <div>
+              <span className="text-[9px] font-black uppercase tracking-wider text-brand">FOR COMPLAINTS &amp; DISPUTES</span>
+              <p className="mt-1 text-xs font-black text-ink flex items-center gap-1.5">
+                <Mail size={14} className="text-brand shrink-0" />
+                <span className="truncate">{COMPLAINT_EMAIL}</span>
+              </p>
+              <p className="mt-0.5 text-[10px] text-inkmuted font-medium">Billing, gig escrow, milestones, and customer grievances.</p>
+            </div>
+            <div className="mt-3">
+              <a
+                data-testid="support-mailto-btn"
+                href={`mailto:${COMPLAINT_EMAIL}?subject=WorkHop Complaint`}
+                className="inline-flex items-center justify-center border-2 border-ink bg-brand px-3 py-1.5 text-[10px] font-black text-white hover:bg-black transition shadow-[1px_1px_0px_#121212]"
+              >
+                EMAIL COMPLAINTS →
+              </a>
+            </div>
+          </div>
+
+          {/* Main Email Box */}
+          <div className="flex flex-col justify-between border-2 border-ink bg-sand p-3.5 shadow-[2px_2px_0px_#121212]">
+            <div>
+              <span className="text-[9px] font-black uppercase tracking-wider text-inkmuted">MAIN EMAIL / GENERAL INQUIRIES</span>
+              <p className="mt-1 text-xs font-black text-ink flex items-center gap-1.5">
+                <Mail size={14} className="text-ink shrink-0" />
+                <span className="truncate">{MAIN_EMAIL}</span>
+              </p>
+              <p className="mt-0.5 text-[10px] text-inkmuted font-medium">Partnerships, business connections, and general platform inquiries.</p>
+            </div>
+            <div className="mt-3">
+              <a
+                data-testid="main-email-mailto-btn"
+                href={`mailto:${MAIN_EMAIL}?subject=WorkHop General Inquiry`}
+                className="inline-flex items-center justify-center border-2 border-ink bg-ink text-white px-3 py-1.5 text-[10px] font-black hover:bg-brand transition shadow-[1px_1px_0px_#121212]"
+              >
+                CONNECT WITH US →
+              </a>
+            </div>
+          </div>
         </div>
+
+        <p className="mb-0.5 mt-5 text-[11px] font-black tracking-[0.15em] text-ink">RAISE A COMPLAINT TICKET</p>
 
         {sent ? (
           <div data-testid="complaint-sent" className="flex flex-col items-center gap-2 border-2 border-ok bg-[#E5F8EE] p-6 text-center">
             <CheckCircle2 size={28} className="text-ok" />
             <p className="text-base font-black text-ink">Complaint registered</p>
-            <p className="text-xs text-inkmuted">Our team at {SUPPORT_EMAIL} will get back within 48 hours.</p>
+            <p className="text-xs text-inkmuted">Our team at {COMPLAINT_EMAIL} will review and get back within 48 hours.</p>
             <button data-testid="complaint-another-btn" onClick={() => setSent(false)} className="mt-1 border-2 border-ink px-4 py-2 text-[11px] font-black tracking-wider text-ink">RAISE ANOTHER</button>
           </div>
         ) : (

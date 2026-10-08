@@ -249,6 +249,58 @@ function SiteControlsTab({ adminFetch }) {
         </div>
       </div>
 
+      {/* Official Public Contact Channels */}
+      <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-ink/10 pb-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Mail size={18} className="text-brand shrink-0" />
+            <div>
+              <h3 className="text-sm font-black tracking-wider uppercase text-ink">
+                Official Public Contact Channels
+              </h3>
+              <p className="text-[11px] text-inkmuted">
+                Configured email addresses displayed in the global footer, support page, and platform disclosures.
+              </p>
+            </div>
+          </div>
+          <span className="border border-ink bg-sand px-2 py-0.5 text-[9px] font-black uppercase text-ink self-start sm:self-auto">
+            PUBLIC CHANNELS
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Main Email */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Main Platform Email (General &amp; Partnerships) *
+            </label>
+            <input
+              type="email"
+              value={settings.main_email || "connect@work-hop.com"}
+              onChange={(e) => setSettings({ ...settings, main_email: e.target.value })}
+              placeholder="connect@work-hop.com"
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+            />
+            <p className="mt-1 text-[9px] text-inkmuted">Default: connect@work-hop.com</p>
+          </div>
+
+          {/* Complaint Email */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+              Official Complaints &amp; Disputes Email *
+            </label>
+            <input
+              type="email"
+              value={settings.complaint_email || "help@work-hop.com"}
+              onChange={(e) => setSettings({ ...settings, complaint_email: e.target.value })}
+              placeholder="help@work-hop.com"
+              className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
+            />
+            <p className="mt-1 text-[9px] text-inkmuted">Default: help@work-hop.com</p>
+          </div>
+        </div>
+      </div>
+
       {/* Statutory Grievance Redressal & Nodal Officer Controls (IT Rules 2021 & DPDP Act 2023) */}
       <div className="border-2 border-ink bg-white p-5 shadow-[4px_4px_0px_#121212]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-ink/10 pb-3 mb-4">

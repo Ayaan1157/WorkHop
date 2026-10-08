@@ -158,6 +158,16 @@ export default function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <a href="mailto:connect@work-hop.com" className="hover:text-white transition flex items-center gap-1">
+                  <span>Contact: connect@work-hop.com</span>
+                </a>
+              </li>
+              <li>
+                <a href="mailto:help@work-hop.com" className="hover:text-white transition flex items-center gap-1 text-brand font-medium">
+                  <span>Complaints: help@work-hop.com</span>
+                </a>
+              </li>
+              <li>
                 <Link to="/legal" className="hover:text-white transition">
                   Community Guidelines
                 </Link>
@@ -203,8 +213,32 @@ export default function SiteFooter() {
           </div>
         </div>
 
+        {/* Official Contact Strip */}
+        <div className="mt-8 sm:mt-10 pt-5 pb-1 border-t border-white/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-black uppercase tracking-wider text-brand">MAIN EMAIL:</span>
+            <a
+              href="mailto:connect@work-hop.com"
+              className="font-bold text-white hover:text-brand transition flex items-center gap-1"
+            >
+              <span>connect@work-hop.com</span>
+              <span className="text-[10px] text-stone-400 font-normal">· General Inquiries &amp; Partnerships</span>
+            </a>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-black uppercase tracking-wider text-brand">FOR COMPLAINTS:</span>
+            <a
+              href="mailto:help@work-hop.com"
+              className="font-bold text-white hover:text-brand transition flex items-center gap-1"
+            >
+              <span>help@work-hop.com</span>
+              <span className="text-[10px] text-stone-400 font-normal">· Grievances, Disputes &amp; Support</span>
+            </a>
+          </div>
+        </div>
+
         {/* Bottom Strip: Copyright & Statutory Badges */}
-        <div className="mt-10 sm:mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-stone-400 font-medium text-center sm:text-left">
+        <div className="mt-5 sm:mt-6 pt-5 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-stone-400 font-medium text-center sm:text-left">
           <p>© 2026 WorkHop Technologies Pvt. Ltd. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-stone-400">
             <Link to="/reviews" className="hover:text-white transition underline underline-offset-2 font-bold text-stone-300">

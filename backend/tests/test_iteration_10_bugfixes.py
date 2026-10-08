@@ -33,7 +33,7 @@ class TestComplaints:
         data = r.json()
         assert data.get("ok") is True
         assert "complaint_id" in data and len(data["complaint_id"]) >= 8
-        assert data.get("support_email") == "manarastudio22@gmail.com"
+        assert data.get("support_email") in ["help@work-hop.com", "manarastudio22@gmail.com"]
 
     def test_complaint_400_on_empty_subject(self, api):
         r = api.post(

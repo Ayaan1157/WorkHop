@@ -313,12 +313,28 @@ export default function Grievance() {
               </p>
               <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-ink/10 pt-2 text-[10px] text-inkmuted">
                 <span>Entity: <strong>WorkHop Technologies Pvt. Ltd. (CIN Reg.)</strong></span>
-                <span className="text-ink">
-                  Nodal Officer (Law Enforcement Inquiries):{" "}
-                  <a href={`mailto:${nodalEmail}`} className="font-bold underline text-brand">
-                    {nodalEmail}
-                  </a>
-                </span>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-ink">
+                    General Complaints:{" "}
+                    <a href="mailto:help@work-hop.com" className="font-bold underline text-brand">
+                      help@work-hop.com
+                    </a>
+                  </span>
+                  <span>·</span>
+                  <span className="text-ink">
+                    Main Email:{" "}
+                    <a href="mailto:connect@work-hop.com" className="font-bold underline text-ink">
+                      connect@work-hop.com
+                    </a>
+                  </span>
+                  <span>·</span>
+                  <span className="text-ink">
+                    Nodal Officer:{" "}
+                    <a href={`mailto:${nodalEmail}`} className="font-bold underline text-brand">
+                      {nodalEmail}
+                    </a>
+                  </span>
+                </div>
               </div>
             </div>
           </div>

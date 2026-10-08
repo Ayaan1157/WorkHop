@@ -274,9 +274,11 @@ export default function Legal() {
                   <p className="text-[11px] font-bold text-brand">{settings.grievance_officer_designation || "Nodal officer"}</p>
                 </div>
                 <div className="border border-ink/20 bg-white p-3">
-                  <span className="text-[10px] font-black uppercase text-inkmuted">Official Contact</span>
-                  <p className="font-bold text-ink">📧 {settings.grievance_officer_email || "grievance@workhop.in"}</p>
-                  <p className="font-bold text-ink">📞 {settings.grievance_officer_phone || "+91 9180169739"}</p>
+                  <span className="text-[10px] font-black uppercase text-inkmuted">Official Contact &amp; Channels</span>
+                  <p className="font-bold text-ink">🛠️ Complaints: <a href="mailto:help@work-hop.com" className="text-brand underline">help@work-hop.com</a></p>
+                  <p className="font-bold text-ink">✉️ Main Email: <a href="mailto:connect@work-hop.com" className="underline">connect@work-hop.com</a></p>
+                  <p className="font-bold text-ink">📧 Statutory Grievance: {settings.grievance_officer_email || "grievance@workhop.in"}</p>
+                  <p className="font-bold text-ink">📞 Helpline: {settings.grievance_officer_phone || "+91 9180169739"}</p>
                 </div>
                 <div className="border border-ink/20 bg-white p-3 sm:col-span-2">
                   <span className="text-[10px] font-black uppercase text-inkmuted">Physical Registered Address</span>
