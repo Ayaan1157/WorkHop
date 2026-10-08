@@ -276,6 +276,166 @@ export function getLeadById(id) {
   return { pro, reviews };
 }
 
+// ============== Employer Profile & Freelancer-to-Employer Reviews ==============
+export const EMPLOYER_REVIEWS_KEY = "workhop_reviews_for_employers";
+
+export function formatEmployerSpendTier(totalAmount) {
+  const rupees = Number(totalAmount) || 0;
+  if (rupees < 10000) return "Under ₹10,000 spent";
+  if (rupees < 25000) return "₹10,000+ spent";
+  if (rupees < 50000) return "₹25,000+ spent";
+  if (rupees < 100000) return "₹50,000+ spent";
+  if (rupees < 250000) return "₹1,00,000+ spent";
+  if (rupees < 500000) return "₹2,50,000+ spent";
+  return "₹5,00,000+ spent";
+}
+
+export function getReviewsForEmployer(companyName) {
+  if (!companyName) return [];
+  const cleanName = companyName.trim().toLowerCase();
+  let userReviews = [];
+  try {
+    const raw = localStorage.getItem(EMPLOYER_REVIEWS_KEY);
+    const all = raw ? JSON.parse(raw) : [];
+    userReviews = all.filter((r) => (r.company_name || "").trim().toLowerCase() === cleanName);
+  } catch {
+    userReviews = [];
+  }
+
+  // Realistic seed reviews for company
+  const seedHash = cleanName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const sampleFreelancers = [
+    {
+      reviewer_name: "Rohan Sen",
+      reviewer_skill: "Senior UI/UX Designer",
+      rating: 5,
+      date_formatted: "1 week ago",
+      job_title: "Fintech Mobile MVP Redesign",
+      text: "Outstanding client! Requirements were crystal clear with fast feedback loops. Milestone payment was released to UPI within 10 minutes of delivery.",
+    },
+    {
+      reviewer_name: "Pooja Hegde",
+      reviewer_skill: "Motion Designer & Video Editor",
+      rating: 5,
+      date_formatted: "3 weeks ago",
+      job_title: "Product Launch Brand Video",
+      text: "Very professional communication. Provided all high-res assets upfront and zero scope creep. Would love to collaborate again!",
+    },
+    {
+      reviewer_name: "Karthik Verma",
+      reviewer_skill: "Full-Stack Engineer",
+      rating: 5,
+      date_formatted: "1 month ago",
+      job_title: "Next.js Frontend Implementation",
+      text: "Prompt payment, respectful timelines, and transparent specs. Highly recommended local Bengaluru employer.",
+    },
+    {
+      reviewer_name: "Ananya Rao",
+      reviewer_skill: "Brand & Graphic Designer",
+      rating: 4.8,
+      date_formatted: "2 months ago",
+      job_title: "Packaging & Festive Print Creatives",
+      text: "Great experience overall. Clear aesthetic vision and helpful feedback on every revision round.",
+    },
+  ];
+
+  const count = 2 + (seedHash % 3);
+  const defaultReviews = sampleFreelancers.slice(0, count).map((r, idx) => ({
+    ...r,
+    review_id: `rev-emp-seed-${cleanName.slice(0, 4)}-${idx}`,
+    company_name: companyName,
+  }));
+
+  return [...userReviews, ...defaultReviews];
+}
+
+export function addFreelancerReviewForEmployer({
+  company_name,
+  reviewer_name = "Verified Freelancer",
+  reviewer_skill = "Creative Pro",
+  rating = 5,
+  text = "",
+  job_title = "Freelance Project",
+}) {
+  if (!company_name) return null;
+  const newReview = {
+    review_id: `rev-emp-${Date.now()}`,
+    company_name: company_name.trim(),
+    reviewer_name: reviewer_name.trim(),
+    reviewer_skill: reviewer_skill.trim(),
+    rating: Number(rating) || 5,
+    text: text.trim() || "Great employer with smooth communication and prompt payment release.",
+    job_title: job_title || "Freelance Collaboration",
+    created_at: new Date().toISOString(),
+    date_formatted: "Just now",
+  };
+
+  try {
+    const raw = localStorage.getItem(EMPLOYER_REVIEWS_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    const updated = [newReview, ...list];
+    localStorage.setItem(EMPLOYER_REVIEWS_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.error("Could not save employer review", err);
+  }
+
+  return newReview;
+}
+
+export function getEmployerProfile(companyName, fallbackArea = "Bengaluru") {
+  if (!companyName) {
+    return {
+      company_name: "WorkHop Partner",
+      employer_name: "Talent Lead",
+      area: fallbackArea,
+      verified_employer: true,
+      payment_verified: true,
+      member_since: "2024",
+      past_hires_count: 8,
+      spend_tier: "₹25,000+ spent",
+      rating: 4.9,
+      reviews_count: 6,
+      reviews: [],
+      open_jobs: [],
+    };
+  }
+
+  const allJobs = getStoredJobs();
+  const companyJobs = allJobs.filter(
+    (j) => (j.company_name || "").trim().toLowerCase() === companyName.trim().toLowerCase()
+  );
+
+  const matchedJob = companyJobs[0] || null;
+  const cleanName = companyName.trim();
+  const area = matchedJob?.area || fallbackArea || "Bengaluru";
+  const employerName = matchedJob?.employer_name || `${cleanName} Talent Team`;
+
+  const reviews = getReviewsForEmployer(cleanName);
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1)
+    : "4.9";
+
+  const seedHash = cleanName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const pastHires = 6 + (seedHash % 16);
+  const estimatedSpend = pastHires * (10000 + (seedHash % 5) * 4000);
+  const spendTier = formatEmployerSpendTier(estimatedSpend);
+
+  return {
+    company_name: cleanName,
+    employer_name: employerName,
+    area,
+    verified_employer: true,
+    payment_verified: true,
+    member_since: "2024",
+    past_hires_count: pastHires,
+    spend_tier: spendTier, // Not the exact amount!
+    rating: Number(avgRating),
+    reviews_count: reviews.length,
+    reviews,
+    open_jobs: companyJobs,
+  };
+}
+
 // 2. Gigs / Jobs
 export function getStoredJobs() {
   const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");

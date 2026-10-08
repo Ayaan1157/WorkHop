@@ -17,6 +17,7 @@ import CouponInput from "@/components/CouponInput";
 import CreditsTopUpModal from "@/components/CreditsTopUpModal";
 import PaymentModeSelector from "@/components/PaymentModeSelector";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import EmployerProfileModal from "@/components/EmployerProfileModal";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import {
@@ -98,6 +99,7 @@ export default function Jobs() {
   const [convByJob, setConvByJob] = useState({});
 
   const [activeJob, setActiveJob] = useState(null);
+  const [selectedEmployer, setSelectedEmployer] = useState(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyNote, setApplyNote] = useState("");
   const [applying, setApplying] = useState(false);
@@ -493,6 +495,7 @@ export default function Jobs() {
               cid ? nav(`/chat/${cid}?role=freelancer`) : nav("/freelancer/chats");
             }}
             onVerifyPress={gotoVerify}
+            onViewEmployer={() => setSelectedEmployer(job)}
           />
         ))}
       </div>
@@ -932,10 +935,14 @@ export default function Jobs() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-brand">
                   {activeJob?.category || "GIG OPPORTUNITY"} {activeJob?.company_name ? `· ${activeJob.company_name}` : ""}
                 </span>
-                {activeJob?.employer_name && (
-                  <span className="text-[10px] font-bold text-ink dark:text-zinc-300">
-                    Posted by: <span className="font-black text-ink dark:text-white">{activeJob.employer_name}</span>
-                  </span>
+                {activeJob?.company_name && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEmployer(activeJob)}
+                    className="text-[10px] font-black text-brand bg-white dark:bg-zinc-800 border border-ink dark:border-zinc-700 px-2 py-0.5 shadow-[1px_1px_0px_#121212] hover:bg-black hover:text-white transition flex items-center gap-1"
+                  >
+                    🏢 View Employer Profile ({activeJob.company_name}) →
+                  </button>
                 )}
               </div>
 
@@ -1462,6 +1469,14 @@ export default function Jobs() {
         }}
       />
 
+      {/* Employer Profile Modal */}
+      <EmployerProfileModal
+        isOpen={Boolean(selectedEmployer)}
+        onClose={() => setSelectedEmployer(null)}
+        employer={selectedEmployer}
+        onApplyJob={(j) => openApplyFor(j)}
+      />
+
       {/* Paywall Modal */}
       {paywallOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setPaywallOpen(false)}>
@@ -1524,8 +1539,7 @@ function FilterGroup({ label, options, value, onPick }) {
   );
 }
 
-// Fiverr / Upwork modeled Gig Card
-const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress }) {
+const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applied, isSaved, onToggleSave, onApply, onMessage, onVerifyPress, onViewEmployer }) {
   const [descExpanded, setDescExpanded] = useState(false);
   const creditsCost = job.credits_to_apply || calculateHopsForJob(job.pay);
   return (
@@ -1609,18 +1623,51 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
         {/* Employer Info & Rating */}
         <div className="mt-3 flex items-center justify-between border-t border-ink/10 dark:border-zinc-800 pt-2.5">
           <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black text-ink dark:text-white">{job.company_name}</span>
-              {job.verified_employer && (
-                <ShieldCheck size={13} className="text-ok" title="Verified Local Employer" />
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-[11px] text-inkmuted dark:text-zinc-400">
-              <span className="flex items-center gap-0.5 text-ink dark:text-zinc-200 font-bold">
-                <Star size={11} fill="#E65A1E" className="text-brand" /> {job.employer_rating || "4.9"}
+            <button
+              type="button"
+              data-testid={`view-employer-btn-${index}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewEmployer?.();
+              }}
+              className="flex items-center gap-1.5 text-left group hover:underline"
+              title="Click to view employer profile, spend tier, past hires & reviews"
+            >
+              <span className="text-xs font-black text-ink dark:text-white group-hover:text-brand">
+                {job.company_name}
               </span>
+              {job.verified_employer && (
+                <ShieldCheck size={13} className="text-ok shrink-0" title="Verified Local Employer" />
+              )}
+              <span className="text-[10px] text-brand font-black opacity-90 group-hover:opacity-100 flex items-center gap-0.5">
+                Profile →
+              </span>
+            </button>
+            <div className="flex items-center gap-2 text-[11px] text-inkmuted dark:text-zinc-400 mt-0.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewEmployer?.();
+                }}
+                className="flex items-center gap-0.5 text-ink dark:text-zinc-200 font-bold hover:text-brand"
+                title="View reviews and ratings for this employer"
+              >
+                <Star size={11} fill="#E65A1E" className="text-brand" /> {job.employer_rating || "4.9"}
+              </button>
               <span>•</span>
               <span>{job.area || "Bengaluru"}</span>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewEmployer?.();
+                }}
+                className="text-[10px] font-black text-brand uppercase hover:underline"
+              >
+                Reviews
+              </button>
             </div>
           </div>
         </div>

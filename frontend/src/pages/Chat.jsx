@@ -6,6 +6,7 @@ import {
   Lock, Unlock, Phone, CheckCircle2
 } from "lucide-react";
 import DealTracker from "@/components/DealTracker";
+import EmployerProfileModal from "@/components/EmployerProfileModal";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import { API, apiGet, apiPost } from "@/lib/api";
 import { scanText, scanUploadFile, redactViolations } from "@/lib/contactScanner";
@@ -23,6 +24,7 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [busy, setBusy] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [employerProfileOpen, setEmployerProfileOpen] = useState(false);
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [myReviewDone, setMyReviewDone] = useState(false);
@@ -273,8 +275,19 @@ export default function Chat() {
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="truncate text-[15px] font-black text-ink dark:text-white">{otherName || "Chat"}</p>
+            {myRole === "freelancer" && (
+              <button
+                type="button"
+                data-testid="chat-view-employer-profile-btn"
+                onClick={() => setEmployerProfileOpen(true)}
+                className="text-[10px] font-black text-brand bg-white dark:bg-zinc-800 border border-ink dark:border-zinc-700 px-2 py-0.5 shadow-[1px_1px_0px_#121212] hover:bg-black hover:text-white transition flex items-center gap-1"
+                title="View employer profile, spend tier, past hires & reviews"
+              >
+                🏢 Employer Profile →
+              </button>
+            )}
             <span className="text-[10px] font-bold text-ok flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-ok animate-pulse" /> Active now
             </span>
@@ -914,6 +927,18 @@ export default function Chat() {
           </div>
         </div>
       )}
+
+      {/* Employer Profile Modal for Freelancer */}
+      <EmployerProfileModal
+        isOpen={employerProfileOpen}
+        onClose={() => setEmployerProfileOpen(false)}
+        employer={{
+          company_name: conv?.company_name || otherName,
+          employer_name: otherName,
+          area: conv?.job_area || "Bengaluru",
+          title: conv?.job_title,
+        }}
+      />
     </div>
   );
 }
