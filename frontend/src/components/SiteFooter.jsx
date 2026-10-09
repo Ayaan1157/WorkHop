@@ -273,8 +273,6 @@ export default function SiteFooter() {
             </Link>
             <span className="hidden xs:inline">·</span>
             <span>⚡ IT Act, 2000 &amp; DPDP Act, 2023 Compliant</span>
-            <span className="hidden xs:inline">·</span>
-            <span>Frazer Town, Bangalore, India</span>
           </div>
         </div>
 
