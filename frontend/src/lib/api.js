@@ -64,7 +64,7 @@ export const clearToken = () => {
 };
 
 // Fallback Mock Router when backend is unreachable (standalone / Vercel preview)
-function mockRouter(path, method = "GET", body = null) {
+async function mockRouter(path, method = "GET", body = null) {
   const cleanPath = path.replace(/^\/api/, "");
 
   // 1. Leads / Verified Pros
@@ -88,10 +88,34 @@ function mockRouter(path, method = "GET", body = null) {
     return jobs.find((j) => String(j.id) === String(jobId)) || null;
   }
   if ((cleanPath === "/employer/jobs" || (cleanPath.startsWith("/employer/") && cleanPath.endsWith("/jobs"))) && method === "GET") {
-    return getStoredJobs();
+    const stored = getStoredJobs();
+    if (isSupabaseConfigured()) {
+      try {
+        const live = await supabaseGetJobs();
+        if (Array.isArray(live) && live.length > 0) {
+          const liveIds = new Set(live.map((j) => String(j.id)));
+          const liveTitles = new Set(live.map((j) => (j.title || "").toLowerCase().trim()));
+          const filtered = stored.filter((j) => !liveIds.has(String(j.id)) && !liveTitles.has((j.title || "").toLowerCase().trim()));
+          return [...live, ...filtered];
+        }
+      } catch {}
+    }
+    return stored;
   }
   if (cleanPath.startsWith("/jobs") && method === "GET") {
-    return getStoredJobs();
+    const stored = getStoredJobs();
+    if (isSupabaseConfigured()) {
+      try {
+        const live = await supabaseGetJobs();
+        if (Array.isArray(live) && live.length > 0) {
+          const liveIds = new Set(live.map((j) => String(j.id)));
+          const liveTitles = new Set(live.map((j) => (j.title || "").toLowerCase().trim()));
+          const filtered = stored.filter((j) => !liveIds.has(String(j.id)) && !liveTitles.has((j.title || "").toLowerCase().trim()));
+          return [...live, ...filtered];
+        }
+      } catch {}
+    }
+    return stored;
   }
   if (cleanPath === "/employer/jobs" && method === "POST") {
     try {
@@ -617,13 +641,13 @@ async function request(path, { method = "GET", body, auth = false } = {}) {
     }
     if (!res.ok) {
       // If endpoint returns 404/500/etc. fallback to mock in dev/preview
-      return mockRouter(path, method, body);
+      return await mockRouter(path, method, body);
     }
     return data;
   } catch (err) {
     clearTimeout(timeoutId);
     // Network error or backend offline: return rich mock data
-    return mockRouter(path, method, body);
+    return await mockRouter(path, method, body);
   }
 }
 
