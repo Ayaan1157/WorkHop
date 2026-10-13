@@ -94,6 +94,9 @@ function mockRouter(path, method = "GET", body = null) {
     return getStoredJobs();
   }
   if (cleanPath === "/employer/jobs" && method === "POST") {
+    try {
+      supabaseCreateJob(body).catch(() => {});
+    } catch {}
     return postCustomJob(body);
   }
   if (cleanPath.startsWith("/employer/jobs/") && (method === "PUT" || method === "PATCH")) {
@@ -109,6 +112,16 @@ function mockRouter(path, method = "GET", body = null) {
   if (cleanPath.includes("/apply") && method === "POST") {
     const parts = cleanPath.split("/");
     const jobId = parts[2];
+    try {
+      supabaseApplyToJob({
+        jobId,
+        freelancerId: body?.freelancer_id,
+        note: body?.note,
+        boostCredits: body?.boost_credits,
+        applicantArea: body?.applicant_area,
+        distanceKm: body?.distance_km,
+      }).catch(() => {});
+    } catch {}
     return applyToJob(
       jobId,
       body?.freelancer_id,
@@ -483,9 +496,17 @@ function mockRouter(path, method = "GET", body = null) {
     return getStoredChats();
   }
   if (cleanPath.includes("/messages") && method === "POST") {
+    const convId = cleanPath.split("/")[2];
+    try {
+      supabaseSendMessage({
+        conversationId: convId,
+        senderId: body?.sender_id || getFreelancerId(),
+        senderRole: body?.sender_role || "freelancer",
+        text: body?.text || "",
+      }).catch(() => {});
+    } catch {}
     if (body?.sender_role === "employer") {
       try {
-        const convId = cleanPath.split("/")[2];
         sendBrowserPushNotification({
           title: "💬 New Message from Employer",
           body: body?.text || "New message in WorkHop chat",
@@ -546,6 +567,16 @@ function mockRouter(path, method = "GET", body = null) {
     return markJobCompletedAndReview(jobId, body);
   }
   if (cleanPath === "/reviews" && method === "POST") {
+    try {
+      supabaseAddReview({
+        jobId: body?.job_id,
+        reviewerId: body?.reviewer_id,
+        revieweeId: body?.freelancer_id || body?.employer_id,
+        reviewerRole: body?.reviewer_role || "employer",
+        rating: body?.rating,
+        comment: body?.text || body?.comment,
+      }).catch(() => {});
+    } catch {}
     const rev = addEmployerReview(body);
     return { ok: true, review: rev };
   }
