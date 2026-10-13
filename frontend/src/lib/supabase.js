@@ -7,14 +7,15 @@ export const SUPABASE_URL =
   "https://kdfrbkxpuwbrvhidihvj.supabase.co";
 
 export const SUPABASE_ANON_KEY =
-  process.env.REACT_APP_SUPABASE_ANON_KEY || "";
+  process.env.REACT_APP_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZnJia3hwdXdicnZoaWRpaHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMDEwNzMsImV4cCI6MjEwNjY3NzA3M30.uaXuh0iPqiHezrWt5zJA_bV1EnhP-XFI59GIs9RH7sk";
 
 export const isSupabaseConfigured = () => Boolean(SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.length > 20);
 
 // Initialize Supabase Client
 export const supabase = createClient(
   SUPABASE_URL,
-  SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_anon_key_until_configured",
+  SUPABASE_ANON_KEY,
   {
     auth: {
       persistSession: true,
