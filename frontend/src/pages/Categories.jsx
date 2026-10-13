@@ -90,6 +90,47 @@ export default function Categories() {
             )}
           </div>
 
+          {/* Featured Spotlight: AI & Smart Automations */}
+          <div className="mb-6 border-2 border-ink bg-[#121212] p-4 sm:p-5 text-white shadow-[3px_3px_0px_#FF5A1F]">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-white bg-brand text-white">
+                  <Sparkles size={20} className="animate-pulse" />
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-[#FFE082] text-ink px-2 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                      FEATURED CATEGORY
+                    </span>
+                    <span className="text-xs font-bold text-stone-400">HIGH DEMAND IN BENGALURU</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-white">
+                    AI &amp; Smart Automations
+                  </h3>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { name: "AI Video & Reels", query: "AI UGC & Reel Generation" },
+                  { name: "AI Graphic & 3D Render", query: "AI Product & Studio Photography" },
+                  { name: "Automations & Bots", query: "No-Code Workflow Automation" },
+                  { name: "AI Content & SEO", query: "AI Content Humanization & SEO Polishing" },
+                  { name: "Coding with AI", query: "Custom Vibe Coding, Scripts & Web Fixes" },
+                ].map((item) => (
+                  <button
+                    key={item.name}
+                    type="button"
+                    onClick={() => goSearch(item.query)}
+                    className="border border-white/80 bg-white/10 hover:bg-brand hover:border-brand px-2.5 py-1 text-xs font-black text-white transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>{item.name}</span>
+                    <ArrowRight size={11} className="text-brand shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {catalog.map((c) => {
               const expanded = open === c.category || Boolean(search && matchedTaxonomy.some((m) => m.category === c.category));

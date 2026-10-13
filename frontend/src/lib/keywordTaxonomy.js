@@ -473,10 +473,103 @@ export const KEYWORD_TAXONOMY = [
     ]
   },
   {
-    category: "AI Services",
+    category: "AI & Smart Automations",
     icon: "sparkles",
     bg: "#E0F7F4",
     subdisciplines: [
+      {
+        name: "AI UGC & Reel Generation (Avatars, HeyGen, ElevenLabs)",
+        keywords: [
+          "HeyGen", "ElevenLabs", "AI UGC", "Faceless reels", "AI video", "UGC video ads",
+          "AI avatars", "Avatar presenter", "Short-form AI video", "Instagram AI reels",
+          "Synthesia", "TikTok AI videos"
+        ]
+      },
+      {
+        name: "AI Product & Studio Photography (Midjourney, DALL-E, Packshots)",
+        keywords: [
+          "Midjourney", "DALL-E", "Leonardo.ai", "AI product photography", "AI packshots",
+          "Studio mockups", "Ecommerce product photos", "Virtual photoshoot",
+          "Product background replacement", "AI imagery"
+        ]
+      },
+      {
+        name: "3D & Architectural AI Rendering & Walkthroughs",
+        keywords: [
+          "3D AI rendering", "Architectural render", "Interior AI visualization", "Walkthroughs",
+          "Real estate render", "Stable Diffusion architecture", "Floor plan AI render", "3D architectural"
+        ]
+      },
+      {
+        name: "AI Voiceovers & Custom Voice Cloning (Kannada, Hindi, English)",
+        keywords: [
+          "AI voiceover", "Voice cloning", "Kannada voice cloning", "Hindi AI voice",
+          "ElevenLabs", "Voice synthesis", "Multilingual dubbing", "Speech synthesis", "Custom voice cloning"
+        ]
+      },
+      {
+        name: "No-Code Workflow Automation (n8n, Make.com, Zapier)",
+        keywords: [
+          "n8n", "Make.com", "Zapier", "Workflow automation", "No-code automation",
+          "Webhook automation", "Business automation", "CRM sync", "Airtable automation", "API sync"
+        ]
+      },
+      {
+        name: "AI WhatsApp & Customer Support Chatbots (Botpress, ManyChat)",
+        keywords: [
+          "WhatsApp AI bot", "Customer support bot", "Botpress", "ManyChat", "Interakt",
+          "AI chatbot", "Conversational AI", "WhatsApp automation", "Automated customer support"
+        ]
+      },
+      {
+        name: "Custom Vibe Coding, Scripts & Web Fixes (Claude Code, Copilot)",
+        keywords: [
+          "Vibe coding", "Claude Code", "GitHub Copilot", "Custom scripts", "Web bug fixes",
+          "AI coding assistant", "Rapid prototyping", "Python automation scripts", "Vibe coder"
+        ]
+      },
+      {
+        name: "AI Lead Enrichment & Local Web Scraping",
+        keywords: [
+          "AI lead enrichment", "Local web scraping", "Google Maps scraping", "Justdial scraper",
+          "LLM data cleaning", "Lead generation", "Apollo enrichment", "Data extraction"
+        ]
+      },
+      {
+        name: "AI Content Humanization & SEO Polishing",
+        keywords: [
+          "AI content humanization", "AI bypass", "Undetectable AI", "SEO polishing",
+          "Humanize AI text", "Copy editing", "AI blog polisher", "Content rewriting"
+        ]
+      },
+      {
+        name: "Prompt Engineering & Custom GPT Building",
+        keywords: [
+          "Prompt engineering", "Prompt engineer", "Custom GPT building", "ChatGPT prompt",
+          "System prompt", "OpenAI GPTs", "Claude prompts", "Prompt optimization"
+        ]
+      },
+      {
+        name: "AI Social Media Copywriting & Caption Assistants",
+        keywords: [
+          "AI social media copywriting", "Caption generation", "Brand copy", "AI copywriting assistant",
+          "Social content planner", "LinkedIn post writing", "Instagram captions"
+        ]
+      },
+      {
+        name: "Data Annotation & Image/Video Labeling",
+        keywords: [
+          "Data annotation", "Image labeling", "Video labeling", "Bounding box",
+          "Dataset annotation", "AI training data", "RLHF data tagging", "Computer vision labeling"
+        ]
+      },
+      {
+        name: "Local Voice Recording & Language Evaluation (Kannada, Hindi, Tamil)",
+        keywords: [
+          "Voice recording", "Local language evaluation", "Kannada speech sample", "Hindi voice data",
+          "Tamil audio collection", "Speech data collection", "Dialect recording"
+        ]
+      },
       {
         name: "AI Prompt Engineering & Workflow Setup",
         keywords: [
@@ -976,12 +1069,36 @@ export const SUBDISCIPLINE_KEYWORDS = {
   "Explainer Video": RAW_SUBDISCIPLINE_KEYWORDS["Explainer Video Animation (2D/3D)"] || [],
   "Wedding Video": RAW_SUBDISCIPLINE_KEYWORDS["Wedding, Event & Celebration Videography"] || [],
 
-  // AI Services
-  "Prompt Engineering": RAW_SUBDISCIPLINE_KEYWORDS["AI Prompt Engineering & Workflow Setup"] || [],
-  "Chatbot": RAW_SUBDISCIPLINE_KEYWORDS["Custom AI Chatbot Development (WhatsApp / Web)"] || [],
-  "Zapier": RAW_SUBDISCIPLINE_KEYWORDS["Automated Workflow Integrations (Make.com, Zapier)"] || [],
-  "AI Art": RAW_SUBDISCIPLINE_KEYWORDS["AI Image & Visual Asset Generation (Midjourney/SD)"] || [],
-  "Voiceover Cloning": RAW_SUBDISCIPLINE_KEYWORDS["AI Voiceover & Audio Cloning Setup"] || [],
+  // AI & Smart Automations
+  "AI UGC & Reel Generation": RAW_SUBDISCIPLINE_KEYWORDS["AI UGC & Reel Generation (Avatars, HeyGen, ElevenLabs)"] || [],
+  "AI Reels": RAW_SUBDISCIPLINE_KEYWORDS["AI UGC & Reel Generation (Avatars, HeyGen, ElevenLabs)"] || [],
+  "AI UGC": RAW_SUBDISCIPLINE_KEYWORDS["AI UGC & Reel Generation (Avatars, HeyGen, ElevenLabs)"] || [],
+  "HeyGen": RAW_SUBDISCIPLINE_KEYWORDS["AI UGC & Reel Generation (Avatars, HeyGen, ElevenLabs)"] || [],
+  "AI Product Photography": RAW_SUBDISCIPLINE_KEYWORDS["AI Product & Studio Photography (Midjourney, DALL-E, Packshots)"] || [],
+  "Midjourney": RAW_SUBDISCIPLINE_KEYWORDS["AI Product & Studio Photography (Midjourney, DALL-E, Packshots)"] || [],
+  "3D Architectural AI Rendering": RAW_SUBDISCIPLINE_KEYWORDS["3D & Architectural AI Rendering & Walkthroughs"] || [],
+  "AI Voiceovers": RAW_SUBDISCIPLINE_KEYWORDS["AI Voiceovers & Custom Voice Cloning (Kannada, Hindi, English)"] || [],
+  "Voice Cloning": RAW_SUBDISCIPLINE_KEYWORDS["AI Voiceovers & Custom Voice Cloning (Kannada, Hindi, English)"] || [],
+  "ElevenLabs": RAW_SUBDISCIPLINE_KEYWORDS["AI Voiceovers & Custom Voice Cloning (Kannada, Hindi, English)"] || [],
+  "No-Code Workflow Automation": RAW_SUBDISCIPLINE_KEYWORDS["No-Code Workflow Automation (n8n, Make.com, Zapier)"] || [],
+  "n8n": RAW_SUBDISCIPLINE_KEYWORDS["No-Code Workflow Automation (n8n, Make.com, Zapier)"] || [],
+  "Make.com": RAW_SUBDISCIPLINE_KEYWORDS["No-Code Workflow Automation (n8n, Make.com, Zapier)"] || [],
+  "Zapier": RAW_SUBDISCIPLINE_KEYWORDS["No-Code Workflow Automation (n8n, Make.com, Zapier)"] || RAW_SUBDISCIPLINE_KEYWORDS["Automated Workflow Integrations (Make.com, Zapier)"] || [],
+  "WhatsApp Bot": RAW_SUBDISCIPLINE_KEYWORDS["AI WhatsApp & Customer Support Chatbots (Botpress, ManyChat)"] || [],
+  "Botpress": RAW_SUBDISCIPLINE_KEYWORDS["AI WhatsApp & Customer Support Chatbots (Botpress, ManyChat)"] || [],
+  "ManyChat": RAW_SUBDISCIPLINE_KEYWORDS["AI WhatsApp & Customer Support Chatbots (Botpress, ManyChat)"] || [],
+  "Vibe Coding": RAW_SUBDISCIPLINE_KEYWORDS["Custom Vibe Coding, Scripts & Web Fixes (Claude Code, Copilot)"] || [],
+  "Claude Code": RAW_SUBDISCIPLINE_KEYWORDS["Custom Vibe Coding, Scripts & Web Fixes (Claude Code, Copilot)"] || [],
+  "AI Scraping": RAW_SUBDISCIPLINE_KEYWORDS["AI Lead Enrichment & Local Web Scraping"] || [],
+  "Lead Enrichment": RAW_SUBDISCIPLINE_KEYWORDS["AI Lead Enrichment & Local Web Scraping"] || [],
+  "AI Content Humanization": RAW_SUBDISCIPLINE_KEYWORDS["AI Content Humanization & SEO Polishing"] || [],
+  "Humanize AI": RAW_SUBDISCIPLINE_KEYWORDS["AI Content Humanization & SEO Polishing"] || [],
+  "Prompt Engineering": RAW_SUBDISCIPLINE_KEYWORDS["Prompt Engineering & Custom GPT Building"] || RAW_SUBDISCIPLINE_KEYWORDS["AI Prompt Engineering & Workflow Setup"] || [],
+  "Custom GPT": RAW_SUBDISCIPLINE_KEYWORDS["Prompt Engineering & Custom GPT Building"] || [],
+  "Data Annotation": RAW_SUBDISCIPLINE_KEYWORDS["Data Annotation & Image/Video Labeling"] || [],
+  "Speech Data": RAW_SUBDISCIPLINE_KEYWORDS["Local Voice Recording & Language Evaluation (Kannada, Hindi, Tamil)"] || [],
+  "Chatbot": RAW_SUBDISCIPLINE_KEYWORDS["AI WhatsApp & Customer Support Chatbots (Botpress, ManyChat)"] || RAW_SUBDISCIPLINE_KEYWORDS["Custom AI Chatbot Development (WhatsApp / Web)"] || [],
+  "AI Art": RAW_SUBDISCIPLINE_KEYWORDS["AI Product & Studio Photography (Midjourney, DALL-E, Packshots)"] || RAW_SUBDISCIPLINE_KEYWORDS["AI Image & Visual Asset Generation (Midjourney/SD)"] || [],
   "AI Agents": RAW_SUBDISCIPLINE_KEYWORDS["Custom AI Agent Development"] || [],
 
   // Music & Audio
@@ -1599,72 +1716,182 @@ export const SKILL_SYNONYM_CLUSTERS = [
     ]
   },
 
-  // ═══════════ 6. AI SERVICES ═══════════
+  // ═══════════ 6. AI & SMART AUTOMATIONS ═══════════
   {
-    category: "AI Services",
-    name: "AI Prompt Engineering & GenAI Workflows",
+    category: "AI & Smart Automations",
+    name: "AI UGC & Reel Generation (Avatars, HeyGen, ElevenLabs)",
     triggers: [
-      "prompt engineer", "prompt engineering", "chatgpt prompt", "midjourney prompt",
-      "midjourney prompt engineering", "system prompt", "llm prompting", "ai workflow",
-      "prompting", "genai"
+      "heygen", "synthesia", "d-id", "ai avatar", "virtual presenter",
+      "ai spokesperson", "ai video creation", "synthetic video", "ai ugc",
+      "faceless reel", "faceless reels", "ai video", "ugc video ads",
+      "ai reel", "ai reels", "short-form ai video", "ugc ad"
     ],
     expandedTags: [
-      "prompt engineer", "chatgpt prompt", "midjourney prompt", "system prompt",
-      "llm prompting", "ai workflow", "prompting", "genai consultant", "prompt engineering"
+      "heygen", "synthesia", "ai avatar video", "virtual presenter",
+      "ai spokesperson", "ai video creation", "ai ugc", "faceless reels",
+      "short-form ai video", "ugc video ads", "ai reels"
     ]
   },
   {
-    category: "AI Services",
-    name: "Custom AI Chatbots & Customer Assistants",
-    triggers: [
-      "ai chatbot", "custom bot", "voiceflow", "botpress", "manychat",
-      "whatsapp ai bot", "customer support bot", "openai bot", "chat bot",
-      "langchain rag development", "rag chatbot", "chatbot"
-    ],
-    expandedTags: [
-      "ai chatbot", "custom bot", "voiceflow", "manychat", "openai api",
-      "whatsapp ai bot", "customer support bot", "botpress", "chatbot"
-    ]
-  },
-  {
-    category: "AI Services",
-    name: "Automated Workflow Integrations (Make.com, Zapier, n8n)",
-    triggers: [
-      "make.com", "zapier", "n8n", "workflow automation", "no-code automation",
-      "api sync", "webhook automation", "business automation"
-    ],
-    expandedTags: [
-      "make.com expert", "zapier automation", "workflow builder", "business automation",
-      "no-code automation", "api sync", "zapier", "make.com", "n8n"
-    ]
-  },
-  {
-    category: "AI Services",
-    name: "AI Image, Concept & Visual Generation",
+    category: "AI & Smart Automations",
+    name: "AI Product & Studio Photography (Midjourney, DALL-E, Packshots)",
     triggers: [
       "midjourney", "stable diffusion", "comfyui", "controlnet", "ai art",
-      "custom ai imagery", "ai visual asset", "ai artist", "concept generation"
+      "custom ai imagery", "ai visual asset", "ai artist", "concept generation",
+      "dall-e", "dalle", "leonardo.ai", "leonardo ai", "ai packshot", "packshot",
+      "studio mockup", "ai product photo", "virtual photoshoot", "product mockup"
     ],
     expandedTags: [
       "midjourney artist", "stable diffusion", "ai art", "custom ai imagery",
-      "concept generation", "controlnet", "midjourney", "ai image generation"
+      "concept generation", "controlnet", "midjourney", "ai image generation",
+      "ai product photography", "ai packshots", "studio mockups", "leonardo.ai"
     ]
   },
   {
-    category: "AI Services",
-    name: "AI Voiceover, Speech Synthesis & Audio Cloning",
+    category: "AI & Smart Automations",
+    name: "3D & Architectural AI Rendering & Walkthroughs",
+    triggers: [
+      "3d ai rendering", "architectural render", "interior ai", "ai interior render",
+      "walkthroughs", "real estate render", "floor plan ai", "stable diffusion architecture",
+      "architectural visualization", "ai walkthrough", "3d architectural render"
+    ],
+    expandedTags: [
+      "3d ai rendering", "architectural render", "interior ai visualization",
+      "walkthroughs", "real estate render", "floor plan ai render", "3d architectural"
+    ]
+  },
+  {
+    category: "AI & Smart Automations",
+    name: "AI Voiceovers & Custom Voice Cloning (Kannada, Hindi, English)",
     triggers: [
       "elevenlabs", "voice cloning", "audio cloning", "ai voiceover",
       "text to speech", "tts", "voice synthesis", "ai voice artist",
-      "whisper transcription", "whisper transcription fine-tuning", "voice ai"
+      "whisper transcription", "voice ai", "kannada voice cloning", "hindi ai voice",
+      "multilingual dubbing", "custom voice cloning"
     ],
     expandedTags: [
       "ai voiceover", "elevenlabs", "audio cloning", "voice synthesis",
-      "text to speech", "ai voice artist", "ai audio", "voice ai", "whisper"
+      "text to speech", "ai voice artist", "ai audio", "voice ai", "whisper",
+      "kannada voice cloning", "multilingual dubbing"
     ]
   },
   {
-    category: "AI Services",
+    category: "AI & Smart Automations",
+    name: "No-Code Workflow Automation (n8n, Make.com, Zapier)",
+    triggers: [
+      "make.com", "zapier", "n8n", "workflow automation", "no-code automation",
+      "api sync", "webhook automation", "business automation", "crm sync",
+      "airtable automation", "pipeline integration"
+    ],
+    expandedTags: [
+      "make.com expert", "zapier automation", "workflow builder", "business automation",
+      "no-code automation", "api sync", "zapier", "make.com", "n8n", "crm sync"
+    ]
+  },
+  {
+    category: "AI & Smart Automations",
+    name: "AI WhatsApp & Customer Support Chatbots (Botpress, ManyChat, Interakt)",
+    triggers: [
+      "ai chatbot", "custom bot", "voiceflow", "botpress", "manychat", "interakt",
+      "whatsapp ai bot", "whatsapp bot", "customer support bot", "openai bot", "chat bot",
+      "conversational ai", "whatsapp automation", "chatbot"
+    ],
+    expandedTags: [
+      "ai chatbot", "custom bot", "voiceflow", "manychat", "openai api",
+      "whatsapp ai bot", "customer support bot", "botpress", "interakt", "chatbot"
+    ]
+  },
+  {
+    category: "AI & Smart Automations",
+    name: "Custom Vibe Coding, Scripts & Web Fixes (Claude Code, Copilot)",
+    triggers: [
+      "vibe coding", "vibe coder", "claude code", "github copilot", "copilot",
+      "custom script", "custom scripts", "web bug fix", "ai coding", "rapid prototype",
+      "rapid prototyping", "python automation script", "ai script"
+    ],
+    expandedTags: [
+      "vibe coding", "claude code", "github copilot", "custom scripts",
+      "web bug fixes", "ai coding assistant", "rapid prototyping", "vibe coder"
+    ]
+  },
+  {
+    category: "AI & Smart Automations",
+    name: "AI Lead Enrichment & Local Web Scraping",
+    triggers: [
+      "lead enrichment", "ai lead enrichment", "local web scraping", "web scraping",
+      "google maps scraper", "google maps scraping", "justdial scraper", "justdial scraping",
+      "llm data cleaning", "lead generation", "apollo enrichment", "data scraping", "data extraction"
+    ],
+    expandedTags: [
+      "ai lead enrichment", "local web scraping", "google maps scraping",
+      "justdial scraper", "llm data cleaning", "lead generation", "data extraction"
+    ]
+  },
+  {
+    category: "AI & Smart Automations",
+    name: "AI Content Humanization & SEO Polishing",
+    triggers: [
+      "ai humanization", "ai content humanization", "ai bypass", "undetectable ai",
+      "humanize ai", "humanize text", "seo polish", "seo polishing", "ai rewriting",
+      "ai blog polisher", "humanize content"
+    ],
+    expandedTags: [
+      "ai content humanization", "ai bypass", "undetectable ai", "seo polishing",
+      "humanize ai text", "copy editing", "ai blog polisher", "content rewriting"
+    ]
+  },
+  {
+    category: "AI & Smart Automations",
+    name: "Prompt Engineering & Custom GPT Building",
+    triggers: [
+      "prompt engineer", "prompt engineering", "chatgpt prompt", "midjourney prompt",
+      "system prompt", "llm prompting", "ai workflow", "prompting", "genai",
+      "custom gpt", "custom gpt building", "openai gpts", "claude prompt"
+    ],
+    expandedTags: [
+      "prompt engineer", "chatgpt prompt", "midjourney prompt", "system prompt",
+      "llm prompting", "ai workflow", "prompting", "custom gpt building", "prompt engineering"
+    ]
+  },
+  {
+    category: "AI & Smart Automations",
+    name: "AI Social Media Copywriting & Caption Assistants",
+    triggers: [
+      "ai copywriting", "ai caption", "ai social media", "caption assistant",
+      "brand copy ai", "social content planner", "linkedin ai post", "caption generator"
+    ],
+    expandedTags: [
+      "ai social media copywriting", "caption generation", "brand copy",
+      "ai copywriting assistant", "social content planner", "linkedin post writing"
+    ]
+  },
+  {
+    category: "AI & Smart Automations",
+    name: "Data Annotation & Image/Video Labeling",
+    triggers: [
+      "data annotation", "data labeling", "image labeling", "video labeling",
+      "bounding box", "dataset annotation", "ai training data", "rlhf", "data tagging"
+    ],
+    expandedTags: [
+      "data annotation", "image labeling", "video labeling", "bounding box",
+      "dataset annotation", "ai training data", "rlhf data tagging", "data labeling"
+    ]
+  },
+  {
+    category: "AI & Smart Automations",
+    name: "Local Voice Recording & Language Evaluation (Kannada, Hindi, Tamil)",
+    triggers: [
+      "voice recording", "language evaluation", "kannada voice recording",
+      "hindi speech sample", "tamil audio collection", "speech data collection",
+      "dialect recording", "local voice recording"
+    ],
+    expandedTags: [
+      "voice recording", "local language evaluation", "kannada speech sample",
+      "hindi voice data", "tamil audio collection", "speech data collection"
+    ]
+  },
+  {
+    category: "AI & Smart Automations",
     name: "Custom LLM Engineering, RAG & Fine-Tuning",
     triggers: [
       "rag", "langchain", "llamaindex", "vector database", "pinecone",
@@ -1673,18 +1900,6 @@ export const SKILL_SYNONYM_CLUSTERS = [
     expandedTags: [
       "openai api", "fine-tuning", "rag architecture", "langchain",
       "vector database", "custom llm", "embeddings", "llm engineer"
-    ]
-  },
-  {
-    category: "AI Services",
-    name: "AI Avatars & Synthetic Video (HeyGen, Synthesia)",
-    triggers: [
-      "heygen", "synthesia", "d-id", "ai avatar", "virtual presenter",
-      "ai spokesperson", "ai video creation", "synthetic video"
-    ],
-    expandedTags: [
-      "heygen", "synthesia", "ai avatar video", "virtual presenter",
-      "ai spokesperson", "ai video creation"
     ]
   },
 
@@ -2082,6 +2297,11 @@ export function expandSkillKeywords(skill, category = "") {
 
       if (matched || (subNameLower.length > 5 && (subNameLower === rawLower || rawLower.includes(subNameLower) || subNameLower.includes(rawLower)))) {
         resultSet.add(cat.category.toLowerCase());
+        if (cat.category === "AI & Smart Automations") {
+          resultSet.add("ai services");
+          resultSet.add("ai");
+          resultSet.add("automation");
+        }
         resultSet.add(sub.name.toLowerCase());
       }
     }
