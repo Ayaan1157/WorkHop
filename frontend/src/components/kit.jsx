@@ -21,10 +21,11 @@ export { default as AuthModal } from "@/components/AuthModal";
 export { default as RecaptchaWidget } from "@/components/RecaptchaWidget";
 export { default as SiteFooter } from "@/components/SiteFooter";
 export { default as FloatingChatWidget } from "@/components/FloatingChatWidget";
-export { default as PaymentModeSelector } from "@/components/PaymentModeSelector";
 export { default as DealTracker } from "@/components/DealTracker";
+export { default as SuggestProfessionModal } from "@/components/SuggestProfessionModal";
 export * from "@/components/Skeletons";
 import SiteFooter from "@/components/SiteFooter";
+import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 
 const ICONS = {
   grid: Grid3x3, palette: Palette, code: Code2, megaphone: Megaphone,
@@ -630,9 +631,17 @@ export function Shell({ children, className = "" }) {
   );
 }
 
-// Horizontal scrollable 9-category filters
-export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile", className = "" }) {
+// Horizontal scrollable category filters with Suggest Tab option
+export function CategoryTiles({
+  selected,
+  onSelect,
+  testIDPrefix = "cat-tile",
+  className = "",
+  onSuggest = null,
+}) {
   const [cats, setCats] = useState(["ALL", ...CATALOG_CATEGORY_NAMES]);
+  const [suggestModalOpen, setSuggestModalOpen] = useState(false);
+
   useEffect(() => {
     apiGet("/catalog")
       .then((d) => {
@@ -640,33 +649,66 @@ export function CategoryTiles({ selected, onSelect, testIDPrefix = "cat-tile", c
       })
       .catch(() => {});
   }, []);
+
+  const handleOpenSuggest = () => {
+    if (typeof onSuggest === "function") {
+      onSuggest();
+    } else {
+      setSuggestModalOpen(true);
+    }
+  };
+
   return (
-    <div className={`w-full bg-white dark:bg-[#121212] ${className}`}>
-      <div className="wh-scroll mx-auto flex w-full max-w-[1600px] gap-3 overflow-x-auto px-4 py-3 sm:px-8">
-        {cats.map((key) => {
-          const v = CATEGORY_VISUALS[key] || CATEGORY_VISUALS.ALL;
-          const on = selected === key;
-          return (
-            <button
-              key={key}
-              data-testid={`${testIDPrefix}-${key.toLowerCase().replace(/[^a-z]+/g, "-")}`}
-              onClick={() => onSelect(key)}
-              className={`flex w-[100px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2.5 transition-transform active:translate-y-0.5 ${on ? "bg-ink dark:bg-[#2a2a2a]" : "bg-white dark:bg-[#1a1a1a] hover:bg-sand"}`}
-            >
-              <span
-                className="flex h-10 w-10 items-center justify-center border-2 border-ink"
-                style={{ background: on ? "#E65A1E" : v.bg }}
+    <>
+      <div className={`w-full bg-white dark:bg-[#121212] ${className}`}>
+        <div className="wh-scroll mx-auto flex w-full max-w-[1600px] gap-3 overflow-x-auto px-4 py-3 sm:px-8">
+          {cats.map((key) => {
+            const v = CATEGORY_VISUALS[key] || CATEGORY_VISUALS.ALL;
+            const on = selected === key;
+            return (
+              <button
+                key={key}
+                data-testid={`${testIDPrefix}-${key.toLowerCase().replace(/[^a-z]+/g, "-")}`}
+                onClick={() => onSelect(key)}
+                className={`flex w-[100px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2.5 transition-transform active:translate-y-0.5 ${on ? "bg-ink dark:bg-[#2a2a2a]" : "bg-white dark:bg-[#1a1a1a] hover:bg-sand"}`}
               >
-                <CatIcon name={v.icon} size={20} className={on ? "text-white stroke-white" : "!text-[#121212] !stroke-[#121212] text-black"} />
-              </span>
-              <span className={`text-center text-[10px] font-black leading-tight ${on ? "text-white dark:!text-white" : "text-ink dark:!text-white"}`}>
-                {(CATEGORY_SHORT_LABELS[key] || key).toUpperCase()}
-              </span>
-            </button>
-          );
-        })}
+                <span
+                  className="flex h-10 w-10 items-center justify-center border-2 border-ink"
+                  style={{ background: on ? "#E65A1E" : v.bg }}
+                >
+                  <CatIcon name={v.icon} size={20} className={on ? "text-white stroke-white" : "!text-[#121212] !stroke-[#121212] text-black"} />
+                </span>
+                <span className={`text-center text-[10px] font-black leading-tight ${on ? "text-white dark:!text-white" : "text-ink dark:!text-white"}`}>
+                  {(CATEGORY_SHORT_LABELS[key] || key).toUpperCase()}
+                </span>
+              </button>
+            );
+          })}
+
+          {/* "+ CAN'T FIND? SUGGEST TAB" TILE */}
+          <button
+            type="button"
+            data-testid={`${testIDPrefix}-suggest-missing`}
+            onClick={handleOpenSuggest}
+            className="flex w-[105px] shrink-0 flex-col items-center justify-center gap-1.5 border-2 border-dashed border-ink/40 dark:border-stone-600 bg-sand/30 dark:bg-[#1c1c1c] p-2.5 transition-all hover:border-brand hover:bg-brand/10 dark:hover:bg-brand/20 active:translate-y-0.5 group"
+            title="Don't see your profession? Suggest a new tab"
+          >
+            <span className="flex h-10 w-10 items-center justify-center border-2 border-dashed border-ink/40 dark:border-stone-500 bg-white dark:bg-[#252525] group-hover:border-brand group-hover:bg-brand transition shadow-[1px_1px_0px_#121212]">
+              <PlusCircle size={20} className="text-ink dark:text-stone-300 group-hover:text-white" />
+            </span>
+            <span className="text-center text-[9px] font-black leading-tight text-inkmuted dark:text-stone-400 group-hover:text-brand tracking-tight">
+              + SUGGEST TAB
+            </span>
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Internal Modal Fallback */}
+      <SuggestProfessionModal
+        isOpen={suggestModalOpen}
+        onClose={() => setSuggestModalOpen(false)}
+      />
+    </>
   );
 }
 

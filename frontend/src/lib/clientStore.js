@@ -2488,6 +2488,150 @@ export function getAdminChatMessages(conversationId) {
   };
 }
 
+// ═══════════ PROFESSION & TAB SUGGESTIONS ═══════════
+const PROFESSION_SUGGESTIONS_KEY = "workhop_profession_suggestions";
+
+const DEFAULT_SEED_SUGGESTIONS = [
+  {
+    id: "sug_seed_1",
+    suggestion_id: "sug_seed_1",
+    profession: "Drone Cinematography & FPV Pilot",
+    category_hint: "Video & Animation",
+    description: "High demand across Bangalore real estate builders, cafes in Indiranagar, and wedding event reels. Currently lumped under generic video.",
+    user_role: "freelancer",
+    user_email: "karthik.fpv@gmail.com",
+    user_phone: "+91 98451 12903",
+    emails: ["karthik.fpv@gmail.com", "reels.bangalore@agency.com"],
+    area: "Indiranagar",
+    status: "under_review",
+    request_count: 5,
+    admin_notes: "Very high local demand. Scheduled to add under Video / Creative tabs.",
+    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
+    updated_at: new Date(Date.now() - 3600000 * 6).toISOString(),
+  },
+  {
+    id: "sug_seed_2",
+    suggestion_id: "sug_seed_2",
+    profession: "Regional Language Voiceover (Kannada & Tulu)",
+    category_hint: "Music & Audio",
+    description: "Advertisers and local radio spots constantly request native Kannada and coastal Karnataka dubbing artists.",
+    user_role: "employer",
+    user_email: "media@adcraftkarnataka.com",
+    user_phone: "+91 97410 44882",
+    emails: ["media@adcraftkarnataka.com"],
+    area: "Basavanagudi",
+    status: "tab_added",
+    request_count: 8,
+    admin_notes: "Added to Audio and Taxonomy under Bangalore Regional Voiceover.",
+    created_at: new Date(Date.now() - 3600000 * 120).toISOString(),
+    updated_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+  },
+  {
+    id: "sug_seed_3",
+    suggestion_id: "sug_seed_3",
+    profession: "Pet Photography & Studio Grooming",
+    category_hint: "Lifestyle & Events",
+    description: "Pet parents in Koramangala and HSR looking for dedicated indoor studio and outdoor dog park photographers.",
+    user_role: "freelancer",
+    user_email: "woofstudios@gmail.com",
+    user_phone: "+91 91234 56789",
+    emails: ["woofstudios@gmail.com"],
+    area: "Koramangala",
+    status: "pending",
+    request_count: 3,
+    admin_notes: null,
+    created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
+    updated_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+  },
+];
+
+export function getStoredProfessionSuggestions() {
+  const raw = localStorage.getItem(PROFESSION_SUGGESTIONS_KEY);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch { /* ignore */ }
+  }
+  localStorage.setItem(PROFESSION_SUGGESTIONS_KEY, JSON.stringify(DEFAULT_SEED_SUGGESTIONS));
+  return DEFAULT_SEED_SUGGESTIONS;
+}
+
+export function saveProfessionSuggestion(data) {
+  if (!data?.profession || !data.profession.trim()) {
+    throw new Error("Profession name is required");
+  }
+  const cleanProf = data.profession.trim();
+  const normKey = cleanProf.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const existing = getStoredProfessionSuggestions();
+
+  const matchIdx = existing.findIndex(
+    (s) => (s.profession || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() === normKey
+  );
+
+  const nowIso = new Date().toISOString();
+
+  if (matchIdx >= 0) {
+    const item = existing[matchIdx];
+    const emails = Array.isArray(item.emails) ? [...item.emails] : [];
+    if (data.user_email && !emails.includes(data.user_email.trim().toLowerCase())) {
+      emails.push(data.user_email.trim().toLowerCase());
+    }
+    const updated = {
+      ...item,
+      request_count: (item.request_count || 1) + 1,
+      emails,
+      updated_at: nowIso,
+    };
+    existing[matchIdx] = updated;
+    localStorage.setItem(PROFESSION_SUGGESTIONS_KEY, JSON.stringify(existing));
+    addAdminLog("PROFESSION_UPVOTED", `Suggestion for tab "${cleanProf}" upvoted (${updated.request_count} requests)`);
+    return { ok: true, suggestion: updated, request_count: updated.request_count };
+  }
+
+  const sugId = `sug_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  const newSug = {
+    id: sugId,
+    suggestion_id: sugId,
+    profession: cleanProf,
+    category_hint: data.category_hint || data.category || "General",
+    description: data.details || data.description || "",
+    user_role: data.user_role || "freelancer",
+    user_email: data.user_email || "",
+    user_phone: data.user_phone || "",
+    emails: data.user_email ? [data.user_email.trim().toLowerCase()] : [],
+    area: data.area || "Bengaluru",
+    status: "pending",
+    request_count: 1,
+    admin_notes: null,
+    created_at: nowIso,
+    updated_at: nowIso,
+  };
+
+  const updatedList = [newSug, ...existing];
+  localStorage.setItem(PROFESSION_SUGGESTIONS_KEY, JSON.stringify(updatedList));
+  addAdminLog("PROFESSION_SUGGESTED", `New profession tab requested: "${cleanProf}" by ${newSug.user_email || newSug.user_role}`);
+  return { ok: true, suggestion: newSug, request_count: 1 };
+}
+
+export function updateProfessionSuggestionStatus(sugId, status, notes = null) {
+  const list = getStoredProfessionSuggestions().map((s) => {
+    if (s.id === sugId || s.suggestion_id === sugId) {
+      return {
+        ...s,
+        status: status || s.status,
+        admin_notes: notes !== null ? notes : s.admin_notes,
+        updated_at: new Date().toISOString(),
+      };
+    }
+    return s;
+  });
+  localStorage.setItem(PROFESSION_SUGGESTIONS_KEY, JSON.stringify(list));
+  addAdminLog("PROFESSION_STATUS_UPDATED", `Profession request ${sugId} status changed to ${status}`);
+  return list.find((s) => s.id === sugId || s.suggestion_id === sugId);
+}
+
+
 
 
 

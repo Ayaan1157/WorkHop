@@ -371,3 +371,54 @@ export async function supabaseGetReviews(userId) {
   if (error) return null;
   return data;
 }
+
+// ══════════════════════════════════════════════════
+// 7. PROFESSION & TAB SUGGESTIONS (SUPABASE)
+// ══════════════════════════════════════════════════
+
+export async function supabaseSubmitProfessionSuggestion(suggestion) {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const { data, error } = await supabase
+      .from("profession_suggestions")
+      .insert([
+        {
+          profession: suggestion.profession,
+          category_hint: suggestion.category_hint || "General",
+          description: suggestion.details || suggestion.description || "",
+          user_role: suggestion.user_role || "freelancer",
+          user_email: suggestion.user_email || null,
+          user_phone: suggestion.user_phone || null,
+          area: suggestion.area || "Bengaluru",
+          status: "pending",
+          request_count: 1,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.warn("Supabase suggestion insert notice:", error.message);
+      return null;
+    }
+    return data;
+  } catch (e) {
+    console.warn("Supabase profession suggestion failed:", e);
+    return null;
+  }
+}
+
+export async function supabaseGetProfessionSuggestions() {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const { data, error } = await supabase
+      .from("profession_suggestions")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}

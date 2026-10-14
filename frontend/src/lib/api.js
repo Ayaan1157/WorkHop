@@ -47,6 +47,9 @@ import {
   saveGrievanceTicket,
   updateGrievanceStatus,
   setStoredChatStatus,
+  getStoredProfessionSuggestions,
+  saveProfessionSuggestion,
+  updateProfessionSuggestionStatus,
 } from "./clientStore";
 import { sendBrowserPushNotification, sendTestPushNotification } from "./pushNotifications";
 export * from "./supabase";
@@ -365,6 +368,17 @@ async function mockRouter(path, method = "GET", body = null) {
     const ticketId = parts[3];
     return updateGrievanceStatus(ticketId, body?.status, body?.resolution_notes);
   }
+  if (cleanPath === "/profession-suggestions" && method === "POST") {
+    return saveProfessionSuggestion(body);
+  }
+  if (cleanPath === "/admin/profession-suggestions" && method === "GET") {
+    return getStoredProfessionSuggestions();
+  }
+  if (cleanPath.startsWith("/admin/profession-suggestions/") && cleanPath.endsWith("/status") && method === "POST") {
+    const parts = cleanPath.split("/");
+    const sugId = parts[3];
+    return updateProfessionSuggestionStatus(sugId, body?.status, body?.notes || body?.admin_notes);
+  }
   if (cleanPath === "/admin/logs" && method === "GET") {
     return getAdminLogs();
   }
@@ -681,3 +695,31 @@ export function getFreelancerId() {
 }
 
 export const setFreelancerId = (id) => localStorage.setItem("workhop_freelancer_id", id);
+
+// Profession Suggestion API wrappers
+export async function submitProfessionSuggestion(data) {
+  try {
+    return await apiPost("/profession-suggestions", data);
+  } catch (err) {
+    console.warn("API profession suggestion failed, using clientStore fallback:", err);
+    return saveProfessionSuggestion(data);
+  }
+}
+
+export async function getProfessionSuggestions() {
+  try {
+    const res = await apiGet("/admin/profession-suggestions", true);
+    if (Array.isArray(res)) return res;
+    return getStoredProfessionSuggestions();
+  } catch {
+    return getStoredProfessionSuggestions();
+  }
+}
+
+export async function updateProfessionSuggestion(sugId, status, notes = null) {
+  try {
+    return await apiPost(`/admin/profession-suggestions/${sugId}/status`, { status, notes, admin_notes: notes }, true);
+  } catch {
+    return updateProfessionSuggestionStatus(sugId, status, notes);
+  }
+}

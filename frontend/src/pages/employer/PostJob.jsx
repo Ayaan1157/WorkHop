@@ -11,6 +11,7 @@ import { BENGALURU_AREAS, findNearestArea, getAreaCoordinates } from "@/lib/loca
 import { API, apiGet, apiPost, apiPut, getEmployerId } from "@/lib/api";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import MarketPriceAdvisor from "@/components/MarketPriceAdvisor";
+import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 import { sanitizeInput, checkSpamKeywords } from "@/lib/security";
 import { ADMIN_EMAILS, getCreditsConfig, calculateHopsForJob, blastFeaturedJobNotification, getStoredJobs, updateCustomJob } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
@@ -40,6 +41,7 @@ export default function PostJob() {
   const [customCoords, setCustomCoords] = useState(null);
   const [description, setDescription] = useState(() => location.state?.prefillDescription || "");
   const [submitting, setSubmitting] = useState(false);
+  const [suggestModalOpen, setSuggestModalOpen] = useState(false);
   const [error, setError] = useState("");
   const [posted, setPosted] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
@@ -369,6 +371,13 @@ export default function PostJob() {
                 </div>
               );
             })()}
+            <button
+              type="button"
+              onClick={() => setSuggestModalOpen(true)}
+              className="mt-1.5 self-start text-left text-[11px] font-bold text-brand hover:underline flex items-center gap-1"
+            >
+              <span>+ Don't see your gig category? Suggest a new profession tab</span>
+            </button>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -599,6 +608,16 @@ export default function PostJob() {
           </p>
         </div>
       )}
+
+      {/* Suggest Profession Modal */}
+      <SuggestProfessionModal
+        isOpen={suggestModalOpen}
+        onClose={() => setSuggestModalOpen(false)}
+        initialCategory={bucket}
+        onSuccess={(suggested) => {
+          if (!title) setTitle(suggested);
+        }}
+      />
     </Shell>
   );
 }

@@ -6494,6 +6494,122 @@ async def create_complaint(req: ComplaintRequest, background_tasks: BackgroundTa
     }
 
 
+# ============== Profession & Tab Suggestions ==============
+class ProfessionSuggestionRequest(BaseModel):
+    profession: str
+    category_hint: Optional[str] = "General"
+    description: Optional[str] = ""
+    details: Optional[str] = ""
+    user_role: Optional[str] = "freelancer"
+    user_email: Optional[str] = ""
+    user_phone: Optional[str] = ""
+    area: Optional[str] = "Bengaluru"
+
+
+@api_router.post("/profession-suggestions")
+async def create_profession_suggestion(req: ProfessionSuggestionRequest):
+    prof_raw = (req.profession or "").strip()
+    if not prof_raw:
+        raise HTTPException(status_code=400, detail="Profession name is required.")
+
+    clean_prof = html.escape(prof_raw[:120])
+    norm_key = re.sub(r'[^a-z0-9]+', ' ', prof_raw.lower()).strip()
+
+    # Check if a similar profession has already been suggested
+    existing = await db.profession_suggestions.find_one({"normalized_key": norm_key})
+    now_str = _now_iso()
+
+    if existing:
+        new_count = existing.get("request_count", 1) + 1
+        emails = existing.get("emails", [])
+        if req.user_email and req.user_email.strip().lower() not in emails:
+            emails.append(req.user_email.strip().lower()[:120])
+
+        await db.profession_suggestions.update_one(
+            {"_id": existing["_id"]},
+            {
+                "$set": {
+                    "request_count": new_count,
+                    "emails": emails,
+                    "updated_at": now_str,
+                }
+            }
+        )
+        return {
+            "ok": True,
+            "suggestion_id": existing.get("id") or str(existing["_id"]),
+            "profession": existing.get("profession", clean_prof),
+            "request_count": new_count,
+            "status": existing.get("status", "pending"),
+            "message": "Suggestion upvoted successfully",
+        }
+
+    sug_id = f"sug_{uuid.uuid4().hex[:10]}"
+    doc = {
+        "_id": sug_id,
+        "id": sug_id,
+        "suggestion_id": sug_id,
+        "profession": clean_prof,
+        "normalized_key": norm_key,
+        "category_hint": html.escape((req.category_hint or "General")[:80]),
+        "description": html.escape(((req.details or req.description) or "")[:1000]),
+        "user_role": req.user_role or "freelancer",
+        "user_email": (req.user_email or "").strip().lower()[:120],
+        "user_phone": (req.user_phone or "").strip()[:20],
+        "emails": [(req.user_email or "").strip().lower()[:120]] if req.user_email else [],
+        "area": (req.area or "Bengaluru")[:60],
+        "status": "pending",
+        "request_count": 1,
+        "admin_notes": None,
+        "created_at": now_str,
+        "updated_at": now_str,
+    }
+    await db.profession_suggestions.insert_one(doc)
+    doc_out = {k: v for k, v in doc.items() if k != "_id"}
+    return {
+        "ok": True,
+        "suggestion": doc_out,
+        "suggestion_id": sug_id,
+        "request_count": 1,
+        "message": "Profession suggestion recorded",
+    }
+
+
+@api_router.get("/admin/profession-suggestions")
+async def admin_get_profession_suggestions(request: Request):
+    await _require_admin(request)
+    docs = await db.profession_suggestions.find({}, {"_id": 0}).sort([("request_count", -1), ("updated_at", -1)]).to_list(1000)
+    return docs
+
+
+@api_router.post("/admin/profession-suggestions/{sug_id}/status")
+async def admin_update_profession_suggestion_status(sug_id: str, request: Request):
+    await _require_admin(request)
+    body = await request.json()
+    status = body.get("status") or "under_review"
+    admin_notes = body.get("admin_notes") or body.get("notes")
+
+    updates = {
+        "status": status,
+        "updated_at": _now_iso(),
+    }
+    if admin_notes is not None:
+        updates["admin_notes"] = html.escape(str(admin_notes)[:1000])
+
+    res = await db.profession_suggestions.update_one(
+        {"$or": [{"_id": sug_id}, {"id": sug_id}, {"suggestion_id": sug_id}]},
+        {"$set": updates}
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Suggestion not found")
+
+    doc = await db.profession_suggestions.find_one(
+        {"$or": [{"_id": sug_id}, {"id": sug_id}, {"suggestion_id": sug_id}]},
+        {"_id": 0}
+    )
+    return doc
+
+
 # ============== Bengaluru Optimized Category Catalog ==============
 CATALOG = [
     {"category": "Graphics & Design", "icon": "color-palette", "subcategories": [

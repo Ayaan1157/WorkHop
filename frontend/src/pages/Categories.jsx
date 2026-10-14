@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, ArrowRight, Search, X, Sparkles, Tag } from "lucide-react";
+import { ChevronDown, ChevronUp, ArrowRight, Search, X, Sparkles, Tag, PlusCircle, HelpCircle } from "lucide-react";
 import { Shell, TopBar, Spinner, CatIcon } from "@/components/kit";
+import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 import { CATEGORY_VISUALS } from "@/lib/catalogFilters";
 import { getStoredCatalog } from "@/lib/clientStore";
 import { SUBDISCIPLINE_KEYWORDS, searchTaxonomy } from "@/lib/keywordTaxonomy";
@@ -22,6 +23,8 @@ export default function Categories() {
   const [open, setOpen] = useState(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestProf, setSuggestProf] = useState("");
 
   useEffect(() => {
     apiGet("/catalog")
@@ -42,6 +45,11 @@ export default function Categories() {
     return searchTaxonomy(search.trim());
   }, [search]);
 
+  const openSuggest = (initial = "") => {
+    setSuggestProf(initial);
+    setSuggestOpen(true);
+  };
+
   return (
     <Shell>
       <TopBar title="ALL CATEGORIES & SERVICE TAXONOMY" sub={`${catalog.length} categories · ${total} services · 300+ search tags`} backTestID="categories-back-btn" />
@@ -50,44 +58,75 @@ export default function Categories() {
       ) : (
         <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-8 pb-16">
           
-          {/* Taxonomy Search Bar */}
-          <div className="mb-6 max-w-xl">
-            <div className="flex h-11 items-center gap-2 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 shadow-[2px_2px_0px_#121212]">
-              <Search size={16} className="text-inkmuted" />
-              <input
-                data-testid="categories-search-input"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search taxonomy — e.g. AutoCAD, Framer, Zomato, Kannada VO, CapCut…"
-                className="wh-input flex-1 bg-transparent text-sm font-bold text-ink dark:text-white placeholder:font-normal placeholder:text-inkmuted"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="flex h-[20px] w-[20px] items-center justify-center bg-ink"
-                >
-                  <X size={12} className="text-white" />
-                </button>
+          {/* Taxonomy Search Bar + Suggest Tab CTA */}
+          <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="w-full max-w-xl">
+              <div className="flex h-11 items-center gap-2 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 shadow-[2px_2px_0px_#121212]">
+                <Search size={16} className="text-inkmuted" />
+                <input
+                  data-testid="categories-search-input"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search taxonomy — e.g. Drone, AutoCAD, Framer, Voiceover, CapCut…"
+                  className="wh-input flex-1 bg-transparent text-sm font-bold text-ink dark:text-white placeholder:font-normal placeholder:text-inkmuted"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="flex h-[20px] w-[20px] items-center justify-center bg-ink"
+                  >
+                    <X size={12} className="text-white" />
+                  </button>
+                )}
+              </div>
+
+              {search && matchedTaxonomy.length > 0 && (
+                <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-black uppercase text-inkmuted dark:text-stone-400">Direct Matches:</span>
+                  {matchedTaxonomy.slice(0, 5).map((m) => (
+                    <button
+                      key={m.subdiscipline}
+                      type="button"
+                      onClick={() => goSearch(m.subdiscipline)}
+                      className="inline-flex items-center gap-1 border border-ink bg-[#FFF3C4] dark:bg-stone-800 px-2 py-0.5 text-xs font-black text-ink dark:text-stone-200 hover:bg-brand hover:text-white transition shadow-[1px_1px_0px_#121212]"
+                    >
+                      <Sparkles size={11} className="text-brand shrink-0" />
+                      <span>{m.subdiscipline}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {search && search.trim().length >= 2 && matchedTaxonomy.length === 0 && (
+                <div className="mt-2.5 flex items-center justify-between gap-2 border border-dashed border-ink/40 bg-sand/40 dark:bg-stone-900/60 p-2.5">
+                  <div className="flex items-center gap-2">
+                    <HelpCircle size={15} className="text-brand shrink-0" />
+                    <span className="text-xs text-ink dark:text-stone-300 font-medium">
+                      Don't see <strong>"{search.trim()}"</strong> in our taxonomy?
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openSuggest(search.trim())}
+                    className="border border-ink bg-brand px-2.5 py-1 text-xs font-black text-white hover:bg-brand/90 transition shadow-[1px_1px_0px_#121212] shrink-0"
+                  >
+                    + SUGGEST TAB
+                  </button>
+                </div>
               )}
             </div>
 
-            {search && matchedTaxonomy.length > 0 && (
-              <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-black uppercase text-inkmuted dark:text-stone-400">Direct Matches:</span>
-                {matchedTaxonomy.slice(0, 5).map((m) => (
-                  <button
-                    key={m.subdiscipline}
-                    type="button"
-                    onClick={() => goSearch(m.subdiscipline)}
-                    className="inline-flex items-center gap-1 border border-ink bg-[#FFF3C4] dark:bg-stone-800 px-2 py-0.5 text-xs font-black text-ink dark:text-stone-200 hover:bg-brand hover:text-white transition shadow-[1px_1px_0px_#121212]"
-                  >
-                    <Sparkles size={11} className="text-brand shrink-0" />
-                    <span>{m.subdiscipline}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Quick Suggest Tab Button */}
+            <button
+              type="button"
+              data-testid="categories-suggest-tab-btn"
+              onClick={() => openSuggest("")}
+              className="inline-flex items-center gap-2 border-2 border-ink bg-sand hover:bg-brand hover:text-white dark:bg-[#202020] dark:hover:bg-brand px-4 py-2.5 text-xs font-black uppercase tracking-wider text-ink dark:text-white transition shadow-[2px_2px_0px_#121212] self-start md:self-auto shrink-0"
+            >
+              <PlusCircle size={15} className="text-brand hover:text-white shrink-0" />
+              <span>CAN'T FIND YOUR PROFESSION? SUGGEST TAB</span>
+            </button>
           </div>
 
           {/* Featured Spotlight: AI & Smart Automations */}
@@ -192,9 +231,40 @@ export default function Categories() {
               );
             })}
           </div>
+          {/* Bottom Suggest Profession Card */}
+          <div className="mt-10 border-2 border-dashed border-ink/40 dark:border-stone-700 bg-sand/30 dark:bg-[#1a1a1a] p-5 sm:p-6 text-center">
+            <div className="inline-flex h-10 w-10 items-center justify-center border-2 border-ink bg-brand text-white shadow-[2px_2px_0px_#121212] mb-3">
+              <Sparkles size={18} />
+            </div>
+            <h4 className="text-base font-black text-ink dark:text-white uppercase">
+              Don't See Your Profession or Niche Listed?
+            </h4>
+            <p className="mt-1 text-xs text-inkmuted dark:text-stone-300 max-w-md mx-auto">
+              Help us expand WorkHop! Tell us what skills or profession tabs you'd like added for Bangalore. We review community requests weekly.
+            </p>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => openSuggest("")}
+                className="inline-flex items-center gap-1.5 border-2 border-ink bg-brand px-5 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-brand/90 transition shadow-[2px_2px_0px_#121212] active:translate-y-0.5"
+              >
+                <PlusCircle size={14} />
+                <span>SUGGEST A NEW PROFESSION TAB</span>
+              </button>
+            </div>
+          </div>
+
           <p className="mt-6 text-center text-xs text-inkmuted">Tap any service or tag to search matching verified gigs &amp; pros in Bengaluru</p>
         </div>
       )}
+
+      {/* Suggest Profession Modal */}
+      <SuggestProfessionModal
+        isOpen={suggestOpen}
+        onClose={() => setSuggestOpen(false)}
+        initialProfession={suggestProf}
+      />
     </Shell>
   );
 }
+

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ShieldCheck, Lock, CheckCircle2, ArrowRight, Image as ImageIcon, Plus, LocateFixed, Loader2 } from "lucide-react";
 import CouponInput from "@/components/CouponInput";
+import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
@@ -36,6 +37,7 @@ export default function Onboarding() {
   const [phone, setPhone] = useState("");
   const [skill, setSkill] = useState("");
   const [category, setCategory] = useState("Graphics & Design");
+  const [suggestModalOpen, setSuggestModalOpen] = useState(false);
   const [rateHr, setRateHr] = useState("");
   const [intro, setIntro] = useState("");
   const [langs, setLangs] = useState(["English"]);
@@ -300,7 +302,25 @@ export default function Onboarding() {
             {phone.length > 0 && !phoneValid && <p data-testid="phone-error" className="text-xs font-bold text-danger">Phone must be exactly 10 digits.</p>}
             <Labeled label="Primary Skill" testID="skill-input" value={skill} onChange={setSkill} placeholder="e.g. Logo Designer, Video Editor" disabled={!state.paid} />
             <p className={fieldLabel}>CATEGORY</p>
-            <div className="flex flex-wrap gap-2">{CATALOG_CATEGORY_NAMES.map((c) => <button key={c} data-testid={`profile-cat-${c.toLowerCase().replace(/[^a-z]+/g, "-")}`} onClick={() => state.paid && setCategory(c)} className={chip(category === c)}>{c.toUpperCase()}</button>)}</div>
+            <div className="flex flex-wrap items-center gap-2">
+              {CATALOG_CATEGORY_NAMES.map((c) => (
+                <button
+                  key={c}
+                  data-testid={`profile-cat-${c.toLowerCase().replace(/[^a-z]+/g, "-")}`}
+                  onClick={() => state.paid && setCategory(c)}
+                  className={chip(category === c)}
+                >
+                  {c.toUpperCase()}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setSuggestModalOpen(true)}
+                className="border-2 border-dashed border-ink/40 dark:border-stone-600 bg-sand/50 dark:bg-stone-800 px-2.5 py-1 text-[10px] font-black uppercase text-brand hover:border-brand hover:bg-brand/10 transition shadow-[1px_1px_0px_#121212]"
+              >
+                + CAN'T FIND YOUR PROFESSION?
+              </button>
+            </div>
             <button data-testid="profile-location-btn" onClick={() => state.paid && requestLocation()} className={`flex items-center gap-2 border-2 border-ink px-3 py-2 text-left ${coords ? "bg-ok" : "bg-sand"}`}>
               {locStatus === "locating" ? <Loader2 size={14} className={`animate-spin ${coords ? "text-white" : "text-ink"}`} /> : <LocateFixed size={14} className={coords ? "text-white" : "text-ink"} />}
               <span className={`flex-1 text-[10px] font-extrabold ${coords ? "text-white" : "text-ink"}`}>{coords ? "LOCATION ADDED ✓" : "ADD MY LOCATION (optional · rank nearest to employers)"}</span>
@@ -467,6 +487,16 @@ export default function Onboarding() {
           <button data-testid="overlay-done-btn" onClick={() => nav("/")} className="border-2 border-ink px-8 py-3 text-[13px] font-black text-ink">Back to home</button>
         </div>
       )}
+
+      {/* Suggest Profession Modal */}
+      <SuggestProfessionModal
+        isOpen={suggestModalOpen}
+        onClose={() => setSuggestModalOpen(false)}
+        initialCategory={category}
+        onSuccess={(suggested) => {
+          if (!skill) setSkill(suggested);
+        }}
+      />
     </div>
   );
 }

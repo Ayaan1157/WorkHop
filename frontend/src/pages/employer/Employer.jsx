@@ -15,6 +15,7 @@ import BoostPreviewModal from "@/components/BoostPreviewModal";
 import ProfileLockedModal from "@/components/ProfileLockedModal";
 import FreelancerProfileModal from "@/components/FreelancerProfileModal";
 import FloatingChatWidget from "@/components/FloatingChatWidget";
+import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
 import { LEAD_CATEGORY_FILTERS } from "@/lib/catalogFilters";
@@ -59,6 +60,7 @@ export default function Employer() {
   const [selectedPro, setSelectedPro] = useState(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [coupon, setCoupon] = useState(null);
+  const [suggestModalOpen, setSuggestModalOpen] = useState(false);
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
   const [showMap, setShowMap] = useState(true);
   const [radarRadius, setRadarRadius] = useState(2);
@@ -481,12 +483,21 @@ export default function Employer() {
                     ? "Bookmark candidate profiles with the heart icon to save them for quick hiring."
                     : "Try adjusting your search keyword or clearing the active filters."}
                 </p>
-                {onlySaved && (
+                {onlySaved ? (
                   <button
                     onClick={() => setOnlySaved(false)}
                     className="mt-2 border-2 border-ink dark:border-zinc-700 bg-ink dark:bg-zinc-800 px-4 py-2 text-xs font-black text-white"
                   >
                     VIEW ALL PROS
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setSuggestModalOpen(true)}
+                    className="mt-2 inline-flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-brand/90 transition active:translate-y-0.5"
+                  >
+                    <Sparkles size={14} />
+                    <span>CAN'T FIND YOUR PROFESSION? SUGGEST TAB</span>
                   </button>
                 )}
               </div>
@@ -695,6 +706,13 @@ export default function Employer() {
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
         pro={selectedPro}
+      />
+      {/* SUGGEST PROFESSION MODAL */}
+      <SuggestProfessionModal
+        isOpen={suggestModalOpen}
+        onClose={() => setSuggestModalOpen(false)}
+        initialProfession={term}
+        initialCategory={catFilter !== "ALL" ? catFilter : ""}
       />
       {/* FLOATING CIRCULAR CHAT WIDGET (Bottom Right) */}
       <FloatingChatWidget role="employer" />

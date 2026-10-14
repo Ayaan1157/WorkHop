@@ -15,7 +15,13 @@ import { BENGALURU_AREAS } from "@/lib/locationAreas";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import AdminChatsTab from "@/components/AdminChatsTab";
 import { checkRateLimit, resetRateLimit } from "@/lib/security";
-import { calculateHopsForJob, getEmployerHops, getStoredJobs } from "@/lib/clientStore";
+import {
+  calculateHopsForJob,
+  getEmployerHops,
+  getStoredJobs,
+  getStoredProfessionSuggestions,
+  updateProfessionSuggestionStatus,
+} from "@/lib/clientStore";
 
 const TABS = [
   { id: "CREDITS", label: "🪙 CREDITS & PRICING" },
@@ -26,7 +32,7 @@ const TABS = [
   { id: "EMPLOYERS", label: "🏢 EMPLOYERS" },
   { id: "ESCROW", label: "💰 ESCROW & PAYMENTS" },
   { id: "COUPONS", label: "🏷️ COUPONS" },
-  { id: "ISSUES", label: "🎫 SUPPORT & ISSUES" },
+  { id: "ISSUES", label: "🎫 SUPPORT & TAB REQUESTS" },
   { id: "LOGS", label: "📜 AUDIT LOGS" },
 ];
 
@@ -3367,25 +3373,32 @@ function CreditsConfigTab({ adminFetch }) {
 
 // 10. Support & Statutory Grievance Redressal Tab
 function IssuesAndGrievancesTab({ adminFetch }) {
-  const [subTab, setSubTab] = useState("grievances"); // "grievances" | "complaints"
+  const [subTab, setSubTab] = useState("grievances"); // "grievances" | "complaints" | "suggestions"
   const [grievances, setGrievances] = useState([]);
   const [complaints, setComplaints] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sugStatusFilter, setSugStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [resolvingId, setResolvingId] = useState(null);
   const [resolutionText, setResolutionText] = useState("");
+  const [sugBusyId, setSugBusyId] = useState(null);
+  const [sugNoteId, setSugNoteId] = useState(null);
+  const [sugNoteText, setSugNoteText] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [grvs, cmps] = await Promise.all([
+      const [grvs, cmps, sugs] = await Promise.all([
         adminFetch("/grievances").catch(() => []),
         adminFetch("/complaints").catch(() => []),
+        adminFetch("/profession-suggestions").catch(() => []),
       ]);
       setGrievances(Array.isArray(grvs) ? grvs : []);
       setComplaints(Array.isArray(cmps) ? cmps : []);
+      setSuggestions(Array.isArray(sugs) && sugs.length > 0 ? sugs : getStoredProfessionSuggestions());
     } catch {
       /* ignore */
     } finally {
@@ -3414,6 +3427,33 @@ function IssuesAndGrievancesTab({ adminFetch }) {
     }
   };
 
+  const handleUpdateSuggestionStatus = async (sugId, newStatus, notes = null) => {
+    setSugBusyId(sugId);
+    try {
+      await adminFetch(`/profession-suggestions/${sugId}/status`, "POST", {
+        status: newStatus,
+        notes,
+        admin_notes: notes,
+      }).catch(() => null);
+
+      updateProfessionSuggestionStatus(sugId, newStatus, notes);
+
+      setSuggestions((prev) =>
+        prev.map((s) =>
+          s.id === sugId || s.suggestion_id === sugId
+            ? { ...s, status: newStatus, admin_notes: notes !== null ? notes : s.admin_notes }
+            : s
+        )
+      );
+      setSugNoteId(null);
+      setSugNoteText("");
+    } catch {
+      /* ignore */
+    } finally {
+      setSugBusyId(null);
+    }
+  };
+
   const filteredGrievances = useMemo(() => {
     return grievances.filter((g) => {
       const matchesStatus =
@@ -3439,6 +3479,33 @@ function IssuesAndGrievancesTab({ adminFetch }) {
     const resolved = grievances.filter((g) => g.status === "resolved").length;
     return { total, open, inReview, resolved };
   }, [grievances]);
+
+  const filteredSuggestions = useMemo(() => {
+    return suggestions.filter((s) => {
+      const matchesStatus =
+        sugStatusFilter === "all" ||
+        (sugStatusFilter === "pending" && (s.status === "pending" || !s.status)) ||
+        s.status === sugStatusFilter;
+      const q = search.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        (s.profession || "").toLowerCase().includes(q) ||
+        (s.category_hint || "").toLowerCase().includes(q) ||
+        (s.description || "").toLowerCase().includes(q) ||
+        (s.user_email || "").toLowerCase().includes(q) ||
+        (s.area || "").toLowerCase().includes(q);
+      return matchesStatus && matchesSearch;
+    });
+  }, [suggestions, sugStatusFilter, search]);
+
+  const sugStats = useMemo(() => {
+    const total = suggestions.length;
+    const totalRequests = suggestions.reduce((sum, s) => sum + (s.request_count || 1), 0);
+    const pending = suggestions.filter((s) => s.status === "pending" || !s.status).length;
+    const underReview = suggestions.filter((s) => s.status === "under_review").length;
+    const tabAdded = suggestions.filter((s) => s.status === "tab_added").length;
+    return { total, totalRequests, pending, underReview, tabAdded };
+  }, [suggestions]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -3474,6 +3541,23 @@ function IssuesAndGrievancesTab({ adminFetch }) {
             <span>GENERAL SUPPORT COMPLAINTS</span>
             <span className="ml-1 bg-white text-ink px-1.5 py-0.2 text-[10px] font-black">
               {complaints.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            data-testid="admin-subtab-suggestions"
+            onClick={() => setSubTab("suggestions")}
+            className={`flex items-center gap-1.5 border-2 border-ink px-3 py-1.5 text-xs font-black transition ${
+              subTab === "suggestions"
+                ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
+                : "bg-white text-ink hover:bg-sand"
+            }`}
+          >
+            <Sparkles size={14} />
+            <span>REQUESTED PROFESSIONS &amp; TABS</span>
+            <span className="ml-1 bg-white text-ink px-1.5 py-0.2 text-[10px] font-black">
+              {suggestions.length}
             </span>
           </button>
         </div>
@@ -3755,7 +3839,7 @@ function IssuesAndGrievancesTab({ adminFetch }) {
             </div>
           )}
         </div>
-      ) : (
+      ) : subTab === "complaints" ? (
         /* Complaints List */
         <div className="grid grid-cols-1 gap-3">
           {complaints.length === 0 ? (
@@ -3784,6 +3868,256 @@ function IssuesAndGrievancesTab({ adminFetch }) {
               </div>
             ))
           )}
+        </div>
+      ) : (
+        /* Requested Professions & Tabs */
+        <div className="flex flex-col gap-4">
+          {/* Top Summary Banner */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="border-2 border-ink bg-white p-3 shadow-[2px_2px_0px_#121212]">
+              <span className="text-[10px] font-black uppercase text-inkmuted block">UNIQUE PROFESSIONS</span>
+              <p className="text-2xl font-black text-ink mt-0.5">{sugStats.total}</p>
+              <span className="text-[10px] font-bold text-stone-500">Requested by community</span>
+            </div>
+            <div className="border-2 border-ink bg-[#FFF4ED] p-3 shadow-[2px_2px_0px_#121212]">
+              <span className="text-[10px] font-black uppercase text-brand block">TOTAL DEMAND VOTES</span>
+              <p className="text-2xl font-black text-brand mt-0.5">{sugStats.totalRequests}</p>
+              <span className="text-[10px] font-bold text-brand/80">Accumulated user requests</span>
+            </div>
+            <div className="border-2 border-ink bg-white p-3 shadow-[2px_2px_0px_#121212]">
+              <span className="text-[10px] font-black uppercase text-amber-600 block">PENDING EVALUATION</span>
+              <p className="text-2xl font-black text-amber-600 mt-0.5">{sugStats.pending + sugStats.underReview}</p>
+              <span className="text-[10px] font-bold text-stone-500">{sugStats.underReview} in review</span>
+            </div>
+            <div className="border-2 border-ink bg-[#E6F4EA] p-3 shadow-[2px_2px_0px_#121212]">
+              <span className="text-[10px] font-black uppercase text-emerald-700 block">TABS ADDED ✓</span>
+              <p className="text-2xl font-black text-emerald-700 mt-0.5">{sugStats.tabAdded}</p>
+              <span className="text-[10px] font-bold text-emerald-700/80">Active in taxonomy</span>
+            </div>
+          </div>
+
+          {/* Search & Filter Strip */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-white p-3 shadow-[2px_2px_0px_#121212]">
+            <div className="flex items-center gap-2 flex-1 max-w-md">
+              <Search size={16} className="text-inkmuted shrink-0" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search requested professions, skills, categories..."
+                className="w-full text-xs font-bold text-ink outline-none placeholder:font-normal placeholder:text-stone-400"
+              />
+              {search && (
+                <button type="button" onClick={() => setSearch("")} className="text-ink hover:text-brand">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {[
+                { id: "all", label: "ALL", count: suggestions.length },
+                { id: "pending", label: "PENDING", count: sugStats.pending },
+                { id: "under_review", label: "IN REVIEW", count: sugStats.underReview },
+                { id: "tab_added", label: "TAB ADDED ✓", count: sugStats.tabAdded },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setSugStatusFilter(f.id)}
+                  className={`border border-ink px-2.5 py-1 text-[10px] font-black transition ${
+                    sugStatusFilter === f.id
+                      ? "bg-ink text-white shadow-[1px_1px_0px_#121212]"
+                      : "bg-white text-ink hover:bg-sand"
+                  }`}
+                >
+                  {f.label} ({f.count})
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Suggestions List */}
+          <div className="grid grid-cols-1 gap-3">
+            {filteredSuggestions.length === 0 ? (
+              <div className="border-2 border-dashed border-ink/40 bg-sand/20 p-8 text-center">
+                <p className="text-xs font-black uppercase tracking-wider text-inkmuted">
+                  No profession suggestions matching your criteria.
+                </p>
+              </div>
+            ) : (
+              filteredSuggestions.map((sug, i) => {
+                const isBusy = sugBusyId === (sug.id || sug.suggestion_id);
+                const isEditingNote = sugNoteId === (sug.id || sug.suggestion_id);
+                const reqCount = sug.request_count || 1;
+                const status = sug.status || "pending";
+
+                return (
+                  <div
+                    key={sug.id || sug.suggestion_id || `sug-${i}`}
+                    className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-base font-black text-ink">{sug.profession}</h4>
+                        <span className="border border-ink bg-[#FF5A1F] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-[1px_1px_0px_#121212]">
+                          🔥 {reqCount} {reqCount > 1 ? "REQUESTS" : "REQUEST"}
+                        </span>
+                        <span className="border border-ink/40 bg-sand px-2 py-0.5 text-[10px] font-black uppercase text-inkmuted">
+                          📁 {sug.category_hint || "General"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          className={`border border-ink px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                            status === "tab_added"
+                              ? "bg-emerald-600 text-white"
+                              : status === "under_review"
+                              ? "bg-blue-600 text-white"
+                              : "bg-amber-400 text-ink"
+                          }`}
+                        >
+                          {status === "tab_added"
+                            ? "✓ TAB ADDED"
+                            : status === "under_review"
+                            ? "🔍 IN REVIEW"
+                            : "⏳ PENDING EVALUATION"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {sug.description && (
+                      <p className="text-xs text-ink/90 mt-2 bg-sand/30 p-2 border-l-2 border-brand font-medium">
+                        "{sug.description}"
+                      </p>
+                    )}
+
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 border-t border-ink/10 pt-2 text-[11px] text-inkmuted">
+                      <div>
+                        <span>Requester: </span>
+                        <strong className="text-ink capitalize">{sug.user_role || "freelancer"}</strong>
+                        {sug.user_email && <span className="ml-1">({sug.user_email})</span>}
+                      </div>
+                      <div>
+                        <span>Area: </span>
+                        <strong className="text-ink">{sug.area || "Bengaluru"}</strong>
+                      </div>
+                      <div>
+                        <span>Requested: </span>
+                        <strong className="text-ink">{fmtDate(sug.created_at)}</strong>
+                      </div>
+                    </div>
+
+                    {sug.emails && sug.emails.length > 1 && (
+                      <div className="mt-1 text-[10px] text-inkmuted font-mono">
+                        Interested users ({sug.emails.length}): {sug.emails.join(", ")}
+                      </div>
+                    )}
+
+                    {sug.admin_notes && (
+                      <div className="mt-2 text-xs bg-emerald-50 border border-emerald-300 p-2 text-emerald-900 font-medium">
+                        <strong>Admin Note:</strong> {sug.admin_notes}
+                      </div>
+                    )}
+
+                    {/* Inline Note Editor */}
+                    {isEditingNote && (
+                      <div className="mt-3 border-2 border-ink bg-sand/50 p-2.5">
+                        <p className="text-[10px] font-black uppercase text-ink mb-1">Update Admin Notes:</p>
+                        <input
+                          type="text"
+                          value={sugNoteText}
+                          onChange={(e) => setSugNoteText(e.target.value)}
+                          placeholder="e.g. Added to catalog under Creative / Video tabs, or scheduled for next release."
+                          className="w-full border border-ink bg-white px-2 py-1.5 text-xs font-bold text-ink outline-none"
+                        />
+                        <div className="mt-2 flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSugNoteId(null)}
+                            className="border border-ink bg-white px-2 py-1 text-[10px] font-black text-ink hover:bg-sand"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleUpdateSuggestionStatus(sug.id || sug.suggestion_id, status, sugNoteText)}
+                            className="border border-ink bg-brand px-3 py-1 text-[10px] font-black text-white hover:bg-brand/90"
+                          >
+                            Save Note
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Controls */}
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-ink/10 pt-2.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {status !== "tab_added" && (
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleUpdateSuggestionStatus(sug.id || sug.suggestion_id, "tab_added", sug.admin_notes || "Tab added to WorkHop taxonomy")}
+                            className="inline-flex items-center gap-1 border-2 border-ink bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-[1px_1px_0px_#121212] transition"
+                          >
+                            <Check size={12} />
+                            <span>MARK TAB ADDED ✓</span>
+                          </button>
+                        )}
+
+                        {status !== "under_review" && (
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleUpdateSuggestionStatus(sug.id || sug.suggestion_id, "under_review")}
+                            className="border border-ink bg-white hover:bg-sand text-ink px-2 py-1 text-[10px] font-black uppercase transition"
+                          >
+                            Mark In Review
+                          </button>
+                        )}
+
+                        {status !== "pending" && (
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleUpdateSuggestionStatus(sug.id || sug.suggestion_id, "pending")}
+                            className="border border-ink bg-white hover:bg-sand text-ink px-2 py-1 text-[10px] font-black uppercase transition"
+                          >
+                            Mark Pending
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSugNoteId(sug.id || sug.suggestion_id);
+                            setSugNoteText(sug.admin_notes || "");
+                          }}
+                          className="border border-ink bg-sand hover:bg-brand hover:text-white text-ink px-2 py-1 text-[10px] font-black uppercase transition"
+                        >
+                          {sug.admin_notes ? "Edit Note" : "+ Add Note"}
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(sug.profession);
+                          alert(`Copied "${sug.profession}" to clipboard.`);
+                        }}
+                        className="inline-flex items-center gap-1 text-[10px] font-black text-inkmuted hover:text-brand transition"
+                      >
+                        <Copy size={11} />
+                        <span>COPY NAME</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -4108,6 +4442,12 @@ export default function Admin() {
             value={overview?.complaints || 2}
             sub="Pending Action"
             icon={AlertTriangle}
+          />
+          <StatTile
+            label="TAB REQUESTS"
+            value={getStoredProfessionSuggestions().length}
+            sub="Community Taxonomy"
+            icon={Sparkles}
           />
         </div>
       </div>

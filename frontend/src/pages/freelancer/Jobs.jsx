@@ -13,6 +13,7 @@ import {
   FloatingChatWidget
 } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";
+import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 import CouponInput from "@/components/CouponInput";
 import CreditsTopUpModal from "@/components/CreditsTopUpModal";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
@@ -130,6 +131,7 @@ export default function Jobs() {
   const [unlocking, setUnlocking] = useState(false);
   const [showMap, setShowMap] = useState(true);
   const [radarRadius, setRadarRadius] = useState(5);
+  const [suggestModalOpen, setSuggestModalOpen] = useState(false);
   const [boostCoupon, setBoostCoupon] = useState(null);
   const { startPayment } = useRazorpay();
   const { coords: liveCoords, status: locStatus, requestLocation } = useUserLocation();
@@ -467,7 +469,16 @@ export default function Jobs() {
               <button onClick={() => setViewTab("all")} className="border-2 border-ink bg-ink px-4 py-2 text-xs font-black text-white">
                 BROWSE ALL GIGS
               </button>
-            ) : null
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSuggestModalOpen(true)}
+                className="inline-flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-brand/90 transition active:translate-y-0.5"
+              >
+                <Sparkles size={14} />
+                <span>CAN'T FIND YOUR PROFESSION? SUGGEST TAB</span>
+              </button>
+            )
           }
         />
       );
@@ -1511,6 +1522,14 @@ export default function Jobs() {
           </div>
         </div>
       )}
+
+      {/* Suggest Profession Modal */}
+      <SuggestProfessionModal
+        isOpen={suggestModalOpen}
+        onClose={() => setSuggestModalOpen(false)}
+        initialProfession={term}
+        initialCategory={catFilter !== "ALL" ? catFilter : ""}
+      />
 
       {/* FLOATING CIRCULAR CHAT WIDGET (Bottom Right) */}
       <FloatingChatWidget role="freelancer" />
