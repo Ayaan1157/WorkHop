@@ -100,7 +100,7 @@ export default function JobDetailsModal({ isOpen, onClose, job }) {
             <div className="border border-[#059669]/30 bg-[#E6F4EA] dark:bg-[#11291E] p-2.5 text-xs text-[#059669] dark:text-emerald-300 flex items-center gap-2">
               <Sparkles size={15} className="shrink-0" />
               <span className="text-[11px] font-bold">
-                0% Platform Fees on Completed Gigs · Direct UPI Escrow Protection
+                0% Platform Fees on Completed Gigs · Direct UPI Settlement (Keep 100%)
               </span>
             </div>
           </div>

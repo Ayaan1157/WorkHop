@@ -252,7 +252,7 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
             <ShieldCheck size={16} className="shrink-0 mt-0.5" />
             <p className="text-[11px] leading-snug">
               <strong>Verified Hyperlocal Hire:</strong> Direct WhatsApp &amp; phone details are
-              safely unlocked once the gig is initiated or hired to ensure platform escrow protection.
+              safely unlocked once the gig is initiated or hired for direct communication and settlement.
             </p>
           </div>
 

@@ -15,7 +15,6 @@ import {
 import GoogleMap from "@/components/GoogleMap";
 import CouponInput from "@/components/CouponInput";
 import CreditsTopUpModal from "@/components/CreditsTopUpModal";
-import PaymentModeSelector from "@/components/PaymentModeSelector";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import EmployerProfileModal from "@/components/EmployerProfileModal";
 import { useRazorpay } from "@/hooks/usePayments";
@@ -73,7 +72,7 @@ export default function Jobs() {
     description: "Explore verified freelance jobs within 5km in Bengaluru. Design, development, photography, videography, marketing and writing gigs. Apply directly, keep 100% payout.",
     canonical: "https://workhop.in/freelancer/jobs",
     ogTitle: "Hyperlocal Gigs in Bengaluru · WorkHop",
-    ogDescription: "Apply to high-paying local gigs in Koramangala, Indiranagar, HSR, Whitefield. Milestone escrow protected.",
+    ogDescription: "Apply to high-paying local gigs in Koramangala, Indiranagar, HSR, Whitefield. Direct client payments, 100% earnings.",
   });
 
   const nav = useNavigate();
@@ -112,8 +111,8 @@ export default function Jobs() {
   // Rate Quoting (Fixed vs Hourly)
   const [proposedRateType, setProposedRateType] = useState("fixed"); // "fixed" | "hourly"
   const [proposedQuote, setProposedQuote] = useState(1000);
-  const [paymentMode, setPaymentMode] = useState("escrow"); // "escrow" | "direct"
-  const [directAcknowledged, setDirectAcknowledged] = useState(false);
+  const [paymentMode] = useState("direct");
+  const [directAcknowledged] = useState(true);
 
   // PDF Attachment & Scanner State
   const [pdfAttachment, setPdfAttachment] = useState(null);
@@ -399,11 +398,6 @@ export default function Jobs() {
       return;
     }
 
-    if (paymentMode === "direct" && !directAcknowledged) {
-      setApplyError("You must acknowledge the Direct Settlement risk disclaimer before applying.");
-      return;
-    }
-
     setApplying(true); setApplyError(null);
     const calculatedDist = calculateDistance(applicantArea, activeJob.area || "Bengaluru");
     try {
@@ -415,8 +409,8 @@ export default function Jobs() {
         boost_credits: 0,
         proposed_rate_type: proposedRateType,
         proposed_quote: proposedQuote,
-        proposed_payment_mode: paymentMode,
-        freelancer_ack_at: paymentMode === "direct" ? new Date().toISOString() : null,
+        proposed_payment_mode: "direct",
+        freelancer_ack_at: new Date().toISOString(),
         pdf_attachment: pdfAttachment,
         portfolio_items: portfolioHighlights.filter((p) => p.visible),
       });
@@ -1045,15 +1039,26 @@ export default function Jobs() {
                   </div>
                 </div>
 
-                {/* Dual Payment Mode Selection */}
+                {/* Direct Settlement (0% Platform Fee) */}
                 <div className="mt-3 pt-3 border-t-2 border-ink/20 dark:border-zinc-700">
-                  <PaymentModeSelector
-                    quote={proposedQuote}
-                    selectedMode={paymentMode}
-                    onChangeMode={setPaymentMode}
-                    acknowledged={directAcknowledged}
-                    onToggleAck={setDirectAcknowledged}
-                  />
+                  <div className="border border-ink/30 dark:border-zinc-700 bg-emerald-50/70 dark:bg-emerald-950/20 p-3 flex items-center justify-between gap-3 shadow-[2px_2px_0px_#10b981]">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white shrink-0">
+                        <Check size={14} strokeWidth={3} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black uppercase text-ink dark:text-white">
+                          Direct Client Settlement · 0% Platform Fee
+                        </p>
+                        <p className="text-[11px] text-inkmuted dark:text-zinc-300 font-medium">
+                          Settle directly with the employer via UPI, cash, or bank transfer. You keep 100% of your ₹{Number(proposedQuote || 0).toLocaleString("en-IN")} earnings.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 shrink-0 tracking-wider">
+                      100% EARNINGS
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1439,21 +1444,16 @@ export default function Jobs() {
                       <AlertTriangle size={16} />
                       <span>RESOLVE CONTACT DETAILS TO SUBMIT</span>
                     </>
-                  ) : paymentMode === "direct" && !directAcknowledged ? (
-                    <>
-                      <AlertTriangle size={16} />
-                      <span>CHECK RISK ACKNOWLEDGEMENT TO SUBMIT</span>
-                    </>
                   ) : (
                     <>
                       <Send size={16} />
-                      <span>SUBMIT PROPOSAL ({paymentMode === "escrow" ? "ESCROW PROTECTED" : "DIRECT SETTLEMENT"})</span>
+                      <span>SUBMIT PROPOSAL (DIRECT SETTLEMENT · 0% FEE)</span>
                     </>
                   )}
                 </button>
               )
             )}
-            <p className="mt-2 text-center text-[11px] text-inkmuted dark:text-zinc-400">Dual payment choice: Protected Escrow or Direct Settlement. Employer sees your proposal instantly.</p>
+            <p className="mt-2 text-center text-[11px] text-inkmuted dark:text-zinc-400">Direct settlement with employer. Zero platform commission, keep 100% earnings.</p>
           </div>
         </div>
       )}

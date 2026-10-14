@@ -295,7 +295,7 @@ export default function PushSettingsModal({ isOpen, onClose }) {
                     Hired &amp; Proposal Acceptance Alerts
                   </p>
                   <p className="text-[11px] text-inkmuted dark:text-stone-400 font-medium">
-                    Immediate notification when a hiring client accepts your proposal and funds milestone escrow.
+                    Immediate notification when a hiring client accepts your proposal and hires you.
                   </p>
                 </div>
               </div>
