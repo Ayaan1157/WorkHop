@@ -1256,20 +1256,20 @@ export default function Landing() {
 
       {/* Trust & Live Metrics Strip */}
       <section className="border-b-2 border-ink dark:border-zinc-800 bg-[#FFF3E9] dark:bg-[#1a140f] py-6 sm:py-8 px-4 sm:px-10 lg:px-16">
-        <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
-          <div>
+        <div className="mx-auto max-w-7xl grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-4 text-center items-center justify-center">
+          <div className="flex flex-col items-center justify-center text-center">
             <p className="text-2xl sm:text-4xl font-black text-black dark:text-white">5 KM</p>
             <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Hyperlocal Radius</p>
           </div>
-          <div>
+          <div className="flex flex-col items-center justify-center text-center">
             <p className="text-2xl sm:text-4xl font-black text-black dark:text-white">200+</p>
             <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Active Bengaluru Gigs</p>
           </div>
-          <div>
+          <div className="flex flex-col items-center justify-center text-center">
             <p className="text-2xl sm:text-4xl font-black text-brand">100%</p>
             <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Keep Your Earnings</p>
           </div>
-          <div>
+          <div className="flex flex-col items-center justify-center text-center">
             <p className="text-2xl sm:text-4xl font-black text-black dark:text-white">1 MIN</p>
             <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Fast Onboarding</p>
           </div>
