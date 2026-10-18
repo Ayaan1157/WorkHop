@@ -121,7 +121,8 @@ export function getStoredLeads() {
     lng: lead.lng || (77.5946 + (idx % 7 - 3) * 0.02),
     rate_hr: lead.rate_hr ?? (750 + (idx % 5) * 150),
     delivery_days: lead.delivery_days ?? (1 + (idx % 3)),
-    reviews_count: lead.reviews_count ?? (12 + (idx * 2) % 20),
+    jobs_done: lead.jobs_done ?? (idx % 2 === 0 ? 2 : 3),
+    reviews_count: lead.reviews_count ?? (idx % 2 === 0 ? 2 : 3),
     intro: lead.intro || `${lead.skill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`,
     languages: lead.languages || ["English", "Kannada", "Hindi"],
     is_dummy: true,
@@ -268,11 +269,34 @@ export function getLeadById(id) {
   const pro = leads.find((l) => l.id === id) || leads[0];
   const dynamicReviews = getStoredReviews(id);
   const defaultReviews = [
-    { review_id: "rev-d1", reviewer_name: "Anita J. · LedgerLite", job_title: "Mobile App MVP", rating: 5, date: "3 days ago", text: "Delivered our 5-screen flow ahead of schedule. Flawless communication and clean design." },
-    { review_id: "rev-d2", reviewer_name: "Karan S. · BrewBlock", job_title: "Brand Identity Redesign", rating: 5, date: "1 week ago", text: "Super responsive and understands local Bengaluru market aesthetic perfectly." },
-    { review_id: "rev-d3", reviewer_name: "Siddharth R. · UrbanKrafts", job_title: "Next.js E-Commerce Landing Page", rating: 4.8, date: "2 weeks ago", text: "Great quality assets, fast turnaround on revisions." },
+    {
+      review_id: "rev-d1",
+      reviewer_name: "Anita J. · LedgerLite",
+      company_name: "LedgerLite",
+      job_title: "Mobile App MVP",
+      rating: 5,
+      date: "3 days ago",
+      date_formatted: "3 days ago",
+      text: "Delivered our 5-screen flow ahead of schedule. Flawless communication and clean design.",
+      is_completed: true,
+      status: "completed",
+      pay: 18000,
+    },
+    {
+      review_id: "rev-d2",
+      reviewer_name: "Karan S. · BrewBlock",
+      company_name: "BrewBlock",
+      job_title: "Brand Identity Redesign",
+      rating: 5,
+      date: "1 week ago",
+      date_formatted: "1 week ago",
+      text: "Super responsive and understands local Bengaluru market aesthetic perfectly.",
+      is_completed: true,
+      status: "completed",
+      pay: 15000,
+    },
   ];
-  const reviews = [...dynamicReviews, ...defaultReviews];
+  const reviews = dynamicReviews.length > 0 ? dynamicReviews : defaultReviews;
   return { pro, reviews };
 }
 
@@ -2629,6 +2653,112 @@ export function updateProfessionSuggestionStatus(sugId, status, notes = null) {
   localStorage.setItem(PROFESSION_SUGGESTIONS_KEY, JSON.stringify(list));
   addAdminLog("PROFESSION_STATUS_UPDATED", `Profession request ${sugId} status changed to ${status}`);
   return list.find((s) => s.id === sugId || s.suggestion_id === sugId);
+}
+
+// ============================================================================
+// CITY WAITLIST STORAGE (Users outside Bengaluru e.g. Mysore, Mangalore)
+// ============================================================================
+const CITY_WAITLIST_KEY = "workhop_city_waitlist";
+
+const DEFAULT_SEED_WAITLIST = [
+  {
+    waitlist_id: "wl_seed_1",
+    email: "rohit.kamat.mys@gmail.com",
+    contact: "rohit.kamat.mys@gmail.com",
+    city: "Mysore",
+    role: "employer",
+    note: "Looking for video editors and event photographers for Mysore Dasara events",
+    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+  },
+  {
+    waitlist_id: "wl_seed_2",
+    email: "priya.shetty.mngl@outlook.com",
+    contact: "priya.shetty.mngl@outlook.com",
+    city: "Mangalore",
+    role: "freelancer",
+    note: "Freelance UI/UX designer and frontend developer based in Mangalore",
+    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+  },
+  {
+    waitlist_id: "wl_seed_3",
+    email: "karthik.patil.hubli@yahoo.com",
+    contact: "karthik.patil.hubli@yahoo.com",
+    city: "Hubli",
+    role: "employer",
+    note: "Need local electricians and plumbing contractors for commercial spaces",
+    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+  },
+  {
+    waitlist_id: "wl_seed_4",
+    email: "ananya.sharma.mysore@gmail.com",
+    contact: "ananya.sharma.mysore@gmail.com",
+    city: "Mysore",
+    role: "freelancer",
+    note: "Content creator and copywriter, excited for WorkHop in Mysore!",
+    created_at: new Date(Date.now() - 6 * 86400000).toISOString(),
+  },
+  {
+    waitlist_id: "wl_seed_5",
+    email: "suresh.rao.belgaum@gmail.com",
+    contact: "suresh.rao.belgaum@gmail.com",
+    city: "Belgaum",
+    role: "employer",
+    note: "Logistics and warehouse assistant requirements",
+    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
+  },
+];
+
+export function getStoredCityWaitlist() {
+  const raw = localStorage.getItem(CITY_WAITLIST_KEY);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch { /* ignore */ }
+  }
+  localStorage.setItem(CITY_WAITLIST_KEY, JSON.stringify(DEFAULT_SEED_WAITLIST));
+  return DEFAULT_SEED_WAITLIST;
+}
+
+export function saveCityWaitlistEntry(data) {
+  const city = (data.city || "Mysore").trim();
+  const email = (data.email || data.contact || "").trim();
+  if (!email) throw new Error("Email address is required.");
+
+  const existing = getStoredCityWaitlist();
+  const waitlist_id = `wl_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  const entry = {
+    waitlist_id,
+    id: waitlist_id,
+    email,
+    contact: email,
+    city: city.charAt(0).toUpperCase() + city.slice(1),
+    role: data.role || "user",
+    note: data.note || "",
+    created_at: new Date().toISOString(),
+  };
+
+  const updated = [entry, ...existing];
+  localStorage.setItem(CITY_WAITLIST_KEY, JSON.stringify(updated));
+  addAdminLog("CITY_WAITLIST_JOINED", `Waitlist signup from outside BLR (${entry.city}): ${email}`);
+
+  const cityCount = updated.filter((item) => item.city.toLowerCase() === city.toLowerCase()).length;
+  return {
+    ok: true,
+    waitlist_id,
+    city: entry.city,
+    email,
+    waitlist_count: cityCount,
+    message: `You're on the waitlist for ${entry.city}! We'll notify you as soon as WorkHop launches in your area.`,
+  };
+}
+
+export function deleteCityWaitlistEntry(id) {
+  const existing = getStoredCityWaitlist();
+  const filtered = existing.filter((item) => item.waitlist_id !== id && item.id !== id);
+  localStorage.setItem(CITY_WAITLIST_KEY, JSON.stringify(filtered));
+  addAdminLog("CITY_WAITLIST_DELETED", `Waitlist entry ${id} removed`);
+  return { ok: true, remaining: filtered.length };
 }
 
 

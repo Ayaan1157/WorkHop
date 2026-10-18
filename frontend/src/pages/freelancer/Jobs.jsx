@@ -28,6 +28,7 @@ import {
   getSavedArea,
   setSavedArea,
   getProximityCoordinates,
+  isLocationInBengaluru,
 } from "@/lib/locationAreas";
 import { JOB_CATEGORY_FILTERS } from "@/lib/catalogFilters";
 import { matchJobToTaxonomy } from "@/lib/keywordTaxonomy";
@@ -610,7 +611,7 @@ export default function Jobs() {
               <GoogleMap
                 pins={mapPins}
                 zoom={13}
-                userLocation={liveCoords}
+                userLocation={liveCoords && isLocationInBengaluru(liveCoords) ? liveCoords : null}
                 height="100%"
                 radiusKm={radarRadius}
                 onRadiusChange={setRadarRadius}

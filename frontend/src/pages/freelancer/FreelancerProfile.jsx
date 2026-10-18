@@ -81,6 +81,7 @@ export default function FreelancerProfile() {
   const [portfolioLinkError, setPortfolioLinkError] = useState(null);
   const [isProcessingPortfolioImage, setIsProcessingPortfolioImage] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
+  const [gigNotice, setGigNotice] = useState(null);
 
   const handlePortfolioLinkChange = (value) => {
     setEditData((d) => ({ ...(d || {}), link: value }));
@@ -823,19 +824,36 @@ export default function FreelancerProfile() {
                 </div>
 
                 {/* List of completed gigs & reviews */}
+                {gigNotice && (
+                  <div className="mt-3 p-3 bg-[#E5F7E0] dark:bg-[#132c18] border border-[#0E6220] text-[#0E6220] dark:text-[#6ee7b7] rounded-lg text-xs flex items-center justify-between animate-in fade-in">
+                    <span className="font-bold flex items-center gap-1.5">
+                      <CheckCircle2 size={16} /> Job Completed · "{gigNotice}" milestone approved &amp; delivered!
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setGigNotice(null)}
+                      className="text-xs font-black underline ml-2"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+
                 <div className="mt-4 flex flex-col gap-3">
                   {(profile.work_history || []).length > 0 ? (
                     (profile.work_history || []).map((gig) => (
                       <div
                         key={gig.id}
-                        className="bg-[#fcfcfc] dark:bg-[#151517] border border-[#e5e5e5] dark:border-[#26262a] rounded-lg p-4 flex flex-col gap-2.5 transition hover:border-[#E65A1E]/40"
+                        onClick={() => setGigNotice(gig.job_title)}
+                        className="bg-[#fcfcfc] dark:bg-[#151517] border border-[#e5e5e5] dark:border-[#26262a] rounded-lg p-4 flex flex-col gap-2.5 transition hover:border-[#E65A1E]/40 cursor-pointer hover:bg-[#E5F7E0]/20"
+                        title="Click to view: Job Completed"
                       >
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div>
                             <h3 className="text-sm font-bold text-ink dark:text-white flex items-center gap-1.5 flex-wrap">
                               <span>{gig.job_title}</span>
                               <span className="inline-flex items-center gap-1 text-[10px] font-black text-ok bg-ok/10 px-2 py-0.5 rounded border border-ok/20">
-                                <CheckCircle2 size={11} /> Completed
+                                <CheckCircle2 size={11} /> Job Completed
                               </span>
                             </h3>
                             <p className="text-xs text-inkmuted dark:text-[#777] mt-0.5">

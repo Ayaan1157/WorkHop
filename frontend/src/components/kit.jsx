@@ -673,10 +673,10 @@ export function CategoryTiles({
                 className={`flex w-[100px] shrink-0 flex-col items-center gap-1.5 border-2 border-ink p-2.5 transition-transform active:translate-y-0.5 ${on ? "bg-ink dark:bg-[#2a2a2a]" : "bg-white dark:bg-[#1a1a1a] hover:bg-sand"}`}
               >
                 <span
-                  className="flex h-10 w-10 items-center justify-center border-2 border-ink"
+                  className="flex h-11 w-11 items-center justify-center border-2 border-ink shadow-[1px_1px_0px_#121212]"
                   style={{ background: on ? "#E65A1E" : v.bg }}
                 >
-                  <CatIcon name={v.icon} size={20} className={on ? "text-white stroke-white" : "!text-[#121212] !stroke-[#121212] text-black"} />
+                  <CatIcon name={v.icon} size={22} className={on ? "text-white stroke-white" : "!text-[#121212] !stroke-[#121212] text-black"} />
                 </span>
                 <span className={`text-center text-[10px] font-black leading-tight ${on ? "text-white dark:!text-white" : "text-ink dark:!text-white"}`}>
                   {(CATEGORY_SHORT_LABELS[key] || key).toUpperCase()}

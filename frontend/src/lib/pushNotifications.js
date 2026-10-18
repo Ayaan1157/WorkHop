@@ -11,6 +11,10 @@ export const DEFAULT_PUSH_PREFERENCES = {
   hired_alerts: true, // application accepted / hired notifications
   escrow_updates: true, // milestone escrow release & payment alerts
   sound: true, // play audio chime with push
+  email_alerts: true, // Outside notification: instant email alert when employer messages
+  whatsapp_alerts: false, // Outside notification: WhatsApp ping when employer messages
+  notification_email: "",
+  notification_phone: "",
 };
 
 // Check if Notification API is supported
@@ -42,15 +46,75 @@ export function getFreelancerPushPreferences() {
 }
 
 // Save freelancer push notification preferences
-export function saveFreelancerPushPreferences(prefs) {
+export function saveFreelancerPushPreferences(prefs, syncServer = true) {
   try {
     const updated = { ...getFreelancerPushPreferences(), ...prefs };
     localStorage.setItem(PUSH_PREFS_KEY, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent("workhop:push_prefs_changed", { detail: updated }));
+
+    if (syncServer && typeof window !== "undefined") {
+      const fId = localStorage.getItem("workhop_freelancer_id");
+      if (fId) {
+        syncNotificationPreferencesToServer(fId, updated).catch(() => {});
+      }
+    }
     return updated;
   } catch {
     return DEFAULT_PUSH_PREFERENCES;
   }
+}
+
+// Sync notification preferences to backend server for a freelancer
+export async function syncNotificationPreferencesToServer(freelancerId, prefs) {
+  if (!freelancerId) return;
+  try {
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
+    await fetch(`${backendUrl}/api/freelancer/${freelancerId}/notifications/preferences`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(prefs),
+    });
+  } catch (err) {
+    console.warn("Could not sync notification preferences to server:", err);
+  }
+}
+
+// Fetch notification preferences from backend server
+export async function fetchNotificationPreferencesFromServer(freelancerId) {
+  if (!freelancerId) return null;
+  try {
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
+    const res = await fetch(`${backendUrl}/api/freelancer/${freelancerId}/notifications/preferences`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ok) {
+        const local = getFreelancerPushPreferences();
+        const merged = {
+          ...local,
+          email_alerts: data.email_alerts !== false,
+          whatsapp_alerts: Boolean(data.whatsapp_alerts),
+          notification_email: data.notification_email || local.notification_email || "",
+          notification_phone: data.notification_phone || local.notification_phone || "",
+        };
+        saveFreelancerPushPreferences(merged, false);
+        return merged;
+      }
+    }
+  } catch (err) {
+    console.warn("Could not fetch notification preferences from server:", err);
+  }
+  return null;
+}
+
+// Dispatch a test email alert so freelancer can verify delivery to their inbox
+export async function sendTestEmailAlert(freelancerId, targetEmail) {
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
+  const res = await fetch(`${backendUrl}/api/freelancer/${freelancerId || "fl-preview"}/notifications/test-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: targetEmail }),
+  });
+  return await res.json();
 }
 
 // Play notification sound

@@ -14,6 +14,11 @@ import {
   ChevronDown,
   Check,
 } from "lucide-react";
+import {
+  BENGALURU_BOUNDS,
+  BENGALURU_CENTER,
+  isLocationInBengaluru,
+} from "@/lib/locationAreas";
 
 // Google Maps Raster Tiles & Fallbacks
 const MAP_LAYERS = {
@@ -52,13 +57,14 @@ export const RADAR_STEPS = [1, 2, 3, 5, 8, 10, 15, 20, 25];
 
 export default function GoogleMap({
   pins = [],
-  center = { lat: 12.9716, lng: 77.5946 },
+  center = BENGALURU_CENTER,
   zoom = 13,
   userLocation = null,
   radiusKm = 5,
   onRadiusChange = null,
   selectedPinId = null,
   onSelectPin = null,
+  onOutsideLocation = null,
   height = "460px",
   className = "",
 }) {
@@ -139,12 +145,26 @@ export default function GoogleMap({
   useEffect(() => {
     if (mapRef.current || !elRef.current) return;
 
-    const initialCenter = userLocation || center;
+    // Strict Leaflet geofence: locks camera inside Greater Bengaluru metro bounds
+    const southWest = L.latLng(BENGALURU_BOUNDS.southWest.lat, BENGALURU_BOUNDS.southWest.lng);
+    const northEast = L.latLng(BENGALURU_BOUNDS.northEast.lat, BENGALURU_BOUNDS.northEast.lng);
+    const blrBounds = L.latLngBounds(southWest, northEast);
+
+    const isOutside = userLocation && !isLocationInBengaluru(userLocation);
+    if (isOutside && onOutsideLocation) {
+      onOutsideLocation(userLocation);
+    }
+    const initialCenter = isOutside ? BENGALURU_CENTER : (userLocation || center || BENGALURU_CENTER);
+
     const map = L.map(elRef.current, {
       zoomControl: false,
       attributionControl: false,
       center: [initialCenter.lat, initialCenter.lng],
-      zoom: userLocation ? 14 : zoom,
+      zoom: userLocation && !isOutside ? 14 : zoom,
+      minZoom: 11, // Strict lower zoom limit: prevents zooming out beyond Bengaluru
+      maxZoom: 19,
+      maxBounds: blrBounds, // Strict geofence: map cannot be dragged to Mysore or outside
+      maxBoundsViscosity: 1.0, // Hard bounce-back boundary
       preferCanvas: true,
       zoomAnimation: true,
       fadeAnimation: true,
@@ -221,10 +241,11 @@ export default function GoogleMap({
   // Update Center / User Location ONLY when coordinates genuinely move (avoids hitching on re-render)
   useEffect(() => {
     if (!mapRef.current || isInteractingRef.current) return;
-    const target = userLocation || center;
+    const isOutside = userLocation && !isLocationInBengaluru(userLocation);
+    const target = isOutside ? BENGALURU_CENTER : (userLocation || center || BENGALURU_CENTER);
     if (!target?.lat || !target?.lng) return;
 
-    const targetZoom = userLocation ? 14 : zoom;
+    const targetZoom = userLocation && !isOutside ? 14 : zoom;
     const prev = lastCenterRef.current;
     if (
       prev &&
@@ -264,7 +285,8 @@ export default function GoogleMap({
     const layer = radiusLayerRef.current;
     if (!layer) return;
 
-    const loc = userLocation || center;
+    const isOutside = userLocation && !isLocationInBengaluru(userLocation);
+    const loc = isOutside ? BENGALURU_CENTER : (userLocation || center || BENGALURU_CENTER);
     if (!loc || !currentRadius || currentRadius <= 0) {
       layer.clearLayers();
       circleRef.current = null;
@@ -321,8 +343,8 @@ export default function GoogleMap({
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 
-    // 1. User Marker (Glowing Radar Pulse)
-    if (userLocation?.lat && userLocation?.lng) {
+    // 1. User Marker (Glowing Radar Pulse) - Only drawn if inside Bengaluru geofence
+    if (userLocation?.lat && userLocation?.lng && isLocationInBengaluru(userLocation)) {
       const userIcon = L.divIcon({
         className: "custom-user-marker",
         html: `
@@ -560,6 +582,12 @@ export default function GoogleMap({
             <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
           </span>
           <span>{pins.length} Pins on Map</span>
+        </div>
+
+        {/* Bengaluru Geofence Badge */}
+        <div className="hidden md:flex items-center gap-1 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-2.5 py-1.5 text-[10px] font-black uppercase text-ink dark:text-white shadow-[2px_2px_0px_#121212]">
+          <span className="text-brand">📍</span>
+          <span>Bengaluru Only</span>
         </div>
       </div>
 

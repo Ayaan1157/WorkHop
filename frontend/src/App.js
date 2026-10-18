@@ -28,6 +28,7 @@ import { useAuth } from "@/context/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ScrollToTop from "@/components/ScrollToTop";
 import FeaturedBlastToast from "@/components/FeaturedBlastToast";
+import CityRestrictionModal from "@/components/CityRestrictionModal";
 
 function ProfileRoute() {
   const { user } = useAuth();
@@ -46,6 +47,7 @@ function App() {
           <BrowserRouter>
             <ScrollToTop />
             <FeaturedBlastToast />
+            <CityRestrictionModal />
             <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/profile" element={<ProfileRoute />} />

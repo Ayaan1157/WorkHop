@@ -228,23 +228,40 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {(pro.samples || [
-                { title: `${pro.skill} Deliverables`, type: "Client Project", tag: "Completed" },
-                { title: "Verified Past Work Milestone", type: "Portfolio Work", tag: "Bengaluru" },
+                { title: `${pro.skill} Deliverables`, type: "Client Project", tag: "Job Completed" },
+                { title: "Verified Past Work Milestone", type: "Portfolio Work", tag: "Job Completed" },
               ]).slice(0, 2).map((s, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between border border-ink/20 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-2.5 text-xs shadow-sm"
+                  onClick={() => setSampleNotice(s.title)}
+                  className="flex items-center justify-between border border-ink/20 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-2.5 text-xs shadow-sm cursor-pointer hover:bg-[#E5F7E0] transition"
+                  title="Click to view status: Job Completed"
                 >
                   <div className="min-w-0 pr-2">
                     <p className="font-black text-ink dark:text-white truncate">{s.title}</p>
-                    <p className="text-[10px] text-inkmuted dark:text-zinc-400">{s.type}</p>
+                    <p className="text-[10px] text-inkmuted dark:text-zinc-400">Click on it: Job Completed</p>
                   </div>
-                  <span className="border border-ink/20 bg-sand dark:bg-zinc-700 px-1.5 py-0.5 text-[9px] font-black uppercase shrink-0">
-                    {s.tag}
+                  <span className="border border-ink/20 bg-[#0E6220] text-white px-2 py-0.5 text-[9px] font-black uppercase shrink-0 flex items-center gap-1 shadow-xs">
+                    <CheckCircle2 size={10} /> Job Completed
                   </span>
                 </div>
               ))}
             </div>
+
+            {sampleNotice && (
+              <div className="mt-2 p-2.5 bg-[#E5F7E0] border border-[#0E6220] text-[#0E6220] rounded text-xs flex items-center justify-between animate-in fade-in">
+                <span className="font-bold flex items-center gap-1.5">
+                  <CheckCircle2 size={14} /> Job Completed · {sampleNotice}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSampleNotice(null)}
+                  className="text-[10px] font-black underline ml-2"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Direct Contact Policy Notice Banner */}

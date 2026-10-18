@@ -34,6 +34,7 @@ export default function Pro() {
   const [paying, setPaying] = useState(false);
   const [coupon, setCoupon] = useState(null);
   const [activeTab, setActiveTab] = useState("overview"); // overview | reviews | skills | history
+  const [clickedJobNotice, setClickedJobNotice] = useState(null);
   const { startPayment } = useRazorpay();
 
   usePageMeta({
@@ -278,27 +279,45 @@ export default function Pro() {
               <div className="flex flex-col gap-2 border-2 border-ink bg-white p-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-[11px] font-black tracking-[0.15em] text-ink">PORTFOLIO &amp; WORK SAMPLES</h2>
-                  <span className="text-[10px] font-extrabold text-inkmuted">3 SAMPLES</span>
+                  <span className="text-[10px] font-extrabold text-inkmuted">2 COMPLETED DELIVERIES</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+                {clickedJobNotice && (
+                  <div className="mt-2 border-2 border-ink bg-[#E5F7E0] p-2.5 text-ink flex items-center justify-between shadow-[2px_2px_0px_#121212] animate-in fade-in">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-[#0E6220]" />
+                      <span className="text-xs font-black uppercase tracking-wider text-[#0E6220]">
+                        Job Completed · {clickedJobNotice.title}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setClickedJobNotice(null)}
+                      className="text-[10px] font-black border border-ink bg-white px-1.5 py-0.2"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                   {[
-                    { title: "Client Project Alpha", tag: "Completed" },
-                    { title: "Commercial Brand Kit", tag: "Featured" },
-                    { title: "High-Impact Delivery", tag: "Verified" },
+                    { title: `${pro.skill} Client Delivery`, tag: "Job Completed" },
+                    { title: "Verified Hyperlocal Project", tag: "Job Completed" },
                   ].map((item, i) => (
                     <div
                       key={i}
-                      className="border-2 border-ink bg-sand p-3 flex flex-col justify-between h-36 relative overflow-hidden group hover:bg-[#FFE5D6] transition"
+                      onClick={() => setClickedJobNotice({ title: item.title })}
+                      className="border-2 border-ink bg-sand p-3.5 flex flex-col justify-between h-36 relative overflow-hidden group hover:bg-[#E5F7E0] transition cursor-pointer shadow-[2px_2px_0px_#121212]"
+                      title="Click to view status: Job Completed"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="border border-ink bg-white px-2 py-0.5 text-[8px] font-black">
-                          {item.tag}
+                        <span className="border border-ink bg-[#0E6220] text-white px-2 py-0.5 text-[8px] font-black uppercase flex items-center gap-1 shadow-xs">
+                          <CheckCircle2 size={10} /> {item.tag}
                         </span>
                         <Sparkles size={13} className="text-brand" />
                       </div>
                       <div>
                         <p className="text-xs font-black text-ink">{item.title}</p>
-                        <p className="text-[10px] text-inkmuted">{pro.skill} case study</p>
+                        <p className="text-[10px] text-inkmuted font-bold mt-0.5">Click on it: Job Completed</p>
                       </div>
                     </div>
                   ))}
@@ -511,22 +530,56 @@ export default function Pro() {
                     COMPLETED JOBS &amp; HISTORY
                   </h2>
                   <span className="text-xs font-black text-brand">
-                    {(reviews.length || pro.jobs_done || 0)} TOTAL DELIVERIES
+                    {(reviews.length || pro.jobs_done || 2)} TOTAL DELIVERIES
                   </span>
                 </div>
+
+                {clickedJobNotice && (
+                  <div className="mb-3 border-2 border-ink bg-[#E5F7E0] p-3 text-ink flex items-center justify-between shadow-[2px_2px_0px_#121212] animate-in fade-in slide-in-from-top-1">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={18} className="text-[#0E6220] shrink-0" />
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wider text-[#0E6220]">
+                          Job Completed
+                        </p>
+                        <p className="text-[11px] font-bold text-ink">
+                          "{clickedJobNotice.title}" has been successfully completed and approved!
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setClickedJobNotice(null)}
+                      className="text-xs font-black border border-ink bg-white px-2 py-0.5 hover:bg-sand"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-3">
                   {reviews.length > 0 ? (
                     reviews.map((h, i) => (
-                      <div key={h.review_id || i} className="border-2 border-ink bg-sand p-3.5 shadow-[1.5px_1.5px_0px_#121212]">
+                      <div
+                        key={h.review_id || i}
+                        onClick={() => setClickedJobNotice({ title: h.job_title, pay: h.pay, client: h.company_name || h.reviewer_name })}
+                        className="border-2 border-ink bg-sand p-3.5 shadow-[1.5px_1.5px_0px_#121212] cursor-pointer hover:bg-[#E5F7E0] transition"
+                        title="Click to view status: Job Completed"
+                      >
                         <div className="flex items-center justify-between flex-wrap gap-1">
-                          <span className="text-xs font-black text-ink">{h.job_title}</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-black text-ink">{h.job_title}</span>
+                            <span className="inline-flex items-center gap-1 bg-[#0E6220] text-white text-[9px] font-black uppercase px-2 py-0.5 border border-ink shadow-[1px_1px_0px_#121212]">
+                              <CheckCircle2 size={10} /> Job Completed
+                            </span>
+                          </div>
                           <span className="text-xs font-black text-ink">
                             {h.pay ? `₹${Number(h.pay).toLocaleString("en-IN")}` : "₹15,000"}
                           </span>
                         </div>
                         <div className="mt-1 flex items-center justify-between text-[10px] text-inkmuted font-bold flex-wrap gap-1">
                           <span>{h.date_formatted || h.date || `${i + 1} week ago`} · {h.company_name || h.reviewer_name || "Bengaluru Client"}</span>
-                          <span className="text-brand flex items-center gap-1 font-black">
+                          <span className="text-[#0E6220] flex items-center gap-1 font-black">
                             <span className="text-amber-500">★</span> {Number(h.rating || 5).toFixed(1)} Completed
                           </span>
                         </div>

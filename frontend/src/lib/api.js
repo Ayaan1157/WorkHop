@@ -50,6 +50,9 @@ import {
   getStoredProfessionSuggestions,
   saveProfessionSuggestion,
   updateProfessionSuggestionStatus,
+  getStoredCityWaitlist,
+  saveCityWaitlistEntry,
+  deleteCityWaitlistEntry,
 } from "./clientStore";
 import { sendBrowserPushNotification, sendTestPushNotification } from "./pushNotifications";
 export * from "./supabase";
@@ -91,19 +94,32 @@ async function mockRouter(path, method = "GET", body = null) {
     return jobs.find((j) => String(j.id) === String(jobId)) || null;
   }
   if ((cleanPath === "/employer/jobs" || (cleanPath.startsWith("/employer/") && cleanPath.endsWith("/jobs"))) && method === "GET") {
-    const stored = getStoredJobs();
-    if (isSupabaseConfigured()) {
-      try {
-        const live = await supabaseGetJobs();
-        if (Array.isArray(live) && live.length > 0) {
-          const liveIds = new Set(live.map((j) => String(j.id)));
-          const liveTitles = new Set(live.map((j) => (j.title || "").toLowerCase().trim()));
-          const filtered = stored.filter((j) => !liveIds.has(String(j.id)) && !liveTitles.has((j.title || "").toLowerCase().trim()));
-          return [...live, ...filtered];
-        }
-      } catch {}
+    const customJobs = JSON.parse(localStorage.getItem("workhop_custom_jobs") || "[]");
+    if (customJobs.length > 0) {
+      return customJobs;
     }
-    return stored;
+    const stored = getStoredJobs();
+    // For dummy employer profile: remove most of the jobs and show only 2-3 clean demo jobs
+    const completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
+    const dummyJobs = stored.slice(0, 3).map((job, idx) => {
+      const isDone = completedMap[job.id] !== undefined ? completedMap[job.id] : (idx === 1);
+      return {
+        ...job,
+        is_dummy: true,
+        is_dummy_job: true,
+        is_completed: isDone,
+        status: isDone ? "completed" : "open",
+      };
+    });
+    return dummyJobs;
+  }
+  if (cleanPath.startsWith("/employer/jobs/") && cleanPath.endsWith("/complete") && method === "POST") {
+    const parts = cleanPath.split("/");
+    const jobId = parts[3];
+    const completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
+    completedMap[jobId] = true;
+    localStorage.setItem("workhop_dummy_completed_jobs", JSON.stringify(completedMap));
+    return { ok: true, job_id: jobId, status: "completed", message: "Job completed" };
   }
   if (cleanPath.startsWith("/jobs") && method === "GET") {
     const stored = getStoredJobs();
@@ -367,6 +383,67 @@ async function mockRouter(path, method = "GET", body = null) {
     const parts = cleanPath.split("/");
     const ticketId = parts[3];
     return updateGrievanceStatus(ticketId, body?.status, body?.resolution_notes);
+  }
+  if (cleanPath.includes("/notifications/preferences")) {
+    const fId = cleanPath.split("/")[2] || "fl-mock";
+    if (method === "PUT") {
+      return { ok: true, freelancer_id: fId, updated: true };
+    }
+    return {
+      ok: true,
+      freelancer_id: fId,
+      email_alerts: true,
+      whatsapp_alerts: false,
+      featured_blasts: true,
+      employer_messages: true,
+      hired_alerts: true,
+      escrow_updates: true,
+      sound: true,
+      notification_email: "freelancer@work-hop.com",
+      notification_phone: "+91 98765 43210",
+    };
+  }
+  if (cleanPath.includes("/notifications/test-email") && method === "POST") {
+    return {
+      ok: true,
+      sent: true,
+      message: `Test alert email dispatched to ${body?.email || "your email"}! Please check your inbox.`,
+    };
+  }
+  if (cleanPath === "/geo/check" && method === "GET") {
+    return {
+      ok: true,
+      ip: "127.0.0.1",
+      city: null,
+      country: "IN",
+      region: "Karnataka",
+      is_bengaluru: true,
+      service_restricted_to: "Bengaluru",
+      bengaluru_center: { lat: 12.9716, lng: 77.5946 },
+    };
+  }
+  if (cleanPath === "/city-waitlist" && method === "POST") {
+    return saveCityWaitlistEntry(body || {});
+  }
+  if (cleanPath === "/admin/city-waitlist" && method === "GET") {
+    const list = getStoredCityWaitlist();
+    const cityCounts = {};
+    for (const item of list) {
+      const c = item.city || "Unknown";
+      cityCounts[c] = (cityCounts[c] || 0) + 1;
+    }
+    const byCity = Object.entries(cityCounts)
+      .map(([city, count]) => ({ city, count }))
+      .sort((a, b) => b.count - a.count);
+    return {
+      total: list.length,
+      by_city: byCity,
+      entries: list,
+    };
+  }
+  if (cleanPath.startsWith("/admin/city-waitlist/") && method === "DELETE") {
+    const id = cleanPath.split("/").pop();
+    return deleteCityWaitlistEntry(id);
   }
   if (cleanPath === "/profession-suggestions" && method === "POST") {
     return saveProfessionSuggestion(body);

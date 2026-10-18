@@ -1185,8 +1185,8 @@ export default function Landing() {
       <section className="border-b-2 border-ink bg-[#121212] text-white px-4 py-6 sm:px-10 lg:px-16 xl:px-20">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="flex items-center gap-3.5">
-            <span className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center border-2 border-white bg-brand text-white shadow-[2px_2px_0px_#ffffff]">
-              <Sparkles size={22} className="animate-pulse" />
+            <span className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center border-2 border-white bg-brand text-white shadow-[2px_2px_0px_#ffffff]">
+              <Sparkles className="h-9 w-9 sm:h-11 sm:w-11 animate-pulse" strokeWidth={2.3} />
             </span>
             <div>
               <div className="flex items-center gap-2">

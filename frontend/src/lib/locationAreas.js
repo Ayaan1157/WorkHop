@@ -26,6 +26,43 @@ export const BENGALURU_AREAS = [
   { name: "Yelahanka", lat: 13.1007, lng: 77.5963, zone: "North" },
 ];
 
+export const BENGALURU_CENTER = { lat: 12.9716, lng: 77.5946 };
+export const BENGALURU_MAX_RADIUS_KM = 50; // Operational cutoff: 50km from city center
+
+// Bounding box for Bengaluru urban & rural metro perimeter
+export const BENGALURU_BOUNDS = {
+  southWest: { lat: 12.65, lng: 77.25 },
+  northEast: { lat: 13.30, lng: 77.95 },
+};
+
+// Check if coordinates fall within Bengaluru metro region
+export function isLocationInBengaluru(coords) {
+  if (!coords || typeof coords.lat !== "number" || typeof coords.lng !== "number") return true;
+  const dist = distanceKm(coords, BENGALURU_CENTER);
+  return dist <= BENGALURU_MAX_RADIUS_KM;
+}
+
+// Distance from central Bengaluru (km)
+export function getDistanceFromBengaluru(coords) {
+  if (!coords || typeof coords.lat !== "number" || typeof coords.lng !== "number") return 0;
+  return Math.round(distanceKm(coords, BENGALURU_CENTER));
+}
+
+// Check if user has explicitly enabled Bengaluru preview mode from outside city
+export function isCityOverrideEnabled() {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("workhop_city_override") === "bengaluru";
+}
+
+export function setCityOverride(enabled = true) {
+  if (typeof window === "undefined") return;
+  if (enabled) {
+    localStorage.setItem("workhop_city_override", "bengaluru");
+  } else {
+    localStorage.removeItem("workhop_city_override");
+  }
+}
+
 // Find closest named locality from coordinates
 export function findNearestArea(coords) {
   if (!coords || !coords.lat || !coords.lng) return null;
@@ -39,7 +76,13 @@ export function findNearestArea(coords) {
       closest = { ...area, distance_km: Math.round(dist * 10) / 10 };
     }
   }
-  return closest;
+
+  const isOutside = minDistance > BENGALURU_MAX_RADIUS_KM;
+  return {
+    ...closest,
+    isOutsideBengaluru: isOutside,
+    distanceToBengaluruCenter: Math.round(distanceKm(coords, BENGALURU_CENTER)),
+  };
 }
 
 // Get center coordinates for a locality name

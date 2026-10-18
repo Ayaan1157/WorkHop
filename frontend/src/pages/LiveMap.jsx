@@ -17,6 +17,8 @@ import {
   getAreaCoordinates,
   getOrganicCoordinates,
   getProximityCoordinates,
+  isLocationInBengaluru,
+  BENGALURU_CENTER,
 } from "@/lib/locationAreas";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet } from "@/lib/api";
@@ -75,12 +77,20 @@ export default function LiveMap() {
     requestLocation();
   }, [requestLocation]);
 
-  // Sync GPS Coordinates when acquired
+  // Sync GPS Coordinates when acquired - clamped to Bengaluru geofence
   useEffect(() => {
     if (gpsCoords?.lat && gpsCoords?.lng) {
-      setUserLocation(gpsCoords);
-      const nearest = findNearestArea(gpsCoords);
-      if (nearest) setSelectedArea(nearest.name);
+      if (isLocationInBengaluru(gpsCoords)) {
+        setUserLocation(gpsCoords);
+        const nearest = findNearestArea(gpsCoords);
+        if (nearest && !nearest.isOutsideBengaluru) {
+          setSelectedArea(nearest.name);
+        }
+      } else {
+        // Outside Bengaluru (e.g. Mysore) - map safely stays centered on Bengaluru
+        setUserLocation(BENGALURU_CENTER);
+        setSelectedArea("Koramangala");
+      }
     }
   }, [gpsCoords]);
 

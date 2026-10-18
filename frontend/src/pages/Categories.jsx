@@ -133,8 +133,8 @@ export default function Categories() {
           <div className="mb-6 border-2 border-ink bg-[#121212] p-4 sm:p-5 text-white shadow-[3px_3px_0px_#FF5A1F]">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-white bg-brand text-white">
-                  <Sparkles size={20} className="animate-pulse" />
+                <span className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center border-2 border-white bg-brand text-white shadow-[2px_2px_0px_#ffffff]">
+                  <Sparkles className="h-8 w-8 sm:h-9 sm:w-9 animate-pulse" strokeWidth={2.3} />
                 </span>
                 <div>
                   <div className="flex items-center gap-2">

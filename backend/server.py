@@ -14,6 +14,9 @@ import re
 import secrets
 import time
 import asyncio
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Set
@@ -3456,6 +3459,231 @@ async def dispatch_push_notification(req: Request):
     return {"ok": True, "dispatched": True, "log_id": push_log["_id"]}
 
 
+class FreelancerNotificationPrefsRequest(BaseModel):
+    email_alerts: Optional[bool] = None
+    whatsapp_alerts: Optional[bool] = None
+    featured_blasts: Optional[bool] = None
+    employer_messages: Optional[bool] = None
+    hired_alerts: Optional[bool] = None
+    escrow_updates: Optional[bool] = None
+    sound: Optional[bool] = None
+    notification_email: Optional[str] = None
+    notification_phone: Optional[str] = None
+
+
+@api_router.get("/freelancer/{freelancer_id}/notifications/preferences")
+async def get_freelancer_notification_preferences(freelancer_id: str):
+    """Retrieve external notification preferences and contact channels for a freelancer."""
+    fdoc = await db.freelancers.find_one({"_id": freelancer_id}) or await db.freelancers.find_one({"freelancer_id": freelancer_id}) or {}
+    sub_doc = await db.push_subscriptions.find_one({"user_id": freelancer_id}) or {}
+    stored_prefs = sub_doc.get("preferences") or {}
+
+    email_val = fdoc.get("notification_email") or fdoc.get("email") or stored_prefs.get("notification_email") or ""
+    phone_val = fdoc.get("notification_phone") or fdoc.get("phone") or stored_prefs.get("notification_phone") or ""
+
+    email_enabled = fdoc.get("email_alerts_enabled")
+    if email_enabled is None:
+        email_enabled = stored_prefs.get("email_alerts", True)
+
+    whatsapp_enabled = fdoc.get("whatsapp_alerts_enabled")
+    if whatsapp_enabled is None:
+        whatsapp_enabled = stored_prefs.get("whatsapp_alerts", False)
+
+    return {
+        "ok": True,
+        "freelancer_id": freelancer_id,
+        "email_alerts": email_enabled,
+        "whatsapp_alerts": whatsapp_enabled,
+        "featured_blasts": stored_prefs.get("featured_blasts", True),
+        "employer_messages": stored_prefs.get("employer_messages", True),
+        "hired_alerts": stored_prefs.get("hired_alerts", True),
+        "escrow_updates": stored_prefs.get("escrow_updates", True),
+        "sound": stored_prefs.get("sound", True),
+        "notification_email": email_val,
+        "notification_phone": phone_val,
+    }
+
+
+@api_router.put("/freelancer/{freelancer_id}/notifications/preferences")
+async def update_freelancer_notification_preferences(freelancer_id: str, req: FreelancerNotificationPrefsRequest):
+    """Update outside-the-website and push notification preferences for a freelancer."""
+    updates = {}
+    if req.email_alerts is not None:
+        updates["email_alerts_enabled"] = req.email_alerts
+    if req.whatsapp_alerts is not None:
+        updates["whatsapp_alerts_enabled"] = req.whatsapp_alerts
+    if req.notification_email is not None:
+        clean_email = req.notification_email.strip().lower()
+        updates["notification_email"] = clean_email
+        if clean_email:
+            updates["email"] = clean_email
+    if req.notification_phone is not None:
+        updates["notification_phone"] = req.notification_phone.strip()
+
+    if updates:
+        await db.freelancers.update_one(
+            {"_id": freelancer_id},
+            {"$set": updates},
+            upsert=False
+        )
+        await db.freelancers.update_one(
+            {"freelancer_id": freelancer_id},
+            {"$set": updates},
+            upsert=False
+        )
+
+    # Also update push_subscriptions record
+    sub_prefs = {
+        "email_alerts": req.email_alerts if req.email_alerts is not None else True,
+        "whatsapp_alerts": req.whatsapp_alerts if req.whatsapp_alerts is not None else False,
+        "featured_blasts": req.featured_blasts if req.featured_blasts is not None else True,
+        "employer_messages": req.employer_messages if req.employer_messages is not None else True,
+        "hired_alerts": req.hired_alerts if req.hired_alerts is not None else True,
+        "escrow_updates": req.escrow_updates if req.escrow_updates is not None else True,
+        "sound": req.sound if req.sound is not None else True,
+    }
+    if req.notification_email:
+        sub_prefs["notification_email"] = req.notification_email.strip().lower()
+    if req.notification_phone:
+        sub_prefs["notification_phone"] = req.notification_phone.strip()
+
+    await db.push_subscriptions.update_one(
+        {"user_id": freelancer_id},
+        {"$set": {
+            "preferences": sub_prefs,
+            "updated_at": _now_iso(),
+        }},
+        upsert=True
+    )
+    return {"ok": True, "freelancer_id": freelancer_id, "updated": True}
+
+
+class TestEmailNotificationRequest(BaseModel):
+    email: Optional[str] = None
+
+
+@api_router.post("/freelancer/{freelancer_id}/notifications/test-email")
+async def send_test_email_notification(freelancer_id: str, req: TestEmailNotificationRequest):
+    """Sends a mock employer message alert email so the freelancer can test external notifications."""
+    fdoc = await db.freelancers.find_one({"_id": freelancer_id}) or await db.freelancers.find_one({"freelancer_id": freelancer_id}) or {}
+    target_email = (req.email or "").strip() or fdoc.get("notification_email") or fdoc.get("email")
+
+    if not target_email:
+        raise HTTPException(status_code=400, detail="Please provide a valid destination email address to send the test alert.")
+
+    subject = "⚡ [TEST ALERT] New message from BrewBox Cafe on WorkHop: \"Full Stack Next.js Dev\""
+    test_html = _build_employer_message_email_html(
+        freelancer_name=fdoc.get("full_name", "Valued Pro"),
+        company_name="BrewBox Cafe (Bengaluru)",
+        job_title="Full Stack Next.js Dev",
+        text="Hi! We saw your portfolio and would love to hire you for our upcoming project. Are you available this week?",
+        chat_url=f"{FRONTEND_URL}/freelancer/jobs?featured=1",
+    )
+    sent = await _send_email(target_email, subject, test_html)
+    return {
+        "ok": True,
+        "sent": sent,
+        "email": target_email,
+        "message": f"Test alert email dispatched to {target_email}! Please check your inbox and spam folder."
+    }
+
+
+class CityWaitlistRequest(BaseModel):
+    city: str
+    contact: Optional[str] = None  # email or phone
+    email: Optional[str] = None
+    role: Optional[str] = "user"  # "freelancer" | "employer" | "user"
+    coords: Optional[dict] = None
+    note: Optional[str] = None
+
+
+@api_router.get("/geo/check")
+async def check_client_geo(request: Request):
+    """Detects client city / region from reverse proxy headers and provides geofence guidance."""
+    cf_city = request.headers.get("cf-ipcity") or request.headers.get("x-vercel-ip-city") or ""
+    cf_country = request.headers.get("cf-ipcountry") or request.headers.get("x-vercel-ip-country") or "IN"
+    cf_region = request.headers.get("cf-region") or request.headers.get("x-vercel-ip-country-region") or ""
+    client_ip = request.client.host if request.client else "127.0.0.1"
+
+    city_clean = cf_city.strip().title()
+    is_blr = False
+    if city_clean.lower() in ("bengaluru", "bangalore", "bangalore urban", "bangalore rural"):
+        is_blr = True
+
+    return {
+        "ok": True,
+        "ip": client_ip,
+        "city": city_clean or None,
+        "country": cf_country,
+        "region": cf_region,
+        "is_bengaluru": is_blr,
+        "service_restricted_to": "Bengaluru",
+        "bengaluru_center": {"lat": 12.9716, "lng": 77.5946},
+    }
+
+
+@api_router.post("/city-waitlist")
+async def submit_city_waitlist(req: CityWaitlistRequest, request: Request):
+    """Allows users outside Bengaluru (e.g. Mysore, Mangalore) to join the expansion waitlist."""
+    city_name = req.city.strip().title()
+    if not city_name:
+        raise HTTPException(status_code=400, detail="City name is required.")
+    email_val = (req.email or req.contact or "").strip()
+    if not email_val or len(email_val) < 4:
+        raise HTTPException(status_code=400, detail="Valid email or contact is required.")
+
+    waitlist_id = str(uuid.uuid4())
+    doc = {
+        "_id": waitlist_id,
+        "waitlist_id": waitlist_id,
+        "city": city_name,
+        "email": email_val,
+        "contact": email_val,
+        "role": req.role or "user",
+        "coords": req.coords,
+        "note": (req.note or "")[:200],
+        "created_at": _now_iso(),
+    }
+    await db.city_waitlist.insert_one(doc)
+
+    count = await db.city_waitlist.count_documents({"city": city_name})
+    return {
+        "ok": True,
+        "waitlist_id": waitlist_id,
+        "city": city_name,
+        "email": email_val,
+        "waitlist_count": count,
+        "message": f"You're on the waitlist for {city_name}! We'll notify you as soon as WorkHop launches in your area.",
+    }
+
+
+@api_router.get("/admin/city-waitlist")
+async def get_admin_city_waitlist(request: Request):
+    """Admin endpoint to see city expansion demand / waitlist votes and captured emails."""
+    await _require_admin(request)
+    docs = await db.city_waitlist.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    city_counts = {}
+    for d in docs:
+        c = d.get("city", "Unknown")
+        city_counts[c] = city_counts.get(c, 0) + 1
+
+    sorted_cities = sorted(city_counts.items(), key=lambda x: x[1], reverse=True)
+    return {
+        "total": len(docs),
+        "by_city": [{"city": c, "count": n} for c, n in sorted_cities],
+        "entries": docs,
+    }
+
+
+@api_router.delete("/admin/city-waitlist/{waitlist_id}")
+async def delete_admin_city_waitlist(waitlist_id: str, request: Request):
+    """Admin endpoint to remove an entry from city waitlist."""
+    await _require_admin(request)
+    res = await db.city_waitlist.delete_one({"waitlist_id": waitlist_id})
+    if res.deleted_count == 0:
+        await db.city_waitlist.delete_one({"_id": waitlist_id})
+    return {"ok": True, "message": "Waitlist entry removed."}
+
 
 @api_router.get("/admin/credits-config")
 async def get_admin_credits_config():
@@ -4192,6 +4420,61 @@ class FreelancerEmailVerifyRequest(BaseModel):
     otp: str
 
 
+MAIN_EMAIL = os.environ.get("MAIN_EMAIL", "connect@work-hop.com")
+COMPLAINT_EMAIL = os.environ.get("COMPLAINT_EMAIL", "help@work-hop.com")
+SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", COMPLAINT_EMAIL)
+EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "WorkHop")
+NOTIFICATION_EMAIL_FROM = os.environ.get("NOTIFICATION_EMAIL_FROM", f"{EMAIL_FROM_NAME} <{MAIN_EMAIL}>")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", os.environ.get("APP_URL", "https://workhop.in")).rstrip("/")
+
+
+def _sync_send_email(to: str, subject: str, html_body: str, from_addr: str = None) -> bool:
+    """Synchronous email dispatch using smtplib (MIME multipart HTML + plain text fallback)."""
+    smtp_host = os.environ.get("SMTP_HOST", "").strip()
+    sender = from_addr or os.environ.get("NOTIFICATION_EMAIL_FROM", f"{EMAIL_FROM_NAME} <{MAIN_EMAIL}>")
+    if not smtp_host:
+        logging.info("Transactional email simulated (SMTP_HOST not set) to %s: %s", to, subject)
+        return True
+    try:
+        smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+        smtp_user = os.environ.get("SMTP_USER", "").strip()
+        smtp_pass = os.environ.get("SMTP_PASSWORD", os.environ.get("SMTP_PASS", "")).strip()
+        use_tls = os.environ.get("SMTP_USE_TLS", "1").lower() in ("1", "true", "yes")
+        use_ssl = os.environ.get("SMTP_USE_SSL", "0").lower() in ("1", "true", "yes")
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = sender
+        msg["To"] = to
+        text_body = re.sub(r'<[^>]+>', ' ', html_body)
+        text_body = re.sub(r'\s+', ' ', text_body).strip()
+        msg.attach(MIMEText(text_body, "plain"))
+        msg.attach(MIMEText(html_body, "html"))
+
+        if use_ssl:
+            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10)
+        else:
+            server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
+            if use_tls:
+                server.starttls()
+
+        if smtp_user and smtp_pass:
+            server.login(smtp_user, smtp_pass)
+
+        server.sendmail(sender, [to], msg.as_string())
+        server.quit()
+        logging.info("Transactional email successfully sent via SMTP to %s: %s", to, subject)
+        return True
+    except Exception as exc:
+        logging.error("Failed to send transactional email to %s: %s", to, exc)
+        return False
+
+
+async def _send_email(to: str, subject: str, html_body: str, from_addr: str = None) -> bool:
+    """Best-effort transactional email via configured SMTP / transactional delivery."""
+    return await asyncio.to_thread(_sync_send_email, to, subject, html_body, from_addr)
+
+
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -4871,8 +5154,178 @@ async def list_messages(conversation_id: str):
     return [ChatMessage(**d) for d in docs]
 
 
+def _build_employer_message_email_html(freelancer_name: str, company_name: str, job_title: str, text: str, chat_url: str) -> str:
+    escaped_f_name = html.escape(freelancer_name or "Freelancer")
+    escaped_c_name = html.escape(company_name or "An Employer")
+    escaped_title = html.escape(job_title or "Gig Inquiry")
+    escaped_text = html.escape(text or "").replace("\n", "<br/>")
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Message from {escaped_c_name} on WorkHop</title>
+</head>
+<body style="margin: 0; padding: 24px 12px; background-color: #F5EFEB; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #121212;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #FFFFFF; border: 3px solid #121212; box-shadow: 6px 6px 0px #121212; border-collapse: separate;">
+    <!-- Header -->
+    <tr>
+      <td style="background-color: #FF5A00; padding: 20px 24px; border-bottom: 3px solid #121212;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+          <tr>
+            <td>
+              <span style="font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #FFFFFF; text-transform: uppercase;">⚡ WORKHOP</span>
+            </td>
+            <td align="right">
+              <span style="background-color: #121212; color: #FFFFFF; font-size: 10px; font-weight: 900; padding: 4px 8px; text-transform: uppercase; letter-spacing: 1px; border: 1px solid #121212;">CLIENT MESSAGE</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Body Content -->
+    <tr>
+      <td style="padding: 28px 24px;">
+        <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 1px;">Hi {escaped_f_name},</p>
+        <h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 900; line-height: 1.3; color: #121212;">
+          <span style="color: #FF5A00;">{escaped_c_name}</span> sent you a direct message regarding <span style="text-decoration: underline;">"{escaped_title}"</span>
+        </h1>
+
+        <!-- Message Box -->
+        <div style="background-color: #FAF7F2; border: 2px solid #121212; padding: 18px 20px; margin: 20px 0; box-shadow: 3px 3px 0px #121212;">
+          <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #666;">Message Preview:</p>
+          <p style="margin: 0; font-size: 15px; line-height: 1.5; font-weight: 500; color: #121212;">
+            "{escaped_text}"
+          </p>
+        </div>
+
+        <!-- CTA Button -->
+        <div style="margin: 28px 0 20px 0; text-align: center;">
+          <a href="{chat_url}" target="_blank" style="display: inline-block; background-color: #FF5A00; color: #FFFFFF; font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; padding: 16px 32px; border: 3px solid #121212; box-shadow: 4px 4px 0px #121212;">
+            OPEN CHAT &amp; REPLY NOW &rarr;
+          </a>
+        </div>
+
+        <!-- Pro Tip -->
+        <div style="background-color: #FFF9E6; border: 1.5px dashed #B8860B; padding: 12px 16px; margin-top: 24px;">
+          <p style="margin: 0; font-size: 12px; font-weight: 600; color: #6A4B00; line-height: 1.4;">
+            💡 <strong>Pro Tip:</strong> Replying within 15 minutes increases your chances of getting hired by <strong>4x</strong>!
+          </p>
+        </div>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #F5EFEB; padding: 18px 24px; border-top: 2px solid #121212; font-size: 11px; color: #666; line-height: 1.5;">
+        <p style="margin: 0 0 6px 0;">
+          You received this outside push notification because you are a registered freelancer on WorkHop.
+        </p>
+        <p style="margin: 0;">
+          Want to turn off email alerts? You can toggle them anytime in your <a href="{FRONTEND_URL}/freelancer/profile" style="color: #121212; font-weight: 700; text-decoration: underline;">Notification Settings</a>.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+
+async def notify_freelancer_outside(conv: dict, text: str) -> None:
+    """Dispatches outside-the-website push notifications (Email & WhatsApp) to the recipient freelancer."""
+    try:
+        freelancer_id = conv.get("freelancer_id")
+        if not freelancer_id:
+            return
+
+        fdoc = await db.freelancers.find_one({"_id": freelancer_id})
+        if not fdoc:
+            fdoc = await db.freelancers.find_one({"freelancer_id": freelancer_id}) or {}
+
+        sub_doc = await db.push_subscriptions.find_one({"user_id": freelancer_id}) or {}
+        stored_prefs = sub_doc.get("preferences") or {}
+
+        conversation_id = conv.get("conversation_id") or conv.get("_id")
+        chat_url = f"{FRONTEND_URL}/chat/{conversation_id}?role=freelancer"
+        company_name = conv.get("company_name", "An Employer")
+        job_title = conv.get("job_title", "Gig Inquiry")
+        freelancer_name = conv.get("freelancer_name") or fdoc.get("full_name", "Freelancer")
+
+        # 1. Outside Email Alerts (Default: True)
+        email_enabled = fdoc.get("email_alerts_enabled")
+        if email_enabled is None:
+            email_enabled = stored_prefs.get("email_alerts", True)
+
+        if email_enabled:
+            target_email = fdoc.get("notification_email") or fdoc.get("email") or stored_prefs.get("notification_email")
+            if not target_email:
+                u = await db.users.find_one({"user_id": freelancer_id})
+                if u:
+                    target_email = u.get("email")
+
+            if target_email:
+                subject = f"💬 New message from {company_name} on WorkHop: \"{job_title}\""
+                email_html = _build_employer_message_email_html(
+                    freelancer_name=freelancer_name,
+                    company_name=company_name,
+                    job_title=job_title,
+                    text=text,
+                    chat_url=chat_url,
+                )
+                await _send_email(target_email, subject, email_html)
+                await db.external_notifications_log.insert_one({
+                    "_id": str(uuid.uuid4()),
+                    "freelancer_id": freelancer_id,
+                    "channel": "email",
+                    "recipient": target_email,
+                    "title": subject,
+                    "conversation_id": conversation_id,
+                    "status": "sent",
+                    "created_at": _now_iso(),
+                })
+                logger.info(f"Dispatched outside email notification to {target_email} for conv {conversation_id}")
+            else:
+                logger.info(f"Freelancer {freelancer_id} has email alerts enabled, but no email on file.")
+
+        # 2. Outside WhatsApp Alerts (Default: False / Opt-In)
+        whatsapp_enabled = fdoc.get("whatsapp_alerts_enabled")
+        if whatsapp_enabled is None:
+            whatsapp_enabled = stored_prefs.get("whatsapp_alerts", False)
+
+        if whatsapp_enabled:
+            phone = fdoc.get("notification_phone") or fdoc.get("phone") or stored_prefs.get("notification_phone")
+            if phone:
+                whatsapp_msg = (
+                    f"💬 *New message from {company_name} on WorkHop*\n\n"
+                    f"Gig: {job_title}\n"
+                    f"Message: \"{text[:120]}\"\n\n"
+                    f"Reply now: {chat_url}"
+                )
+                await db.external_notifications_log.insert_one({
+                    "_id": str(uuid.uuid4()),
+                    "freelancer_id": freelancer_id,
+                    "channel": "whatsapp",
+                    "recipient": phone,
+                    "message": whatsapp_msg,
+                    "conversation_id": conversation_id,
+                    "status": "queued",
+                    "created_at": _now_iso(),
+                })
+                wa_webhook = os.environ.get("WHATSAPP_WEBHOOK_URL")
+                if wa_webhook:
+                    try:
+                        async with httpx.AsyncClient(timeout=5.0) as client:
+                            await client.post(wa_webhook, json={"to": phone, "message": whatsapp_msg})
+                    except Exception as wa_err:
+                        logger.warning(f"Failed to post to WhatsApp webhook: {wa_err}")
+    except Exception as e:
+        logger.warning(f"Error in notify_freelancer_outside: {e}")
+
+
 @api_router.post("/chats/{conversation_id}/messages", response_model=ChatMessage)
-async def send_message(conversation_id: str, req: SendMessageRequest):
+async def send_message(conversation_id: str, req: SendMessageRequest, background_tasks: BackgroundTasks):
     conv = await db.conversations.find_one({"_id": conversation_id}, {"_id": 0})
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found.")
@@ -4921,6 +5374,10 @@ async def send_message(conversation_id: str, req: SendMessageRequest):
             })
         except Exception as pe:
             logger.warning(f"Could not log push notification: {pe}")
+
+        # Dispatch outside-the-website push alert (email/whatsapp) asynchronously
+        background_tasks.add_task(notify_freelancer_outside, conv, text)
+
     return ChatMessage(**msg)
 
 
@@ -6422,24 +6879,15 @@ async def list_employer_jobs(request: Request, employer_id: Optional[str] = None
             if sess and sess.get("user_id"):
                 query["employer_id"] = sess["user_id"]
     docs = await db.custom_jobs.find(query, {"_id": 0}).to_list(200)
+    if not docs:
+        # For dummy employer profile: return 2-3 sample jobs
+        sample_jobs = SEED_JOBS[:3]
+        return [Job(**{k: v for k, v in j.items() if k in Job.model_fields}) for j in sample_jobs]
     docs.sort(key=lambda j: j.get("created_at", ""), reverse=True)
     return [Job(**{k: v for k, v in d.items() if k in Job.model_fields}) for d in docs]
 
 
 # ============== Complaints / Support ==============
-MAIN_EMAIL = os.environ.get("MAIN_EMAIL", "connect@work-hop.com")
-COMPLAINT_EMAIL = os.environ.get("COMPLAINT_EMAIL", "help@work-hop.com")
-SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", COMPLAINT_EMAIL)
-EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "WorkHop")
-SMTP_HOST = os.environ.get("SMTP_HOST", "")
-
-
-async def _send_email(to: str, subject: str, html: str) -> bool:
-    """Best-effort transactional email via configured SMTP / transactional delivery."""
-    logging.info("Transactional email queued for %s: %s", to, subject)
-    return True
-
-
 async def send_complaint_email(complaint: dict) -> None:
     """Best-effort dispatch to the support inbox. HTML escaped. Never raises."""
     c_id = html.escape(str(complaint.get('complaint_id', '')))

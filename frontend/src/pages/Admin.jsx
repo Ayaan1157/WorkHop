@@ -14,6 +14,7 @@ import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from "@/lib/api";
 import { BENGALURU_AREAS } from "@/lib/locationAreas";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import AdminChatsTab from "@/components/AdminChatsTab";
+import CityWaitlistTab from "@/components/CityWaitlistTab";
 import { checkRateLimit, resetRateLimit } from "@/lib/security";
 import {
   calculateHopsForJob,
@@ -33,6 +34,7 @@ const TABS = [
   { id: "ESCROW", label: "💰 ESCROW & PAYMENTS" },
   { id: "COUPONS", label: "🏷️ COUPONS" },
   { id: "ISSUES", label: "🎫 SUPPORT & TAB REQUESTS" },
+  { id: "WAITLIST", label: "📍 OUTSIDE BLR WAITLIST" },
   { id: "LOGS", label: "📜 AUDIT LOGS" },
 ];
 
@@ -4572,6 +4574,8 @@ export default function Admin() {
         {tab === "COUPONS" && <CouponsTab adminFetch={adminFetch} />}
 
         {tab === "ISSUES" && <IssuesAndGrievancesTab adminFetch={adminFetch} />}
+
+        {tab === "WAITLIST" && <CityWaitlistTab adminFetch={adminFetch} />}
       </main>
     </div>
   );

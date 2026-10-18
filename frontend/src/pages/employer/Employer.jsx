@@ -19,7 +19,12 @@ import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
 import { LEAD_CATEGORY_FILTERS } from "@/lib/catalogFilters";
-import { getOrganicCoordinates, getProximityCoordinates } from "@/lib/locationAreas";
+import {
+  getOrganicCoordinates,
+  getProximityCoordinates,
+  isLocationInBengaluru,
+  BENGALURU_CENTER,
+} from "@/lib/locationAreas";
 import { apiGet, getEmployerId } from "@/lib/api";
 import { getSavedProIds, toggleSavePro, ADMIN_EMAILS } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
@@ -119,7 +124,8 @@ export default function Employer() {
   });
 
   const sorted = useMemo(() => {
-    const center = coords || { lat: 12.9352, lng: 77.6245 };
+    const isInsideBlr = coords && isLocationInBengaluru(coords);
+    const center = isInsideBlr ? coords : BENGALURU_CENTER;
     const withDist = base.map((l, idx) => {
       const org = getProximityCoordinates(center.lat, center.lng, l.distance_km || (0.3 + (idx % 15) * 0.25), l.id || idx);
       const dist = distanceKm(center, org);
@@ -176,12 +182,15 @@ export default function Employer() {
 
   const mapSection = useMemo(() => {
     if (!showMap) return null;
+    const isInsideBlr = coords && isLocationInBengaluru(coords);
+    const isOutsideBlr = coords && !isLocationInBengaluru(coords);
+
     return (
       <div className="relative isolate h-[260px] sm:h-[300px] md:h-[360px] w-full bg-sand/20" data-testid="employer-map">
         <GoogleMap
           pins={mapPins}
           zoom={13}
-          userLocation={coords}
+          userLocation={isInsideBlr ? coords : null}
           height="100%"
           radiusKm={radarRadius}
           onRadiusChange={setRadarRadius}
@@ -194,16 +203,20 @@ export default function Employer() {
           data-testid="leads-near-me-btn"
           onClick={requestLocation}
           className={`absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 z-[400] flex items-center gap-1 sm:gap-1.5 border-2 border-ink px-2 sm:px-2.5 py-1 text-xs font-black shadow-[2px_2px_0px_#121212] transition active:translate-y-0.5 ${
-            coords ? "bg-brand text-white" : "bg-white text-ink hover:bg-sand"
+            isInsideBlr
+              ? "bg-brand text-white"
+              : isOutsideBlr
+              ? "bg-[#FFF2EB] text-brand border-brand"
+              : "bg-white text-ink hover:bg-sand"
           }`}
         >
           {locStatus === "locating" ? (
             <Loader2 size={13} className="animate-spin" />
           ) : (
-            <LocateFixed size={13} className={coords ? "text-white" : "text-brand"} />
+            <LocateFixed size={13} className={isInsideBlr ? "text-white" : "text-brand"} />
           )}
           <span className="text-[10px] font-black tracking-wider">
-            {coords ? "GPS ACTIVE" : "NEAR ME"}
+            {isInsideBlr ? "GPS ACTIVE" : isOutsideBlr ? "OUTSIDE BLR" : "NEAR ME"}
           </span>
         </button>
       </div>

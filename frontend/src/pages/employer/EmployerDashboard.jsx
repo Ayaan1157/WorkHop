@@ -70,6 +70,7 @@ export default function EmployerDashboard() {
   const [chats, setChats] = useState([]);
   const [savedPros, setSavedPros] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [jobCompletedNotice, setJobCompletedNotice] = useState(null);
 
   // Load Employer Data
   const loadDashboardData = useCallback(async () => {
@@ -82,6 +83,23 @@ export default function EmployerDashboard() {
         allJobs = Array.isArray(remoteJobs) ? remoteJobs : [];
       } catch {
         allJobs = getStoredJobs();
+      }
+
+      // Check if this is the dummy profile (no custom jobs created)
+      const customJobs = JSON.parse(localStorage.getItem("workhop_custom_jobs") || "[]");
+      if (customJobs.length === 0) {
+        // Dummy profile: remove most of the jobs and show only 2-3 clean demo jobs
+        const completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
+        allJobs = allJobs.slice(0, 3).map((job, idx) => {
+          const isDone = completedMap[job.id] !== undefined ? completedMap[job.id] : (idx === 1);
+          return {
+            ...job,
+            is_dummy: true,
+            is_dummy_job: true,
+            is_completed: isDone,
+            status: isDone ? "completed" : "open",
+          };
+        });
       }
       setJobs(allJobs);
 
@@ -102,6 +120,34 @@ export default function EmployerDashboard() {
       setLoading(false);
     }
   }, []);
+
+  const handleJobCardClick = (j) => {
+    const nextCompleted = !j.is_completed;
+    const completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
+    completedMap[j.id] = nextCompleted;
+    localStorage.setItem("workhop_dummy_completed_jobs", JSON.stringify(completedMap));
+
+    setJobs((prev) =>
+      prev.map((item) =>
+        item.id === j.id
+          ? {
+              ...item,
+              is_completed: nextCompleted,
+              status: nextCompleted ? "completed" : "open",
+            }
+          : item
+      )
+    );
+
+    if (nextCompleted) {
+      setJobCompletedNotice({
+        id: j.id,
+        title: j.title,
+        message: `Job completed! "${j.title}" is now marked as Job Completed.`,
+      });
+      setTimeout(() => setJobCompletedNotice(null), 4000);
+    }
+  };
 
   useEffect(() => {
     loadDashboardData();
@@ -524,6 +570,29 @@ export default function EmployerDashboard() {
                   </button>
                 </div>
 
+                {jobCompletedNotice && (
+                  <div className="mb-4 bg-[#E5F7E0] dark:bg-[#132c18] border-2 border-ink p-3.5 text-ink dark:text-white flex items-center justify-between shadow-[2px_2px_0px_#121212] animate-in fade-in slide-in-from-top-1">
+                    <div className="flex items-center gap-2.5">
+                      <CheckCircle2 size={20} className="text-[#0E6220] dark:text-[#6ee7b7] shrink-0" />
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wider text-[#0E6220] dark:text-[#6ee7b7]">
+                          Job Completed
+                        </p>
+                        <p className="text-[11px] font-bold text-inkmuted dark:text-stone-300">
+                          {jobCompletedNotice.message}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setJobCompletedNotice(null)}
+                      className="border border-ink bg-white dark:bg-[#252525] px-2 py-0.5 text-xs font-black"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+
                 {jobs.length === 0 ? (
                   <div className="py-12 text-center border border-dashed border-[#ddd] dark:border-[#333] rounded-xl p-6">
                     <Briefcase size={36} className="mx-auto text-inkmuted/40 mb-3" />
@@ -544,7 +613,12 @@ export default function EmployerDashboard() {
                     {jobs.map((j) => (
                       <div
                         key={j.id}
-                        className="bg-[#fcfcfc] dark:bg-[#151517] border border-[#e5e5e5] dark:border-[#26262a] rounded-xl p-5 transition hover:border-[#E65A1E]/40"
+                        onClick={() => handleJobCardClick(j)}
+                        className={`rounded-xl p-5 transition cursor-pointer border ${
+                          j.is_completed || j.status === "completed"
+                            ? "bg-[#F0FDF4] dark:bg-[#0d2818] border-[#86EFAC] dark:border-[#1e4620] shadow-[2px_2px_0px_#0E6220]"
+                            : "bg-[#fcfcfc] dark:bg-[#151517] border-[#e5e5e5] dark:border-[#26262a] hover:border-[#E65A1E]/40"
+                        }`}
                       >
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="min-w-0 flex-1">
@@ -552,6 +626,11 @@ export default function EmployerDashboard() {
                               <span className="rounded-full bg-[#E65A1E]/10 text-[#E65A1E] px-2.5 py-0.5 text-[10px] font-bold">
                                 {j.category || j.bucket || "Creative"}
                               </span>
+                              {j.is_completed || j.status === "completed" ? (
+                                <span className="rounded-full bg-emerald-600 text-white px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                                  <CheckCircle2 size={11} /> Job Completed
+                                </span>
+                              ) : null}
                               {j.is_boosted && (
                                 <span className="rounded-full bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 text-[10px] font-bold flex items-center gap-1">
                                   <Flame size={11} className="fill-red-500" /> URGENT PINNED
@@ -567,8 +646,11 @@ export default function EmployerDashboard() {
                               )}
                             </div>
 
-                            <h3 className="text-base font-bold text-ink dark:text-white mt-1.5">
-                              {j.title}
+                            <h3 className="text-base font-bold text-ink dark:text-white mt-1.5 flex items-center gap-2">
+                              <span>{j.title}</span>
+                              {(j.is_completed || j.status === "completed") && (
+                                <span className="text-emerald-600 text-xs font-black">✓ Completed</span>
+                              )}
                             </h3>
 
                             {j.description && (
@@ -597,7 +679,10 @@ export default function EmployerDashboard() {
                             <button
                               type="button"
                               data-testid={`edit-job-btn-${j.id}`}
-                              onClick={() => setEditingJob(j)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingJob(j);
+                              }}
                               className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition shadow-sm"
                               title="Edit this gig's salary budget, description, category, and location"
                             >
@@ -606,23 +691,39 @@ export default function EmployerDashboard() {
                             </button>
 
                             {j.is_completed || j.status === "completed" ? (
-                              <span className="inline-flex items-center gap-1 rounded-lg border border-ok/30 bg-ok/10 text-ok px-3 py-2 text-xs font-bold">
-                                <CheckCircle2 size={13} /> COMPLETED &amp; REVIEWED
-                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleJobCardClick(j);
+                                }}
+                                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-black shadow-sm uppercase tracking-wide transition"
+                                title="Job Completed - Click to toggle"
+                              >
+                                <CheckCircle2 size={14} className="fill-white text-emerald-600" />
+                                <span>JOB COMPLETED</span>
+                              </button>
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => setReviewJob(j)}
-                                className="flex-1 md:flex-initial flex items-center justify-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition"
-                                title="Mark gig complete and leave rating & feedback for the freelancer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleJobCardClick(j);
+                                }}
+                                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 hover:bg-emerald-600 hover:text-white px-3.5 py-2 text-xs font-black text-emerald-700 dark:text-emerald-300 transition shadow-xs"
+                                title="Click to mark this job as completed"
                               >
-                                <CheckCircle2 size={13} className="text-ok" /> COMPLETE &amp; REVIEW
+                                <CheckCircle2 size={13} className="text-ok" />
+                                <span>COMPLETE JOB</span>
                               </button>
                             )}
 
                             <button
                               type="button"
-                              onClick={() => setLeaderboardJob(j)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLeaderboardJob(j);
+                              }}
                               className="flex-1 md:flex-initial flex items-center justify-center gap-1 rounded-lg bg-[#FFF3C4] border border-[#FFEAA0] px-3 py-2 text-xs font-bold text-[#92400E] hover:bg-[#FFEAA0] transition"
                               title="View Applicant Leaderboard & Bids"
                             >
@@ -632,7 +733,10 @@ export default function EmployerDashboard() {
                             {!j.is_boosted && !j.is_completed && (
                               <button
                                 type="button"
-                                onClick={() => handleBoostJob(j.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBoostJob(j.id);
+                                }}
                                 className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-100 transition shadow-sm"
                                 title="Boost this gig & blast real-time website notifications to all registered freelancers within a 5km radius"
                               >
@@ -643,7 +747,10 @@ export default function EmployerDashboard() {
 
                             <button
                               type="button"
-                              onClick={() => nav(`/employer/inbox`)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                nav(`/employer/inbox`);
+                              }}
                               className="flex-1 md:flex-initial flex items-center justify-center gap-1 rounded-lg bg-ink text-white dark:bg-white dark:text-black px-3 py-2 text-xs font-bold hover:bg-[#E65A1E] dark:hover:bg-[#E65A1E] dark:hover:text-white transition shadow-sm"
                             >
                               PROPOSALS <ChevronRight size={13} />
