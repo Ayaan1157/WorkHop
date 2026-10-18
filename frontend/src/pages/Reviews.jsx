@@ -521,13 +521,6 @@ export default function Reviews() {
     });
   }, [allReviews, activeCategory, selectedArea, ratingFilter, searchQuery]);
 
-  // Aggregate stats
-  const aggregateRating = useMemo(() => {
-    if (allReviews.length === 0) return "5.0";
-    const sum = allReviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
-    return (sum / allReviews.length).toFixed(1);
-  }, [allReviews]);
-
   const handleHelpful = (reviewId, initialCount = 10) => {
     setHelpfulMap((prev) => {
       const current = prev[reviewId] ?? initialCount;
@@ -593,9 +586,9 @@ export default function Reviews() {
           </span>
         </div>
 
-        {/* Hero Header & Metrics Strip */}
+        {/* Hero Header */}
         <div className="border-4 border-ink bg-white dark:bg-[#151517] p-6 sm:p-10 shadow-[6px_6px_0px_#121212] dark:shadow-[6px_6px_0px_#E65A1E]">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b-2 border-ink dark:border-zinc-800 pb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="max-w-2xl">
               <span className="flex items-center gap-1.5 text-xs font-black uppercase text-brand tracking-widest mb-1">
                 <Sparkles size={14} /> 100% VERIFIED CLIENT &amp; PRO FEEDBACK
@@ -622,34 +615,6 @@ export default function Reviews() {
               >
                 Post A Gig (Free) <ArrowRight size={14} />
               </Link>
-            </div>
-          </div>
-
-          {/* Key Trust Stats Strip */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 pt-2">
-            <div className="border-2 border-ink dark:border-zinc-800 bg-[#FFF9E6] dark:bg-amber-950/20 p-3 sm:p-4">
-              <div className="flex items-center gap-1 text-brand mb-1">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} size={15} fill="#E65A1E" className="text-brand" />
-                ))}
-              </div>
-              <p className="text-2xl sm:text-3xl font-black text-ink dark:text-white">{aggregateRating} / 5.0</p>
-              <p className="text-[10px] sm:text-xs font-bold uppercase text-inkmuted dark:text-stone-400 mt-0.5">Average Gig Rating</p>
-            </div>
-
-            <div className="border-2 border-ink dark:border-zinc-800 bg-sand/60 dark:bg-zinc-900 p-3 sm:p-4">
-              <p className="text-2xl sm:text-3xl font-black text-ink dark:text-white">1,400+</p>
-              <p className="text-[10px] sm:text-xs font-bold uppercase text-inkmuted dark:text-stone-400 mt-0.5">Completed Bengaluru Gigs</p>
-            </div>
-
-            <div className="border-2 border-ink dark:border-zinc-800 bg-[#E8F5E9] dark:bg-emerald-950/20 p-3 sm:p-4">
-              <p className="text-2xl sm:text-3xl font-black text-ok">0% FEE</p>
-              <p className="text-[10px] sm:text-xs font-bold uppercase text-inkmuted dark:text-stone-400 mt-0.5">Direct Payouts Kept</p>
-            </div>
-
-            <div className="border-2 border-ink dark:border-zinc-800 bg-sand/60 dark:bg-zinc-900 p-3 sm:p-4">
-              <p className="text-2xl sm:text-3xl font-black text-brand">5 KM</p>
-              <p className="text-[10px] sm:text-xs font-bold uppercase text-inkmuted dark:text-stone-400 mt-0.5">Hyperlocal Radius</p>
             </div>
           </div>
         </div>
