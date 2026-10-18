@@ -96,6 +96,7 @@ export default function Jobs() {
   const [sortBy, setSortBy] = useState("newest");
   const [viewTab, setViewTab] = useState("all"); // 'all' | 'saved'
   const [savedJobIds, setSavedJobIds] = useState(getSavedJobIds());
+  const [likedToast, setLikedToast] = useState(null);
   const [search, setSearch] = useState(sp.get("q") || "");
   const [convByJob, setConvByJob] = useState({});
 
@@ -183,8 +184,16 @@ export default function Jobs() {
 
   const handleToggleSave = (id, e) => {
     e.stopPropagation();
+    const wasSaved = savedJobIds.includes(id);
     const updated = toggleSaveJob(id);
     setSavedJobIds(updated);
+    setLikedToast({
+      message: !wasSaved ? "Gig added to Liked!" : "Gig removed from Liked.",
+      actionText: !wasSaved ? "View Liked" : null,
+    });
+    setTimeout(() => {
+      setLikedToast((curr) => (curr ? null : curr));
+    }, 3500);
   };
 
   const isVerified = isAdmin || !!status?.is_verified;
@@ -462,12 +471,16 @@ export default function Jobs() {
       return (
         <EmptyBlock
           testID="empty-state"
-          icon={<Search size={28} className="text-ink" />}
-          title={viewTab === "saved" ? "No saved gigs yet" : term ? `No matches for "${search.trim()}"` : "No gigs match your active filters"}
-          sub={viewTab === "saved" ? "Click the heart icon on any gig card to bookmark it for later." : "Try resetting your filters or searching for another keyword."}
+          icon={viewTab === "saved" ? <Heart size={32} className="text-brand fill-brand" /> : <Search size={28} className="text-ink" />}
+          title={viewTab === "saved" ? "No liked gigs yet" : term ? `No matches for "${search.trim()}"` : "No gigs match your active filters"}
+          sub={viewTab === "saved" ? "Tap the heart icon on any gig card to save and track all the gigs you like." : "Try resetting your filters or searching for another keyword."}
           action={
             viewTab === "saved" ? (
-              <button onClick={() => setViewTab("all")} className="border-2 border-ink bg-ink px-4 py-2 text-xs font-black text-white">
+              <button
+                type="button"
+                onClick={() => setViewTab("all")}
+                className="border-2 border-ink bg-brand px-5 py-2.5 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition"
+              >
                 BROWSE ALL GIGS
               </button>
             ) : (
@@ -518,6 +531,31 @@ export default function Jobs() {
         backTestID="jobs-back-btn"
         right={
           <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Dedicated LIKED Button */}
+            <button
+              type="button"
+              data-testid="topbar-liked-btn"
+              onClick={() => setViewTab((curr) => (curr === "saved" ? "all" : "saved"))}
+              className={`h-9 items-center gap-1.5 border-2 border-ink px-2.5 sm:px-3 text-xs font-black tracking-wider shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5 inline-flex ${
+                viewTab === "saved"
+                  ? "bg-brand text-white"
+                  : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525]"
+              }`}
+              title={viewTab === "saved" ? "Switch to All Gigs" : "View Liked Gigs"}
+            >
+              <Heart
+                size={14}
+                className={viewTab === "saved" ? "fill-white text-white" : (savedJobIds.length > 0 ? "fill-brand text-brand" : "text-brand")}
+              />
+              <span className="hidden xs:inline">LIKED</span>
+              <span
+                className={`flex h-4 min-w-[16px] px-1 items-center justify-center text-[9px] font-black ${
+                  viewTab === "saved" ? "bg-white text-brand" : "bg-brand text-white"
+                }`}
+              >
+                {savedJobIds.length}
+              </span>
+            </button>
             {isAdmin && (
               <button
                 onClick={() => nav("/employer")}
@@ -673,10 +711,12 @@ export default function Jobs() {
         </div>
       )}
 
-      {/* View Switcher Tabs: All Gigs vs Saved Bookmarks */}
+      {/* View Switcher Tabs: All Gigs vs Liked Gigs */}
       <div className="border-b-2 border-ink dark:border-zinc-800 bg-white dark:bg-[#121212]">
         <div className="mx-auto flex w-full max-w-[1600px] px-4 sm:px-8">
           <button
+            type="button"
+            data-testid="view-tab-all"
             onClick={() => setViewTab("all")}
             className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
               viewTab === "all" ? "border-brand bg-sand dark:bg-zinc-800 text-ink dark:text-white" : "border-transparent text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white"
@@ -685,13 +725,15 @@ export default function Jobs() {
             <span>ALL GIGS ({jobs.length})</span>
           </button>
           <button
+            type="button"
+            data-testid="view-tab-liked"
             onClick={() => setViewTab("saved")}
             className={`flex items-center gap-1.5 border-b-2 px-4 py-3 text-xs font-black tracking-wider transition ${
               viewTab === "saved" ? "border-brand bg-sand dark:bg-zinc-800 text-ink dark:text-white" : "border-transparent text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white"
             }`}
           >
-            <Heart size={14} className={savedJobIds.length > 0 ? "text-brand" : "text-inkmuted dark:text-zinc-400"} fill={savedJobIds.length > 0 ? "#E65A1E" : "none"} />
-            <span>SAVED ({savedJobIds.length})</span>
+            <Heart size={14} className={savedJobIds.length > 0 ? "text-brand fill-brand" : "text-inkmuted dark:text-zinc-400"} />
+            <span>LIKED GIGS ({savedJobIds.length})</span>
           </button>
         </div>
       </div>
@@ -731,6 +773,32 @@ export default function Jobs() {
           )}
 
           <div className="flex items-center gap-2">
+            {/* Dedicated LIKED Button in Toolbar */}
+            <button
+              type="button"
+              data-testid="toolbar-liked-btn"
+              onClick={() => setViewTab((curr) => (curr === "saved" ? "all" : "saved"))}
+              className={`flex h-10 sm:h-11 items-center gap-1.5 border-2 border-ink dark:border-zinc-700 px-3 sm:px-4 text-xs font-black tracking-wider transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
+                viewTab === "saved"
+                  ? "bg-brand text-white"
+                  : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-800"
+              }`}
+              title={viewTab === "saved" ? "Switch back to All Gigs" : "View Liked Gigs"}
+            >
+              <Heart
+                size={15}
+                className={viewTab === "saved" ? "fill-white text-white" : (savedJobIds.length > 0 ? "fill-brand text-brand" : "text-brand")}
+              />
+              <span className="text-xs font-black tracking-wider">LIKED</span>
+              <span
+                className={`flex h-4 min-w-[16px] px-1 items-center justify-center text-[9px] font-black ${
+                  viewTab === "saved" ? "bg-white text-brand" : "bg-brand text-white"
+                }`}
+              >
+                {savedJobIds.length}
+              </span>
+            </button>
+
             {/* Sorting Dropdown */}
             <div className="flex-1 sm:flex-none flex h-10 sm:h-11 items-center justify-between gap-1.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#1a1a1a] px-3 shadow-[1.5px_1.5px_0px_#121212]">
               <ArrowUpDown size={14} className="text-inkmuted dark:text-zinc-400 shrink-0" />
@@ -908,6 +976,30 @@ export default function Jobs() {
 
       {/* Gig Cards Grid */}
       <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-8 pb-24">
+        {viewTab === "saved" && (
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-2 border-ink bg-sand/70 dark:bg-[#1a1a1a] p-3.5 shadow-[2px_2px_0px_#121212]">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-brand text-white shadow-[1px_1px_0px_#121212] shrink-0">
+                <Heart size={15} className="fill-white" />
+              </span>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-ink dark:text-white">
+                  Viewing Liked Gigs ({filtered.length} {filtered.length === 1 ? "gig" : "gigs"})
+                </p>
+                <p className="text-[11px] font-semibold text-inkmuted dark:text-zinc-400">
+                  Showing gigs you’ve hearted. Click the heart on any gig card to unlike it.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setViewTab("all")}
+              className="self-start sm:self-auto border-2 border-ink bg-white dark:bg-zinc-800 px-3 py-1.5 text-xs font-black text-ink dark:text-white hover:bg-brand hover:text-white transition shadow-[1px_1px_0px_#121212]"
+            >
+              ← VIEW ALL GIGS
+            </button>
+          </div>
+        )}
         {gigCardsGrid}
       </div>
 
@@ -1532,6 +1624,43 @@ export default function Jobs() {
         initialCategory={catFilter !== "ALL" ? catFilter : ""}
       />
 
+      {/* Toast notification for Liked actions */}
+      {likedToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          data-testid="liked-toast"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 border-2 border-ink bg-white dark:bg-[#121212] px-4 py-3 shadow-[4px_4px_0px_#121212] dark:shadow-[4px_4px_0px_#E65A1E] animate-in fade-in slide-in-from-bottom-2"
+        >
+          <span className="flex h-6 w-6 items-center justify-center bg-brand text-white border border-ink">
+            <Heart size={13} className="fill-white" />
+          </span>
+          <span className="text-xs font-black text-ink dark:text-white">
+            {likedToast.message}
+          </span>
+          {likedToast.actionText && (
+            <button
+              type="button"
+              onClick={() => {
+                setViewTab("saved");
+                setLikedToast(null);
+              }}
+              className="border border-ink bg-brand px-2.5 py-1 text-[10px] font-black uppercase text-white hover:bg-black transition shadow-[1px_1px_0px_#121212]"
+            >
+              {likedToast.actionText}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setLikedToast(null)}
+            className="text-inkmuted hover:text-ink dark:text-zinc-400 dark:hover:text-white ml-1"
+            title="Dismiss notification"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* FLOATING CIRCULAR CHAT WIDGET (Bottom Right) */}
       <FloatingChatWidget role="freelancer" />
     </Shell>
@@ -1601,15 +1730,16 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
             </span>
             {/* Bookmark heart button */}
             <button
+              type="button"
               data-testid={`job-save-btn-${index}`}
               onClick={onToggleSave}
               className="flex h-7 w-7 items-center justify-center border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-sand dark:hover:bg-zinc-700 transition"
-              title={isSaved ? "Remove from saved" : "Save gig"}
+              title={isSaved ? "Liked (click to unlike)" : "Like this gig"}
+              aria-label={isSaved ? "Liked gig" : "Like gig"}
             >
               <Heart
                 size={14}
-                className={isSaved ? "text-brand" : "text-inkmuted dark:text-zinc-400"}
-                fill={isSaved ? "#E65A1E" : "none"}
+                className={isSaved ? "text-brand fill-brand" : "text-inkmuted dark:text-zinc-400"}
               />
             </button>
           </div>
