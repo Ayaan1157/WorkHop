@@ -101,8 +101,8 @@ async function mockRouter(path, method = "GET", body = null) {
     const stored = getStoredJobs();
     // For dummy employer profile: remove most of the jobs and show only 2-3 clean demo jobs
     const completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
-    const dummyJobs = stored.slice(0, 3).map((job, idx) => {
-      const isDone = completedMap[job.id] !== undefined ? completedMap[job.id] : (idx === 1);
+    const dummyJobs = stored.slice(0, 3).map((job) => {
+      const isDone = Boolean(completedMap[job.id]);
       return {
         ...job,
         is_dummy: true,
@@ -123,18 +123,32 @@ async function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath.startsWith("/jobs") && method === "GET") {
     const stored = getStoredJobs();
+    let completedMap = {};
+    try {
+      completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
+    } catch {}
+    let customJobs = [];
+    try {
+      customJobs = JSON.parse(localStorage.getItem("workhop_custom_jobs") || "[]");
+    } catch {}
+    const completedCustomIds = new Set(customJobs.filter(j => j.is_completed || j.status === "completed").map(j => j.id));
+
+    // Once a job is completed, the listing is removed from public search & feeds
+    const openStored = stored.filter(j => !j.is_completed && j.status !== "completed" && !completedMap[j.id] && !completedCustomIds.has(j.id));
+
     if (isSupabaseConfigured()) {
       try {
         const live = await supabaseGetJobs();
         if (Array.isArray(live) && live.length > 0) {
           const liveIds = new Set(live.map((j) => String(j.id)));
           const liveTitles = new Set(live.map((j) => (j.title || "").toLowerCase().trim()));
-          const filtered = stored.filter((j) => !liveIds.has(String(j.id)) && !liveTitles.has((j.title || "").toLowerCase().trim()));
-          return [...live, ...filtered];
+          const filtered = openStored.filter((j) => !liveIds.has(String(j.id)) && !liveTitles.has((j.title || "").toLowerCase().trim()));
+          const openLive = live.filter(j => !j.is_completed && j.status !== "completed" && !completedMap[j.id]);
+          return [...openLive, ...filtered];
         }
       } catch {}
     }
-    return stored;
+    return openStored;
   }
   if (cleanPath === "/employer/jobs" && method === "POST") {
     try {

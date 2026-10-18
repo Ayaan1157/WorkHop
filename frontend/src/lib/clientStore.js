@@ -425,8 +425,13 @@ export function getEmployerProfile(companyName, fallbackArea = "Bengaluru") {
   }
 
   const allJobs = getStoredJobs();
+  let completedMap = {};
+  try {
+    completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
+  } catch {}
   const companyJobs = allJobs.filter(
     (j) => (j.company_name || "").trim().toLowerCase() === companyName.trim().toLowerCase()
+      && !j.is_completed && j.status !== "completed" && !completedMap[j.id]
   );
 
   const matchedJob = companyJobs[0] || null;

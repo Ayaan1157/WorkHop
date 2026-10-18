@@ -5,7 +5,7 @@ import {
   Phone, Mail, CheckCircle2, ChevronRight, ChevronLeft, Coins, Trophy,
   Pencil, X, ShieldCheck, Star, Check, ArrowRightLeft,
   Flame, Plus, Menu, LayoutGrid, MessagesSquare, Zap,
-  Map as MapIcon, Tag, LifeBuoy, FileText, LogOut
+  Map as MapIcon, Tag, LifeBuoy, FileText, LogOut, RotateCcw
 } from "lucide-react";
 import { Shell } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
@@ -71,6 +71,7 @@ export default function EmployerDashboard() {
   const [savedPros, setSavedPros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [jobCompletedNotice, setJobCompletedNotice] = useState(null);
+  const [jobsTab, setJobsTab] = useState("active"); // "active" | "completed"
 
   // Load Employer Data
   const loadDashboardData = useCallback(async () => {
@@ -90,8 +91,8 @@ export default function EmployerDashboard() {
       if (customJobs.length === 0) {
         // Dummy profile: remove most of the jobs and show only 2-3 clean demo jobs
         const completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
-        allJobs = allJobs.slice(0, 3).map((job, idx) => {
-          const isDone = completedMap[job.id] !== undefined ? completedMap[job.id] : (idx === 1);
+        allJobs = allJobs.slice(0, 3).map((job) => {
+          const isDone = Boolean(completedMap[job.id]);
           return {
             ...job,
             is_dummy: true,
@@ -127,6 +128,17 @@ export default function EmployerDashboard() {
     completedMap[j.id] = nextCompleted;
     localStorage.setItem("workhop_dummy_completed_jobs", JSON.stringify(completedMap));
 
+    // Also update in custom jobs if applicable
+    const customJobs = JSON.parse(localStorage.getItem("workhop_custom_jobs") || "[]");
+    if (customJobs.some((cj) => cj.id === j.id)) {
+      const updatedCustom = customJobs.map((cj) =>
+        cj.id === j.id
+          ? { ...cj, is_completed: nextCompleted, status: nextCompleted ? "completed" : "open" }
+          : cj
+      );
+      localStorage.setItem("workhop_custom_jobs", JSON.stringify(updatedCustom));
+    }
+
     setJobs((prev) =>
       prev.map((item) =>
         item.id === j.id
@@ -143,9 +155,20 @@ export default function EmployerDashboard() {
       setJobCompletedNotice({
         id: j.id,
         title: j.title,
-        message: `Job completed! "${j.title}" is now marked as Job Completed.`,
+        job: { ...j, is_completed: true },
+        isCompleted: true,
+        message: `Job completed! "${j.title}" has been marked completed and the listing is removed.`,
       });
-      setTimeout(() => setJobCompletedNotice(null), 4000);
+      setTimeout(() => setJobCompletedNotice((curr) => (curr?.id === j.id ? null : curr)), 6000);
+    } else {
+      setJobCompletedNotice({
+        id: j.id,
+        title: j.title,
+        job: { ...j, is_completed: false },
+        isCompleted: false,
+        message: `Listing restored! "${j.title}" is now active again.`,
+      });
+      setTimeout(() => setJobCompletedNotice((curr) => (curr?.id === j.id ? null : curr)), 4000);
     }
   };
 
@@ -205,7 +228,10 @@ export default function EmployerDashboard() {
   };
 
   const totalApplicants = chats.length;
-  const activeJobsCount = jobs.filter((j) => !j.is_filled).length;
+  const activeJobs = jobs.filter((j) => !j.is_completed && j.status !== "completed" && !j.is_filled);
+  const completedJobs = jobs.filter((j) => j.is_completed || j.status === "completed" || j.is_filled);
+  const activeJobsCount = activeJobs.length;
+  const displayedJobs = jobsTab === "active" ? activeJobs : completedJobs;
 
   const navMenuItems = [
     {
@@ -553,64 +579,139 @@ export default function EmployerDashboard() {
 
               {/* 3. Gigs Posted by Employer */}
               <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                   <div className="flex items-center gap-2">
                     <Briefcase size={18} className="text-[#E65A1E]" />
                     <h2 className="text-base font-bold text-ink dark:text-white">Gigs Posted by You</h2>
                     <span className="text-xs font-bold text-[#E65A1E] bg-[#E65A1E]/10 px-2.5 py-0.5 rounded-full">
-                      {jobs.length} Gigs
+                      {activeJobs.length} Active
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => nav("/employer/post-job")}
-                    className="flex items-center gap-1 text-xs font-bold text-[#E65A1E] hover:underline"
-                  >
-                    <Plus size={14} /> Post Another Gig
-                  </button>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* View Switcher Tabs: Active vs Completed / Removed */}
+                    <div className="flex items-center gap-1 border border-[#e5e5e5] dark:border-[#26262a] bg-[#f5f5f5] dark:bg-[#1a1a1a] p-1 rounded-lg">
+                      <button
+                        type="button"
+                        data-testid="employer-jobs-tab-active"
+                        onClick={() => setJobsTab("active")}
+                        className={`px-3 py-1 rounded text-xs font-bold transition ${
+                          jobsTab === "active"
+                            ? "bg-white dark:bg-[#252525] text-ink dark:text-white shadow-xs"
+                            : "text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white"
+                        }`}
+                      >
+                        Active Gigs ({activeJobs.length})
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="employer-jobs-tab-completed"
+                        onClick={() => setJobsTab("completed")}
+                        className={`px-3 py-1 rounded text-xs font-bold transition flex items-center gap-1.5 ${
+                          jobsTab === "completed"
+                            ? "bg-white dark:bg-[#252525] text-ink dark:text-white shadow-xs"
+                            : "text-inkmuted dark:text-zinc-400 hover:text-ink dark:hover:text-white"
+                        }`}
+                      >
+                        <CheckCircle2 size={12} className={completedJobs.length > 0 ? "text-emerald-600" : ""} />
+                        <span>Completed / Removed ({completedJobs.length})</span>
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => nav("/employer/post-job")}
+                      className="hidden sm:flex items-center gap-1 text-xs font-bold text-[#E65A1E] hover:underline"
+                    >
+                      <Plus size={14} /> Post Another Gig
+                    </button>
+                  </div>
                 </div>
 
                 {jobCompletedNotice && (
-                  <div className="mb-4 bg-[#E5F7E0] dark:bg-[#132c18] border-2 border-ink p-3.5 text-ink dark:text-white flex items-center justify-between shadow-[2px_2px_0px_#121212] animate-in fade-in slide-in-from-top-1">
+                  <div className="mb-4 bg-[#E5F7E0] dark:bg-[#132c18] border-2 border-ink p-3.5 text-ink dark:text-white flex items-center justify-between gap-3 shadow-[2px_2px_0px_#121212] animate-in fade-in slide-in-from-top-1">
                     <div className="flex items-center gap-2.5">
                       <CheckCircle2 size={20} className="text-[#0E6220] dark:text-[#6ee7b7] shrink-0" />
                       <div>
                         <p className="text-xs font-black uppercase tracking-wider text-[#0E6220] dark:text-[#6ee7b7]">
-                          Job Completed
+                          {jobCompletedNotice.isCompleted ? "Job Completed · Listing Removed" : "Listing Restored"}
                         </p>
                         <p className="text-[11px] font-bold text-inkmuted dark:text-stone-300">
                           {jobCompletedNotice.message}
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setJobCompletedNotice(null)}
-                      className="border border-ink bg-white dark:bg-[#252525] px-2 py-0.5 text-xs font-black"
-                    >
-                      ✕
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {jobCompletedNotice.job && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleJobCardClick(jobCompletedNotice.job);
+                            setJobCompletedNotice(null);
+                          }}
+                          className="border border-ink bg-white dark:bg-[#252525] px-2.5 py-1 text-xs font-black text-ink dark:text-white hover:bg-brand hover:text-white transition shadow-[1px_1px_0px_#121212]"
+                        >
+                          {jobCompletedNotice.isCompleted ? "UNDO" : "DISMISS"}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setJobCompletedNotice(null)}
+                        className="border border-ink bg-white dark:bg-[#252525] px-2 py-0.5 text-xs font-black"
+                        title="Dismiss notification"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {jobs.length === 0 ? (
+                {displayedJobs.length === 0 ? (
                   <div className="py-12 text-center border border-dashed border-[#ddd] dark:border-[#333] rounded-xl p-6">
-                    <Briefcase size={36} className="mx-auto text-inkmuted/40 mb-3" />
-                    <h4 className="text-sm font-bold text-ink dark:text-white">No gigs posted yet</h4>
+                    <CheckCircle2 size={36} className="mx-auto text-emerald-600 mb-3" />
+                    <h4 className="text-sm font-bold text-ink dark:text-white">
+                      {jobsTab === "active"
+                        ? (completedJobs.length > 0 ? "All jobs completed! No active listings." : "No gigs posted yet")
+                        : "No completed gigs yet"}
+                    </h4>
                     <p className="text-xs text-inkmuted dark:text-[#888] mt-1 max-w-sm mx-auto">
-                      Post your first gig for free and connect with verified local Bengaluru talent within hours.
+                      {jobsTab === "active"
+                        ? (completedJobs.length > 0
+                            ? "Completed gig listings have been removed from the active board. You can post a new gig or view your completed gigs history."
+                            : "Post your first gig for free and connect with verified local Bengaluru talent within hours.")
+                        : "When a gig is completed, it is removed from active listings and archived here."}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => nav("/employer/post-job")}
-                      className="mt-4 rounded-lg bg-[#E65A1E] px-4 py-2 text-xs font-bold text-white hover:bg-[#F06B2E] transition shadow-sm inline-flex items-center gap-1.5"
-                    >
-                      <PlusCircle size={14} /> Post a Free Gig Now
-                    </button>
+                    <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => nav("/employer/post-job")}
+                        className="rounded-lg bg-[#E65A1E] px-4 py-2 text-xs font-bold text-white hover:bg-[#F06B2E] transition shadow-sm inline-flex items-center gap-1.5"
+                      >
+                        <PlusCircle size={14} /> Post a Free Gig Now
+                      </button>
+                      {jobsTab === "active" && completedJobs.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setJobsTab("completed")}
+                          className="rounded-lg border border-ink/20 dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-4 py-2 text-xs font-bold text-ink dark:text-white hover:bg-ink hover:text-white transition inline-flex items-center gap-1.5"
+                        >
+                          View Completed Gigs ({completedJobs.length})
+                        </button>
+                      )}
+                      {jobsTab === "completed" && activeJobs.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setJobsTab("active")}
+                          className="rounded-lg border border-ink/20 dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-4 py-2 text-xs font-bold text-ink dark:text-white hover:bg-ink hover:text-white transition inline-flex items-center gap-1.5"
+                        >
+                          View Active Gigs ({activeJobs.length})
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    {jobs.map((j) => (
+                    {displayedJobs.map((j) => (
                       <div
                         key={j.id}
                         onClick={() => handleJobCardClick(j)}
@@ -628,7 +729,7 @@ export default function EmployerDashboard() {
                               </span>
                               {j.is_completed || j.status === "completed" ? (
                                 <span className="rounded-full bg-emerald-600 text-white px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                                  <CheckCircle2 size={11} /> Job Completed
+                                  <CheckCircle2 size={11} /> Job Completed · Removed from Listing
                                 </span>
                               ) : null}
                               {j.is_boosted && (
@@ -697,11 +798,11 @@ export default function EmployerDashboard() {
                                   e.stopPropagation();
                                   handleJobCardClick(j);
                                 }}
-                                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-black shadow-sm uppercase tracking-wide transition"
-                                title="Job Completed - Click to toggle"
+                                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg bg-zinc-100 hover:bg-ink hover:text-white dark:bg-zinc-800 dark:hover:bg-white dark:hover:text-black border border-ink/20 px-3.5 py-2 text-xs font-black transition shadow-xs"
+                                title="Click to restore this gig back to active listings"
                               >
-                                <CheckCircle2 size={14} className="fill-white text-emerald-600" />
-                                <span>JOB COMPLETED</span>
+                                <RotateCcw size={13} />
+                                <span>REOPEN GIG</span>
                               </button>
                             ) : (
                               <button
@@ -711,10 +812,10 @@ export default function EmployerDashboard() {
                                   handleJobCardClick(j);
                                 }}
                                 className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 hover:bg-emerald-600 hover:text-white px-3.5 py-2 text-xs font-black text-emerald-700 dark:text-emerald-300 transition shadow-xs"
-                                title="Click to mark this job as completed"
+                                title="Click to mark this job as completed and remove listing"
                               >
                                 <CheckCircle2 size={13} className="text-ok" />
-                                <span>COMPLETE JOB</span>
+                                <span>COMPLETE &amp; REMOVE</span>
                               </button>
                             )}
 

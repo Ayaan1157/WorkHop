@@ -212,6 +212,12 @@ export default function Jobs() {
   };
 
   const passes = (j) => {
+    // Completed jobs are removed from public listings
+    if (j.is_completed || j.status === "completed") return false;
+    try {
+      const completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
+      if (completedMap[j.id]) return false;
+    } catch {}
     if (viewTab === "saved" && !savedJobIds.includes(j.id)) return false;
     if (filters.budget) {
       const [a, b] = filters.budget.split("-");
