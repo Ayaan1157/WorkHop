@@ -138,7 +138,10 @@ export default function Categories() {
                 </span>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="bg-[#FFE082] text-ink px-2 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                    <span
+                      className="bg-[#FFE082] !text-black px-2 py-0.5 text-[10px] font-black uppercase tracking-wider"
+                      style={{ color: "#000000" }}
+                    >
                       FEATURED CATEGORY
                     </span>
                     <span className="text-xs font-bold text-stone-400">HIGH DEMAND IN BENGALURU</span>

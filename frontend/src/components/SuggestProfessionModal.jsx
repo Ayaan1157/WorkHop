@@ -152,7 +152,10 @@ export default function SuggestProfessionModal({
               <CheckCircle2 size={32} />
             </div>
 
-            <span className="inline-block bg-[#FFE082] text-ink px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider mb-2 border border-ink shadow-[1px_1px_0px_#121212]">
+            <span
+              className="inline-block bg-[#FFE082] !text-black px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider mb-2 border border-ink shadow-[1px_1px_0px_#121212]"
+              style={{ color: "#000000" }}
+            >
               SUGGESTION LOGGED ✓
             </span>
 

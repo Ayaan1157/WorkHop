@@ -1190,7 +1190,10 @@ export default function Landing() {
             </span>
             <div className="shrink-0">
               <div className="flex items-center gap-1.5">
-                <span className="bg-[#FFE082] text-ink px-2 py-0.2 text-[9px] font-black uppercase tracking-wider">
+                <span
+                  className="bg-[#FFE082] !text-black px-2 py-0.5 text-[10px] font-black uppercase tracking-wider"
+                  style={{ color: "#000000" }}
+                >
                   NEW CATEGORY
                 </span>
                 <span className="text-[11px] font-bold text-stone-400">TRENDING IN BENGALURU</span>
