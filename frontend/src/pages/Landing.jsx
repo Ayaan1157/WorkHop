@@ -1182,51 +1182,51 @@ export default function Landing() {
       </section>
 
       {/* Featured AI & Smart Automations Strip / Banner */}
-      <section className="border-b-2 border-ink bg-[#121212] text-white px-4 py-6 sm:px-10 lg:px-16 xl:px-20">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div className="flex items-center gap-3.5">
-            <span className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center border-2 border-white bg-brand text-white shadow-[2px_2px_0px_#ffffff]">
-              <Sparkles className="h-9 w-9 sm:h-11 sm:w-11 animate-pulse" strokeWidth={2.3} />
+      <section className="border-b-2 border-ink bg-[#121212] text-white px-4 py-5 sm:px-8 lg:px-12 xl:px-16">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center border-2 border-white bg-brand text-white shadow-[2px_2px_0px_#ffffff]">
+              <Sparkles className="h-8 w-8 sm:h-9 sm:w-9 animate-pulse" strokeWidth={2.3} />
             </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="bg-[#FFE082] text-ink px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
+            <div className="shrink-0">
+              <div className="flex items-center gap-1.5">
+                <span className="bg-[#FFE082] text-ink px-2 py-0.2 text-[9px] font-black uppercase tracking-wider">
                   NEW CATEGORY
                 </span>
-                <span className="text-xs font-bold text-stone-400">TRENDING IN BENGALURU</span>
+                <span className="text-[11px] font-bold text-stone-400">TRENDING IN BENGALURU</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight whitespace-nowrap">
                 AI &amp; Smart Automations
               </h2>
             </div>
           </div>
 
-          {/* 5 Quick Sub-Tags */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* 5 Quick Sub-Tags - strictly fits in ONE line */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto scrollbar-none pb-1 xl:pb-0">
             {[
               {
                 title: "AI Video & Reels",
-                sub: "Avatars, UGC Ads, Voiceovers",
+                sub: "Avatars, UGC Ads",
                 query: "AI UGC & Reel Generation",
               },
               {
-                title: "AI Graphic & 3D Render",
-                sub: "Midjourney, Studio Shots, Architect Visuals",
+                title: "AI Graphic & 3D",
+                sub: "Midjourney & 3D",
                 query: "AI Product & Studio Photography",
               },
               {
                 title: "Automations & Bots",
-                sub: "WhatsApp Bots, Make.com, n8n, CRM Sync",
+                sub: "Bots & Workflows",
                 query: "No-Code Workflow Automation",
               },
               {
                 title: "AI Content & SEO",
-                sub: "Human Editing, Prompt Writing, Brand Copy",
+                sub: "Prompts & Copy",
                 query: "AI Content Humanization & SEO Polishing",
               },
               {
                 title: "Coding with AI",
-                sub: "Web Scripts, Bug Fixes, Tool Setup",
+                sub: "Scripts & Bug Fixes",
                 query: "Custom Vibe Coding, Scripts & Web Fixes",
               },
             ].map((tag) => (
@@ -1234,13 +1234,13 @@ export default function Landing() {
                 key={tag.title}
                 type="button"
                 onClick={() => nav(`/freelancer/jobs?q=${encodeURIComponent(tag.query)}`)}
-                className="group flex flex-col text-left border-2 border-white/80 bg-white/5 hover:bg-brand hover:border-brand p-2.5 transition shadow-[2px_2px_0px_rgba(255,255,255,0.4)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 cursor-pointer"
+                className="group flex flex-col text-left border-2 border-white/80 bg-white/5 hover:bg-brand hover:border-brand px-2.5 py-1.5 transition shadow-[2px_2px_0px_rgba(255,255,255,0.4)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 cursor-pointer shrink-0 whitespace-nowrap"
               >
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-sm font-black text-white group-hover:text-white">
+                <div className="flex items-center gap-1">
+                  <span className="text-xs font-black text-white group-hover:text-white">
                     {tag.title}
                   </span>
-                  <ArrowRight size={13} className="text-brand group-hover:text-white group-hover:translate-x-0.5 transition" />
+                  <ArrowRight size={11} className="text-brand group-hover:text-white group-hover:translate-x-0.5 transition shrink-0" />
                 </div>
                 <span className="text-[10px] text-stone-300 font-medium group-hover:text-white/90">
                   {tag.sub}
