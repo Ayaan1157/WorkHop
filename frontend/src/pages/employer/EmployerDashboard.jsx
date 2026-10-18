@@ -249,13 +249,6 @@ export default function EmployerDashboard() {
       testID: "profile-employer",
     },
     {
-      icon: Tag,
-      label: "Employee Site (Find Gigs)",
-      sub: "Browse 50+ active gigs in 5km radius",
-      to: "/freelancer/jobs",
-      testID: "profile-jobs",
-    },
-    {
       icon: MessagesSquare,
       label: "My Messages & Proposals",
       sub: "Chats with applicants & pros",
@@ -308,16 +301,18 @@ export default function EmployerDashboard() {
             </button>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                data-testid="switch-to-freelancer-btn"
-                onClick={handleSwitchToFreelancer}
-                className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#ddd] dark:border-[#333] bg-[#FFF3C4] px-3 py-1.5 text-xs font-black text-ink hover:bg-[#FFEAA0] transition shadow-xs"
-                title="Switch to Freelancer Profile"
-              >
-                <ArrowRightLeft size={13} className="text-brand" />
-                <span>FREELANCER VIEW</span>
-              </button>
+              {user?.is_admin && (
+                <button
+                  type="button"
+                  data-testid="switch-to-freelancer-btn"
+                  onClick={handleSwitchToFreelancer}
+                  className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#ddd] dark:border-[#333] bg-[#FFF3C4] px-3 py-1.5 text-xs font-black text-ink hover:bg-[#FFEAA0] transition shadow-xs"
+                  title="Switch to Freelancer Profile (Admin)"
+                >
+                  <ArrowRightLeft size={13} className="text-brand" />
+                  <span>FREELANCER VIEW</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -991,23 +986,25 @@ export default function EmployerDashboard() {
                   </button>
                 </div>
 
-                {/* Quick Switch Role Card */}
-                <div className="bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl p-4">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <ArrowRightLeft size={14} className="text-[#E65A1E]" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-ink dark:text-white">SWITCH ROLE VIEW</span>
+                {/* Quick Switch Role Card (Admin Only) */}
+                {user?.is_admin && (
+                  <div className="bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl p-4">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <ArrowRightLeft size={14} className="text-[#E65A1E]" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-ink dark:text-white">SWITCH ROLE VIEW (ADMIN)</span>
+                    </div>
+                    <p className="text-xs text-inkmuted dark:text-[#888] mb-3">
+                      Switch freely between your Employer Hiring Dashboard and Freelancer Pro Profile.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleSwitchToFreelancer}
+                      className="w-full flex items-center justify-center gap-1.5 bg-ink text-white dark:bg-white dark:text-black py-2 rounded-lg text-xs font-bold hover:bg-[#E65A1E] hover:text-white transition"
+                    >
+                      <ArrowRightLeft size={13} /> SWITCH TO FREELANCER VIEW
+                    </button>
                   </div>
-                  <p className="text-xs text-inkmuted dark:text-[#888] mb-3">
-                    Switch freely between your Employer Hiring Dashboard and Freelancer Pro Profile.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleSwitchToFreelancer}
-                    className="w-full flex items-center justify-center gap-1.5 bg-ink text-white dark:bg-white dark:text-black py-2 rounded-lg text-xs font-bold hover:bg-[#E65A1E] hover:text-white transition"
-                  >
-                    <ArrowRightLeft size={13} /> SWITCH TO FREELANCER VIEW
-                  </button>
-                </div>
+                )}
 
                 {/* Navigation Links list */}
                 <div className="flex flex-col gap-1.5 mt-2">

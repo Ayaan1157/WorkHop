@@ -32,6 +32,10 @@ export default function Landing() {
   const { isDark, toggleTheme } = useTheme();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
 
+  const userRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
+  const isEmployerUser = Boolean(user && (userRole?.includes("employ") || userRole?.includes("client")));
+  const isFreelancerUser = Boolean(user && !isEmployerUser);
+
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalRole, setAuthModalRole] = useState("freelancer");
   const [authModalMode, setAuthModalMode] = useState("signin");
@@ -386,7 +390,7 @@ export default function Landing() {
 
   const chooseRole = (role) => {
     if (user) {
-      if (role === "employer") return nav("/employer");
+      if (isEmployerUser) return nav("/employer");
       return nav("/freelancer/jobs");
     }
     setAuthModalRole(role);
@@ -936,7 +940,7 @@ export default function Landing() {
                 { label: "LIVE MAP", path: "/map", testId: "nav-map" },
                 { label: "CATEGORIES", path: "/categories", testId: "nav-categories" },
                 { label: "REVIEWS", path: "/reviews", testId: "nav-reviews" },
-                { label: "PLANS", path: "/employer/plans", testId: "nav-plans" },
+                { label: "PLANS", path: isFree ? "/plans?tab=freelancer" : "/employer/plans", testId: "nav-plans" },
               ].filter((link) => {
                 if (!user) return true;
                 if (link.forRole === "employer") return isEmp;
@@ -1048,7 +1052,7 @@ export default function Landing() {
                   { label: "LIVE MAP", path: "/map" },
                   { label: "CATEGORIES", path: "/categories" },
                   { label: "REVIEWS", path: "/reviews" },
-                  { label: "PLANS", path: "/employer/plans" },
+                  { label: "PLANS", path: isFree ? "/plans?tab=freelancer" : "/employer/plans" },
                 ].filter((link) => {
                   if (!user) return true;
                   if (link.forRole === "employer") return isEmp;
@@ -1083,26 +1087,33 @@ export default function Landing() {
               </span>
               <div>
                 <p className="text-xs sm:text-sm font-black text-ink dark:text-white">Welcome back, {user.name || "Member"}!</p>
-                <p className="text-[10px] sm:text-[11px] text-inkmuted dark:text-stone-400">Select your workspace to view experts or apply to gigs</p>
+                <p className="text-[10px] sm:text-[11px] text-inkmuted dark:text-stone-400">
+                  {isEmployerUser
+                    ? "Your Employer Workspace · View and hire verified local experts"
+                    : "Your Freelancer Workspace · Apply to active gigs and chat with employers"}
+                </p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <button
-                data-testid="quick-employer-btn"
-                onClick={() => nav("/employer")}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-ink bg-ink text-white px-3.5 py-2 text-xs font-black shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
-              >
-                <Users size={14} />
-                <span>🏢 EMPLOYER</span>
-              </button>
-              <button
-                data-testid="quick-freelancer-btn"
-                onClick={() => nav("/freelancer/jobs")}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-ink bg-brand text-white px-3.5 py-2 text-xs font-black shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
-              >
-                <Briefcase size={14} />
-                <span>💼 FREELANCER</span>
-              </button>
+              {isEmployerUser ? (
+                <button
+                  data-testid="quick-employer-btn"
+                  onClick={() => nav("/employer")}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-ink bg-ink text-white px-4 py-2 text-xs font-black shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
+                >
+                  <Users size={14} />
+                  <span>🏢 GO TO EMPLOYER SITE</span>
+                </button>
+              ) : (
+                <button
+                  data-testid="quick-freelancer-btn"
+                  onClick={() => nav("/freelancer/jobs")}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-ink bg-brand text-white px-4 py-2 text-xs font-black shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
+                >
+                  <Briefcase size={14} />
+                  <span>💼 GO TO FREELANCER SITE</span>
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1122,61 +1133,65 @@ export default function Landing() {
         </div>
 
         {/* Dual Action Cards Stretching Full Width */}
-        <div className="mt-8 sm:mt-12 grid grid-cols-1 gap-5 sm:gap-8 md:grid-cols-2">
+        <div className={`mt-8 sm:mt-12 grid grid-cols-1 gap-5 sm:gap-8 ${user ? "md:grid-cols-1" : "md:grid-cols-2"}`}>
           
-          {/* Employer Card */}
-          <button
-            data-testid="role-employer-card"
-            onClick={() => chooseRole("employer")}
-            className="group border-2 border-ink bg-white dark:bg-[#1a1a1a] p-4 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
-          >
-            <div className="mb-4 sm:mb-6 flex items-center justify-between">
-              <span className="bg-brand px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.1em] text-white">
-                I'M HIRING (EMPLOYER)
-              </span>
-              <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-ink bg-sand dark:bg-[#2a2a2a] group-hover:bg-brand group-hover:text-white transition">
-                <ArrowRight size={20} className="text-ink dark:text-white group-hover:text-white" />
+          {/* Employer Card: Shown if not logged in OR if logged in as Employer */}
+          {(!user || isEmployerUser) && (
+            <button
+              data-testid="role-employer-card"
+              onClick={() => chooseRole("employer")}
+              className="group border-2 border-ink bg-white dark:bg-[#1a1a1a] p-4 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
+            >
+              <div className="mb-4 sm:mb-6 flex items-center justify-between">
+                <span className="bg-brand px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.1em] text-white">
+                  I'M HIRING (EMPLOYER)
+                </span>
+                <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-ink bg-sand dark:bg-[#2a2a2a] group-hover:bg-brand group-hover:text-white transition">
+                  <ArrowRight size={20} className="text-ink dark:text-white group-hover:text-white" />
+                </div>
               </div>
-            </div>
-            <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-black dark:text-white">
-              Find 5 verified experts on your block
-            </p>
-            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-black dark:text-white/80 font-semibold">
-              Unlock direct phone numbers and full verified portfolios of top designers, developers, videographers, and creators near you.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-ink/20 dark:border-white/20 pt-4 text-xs font-black text-brand">
-              <span>One-time unlock from ₹199</span>
-              <span>•</span>
-              <span>Instant Call &amp; Chat</span>
-            </div>
-          </button>
+              <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-black dark:text-white">
+                Find 5 verified experts on your block
+              </p>
+              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-black dark:text-white/80 font-semibold">
+                Unlock direct phone numbers and full verified portfolios of top designers, developers, videographers, and creators near you.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-ink/20 dark:border-white/20 pt-4 text-xs font-black text-brand">
+                <span>One-time unlock from ₹199</span>
+                <span>•</span>
+                <span>Instant Call &amp; Chat</span>
+              </div>
+            </button>
+          )}
 
-          {/* Freelancer Card */}
-          <button
-            data-testid="role-freelancer-card"
-            onClick={() => chooseRole("freelancer")}
-            className="group border-2 border-ink bg-brand p-4 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
-          >
-            <div className="mb-4 sm:mb-6 flex items-center justify-between">
-              <span className="bg-ink px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.1em] text-white">
-                I'M LOOKING FOR GIGS (FREELANCER)
-              </span>
-              <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-ink transition">
-                <ArrowRight size={20} className="text-white" />
+          {/* Freelancer Card: Shown if not logged in OR if logged in as Freelancer */}
+          {(!user || isFreelancerUser) && (
+            <button
+              data-testid="role-freelancer-card"
+              onClick={() => chooseRole("freelancer")}
+              className="group border-2 border-ink bg-brand p-4 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
+            >
+              <div className="mb-4 sm:mb-6 flex items-center justify-between">
+                <span className="bg-ink px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.1em] text-white">
+                  I'M LOOKING FOR GIGS (FREELANCER)
+                </span>
+                <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-ink transition">
+                  <ArrowRight size={20} className="text-white" />
+                </div>
               </div>
-            </div>
-            <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-white">
-              Apply to 200+ gigs within 5km of you
-            </p>
-            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-white/95 font-semibold">
-              Direct chat with Bengaluru employers looking for immediate hires. Zero middlemen, keep 100% earnings.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/20 pt-4 text-xs font-extrabold text-white">
-              <span>Hyperlocal 5km Matching</span>
-              <span>•</span>
-              <span>Direct Client Payments (0% Fee)</span>
-            </div>
-          </button>
+              <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-white">
+                Apply to 200+ gigs within 5km of you
+              </p>
+              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-white/95 font-semibold">
+                Direct chat with Bengaluru employers looking for immediate hires. Zero middlemen, keep 100% earnings.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/20 pt-4 text-xs font-extrabold text-white">
+                <span>Hyperlocal 5km Matching</span>
+                <span>•</span>
+                <span>Direct Client Payments (0% Fee)</span>
+              </div>
+            </button>
+          )}
 
         </div>
       </section>
@@ -1236,7 +1251,7 @@ export default function Landing() {
               <button
                 key={tag.title}
                 type="button"
-                onClick={() => nav(`/freelancer/jobs?q=${encodeURIComponent(tag.query)}`)}
+                onClick={() => nav(isEmployerUser ? `/employer?q=${encodeURIComponent(tag.query)}` : `/freelancer/jobs?q=${encodeURIComponent(tag.query)}`)}
                 className="group flex flex-col text-left border-2 border-white/80 bg-white/5 hover:bg-brand hover:border-brand px-2.5 py-1.5 transition shadow-[2px_2px_0px_rgba(255,255,255,0.4)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 cursor-pointer shrink-0 whitespace-nowrap"
               >
                 <div className="flex items-center gap-1">

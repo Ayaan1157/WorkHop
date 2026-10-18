@@ -168,22 +168,8 @@ export default function FreelancerProfile() {
 
   const navMenuItems = [
     {
-      icon: Building2,
-      label: "Employer Dashboard & Hiring Hub",
-      sub: "Manage gigs, applicant proposals & billing",
-      to: "/employer/dashboard",
-      testID: "profile-employer-dashboard",
-    },
-    {
-      icon: Briefcase,
-      label: "Employer Site (Nearby Pros)",
-      sub: "Explore 50+ verified pros & unlock leads",
-      to: "/employer",
-      testID: "profile-employer",
-    },
-    {
       icon: Tag,
-      label: "Employee Site (Find Gigs)",
+      label: "Find Gigs",
       sub: "Browse 50+ active gigs in 5km radius",
       to: "/freelancer/jobs",
       testID: "profile-jobs",
@@ -416,19 +402,21 @@ export default function FreelancerProfile() {
             </button>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                data-testid="profile-switch-employer-btn"
-                onClick={() => {
-                  localStorage.setItem("workhop_auth_role", "employer");
-                  nav("/employer/dashboard");
-                }}
-                className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#ddd] dark:border-[#333] bg-[#FFF3C4] px-3 py-1.5 text-xs font-black text-ink hover:bg-[#FFEAA0] transition shadow-xs"
-                title="Switch to Employer Dashboard"
-              >
-                <Building2 size={14} className="text-brand" />
-                <span>EMPLOYER DASHBOARD</span>
-              </button>
+              {user?.is_admin && (
+                <button
+                  type="button"
+                  data-testid="profile-switch-employer-btn"
+                  onClick={() => {
+                    localStorage.setItem("workhop_auth_role", "employer");
+                    nav("/employer/dashboard");
+                  }}
+                  className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#ddd] dark:border-[#333] bg-[#FFF3C4] px-3 py-1.5 text-xs font-black text-ink hover:bg-[#FFEAA0] transition shadow-xs"
+                  title="Switch to Employer Dashboard (Admin)"
+                >
+                  <Building2 size={14} className="text-brand" />
+                  <span>EMPLOYER DASHBOARD</span>
+                </button>
+              )}
 
               <button
                 onClick={() => setMenuDrawerOpen(true)}

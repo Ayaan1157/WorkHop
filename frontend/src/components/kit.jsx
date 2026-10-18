@@ -149,24 +149,29 @@ export function GlobalNav() {
     (loc.pathname.startsWith("/plans") && loc.search.includes("employer"))
   );
 
+  const isEmployerUser = Boolean(user && (userRole?.includes("employ") || userRole?.includes("client")));
+  const isFreelancerUser = Boolean(user && !isAdmin && !isEmployerUser);
+
   const isEmployer = Boolean(
-    (user && (userRole?.includes("employ") || userRole?.includes("client"))) ||
-    (!isFreelancerRoute && (isAdmin || isEmployerRoute))
+    isEmployerUser ||
+    (!user && isEmployerRoute) ||
+    isAdmin
   );
 
-  const isFreelancerRole = Boolean(
-    user?.role === "freelancer" ||
-    localStorage.getItem("workhop_auth_role") === "freelancer" ||
-    (user && !isAdmin && (userRole?.includes("freelancer") || (!userRole?.includes("employ") && !userRole?.includes("client"))))
+  const isFreelancer = Boolean(
+    isFreelancerUser ||
+    (!user && isFreelancerRoute) ||
+    isAdmin
   );
 
-  const isFreelancer = Boolean(isFreelancerRoute || isFreelancerRole);
-  const showPostJob = !isFreelancerRoute && !isFreelancerRole;
+  const showPostJob = Boolean(
+    isEmployerUser || (!user && !isFreelancerRoute) || isAdmin
+  );
 
   const currentFreelancerId = getFreelancerId?.() || user?.id || "anon";
   const userWallet = getCreditsWallet(currentFreelancerId);
   const currentHops = userWallet?.balance ?? 20;
-  const plansPath = (isFreelancer && !isEmployerRoute) ? "/plans?tab=freelancer" : (isEmployer ? "/plans?tab=employer" : "/plans?tab=freelancer");
+  const plansPath = isFreelancerUser ? "/plans?tab=freelancer" : "/plans?tab=employer";
 
   const desktopLinks = [
     { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users, forRole: "employer" },
@@ -175,10 +180,10 @@ export function GlobalNav() {
     { label: "CATEGORIES", path: "/categories", testId: "nav-categories", icon: Grid3x3 },
     { label: "PLANS", path: plansPath, testId: "nav-plans", icon: Coins },
   ].filter((link) => {
-    if (!user) return true; // Show both if not signed in
     if (isAdmin) return true; // Admin gets access to both sides and everything!
-    if (link.forRole === "employer") return isEmployer;
-    if (link.forRole === "freelancer") return isFreelancer || isAdmin;
+    if (!user) return true; // Show both if not signed in
+    if (link.forRole === "employer") return isEmployerUser;
+    if (link.forRole === "freelancer") return isFreelancerUser;
     return true;
   });
 

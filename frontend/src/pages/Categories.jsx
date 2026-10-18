@@ -8,6 +8,7 @@ import { getStoredCatalog } from "@/lib/clientStore";
 import { SUBDISCIPLINE_KEYWORDS, searchTaxonomy } from "@/lib/keywordTaxonomy";
 import { apiGet } from "@/lib/api";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Categories() {
   usePageMeta({
@@ -19,6 +20,10 @@ export default function Categories() {
   });
 
   const nav = useNavigate();
+  const { user } = useAuth();
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
+  const isEmployerUser = Boolean(user && (userRole.includes("employ") || userRole.includes("client")));
+
   const [catalog, setCatalog] = useState(() => getStoredCatalog());
   const [open, setOpen] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -37,7 +42,7 @@ export default function Categories() {
       .finally(() => setLoading(false));
   }, []);
 
-  const goSearch = (term) => nav(`/freelancer/jobs?q=${encodeURIComponent(term)}`);
+  const goSearch = (term) => nav(isEmployerUser ? `/employer?q=${encodeURIComponent(term)}` : `/freelancer/jobs?q=${encodeURIComponent(term)}`);
   const total = catalog.reduce((n, c) => n + c.subcategories.length, 0);
 
   const matchedTaxonomy = useMemo(() => {

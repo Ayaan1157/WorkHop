@@ -62,33 +62,46 @@ export default function Profile() {
     }
   };
 
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase();
+  const isEmployerUser = Boolean(userRole.includes("employ") || userRole.includes("client"));
+  const userArea = user?.area || localStorage.getItem("workhop_user_area") || "Koramangala";
+  const userPhone = phone || user?.phone || localStorage.getItem("workhop_pro_phone");
+
   const menu = [
     {
       icon: UserCheck,
       label: "Edit Full Profile",
       sub: "Employment, skills, portfolio, certifications & more",
-      to: "/freelancer/profile",
+      to: isEmployerUser ? "/employer/dashboard" : "/freelancer/profile",
       testID: "profile-full-edit",
     },
-    {
-      icon: Briefcase,
-      label: "Employer Site (Nearby Pros)",
-      sub: "Explore 50+ verified pros & unlock leads",
-      to: "/employer",
-      testID: "profile-employer",
-    },
-    {
-      icon: Tag,
-      label: "Employee Site (Find Gigs)",
-      sub: "Browse 50+ active gigs in 5km radius",
-      to: "/freelancer/jobs",
-      testID: "profile-jobs",
-    },
+    ...(isEmployerUser || user?.is_admin
+      ? [
+          {
+            icon: Briefcase,
+            label: "Employer Site (Nearby Pros)",
+            sub: "Explore 50+ verified pros & unlock leads",
+            to: "/employer",
+            testID: "profile-employer",
+          },
+        ]
+      : []),
+    ...(!isEmployerUser || user?.is_admin
+      ? [
+          {
+            icon: Tag,
+            label: "Find Gigs",
+            sub: "Browse 50+ active gigs in 5km radius",
+            to: "/freelancer/jobs",
+            testID: "profile-jobs",
+          },
+        ]
+      : []),
     {
       icon: MessagesSquare,
       label: "My Messages",
       sub: "Chats with employers & pros",
-      to: "/freelancer/chats",
+      to: isEmployerUser ? "/employer/inbox" : "/freelancer/chats",
       testID: "profile-chats",
     },
     {
@@ -108,8 +121,8 @@ export default function Profile() {
     {
       icon: Tag,
       label: "Plans & Pricing",
-      sub: "Job posts & urgent boosts",
-      to: "/employer/plans",
+      sub: isEmployerUser ? "Job posts & urgent boosts" : "Bidding Hops for freelancers",
+      to: isEmployerUser ? "/employer/plans" : "/plans?tab=freelancer",
       testID: "profile-plans",
     },
     {
@@ -127,10 +140,6 @@ export default function Profile() {
       testID: "profile-legal",
     },
   ];
-
-  const userRole = user?.role || localStorage.getItem("workhop_auth_role") || "freelancer";
-  const userArea = user?.area || localStorage.getItem("workhop_user_area") || "Koramangala";
-  const userPhone = phone || user?.phone || localStorage.getItem("workhop_pro_phone");
 
   return (
     <Shell>

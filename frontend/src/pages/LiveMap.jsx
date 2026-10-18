@@ -40,12 +40,23 @@ export default function LiveMap() {
   const { user } = useAuth();
   const { coords: gpsCoords, status: locStatus, requestLocation } = useUserLocation();
 
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    userRole === "admin" ||
+    ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
+  );
+  const isEmployerUser = Boolean(user && (userRole.includes("employ") || userRole.includes("client")));
+  const isFreelancerUser = Boolean(user && !isAdmin && !isEmployerUser);
+
   // Role Exploration Mode: "employer" (Show Freelancers) vs "freelancer" (Show Open Gigs)
   const initialMode = useMemo(() => {
+    if (!isAdmin && isEmployerUser) return "employer";
+    if (!isAdmin && isFreelancerUser) return "freelancer";
     const savedRole = localStorage.getItem("workhop_auth_role") || user?.role;
     if (savedRole === "freelancer" || savedRole === "candidate") return "freelancer";
     return "employer";
-  }, [user]);
+  }, [user, isAdmin, isEmployerUser, isFreelancerUser]);
 
   const [viewMode, setViewMode] = useState(initialMode); // "employer" | "freelancer"
 
@@ -348,44 +359,58 @@ export default function LiveMap() {
             <span className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400 hidden sm:inline">
               Map View Mode:
             </span>
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 w-full sm:w-auto">
-              {/* Option 1: I'm Hiring (Show Freelancers) */}
-              <button
-                data-testid="mode-employer-btn"
-                onClick={() => {
-                  setViewMode("employer");
-                  setSelectedPinId(null);
-                }}
-                className={`flex h-10 items-center justify-center gap-1.5 sm:gap-2 border-2 border-ink px-3 sm:px-4 text-[11px] sm:text-xs font-black transition ${
-                  viewMode === "employer"
-                    ? "bg-brand text-white shadow-[2px_2px_0px_#121212] -translate-y-0.5"
-                    : "bg-sand dark:bg-[#1f1f1f] text-ink dark:text-white hover:bg-stone/20"
-                }`}
-              >
-                <span>🏢</span>
-                <span className="hidden xs:inline sm:hidden">HIRING</span>
-                <span className="hidden sm:inline">I'M HIRING (PROS)</span>
-                <span className="xs:hidden">HIRING</span>
-              </button>
+            <div className="w-full sm:w-auto">
+              {(!user || isAdmin) ? (
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 w-full sm:w-auto">
+                  {/* Option 1: I'm Hiring (Show Freelancers) */}
+                  <button
+                    data-testid="mode-employer-btn"
+                    onClick={() => {
+                      setViewMode("employer");
+                      setSelectedPinId(null);
+                    }}
+                    className={`flex h-10 items-center justify-center gap-1.5 sm:gap-2 border-2 border-ink px-3 sm:px-4 text-[11px] sm:text-xs font-black transition ${
+                      viewMode === "employer"
+                        ? "bg-brand text-white shadow-[2px_2px_0px_#121212] -translate-y-0.5"
+                        : "bg-sand dark:bg-[#1f1f1f] text-ink dark:text-white hover:bg-stone/20"
+                    }`}
+                  >
+                    <span>🏢</span>
+                    <span className="hidden xs:inline sm:hidden">HIRING</span>
+                    <span className="hidden sm:inline">I'M HIRING (PROS)</span>
+                    <span className="xs:hidden">HIRING</span>
+                  </button>
 
-              {/* Option 2: I'm a Freelancer (Show Open Gigs) */}
-              <button
-                data-testid="mode-freelancer-btn"
-                onClick={() => {
-                  setViewMode("freelancer");
-                  setSelectedPinId(null);
-                }}
-                className={`flex h-10 items-center justify-center gap-1.5 sm:gap-2 border-2 border-ink px-3 sm:px-4 text-[11px] sm:text-xs font-black transition ${
-                  viewMode === "freelancer"
-                    ? "bg-[#059669] text-white shadow-[2px_2px_0px_#121212] -translate-y-0.5"
-                    : "bg-sand dark:bg-[#1f1f1f] text-ink dark:text-white hover:bg-stone/20"
-                }`}
-              >
-                <span>💼</span>
-                <span className="hidden xs:inline sm:hidden">GIGS</span>
-                <span className="hidden sm:inline">I'M A FREELANCER (GIGS)</span>
-                <span className="xs:hidden">GIGS</span>
-              </button>
+                  {/* Option 2: I'm a Freelancer (Show Open Gigs) */}
+                  <button
+                    data-testid="mode-freelancer-btn"
+                    onClick={() => {
+                      setViewMode("freelancer");
+                      setSelectedPinId(null);
+                    }}
+                    className={`flex h-10 items-center justify-center gap-1.5 sm:gap-2 border-2 border-ink px-3 sm:px-4 text-[11px] sm:text-xs font-black transition ${
+                      viewMode === "freelancer"
+                        ? "bg-[#059669] text-white shadow-[2px_2px_0px_#121212] -translate-y-0.5"
+                        : "bg-sand dark:bg-[#1f1f1f] text-ink dark:text-white hover:bg-stone/20"
+                    }`}
+                  >
+                    <span>💼</span>
+                    <span className="hidden xs:inline sm:hidden">GIGS</span>
+                    <span className="hidden sm:inline">I'M A FREELANCER (GIGS)</span>
+                    <span className="xs:hidden">GIGS</span>
+                  </button>
+                </div>
+              ) : isEmployerUser ? (
+                <div className="flex h-10 items-center gap-2 border-2 border-ink bg-brand px-4 text-xs font-black text-white shadow-[2px_2px_0px_#121212]">
+                  <span>🏢</span>
+                  <span>NEARBY PROS RADAR</span>
+                </div>
+              ) : (
+                <div className="flex h-10 items-center gap-2 border-2 border-ink bg-[#059669] px-4 text-xs font-black text-white shadow-[2px_2px_0px_#121212]">
+                  <span>💼</span>
+                  <span>NEARBY OPEN GIGS RADAR</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -854,28 +879,30 @@ export default function LiveMap() {
 
             </div>
 
-            {/* Bottom Quick Switch Banner */}
-            <div className="mt-2 border-2 border-ink bg-[#121212] dark:bg-[#161618] text-white p-3 shadow-[2px_2px_0px_#E65A1E]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={14} className="text-brand" />
-                  <span className="text-xs font-black uppercase">
-                    {viewMode === "employer"
-                      ? "Are you looking for work instead?"
-                      : "Are you hiring freelancers instead?"}
-                  </span>
+            {/* Bottom Quick Switch Banner (Unauthenticated or Admin) */}
+            {(!user || isAdmin) && (
+              <div className="mt-2 border-2 border-ink bg-[#121212] dark:bg-[#161618] text-white p-3 shadow-[2px_2px_0px_#E65A1E]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={14} className="text-brand" />
+                    <span className="text-xs font-black uppercase">
+                      {viewMode === "employer"
+                        ? "Are you looking for work instead?"
+                        : "Are you hiring freelancers instead?"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setViewMode(viewMode === "employer" ? "freelancer" : "employer");
+                      setSelectedPinId(null);
+                    }}
+                    className="text-[10px] font-black text-brand underline uppercase hover:text-white"
+                  >
+                    Switch Mode →
+                  </button>
                 </div>
-                <button
-                  onClick={() => {
-                    setViewMode(viewMode === "employer" ? "freelancer" : "employer");
-                    setSelectedPinId(null);
-                  }}
-                  className="text-[10px] font-black text-brand underline uppercase hover:text-white"
-                >
-                  Switch Mode →
-                </button>
               </div>
-            </div>
+            )}
 
           </div>
 

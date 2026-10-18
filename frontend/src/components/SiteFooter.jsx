@@ -1,6 +1,17 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SiteFooter() {
+  const { user } = useAuth();
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    userRole === "admin" ||
+    ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
+  );
+  const isEmployerUser = Boolean(user && (userRole.includes("employ") || userRole.includes("client")));
+  const isFreelancerUser = Boolean(user && !isAdmin && !isEmployerUser);
+
   return (
     <footer className="w-full border-t-2 border-ink bg-[#0B0B0C] text-white pt-12 sm:pt-16 pb-28 sm:pb-32 lg:pb-14 transition-colors">
       <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 lg:px-12">
@@ -85,63 +96,67 @@ export default function SiteFooter() {
         {/* Main Grid: 2 columns on mobile, 4 columns on tablet & desktop */}
         <div className="grid grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-8 sm:gap-y-10 sm:grid-cols-2 lg:grid-cols-4 pt-8 sm:pt-12">
           
-          {/* Column 1: For Employers */}
-          <div className="flex flex-col gap-3">
-            <h4 className="text-sm font-black uppercase tracking-wider text-white">
-              For Employers
-            </h4>
-            <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-stone-400">
-              <li>
-                <Link to="/employer" className="hover:text-white transition">
-                  Explore Verified Pros
-                </Link>
-              </li>
-              <li>
-                <Link to="/employer/post-job" className="hover:text-white transition">
-                  Post a Gig (Free)
-                </Link>
-              </li>
-              <li>
-                <Link to="/employer/plans" className="hover:text-white transition">
-                  Pricing &amp; Plans
-                </Link>
-              </li>
-              <li>
-                <Link to="/categories" className="hover:text-white transition">
-                  Browse Categories
-                </Link>
-              </li>
-              <li>
-                <Link to="/reviews" className="hover:text-white transition">
-                  Client Reviews &amp; Stories
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {/* Column 1: For Employers (Hidden for signed-in Freelancers) */}
+          {(!isFreelancerUser || isAdmin) && (
+            <div className="flex flex-col gap-3">
+              <h4 className="text-sm font-black uppercase tracking-wider text-white">
+                For Employers
+              </h4>
+              <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-stone-400">
+                <li>
+                  <Link to="/employer" className="hover:text-white transition">
+                    Explore Verified Pros
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/employer/post-job" className="hover:text-white transition">
+                    Post a Gig (Free)
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/employer/plans" className="hover:text-white transition">
+                    Pricing &amp; Plans
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/categories" className="hover:text-white transition">
+                    Browse Categories
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reviews" className="hover:text-white transition">
+                    Client Reviews &amp; Stories
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
 
-          {/* Column 2: For Freelancers */}
-          <div className="flex flex-col gap-3">
-            <h4 className="text-sm font-black uppercase tracking-wider text-white">
-              For Freelancers
-            </h4>
-            <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-stone-400">
-              <li>
-                <Link to="/freelancer/jobs" className="hover:text-white transition">
-                  Find Nearby Gigs
-                </Link>
-              </li>
-              <li>
-                <Link to="/freelancer" className="hover:text-white transition">
-                  Get Verified
-                </Link>
-              </li>
-              <li>
-                <Link to="/map" className="hover:text-white transition">
-                  Live Radar Map
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {/* Column 2: For Freelancers (Hidden for signed-in Employers) */}
+          {(!isEmployerUser || isAdmin) && (
+            <div className="flex flex-col gap-3">
+              <h4 className="text-sm font-black uppercase tracking-wider text-white">
+                For Freelancers
+              </h4>
+              <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-stone-400">
+                <li>
+                  <Link to="/freelancer/jobs" className="hover:text-white transition">
+                    Find Nearby Gigs
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/freelancer" className="hover:text-white transition">
+                    Get Verified
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/map" className="hover:text-white transition">
+                    Live Radar Map
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
 
           {/* Column 3: Resources */}
           <div className="flex flex-col gap-3">

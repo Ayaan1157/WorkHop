@@ -440,6 +440,14 @@ const AREAS = [
 export default function Reviews() {
   const nav = useNavigate();
   const { user } = useAuth();
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    userRole === "admin" ||
+    ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
+  );
+  const isEmployerUser = Boolean(user && (userRole.includes("employ") || userRole.includes("client")));
+  const isFreelancerUser = Boolean(user && !isAdmin && !isEmployerUser);
 
   const [activeCategory, setActiveCategory] = useState("All Categories");
   const [selectedArea, setSelectedArea] = useState("All Neighborhoods");
@@ -609,12 +617,21 @@ export default function Reviews() {
               >
                 <Plus size={14} /> Leave A Review
               </button>
-              <Link
-                to="/employer/post-job"
-                className="flex items-center justify-center gap-2 border-2 border-ink bg-brand px-5 py-3 text-xs font-black uppercase text-white shadow-[3px_3px_0px_#121212] hover:bg-black transition"
-              >
-                Post A Gig (Free) <ArrowRight size={14} />
-              </Link>
+              {(!isFreelancerUser || isAdmin) ? (
+                <Link
+                  to="/employer/post-job"
+                  className="flex items-center justify-center gap-2 border-2 border-ink bg-brand px-5 py-3 text-xs font-black uppercase text-white shadow-[3px_3px_0px_#121212] hover:bg-black transition"
+                >
+                  Post A Gig (Free) <ArrowRight size={14} />
+                </Link>
+              ) : (
+                <Link
+                  to="/freelancer/jobs"
+                  className="flex items-center justify-center gap-2 border-2 border-ink bg-brand px-5 py-3 text-xs font-black uppercase text-white shadow-[3px_3px_0px_#121212] hover:bg-black transition"
+                >
+                  Browse Gigs (Free) <ArrowRight size={14} />
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -891,10 +908,10 @@ export default function Reviews() {
                       </button>
 
                       <Link
-                        to={`/employer?pro=${rev.freelancer_id || "fl-1"}`}
+                        to={isFreelancerUser ? `/pro/${rev.freelancer_id || "fl-1"}` : `/employer?pro=${rev.freelancer_id || "fl-1"}`}
                         className="text-[11px] font-black text-brand hover:underline flex items-center gap-0.5"
                       >
-                        <span>Hire Pro</span>
+                        <span>{isFreelancerUser ? "View Pro" : "Hire Pro"}</span>
                         <ChevronRight size={12} />
                       </Link>
                     </div>
@@ -915,18 +932,22 @@ export default function Reviews() {
           </p>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              to="/employer/post-job"
-              className="border-2 border-white bg-brand px-6 py-3.5 text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-white hover:text-black transition"
-            >
-              Post A Gig · 100% Free
-            </Link>
-            <Link
-              to="/freelancer/jobs"
-              className="border-2 border-white bg-transparent px-6 py-3.5 text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-white hover:text-black transition"
-            >
-              Browse 200+ Local Gigs
-            </Link>
+            {(!isFreelancerUser || isAdmin) && (
+              <Link
+                to="/employer/post-job"
+                className="border-2 border-white bg-brand px-6 py-3.5 text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-white hover:text-black transition"
+              >
+                Post A Gig · 100% Free
+              </Link>
+            )}
+            {(!isEmployerUser || isAdmin) && (
+              <Link
+                to="/freelancer/jobs"
+                className="border-2 border-white bg-transparent px-6 py-3.5 text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-white hover:text-black transition"
+              >
+                Browse 200+ Local Gigs
+              </Link>
+            )}
           </div>
         </div>
 

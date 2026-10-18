@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 
@@ -39,6 +39,44 @@ function ProfileRoute() {
   return <FreelancerProfile />;
 }
 
+function EmployerRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    userRole === "admin" ||
+    ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
+  );
+  if (isAdmin) return children;
+
+  // If user is signed in as a freelancer, redirect to the freelancer site
+  if (user && (userRole === "freelancer" || (!userRole.includes("employ") && !userRole.includes("client")))) {
+    return <Navigate to="/freelancer/jobs" replace />;
+  }
+
+  return children;
+}
+
+function FreelancerRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    userRole === "admin" ||
+    ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
+  );
+  if (isAdmin) return children;
+
+  // If user is signed in as an employer, redirect to the employer site
+  if (user && (userRole.includes("employ") || userRole.includes("client"))) {
+    return <Navigate to="/employer" replace />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <ThemeProvider>
@@ -51,8 +89,8 @@ function App() {
             <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/profile" element={<ProfileRoute />} />
-            <Route path="/employer/dashboard" element={<EmployerDashboard />} />
-            <Route path="/employer/profile" element={<EmployerDashboard />} />
+            <Route path="/employer/dashboard" element={<EmployerRoute><EmployerDashboard /></EmployerRoute>} />
+            <Route path="/employer/profile" element={<EmployerRoute><EmployerDashboard /></EmployerRoute>} />
             <Route path="/settings" element={<Profile />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/blog" element={<Blog />} />
@@ -66,17 +104,17 @@ function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/chat/:id" element={<Chat />} />
             <Route path="/pro/:id" element={<Pro />} />
-            <Route path="/employer" element={<Employer />} />
+            <Route path="/employer" element={<EmployerRoute><Employer /></EmployerRoute>} />
             <Route path="/plans" element={<Plans />} />
-            <Route path="/employer/plans" element={<Plans />} />
-            <Route path="/freelancer/plans" element={<Plans />} />
-            <Route path="/employer/post-job" element={<PostJob />} />
-            <Route path="/employer/edit-job/:id" element={<PostJob />} />
-            <Route path="/employer/inbox" element={<Inbox />} />
-            <Route path="/freelancer" element={<Onboarding />} />
-            <Route path="/freelancer/jobs" element={<Jobs />} />
-            <Route path="/freelancer/chats" element={<FreelancerChats />} />
-            <Route path="/freelancer/profile" element={<FreelancerProfile />} />
+            <Route path="/employer/plans" element={<EmployerRoute><Plans /></EmployerRoute>} />
+            <Route path="/freelancer/plans" element={<FreelancerRoute><Plans /></FreelancerRoute>} />
+            <Route path="/employer/post-job" element={<EmployerRoute><PostJob /></EmployerRoute>} />
+            <Route path="/employer/edit-job/:id" element={<EmployerRoute><PostJob /></EmployerRoute>} />
+            <Route path="/employer/inbox" element={<EmployerRoute><Inbox /></EmployerRoute>} />
+            <Route path="/freelancer" element={<FreelancerRoute><Onboarding /></FreelancerRoute>} />
+            <Route path="/freelancer/jobs" element={<FreelancerRoute><Jobs /></FreelancerRoute>} />
+            <Route path="/freelancer/chats" element={<FreelancerRoute><FreelancerChats /></FreelancerRoute>} />
+            <Route path="/freelancer/profile" element={<FreelancerRoute><FreelancerProfile /></FreelancerRoute>} />
           </Routes>
         </BrowserRouter>
         </ErrorBoundary>

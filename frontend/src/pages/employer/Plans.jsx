@@ -30,17 +30,28 @@ export default function Plans() {
     (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
   );
 
-  // Determine initial tab: ?tab=freelancer vs ?tab=employer
-  const requestedTab = (searchParams.get("tab") || searchParams.get("role") || "").toLowerCase();
-  const storedRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
-  const isFreelancerByDefault =
-    requestedTab === "freelancer" ||
-    (!requestedTab && (location.pathname.includes("/freelancer") || storedRole === "freelancer" || (!storedRole.includes("employ") && !storedRole.includes("client"))));
+  // Determine initial tab: locked to user's signed-in role
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
+  const isEmployerUser = Boolean(user && (userRole.includes("employ") || userRole.includes("client")));
+  const isFreelancerUser = Boolean(user && !isAdmin && !isEmployerUser);
 
-  const [tab, setTab] = useState(isFreelancerByDefault ? "freelancer" : "employer");
+  const initialTab = () => {
+    if (!isAdmin && isEmployerUser) return "employer";
+    if (!isAdmin && isFreelancerUser) return "freelancer";
+    const requestedTab = (searchParams.get("tab") || searchParams.get("role") || "").toLowerCase();
+    if (requestedTab === "freelancer") return "freelancer";
+    if (requestedTab === "employer") return "employer";
+    return location.pathname.includes("/freelancer") ? "freelancer" : "employer";
+  };
+
+  const [tab, setTab] = useState(initialTab);
 
   // Keep URL in sync when tab toggles
   const switchTab = (newTab) => {
+    if (!isAdmin && user) {
+      if (isEmployerUser && newTab !== "employer") return;
+      if (isFreelancerUser && newTab !== "freelancer") return;
+    }
     setTab(newTab);
     setSearchParams({ tab: newTab });
   };
@@ -229,37 +240,39 @@ export default function Plans() {
           {/* ══════════════════════════════════════════════════
               TOP SEGMENTED ROLE TOGGLE: FREELANCER VS EMPLOYER
               ══════════════════════════════════════════════════ */}
-          <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-2 border-ink bg-white dark:bg-[#181818] p-2 sm:p-2.5 shadow-[4px_4px_0px_#121212]">
-            <div className="flex items-center gap-1.5 flex-1">
-              <button
-                type="button"
-                data-testid="tab-freelancer-plans"
-                onClick={() => switchTab("freelancer")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 text-xs sm:text-sm font-black uppercase tracking-wider transition border-2 ${
-                  tab === "freelancer"
-                    ? "bg-brand text-white border-ink shadow-[2px_2px_0px_#121212]"
-                    : "bg-white dark:bg-[#222] text-ink dark:text-white border-transparent hover:bg-sand dark:hover:bg-[#2c2c2c]"
-                }`}
-              >
-                <Coins size={16} className={tab === "freelancer" ? "text-white" : "text-brand"} />
-                <span>FOR FREELANCERS (1 HOP = ₹15)</span>
-              </button>
+          {(!user || isAdmin) && (
+            <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-2 border-ink bg-white dark:bg-[#181818] p-2 sm:p-2.5 shadow-[4px_4px_0px_#121212]">
+              <div className="flex items-center gap-1.5 flex-1">
+                <button
+                  type="button"
+                  data-testid="tab-freelancer-plans"
+                  onClick={() => switchTab("freelancer")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 text-xs sm:text-sm font-black uppercase tracking-wider transition border-2 ${
+                    tab === "freelancer"
+                      ? "bg-brand text-white border-ink shadow-[2px_2px_0px_#121212]"
+                      : "bg-white dark:bg-[#222] text-ink dark:text-white border-transparent hover:bg-sand dark:hover:bg-[#2c2c2c]"
+                  }`}
+                >
+                  <Coins size={16} className={tab === "freelancer" ? "text-white" : "text-brand"} />
+                  <span>FOR FREELANCERS (1 HOP = ₹15)</span>
+                </button>
 
-              <button
-                type="button"
-                data-testid="tab-employer-plans"
-                onClick={() => switchTab("employer")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 text-xs sm:text-sm font-black uppercase tracking-wider transition border-2 ${
-                  tab === "employer"
-                    ? "bg-[#059669] text-white border-ink shadow-[2px_2px_0px_#121212]"
-                    : "bg-white dark:bg-[#222] text-ink dark:text-white border-transparent hover:bg-sand dark:hover:bg-[#2c2c2c]"
-                }`}
-              >
-                <Zap size={16} className={tab === "employer" ? "text-white" : "text-[#059669]"} />
-                <span>FOR EMPLOYERS (100% FREE GIG POSTS)</span>
-              </button>
+                <button
+                  type="button"
+                  data-testid="tab-employer-plans"
+                  onClick={() => switchTab("employer")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 text-xs sm:text-sm font-black uppercase tracking-wider transition border-2 ${
+                    tab === "employer"
+                      ? "bg-[#059669] text-white border-ink shadow-[2px_2px_0px_#121212]"
+                      : "bg-white dark:bg-[#222] text-ink dark:text-white border-transparent hover:bg-sand dark:hover:bg-[#2c2c2c]"
+                  }`}
+                >
+                  <Zap size={16} className={tab === "employer" ? "text-white" : "text-[#059669]"} />
+                  <span>FOR EMPLOYERS (100% FREE GIG POSTS)</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ══════════════════════════════════════════════════
               VIEW 1: FREELANCER PLANS & PRICING (1 HOP = 15 RS)
