@@ -1,5 +1,6 @@
 // WorkHop Hyperlocal Push Notification Engine for Freelancers
 // Handles browser permissions, Web Push Service Worker, preferences, and native OS notifications.
+import { playNotificationSound } from "./notificationSound";
 
 const PUSH_ENABLED_KEY = "workhop_push_enabled";
 const PUSH_PREFS_KEY = "workhop_push_preferences";
@@ -118,29 +119,8 @@ export async function sendTestEmailAlert(freelancerId, targetEmail) {
 }
 
 // Play notification sound
-export function playPushChime() {
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = "sine";
-    // Upbeat two-tone chime (F5 -> C6)
-    osc.frequency.setValueAtTime(698.46, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.12);
-
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.38);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.38);
-  } catch {
-    // Autoplay fallback
-  }
+export function playPushChime(options = {}) {
+  return playNotificationSound({ type: "chime", ...options });
 }
 
 // Register service worker for background web push

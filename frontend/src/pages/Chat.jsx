@@ -10,6 +10,7 @@ import EmployerProfileModal from "@/components/EmployerProfileModal";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import { API, apiGet, apiPost } from "@/lib/api";
 import { scanText, scanUploadFile, redactViolations } from "@/lib/contactScanner";
+import { playNotificationSound } from "@/lib/notificationSound";
 
 export default function Chat() {
   const nav = useNavigate();
@@ -36,6 +37,7 @@ export default function Chat() {
   const [isTyping, setIsTyping] = useState(false);
   const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
+  const prevMsgCountRef = useRef(null);
 
   const [deal, setDeal] = useState(null);
   const [dealEvents, setDealEvents] = useState([]);
@@ -91,13 +93,25 @@ export default function Chat() {
 
   const loadMessages = useCallback(async () => {
     try {
-      setMessages(await apiGet(`/chats/${id}/messages`));
+      const data = await apiGet(`/chats/${id}/messages`);
+      const list = Array.isArray(data) ? data : [];
+      setMessages(list);
+
+      // Play subtle chime on incoming message from the other party
+      if (prevMsgCountRef.current !== null && list.length > prevMsgCountRef.current) {
+        const lastMsg = list[list.length - 1];
+        if (lastMsg && lastMsg.sender_role !== myRole) {
+          playNotificationSound({ type: "ping" });
+        }
+      }
+      prevMsgCountRef.current = list.length;
     } catch {
       /* ignore */
     }
-  }, [id]);
+  }, [id, myRole]);
 
   useEffect(() => {
+    prevMsgCountRef.current = null;
     apiGet(`/chats/${id}`)
       .then((c) => {
         setConv(c);

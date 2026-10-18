@@ -31,6 +31,7 @@ import {
   fetchNotificationPreferencesFromServer,
   sendTestEmailAlert,
 } from "@/lib/pushNotifications";
+import { previewNotificationSound, playNotificationSound } from "@/lib/notificationSound";
 
 export default function PushSettingsModal({ isOpen, onClose }) {
   const [supported, setSupported] = useState(true);
@@ -81,9 +82,13 @@ export default function PushSettingsModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const handleTogglePref = (key) => {
-    const updated = { ...prefs, [key]: !prefs[key] };
+    const nextVal = !prefs[key];
+    const updated = { ...prefs, [key]: nextVal };
     setPrefs(updated);
     saveFreelancerPushPreferences(updated);
+    if (key === "sound" && nextVal) {
+      previewNotificationSound("chime");
+    }
   };
 
   const handleSaveContactChannels = () => {
@@ -587,10 +592,12 @@ export default function PushSettingsModal({ isOpen, onClose }) {
 
               {/* Category 5: Audio Chime & Vibration */}
               <div
-                onClick={() => handleTogglePref("sound")}
-                className="flex items-center justify-between border-2 border-ink bg-sand/20 dark:bg-[#1c1c1c] p-3 cursor-pointer transition hover:bg-sand/40"
+                className="flex items-center justify-between border-2 border-ink bg-sand/20 dark:bg-[#1c1c1c] p-3 transition hover:bg-sand/40"
               >
-                <div className="flex items-start gap-3">
+                <div
+                  onClick={() => handleTogglePref("sound")}
+                  className="flex items-start gap-3 flex-1 cursor-pointer"
+                >
                   <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center border border-ink bg-white dark:bg-[#252525]">
                     {prefs.sound ? (
                       <Volume2 size={14} className="text-brand" />
@@ -607,12 +614,26 @@ export default function PushSettingsModal({ isOpen, onClose }) {
                     </p>
                   </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={prefs.sound}
-                  onChange={() => {}}
-                  className="h-4 w-4 accent-brand cursor-pointer shrink-0 ml-3"
-                />
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      previewNotificationSound("chime");
+                    }}
+                    title="Test chime sound"
+                    className="flex items-center gap-1 border border-ink bg-white dark:bg-[#252525] px-2 py-1 text-[10px] font-black uppercase text-ink dark:text-white shadow-[1px_1px_0px_#121212] hover:bg-sand active:translate-y-0.5"
+                  >
+                    <Volume2 size={11} className="text-brand" />
+                    <span>Test Sound</span>
+                  </button>
+                  <input
+                    type="checkbox"
+                    checked={prefs.sound}
+                    onChange={() => handleTogglePref("sound")}
+                    className="h-4 w-4 accent-brand cursor-pointer shrink-0"
+                  />
+                </div>
               </div>
             </div>
           </div>

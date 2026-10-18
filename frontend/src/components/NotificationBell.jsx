@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell, MessageSquare, Briefcase, CreditCard, CheckCheck, X, Zap, SlidersHorizontal } from "lucide-react";
 import { getStoredNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/clientStore";
 import { isPushEnabled } from "@/lib/pushNotifications";
+import { playNotificationSound } from "@/lib/notificationSound";
 import PushSettingsModal from "@/components/PushSettingsModal";
 
 export default function NotificationBell({ embedded = false, className = "" }) {
@@ -13,24 +14,38 @@ export default function NotificationBell({ embedded = false, className = "" }) {
   const [pushModalOpen, setPushModalOpen] = useState(false);
   const [isPushActive, setIsPushActive] = useState(() => isPushEnabled());
   const dropdownRef = useRef(null);
+  const prevUnreadRef = useRef(null);
 
-  const refreshNotifs = () => {
-    setNotifications(getStoredNotifications());
+  const refreshNotifs = (options = {}) => {
+    const list = getStoredNotifications();
+    setNotifications(list);
+    const unread = list.filter((n) => !n.read).length;
+    if (prevUnreadRef.current !== null && unread > prevUnreadRef.current && options?.playSound !== false) {
+      playNotificationSound({ type: "chime" });
+    }
+    prevUnreadRef.current = unread;
   };
 
   useEffect(() => {
-    refreshNotifs();
+    refreshNotifs({ playSound: false });
     setIsPushActive(isPushEnabled());
   }, [open]);
 
   useEffect(() => {
-    window.addEventListener("workhop:featured_blast", refreshNotifs);
-    window.addEventListener("workhop:notifications_updated", refreshNotifs);
+    const handleBlast = () => {
+      refreshNotifs({ playSound: true });
+    };
+    const handleUpdate = () => {
+      refreshNotifs({ playSound: true });
+    };
+
+    window.addEventListener("workhop:featured_blast", handleBlast);
+    window.addEventListener("workhop:notifications_updated", handleUpdate);
     const handlePushStatus = () => setIsPushActive(isPushEnabled());
     window.addEventListener("workhop:push_status_changed", handlePushStatus);
     const handleStorage = (e) => {
       if (e.key === "workhop_notifications" || e.key === "workhop_last_featured_blast") {
-        refreshNotifs();
+        refreshNotifs({ playSound: true });
       }
       if (e.key === "workhop_push_enabled") {
         setIsPushActive(isPushEnabled());
@@ -42,13 +57,13 @@ export default function NotificationBell({ embedded = false, className = "" }) {
     try {
       if (typeof BroadcastChannel !== "undefined") {
         channel = new BroadcastChannel("workhop_featured_blast");
-        channel.onmessage = refreshNotifs;
+        channel.onmessage = () => refreshNotifs({ playSound: true });
       }
     } catch {}
 
     return () => {
-      window.removeEventListener("workhop:featured_blast", refreshNotifs);
-      window.removeEventListener("workhop:notifications_updated", refreshNotifs);
+      window.removeEventListener("workhop:featured_blast", handleBlast);
+      window.removeEventListener("workhop:notifications_updated", handleUpdate);
       window.removeEventListener("workhop:push_status_changed", handlePushStatus);
       window.removeEventListener("storage", handleStorage);
       if (channel) channel.close();
