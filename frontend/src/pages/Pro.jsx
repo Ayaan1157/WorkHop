@@ -219,7 +219,7 @@ export default function Pro() {
                   }
                   className="w-full sm:w-auto mt-2 flex items-center justify-center gap-1.5 border-2 border-ink bg-sand dark:bg-zinc-800 px-4 py-2 text-xs font-black text-ink dark:text-white shadow-[1.5px_1.5px_0px_#121212] hover:bg-sand/80 transition"
                 >
-                  <span>POST GIG TO HIRE ({pro.name?.split(" ")?.[0] || "PRO"}) →</span>
+                  <span>POST A GIG →</span>
                 </button>
               </div>
             </div>

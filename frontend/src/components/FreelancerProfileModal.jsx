@@ -284,7 +284,7 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
             className="flex w-full items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-brand py-3 text-xs sm:text-sm font-black tracking-wider text-white shadow-[3px_3px_0px_#121212] hover:bg-black transition active:translate-y-0.5 uppercase"
           >
             <PlusCircle size={15} />
-            <span>POST GIG TO HIRE {firstName} (0% PLATFORM FEE)</span>
+            <span>POST A GIG</span>
             <ArrowRight size={15} />
           </button>
 
