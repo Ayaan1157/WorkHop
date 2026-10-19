@@ -5234,7 +5234,7 @@ def _build_employer_message_email_html(freelancer_name: str, company_name: str, 
 
 
 async def notify_freelancer_outside(conv: dict, text: str) -> None:
-    """Dispatches outside-the-website push notifications (Email & WhatsApp) to the recipient freelancer."""
+    """Dispatches outside-the-website push notification alerts (Email) to the recipient freelancer."""
     try:
         freelancer_id = conv.get("freelancer_id")
         if not freelancer_id:
@@ -5253,7 +5253,7 @@ async def notify_freelancer_outside(conv: dict, text: str) -> None:
         job_title = conv.get("job_title", "Gig Inquiry")
         freelancer_name = conv.get("freelancer_name") or fdoc.get("full_name", "Freelancer")
 
-        # 1. Outside Email Alerts (Default: True)
+        # Outside Email Alerts (Default: True)
         email_enabled = fdoc.get("email_alerts_enabled")
         if email_enabled is None:
             email_enabled = stored_prefs.get("email_alerts", True)
@@ -5288,38 +5288,6 @@ async def notify_freelancer_outside(conv: dict, text: str) -> None:
                 logger.info(f"Dispatched outside email notification to {target_email} for conv {conversation_id}")
             else:
                 logger.info(f"Freelancer {freelancer_id} has email alerts enabled, but no email on file.")
-
-        # 2. Outside WhatsApp Alerts (Default: False / Opt-In)
-        whatsapp_enabled = fdoc.get("whatsapp_alerts_enabled")
-        if whatsapp_enabled is None:
-            whatsapp_enabled = stored_prefs.get("whatsapp_alerts", False)
-
-        if whatsapp_enabled:
-            phone = fdoc.get("notification_phone") or fdoc.get("phone") or stored_prefs.get("notification_phone")
-            if phone:
-                whatsapp_msg = (
-                    f"💬 *New message from {company_name} on WorkHop*\n\n"
-                    f"Gig: {job_title}\n"
-                    f"Message: \"{text[:120]}\"\n\n"
-                    f"Reply now: {chat_url}"
-                )
-                await db.external_notifications_log.insert_one({
-                    "_id": str(uuid.uuid4()),
-                    "freelancer_id": freelancer_id,
-                    "channel": "whatsapp",
-                    "recipient": phone,
-                    "message": whatsapp_msg,
-                    "conversation_id": conversation_id,
-                    "status": "queued",
-                    "created_at": _now_iso(),
-                })
-                wa_webhook = os.environ.get("WHATSAPP_WEBHOOK_URL")
-                if wa_webhook:
-                    try:
-                        async with httpx.AsyncClient(timeout=5.0) as client:
-                            await client.post(wa_webhook, json={"to": phone, "message": whatsapp_msg})
-                    except Exception as wa_err:
-                        logger.warning(f"Failed to post to WhatsApp webhook: {wa_err}")
     except Exception as e:
         logger.warning(f"Error in notify_freelancer_outside: {e}")
 

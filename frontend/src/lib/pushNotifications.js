@@ -13,9 +13,7 @@ export const DEFAULT_PUSH_PREFERENCES = {
   escrow_updates: true, // milestone escrow release & payment alerts
   sound: true, // play audio chime with push
   email_alerts: true, // Outside notification: instant email alert when employer messages
-  whatsapp_alerts: false, // Outside notification: WhatsApp ping when employer messages
   notification_email: "",
-  notification_phone: "",
 };
 
 // Check if Notification API is supported
@@ -93,9 +91,7 @@ export async function fetchNotificationPreferencesFromServer(freelancerId) {
         const merged = {
           ...local,
           email_alerts: data.email_alerts !== false,
-          whatsapp_alerts: Boolean(data.whatsapp_alerts),
           notification_email: data.notification_email || local.notification_email || "",
-          notification_phone: data.notification_phone || local.notification_phone || "",
         };
         saveFreelancerPushPreferences(merged, false);
         return merged;

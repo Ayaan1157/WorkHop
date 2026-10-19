@@ -13,7 +13,6 @@ import {
   Send,
   Loader2,
   Mail,
-  MessageCircle,
   ExternalLink,
   ShieldCheck,
   Check,
@@ -41,9 +40,8 @@ export default function PushSettingsModal({ isOpen, onClose }) {
   const [testResult, setTestResult] = useState(null);
   const [enabling, setEnabling] = useState(false);
 
-  // Outside notifications (Email & WhatsApp)
+  // Outside notifications (Email)
   const [notificationEmail, setNotificationEmail] = useState("");
-  const [notificationPhone, setNotificationPhone] = useState("");
   const [savedContactNotice, setSavedContactNotice] = useState(false);
   const [emailTesting, setEmailTesting] = useState(false);
   const [emailTestResult, setEmailTestResult] = useState(null);
@@ -56,7 +54,6 @@ export default function PushSettingsModal({ isOpen, onClose }) {
     const current = getFreelancerPushPreferences();
     setPrefs(current);
     if (current.notification_email) setNotificationEmail(current.notification_email);
-    if (current.notification_phone) setNotificationPhone(current.notification_phone);
 
     // Try fetching synced preferences from backend if freelancer ID is available
     if (typeof window !== "undefined") {
@@ -66,7 +63,6 @@ export default function PushSettingsModal({ isOpen, onClose }) {
           if (serverPrefs) {
             setPrefs(serverPrefs);
             if (serverPrefs.notification_email) setNotificationEmail(serverPrefs.notification_email);
-            if (serverPrefs.notification_phone) setNotificationPhone(serverPrefs.notification_phone);
           }
         });
       }
@@ -95,7 +91,6 @@ export default function PushSettingsModal({ isOpen, onClose }) {
     const updated = {
       ...prefs,
       notification_email: notificationEmail.trim(),
-      notification_phone: notificationPhone.trim(),
     };
     setPrefs(updated);
     saveFreelancerPushPreferences(updated);
@@ -197,7 +192,7 @@ export default function PushSettingsModal({ isOpen, onClose }) {
                 Notification &amp; Alert Settings
               </h3>
               <p className="text-[10px] font-bold text-inkmuted dark:text-stone-400">
-                Outside alerts (Email &amp; WhatsApp) + In-browser instant push notifications
+                Outside email alerts + In-browser instant push notifications
               </p>
             </div>
           </div>
@@ -213,14 +208,14 @@ export default function PushSettingsModal({ isOpen, onClose }) {
         <div className="p-5 space-y-6 max-h-[75vh] overflow-y-auto">
 
           {/* ======================================================== */}
-          {/* SECTION 1: OUTSIDE WEBSITE NOTIFICATIONS (EMAIL & WHATSAPP) */}
+          {/* SECTION 1: OUTSIDE WEBSITE NOTIFICATIONS (EMAIL ALERTS) */}
           {/* ======================================================== */}
           <div className="border-2 border-brand bg-[#FFF7F2] dark:bg-[#23150e] p-4 shadow-[3px_3px_0px_#FF5A00]">
             <div className="flex items-center justify-between gap-2 border-b border-brand/30 pb-2 mb-3">
               <div className="flex items-center gap-2">
                 <Sparkles size={16} className="text-brand fill-brand" />
                 <h4 className="text-xs font-black uppercase tracking-wider text-ink dark:text-white">
-                  Outside Website Alerts (When Away or Offline)
+                  Outside Email Alerts (When Away or Offline)
                 </h4>
               </div>
               <span className="bg-brand text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 border border-ink shadow-[1px_1px_0px_#121212]">
@@ -229,11 +224,11 @@ export default function PushSettingsModal({ isOpen, onClose }) {
             </div>
 
             <p className="text-[11px] text-inkmuted dark:text-stone-300 font-medium mb-4 leading-relaxed">
-              People are busy — you don't need to stay glued to the website. Turn on outside alerts so you get notified instantly when an employer messages you for a gig inquiry or active job.
+              People are busy — you don't need to stay glued to the website. Turn on outside email alerts so you get notified instantly in your inbox when an employer messages you for a gig inquiry or active job.
             </p>
 
             <div className="space-y-4">
-              {/* Channel 1: Email Alerts (Recommended) */}
+              {/* Channel: Email Alerts (Recommended) */}
               <div className="border-2 border-ink bg-white dark:bg-[#1a1a1a] p-3.5 shadow-[2px_2px_0px_#121212]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
@@ -289,7 +284,7 @@ export default function PushSettingsModal({ isOpen, onClose }) {
 
                     {savedContactNotice && (
                       <p className="text-[10px] font-bold text-ok flex items-center gap-1">
-                        <Check size={12} /> Contact channels saved successfully!
+                        <Check size={12} /> Destination email saved successfully!
                       </p>
                     )}
 
@@ -318,65 +313,6 @@ export default function PushSettingsModal({ isOpen, onClose }) {
                         {emailTestResult.message}
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
-
-              {/* Channel 2: WhatsApp Alerts (Opt-in) */}
-              <div className="border-2 border-ink bg-white dark:bg-[#1a1a1a] p-3.5 shadow-[2px_2px_0px_#121212]">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center border border-ink bg-[#25D366] text-white shadow-[1px_1px_0px_#121212]">
-                      <MessageCircle size={16} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-black text-ink dark:text-white">
-                          WhatsApp Message Alerts
-                        </p>
-                        <span className="bg-stone-100 dark:bg-stone-800 text-ink dark:text-stone-300 text-[8px] font-black uppercase px-1.5 py-0.5 border border-ink/30">
-                          OPT-IN
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-inkmuted dark:text-stone-400 font-medium mt-1">
-                        Get a WhatsApp ping on your mobile device when an employer messages you regarding a gig inquiry.
-                      </p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2 mt-1">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(prefs.whatsapp_alerts)}
-                      onChange={() => handleTogglePref("whatsapp_alerts")}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#25D366] border border-ink"></div>
-                  </label>
-                </div>
-
-                {Boolean(prefs.whatsapp_alerts) && (
-                  <div className="mt-3.5 pt-3 border-t border-ink/20 space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-stone-400">
-                      WhatsApp Mobile Number:
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="tel"
-                        value={notificationPhone}
-                        onChange={(e) => setNotificationPhone(e.target.value)}
-                        placeholder="+91 98765 43210"
-                        className="flex-1 border-2 border-ink bg-sand/30 dark:bg-[#252525] px-3 py-1.5 text-xs font-bold text-ink dark:text-white outline-none focus:bg-white"
-                      />
-                      <button
-                        onClick={handleSaveContactChannels}
-                        className="border-2 border-ink bg-ink px-3 py-1.5 text-xs font-black uppercase text-white shadow-[1.5px_1.5px_0px_#121212] hover:bg-brand transition shrink-0"
-                      >
-                        Save
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-inkmuted dark:text-stone-400">
-                      Used strictly for employer gig alerts and payment notices. Never shared with third parties.
-                    </p>
                   </div>
                 )}
               </div>

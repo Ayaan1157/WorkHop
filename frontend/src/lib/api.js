@@ -407,14 +407,12 @@ async function mockRouter(path, method = "GET", body = null) {
       ok: true,
       freelancer_id: fId,
       email_alerts: true,
-      whatsapp_alerts: false,
       featured_blasts: true,
       employer_messages: true,
       hired_alerts: true,
       escrow_updates: true,
       sound: true,
       notification_email: "freelancer@work-hop.com",
-      notification_phone: "+91 98765 43210",
     };
   }
   if (cleanPath.includes("/notifications/test-email") && method === "POST") {
