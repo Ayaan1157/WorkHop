@@ -66,11 +66,11 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     if (initialMode) setMode(initialMode);
   }, [initialRole, initialMode, isOpen]);
 
-  // If GPS detects coords, update area automatically
+  // If GPS detects coords, update area automatically if inside Bengaluru
   useEffect(() => {
     if (coords) {
       const nearest = findNearestArea(coords);
-      if (nearest) {
+      if (nearest && !nearest.isOutsideBengaluru) {
         setArea(nearest.name);
         setSavedArea(nearest.name);
       }
@@ -605,6 +605,11 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                       ))}
                     </select>
                   </div>
+                  {coords && findNearestArea(coords)?.isOutsideBengaluru && (
+                    <p className="mt-1 text-[10px] font-bold text-brand">
+                      📍 Your detected location is outside Bengaluru. WorkHop services are currently live exclusively across Bengaluru.
+                    </p>
+                  )}
                 </div>
 
                 {/* Dynamic Role Field: Company Name & Optional GST (Employer) OR Skill (Freelancer) */}

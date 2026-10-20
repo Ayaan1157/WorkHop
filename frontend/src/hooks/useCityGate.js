@@ -4,18 +4,32 @@ import {
   getDistanceFromBengaluru,
   isCityOverrideEnabled,
   setCityOverride,
+  reverseGeocodeCity,
 } from "@/lib/locationAreas";
 import { useUserLocation } from "@/hooks/useUserLocation";
 
 // City Gate Hook for Geofencing WorkHop to Bengaluru
 export function useCityGate() {
   const { coords, status: locStatus, requestLocation } = useUserLocation();
-  const [detectedCity, setDetectedCity] = useState("Mysore");
+  const [detectedCity, setDetectedCity] = useState("your area");
   const [isOutsideCity, setIsOutsideCity] = useState(false);
   const [distanceKm, setDistanceKm] = useState(null);
   const [isPreviewMode, setIsPreviewMode] = useState(() => isCityOverrideEnabled());
   const [isGateOpen, setIsGateOpen] = useState(false);
   const [checked, setChecked] = useState(false);
+
+  // Auto-request location when user is signed in
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isUserLoggedIn = !!(
+      localStorage.getItem("workhop_token") ||
+      localStorage.getItem("workhop_user") ||
+      localStorage.getItem("workhop_freelancer_id")
+    );
+    if (isUserLoggedIn && locStatus === "idle" && !coords) {
+      requestLocation();
+    }
+  }, [locStatus, coords, requestLocation]);
 
   // 1. Check IP-based location on initial mount (catches desktop & non-GPS visitors)
   useEffect(() => {
@@ -90,28 +104,44 @@ export function useCityGate() {
   }, []);
 
   // 2. Accurate Hardware GPS Check when user shares coordinates
-  useEffect(() => {
-    if (!coords || typeof coords.lat !== "number" || typeof coords.lng !== "number") return;
+  const handleCoordsCheck = useCallback((c) => {
+    if (!c || typeof c.lat !== "number" || typeof c.lng !== "number") return;
 
-    const inBlr = isLocationInBengaluru(coords);
-    const dist = getDistanceFromBengaluru(coords);
+    const inBlr = isLocationInBengaluru(c);
+    const dist = getDistanceFromBengaluru(c);
     setDistanceKm(dist);
 
     if (!inBlr) {
       setIsOutsideCity(true);
-      // Rough estimation for Mysore if south-west and ~120-160km away
-      if (coords.lat < 12.6 && coords.lng < 77.0 && dist > 80 && dist < 180) {
-        setDetectedCity("Mysore");
-      }
-      if (!isCityOverrideEnabled()) {
-        setIsGateOpen(true);
-      }
+      setIsGateOpen(true);
+      setIsPreviewMode(false);
+      setCityOverride(false);
+
+      reverseGeocodeCity(c).then((cityName) => {
+        if (cityName) setDetectedCity(cityName);
+      });
     } else {
       // User is genuinely in Bengaluru! Close gate
       setIsOutsideCity(false);
       setIsGateOpen(false);
+      setDetectedCity("Bengaluru");
     }
-  }, [coords]);
+  }, []);
+
+  useEffect(() => {
+    if (coords) {
+      handleCoordsCheck(coords);
+    }
+  }, [coords, handleCoordsCheck]);
+
+  // Listen for global location updates
+  useEffect(() => {
+    const onLocationUpdated = (e) => {
+      if (e?.detail) handleCoordsCheck(e.detail);
+    };
+    window.addEventListener("workhop:location_updated", onLocationUpdated);
+    return () => window.removeEventListener("workhop:location_updated", onLocationUpdated);
+  }, [handleCoordsCheck]);
 
   const enablePreviewMode = useCallback(() => {
     setCityOverride(true);

@@ -63,6 +63,26 @@ export function setCityOverride(enabled = true) {
   }
 }
 
+// Reverse-geocode coordinates to an English city / region name (Free client-side lookup)
+export async function reverseGeocodeCity(coords) {
+  if (!coords || typeof coords.lat !== "number" || typeof coords.lng !== "number") return null;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coords.lat}&longitude=${coords.lng}&localityLanguage=en`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      const city = data.city || data.locality || data.principalSubdivision;
+      if (city) return city;
+    }
+  } catch {}
+  return null;
+}
+
 // Find closest named locality from coordinates
 export function findNearestArea(coords) {
   if (!coords || !coords.lat || !coords.lng) return null;

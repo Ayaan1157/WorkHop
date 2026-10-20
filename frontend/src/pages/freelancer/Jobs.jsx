@@ -148,7 +148,7 @@ export default function Jobs() {
   useEffect(() => {
     if (liveCoords?.lat && liveCoords?.lng) {
       const nearest = findNearestArea(liveCoords);
-      if (nearest) {
+      if (nearest && !nearest.isOutsideBengaluru) {
         setApplicantArea(nearest.name);
         setSavedArea(nearest.name);
       }
@@ -252,7 +252,8 @@ export default function Jobs() {
   }, [jobs, catFilter, filters, term, sortBy, viewTab, savedJobIds]);
 
   const mapPins = useMemo(() => {
-    const center = liveCoords || { lat: 12.9352, lng: 77.6245 };
+    const isInsideBlr = liveCoords && isLocationInBengaluru(liveCoords);
+    const center = isInsideBlr ? liveCoords : { lat: 12.9352, lng: 77.6245 };
     return filtered.slice(0, 40).map((j, idx) => {
       const coords = getProximityCoordinates(center.lat, center.lng, j.distance_km || (0.4 + (idx % 15) * 0.3), j.id || idx);
       return {

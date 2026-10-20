@@ -32,7 +32,7 @@ export default function CityRestrictionModal({
     submitWaitlist,
   } = useCityGate();
 
-  const [cityInput, setCityInput] = useState(detectedCity || "Mysore");
+  const [cityInput, setCityInput] = useState(detectedCity || "your area");
   const [contactInput, setContactInput] = useState("");
   const [roleInput, setRoleInput] = useState("employer"); // "employer" | "freelancer"
   const [submitting, setSubmitting] = useState(false);
@@ -40,13 +40,25 @@ export default function CityRestrictionModal({
   const [submitMessage, setSubmitMessage] = useState("");
   const [waitlistCount, setWaitlistCount] = useState(148);
 
+  // Auto-fill logged-in user email if available
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem("workhop_user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u?.email && !contactInput) {
+          setContactInput(u.email);
+        }
+      }
+    } catch {}
+  }, [contactInput]);
+
   // Sync cityInput when detectedCity updates
   React.useEffect(() => {
-    if (detectedCity && !cityInput) {
+    if (detectedCity && (!cityInput || cityInput === "your area" || cityInput === "Mysore")) {
       setCityInput(detectedCity);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detectedCity]);
+  }, [detectedCity, cityInput]);
 
   const showModal = forceOpen || (isGateOpen && !isPreviewMode);
 
@@ -57,7 +69,7 @@ export default function CityRestrictionModal({
     setSubmitting(true);
     try {
       const res = await submitWaitlist({
-        city: cityInput.trim() || detectedCity || "Mysore",
+        city: cityInput.trim() || detectedCity || "your city",
         email: contactInput.trim(),
         contact: contactInput.trim(),
         role: roleInput,
@@ -88,7 +100,7 @@ export default function CityRestrictionModal({
               PREVIEW MODE
             </span>
             <span className="text-[11px] font-bold">
-              You are exploring WorkHop Bengaluru ({distanceKm ? `${distanceKm}km away` : `visiting from ${detectedCity || "outside city"}`}). Open gigs &amp; verified pros are localized to Bengaluru.
+              WorkHop is not available in {detectedCity || "your region"} yet ({distanceKm ? `~${distanceKm}km from Bengaluru` : "outside Bengaluru"}). You are previewing Bengaluru listings.
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -96,7 +108,7 @@ export default function CityRestrictionModal({
               onClick={exitPreviewMode}
               className="border border-ink bg-white px-2 py-0.5 text-[10px] font-black uppercase hover:bg-sand transition"
             >
-              Check City Launch
+              View Region Status
             </button>
           </div>
         </div>
@@ -104,7 +116,7 @@ export default function CityRestrictionModal({
 
       {/* 2. Geofence Interstitial Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md animate-in fade-in duration-200">
           <div className="w-full max-w-lg border-3 border-ink bg-white dark:bg-[#151515] text-ink dark:text-white shadow-[8px_8px_0px_#121212] dark:shadow-[8px_8px_0px_#333]">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b-3 border-ink bg-brand px-5 py-4 text-white">
@@ -114,10 +126,10 @@ export default function CityRestrictionModal({
                 </div>
                 <div>
                   <h3 className="text-sm font-black uppercase tracking-wider text-white">
-                    City Service Boundary
+                    Not Available In Your Region Yet
                   </h3>
                   <p className="text-[10px] font-black uppercase tracking-wider text-white/90">
-                    Bengaluru Exclusive Hyperlocal Zone
+                    WorkHop is currently exclusive to Bengaluru
                   </p>
                 </div>
               </div>
@@ -140,10 +152,10 @@ export default function CityRestrictionModal({
                   </div>
                   <div>
                     <h4 className="text-base font-black tracking-tight text-ink dark:text-white">
-                      Sorry! We'll be in {detectedCity || "your city"} soon.
+                      WorkHop is not available in {detectedCity || "your region"} yet
                     </h4>
                     <p className="text-xs text-inkmuted dark:text-stone-300 font-medium mt-1 leading-relaxed">
-                      WorkHop operates on a strict <strong>5-kilometer hyperlocal radius</strong> with 100% physically verified local freelancers and milestone-protected escrow.
+                      We detected your location in <strong>{detectedCity || "a region outside Bengaluru"}</strong>{distanceKm ? ` (~${distanceKm} km away)` : ""}. WorkHop operates on a strict <strong>5-kilometer hyperlocal radius</strong> with 100% physically verified local freelancers and milestone-protected escrow.
                     </p>
                     <p className="text-xs text-inkmuted dark:text-stone-300 font-medium mt-2">
                       To guarantee same-day availability and trusted quality, we are currently live exclusively across <strong>Bengaluru</strong>.
@@ -158,7 +170,7 @@ export default function CityRestrictionModal({
                   <div className="flex items-center gap-1.5">
                     <Sparkles size={14} className="text-brand fill-brand" />
                     <span className="text-xs font-black uppercase tracking-wider text-ink dark:text-white">
-                      Vote to Bring WorkHop to Your City
+                      Vote to Bring WorkHop to Your Region
                     </span>
                   </div>
                   <span className="bg-[#E5F7E0] dark:bg-[#132c18] text-[#0E6220] dark:text-[#6ee7b7] text-[9px] font-black uppercase px-2 py-0.5 border border-ink/40">
