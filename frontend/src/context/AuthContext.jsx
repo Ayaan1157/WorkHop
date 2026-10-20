@@ -7,6 +7,7 @@ const AuthContext = createContext({
   loading: true,
   login: () => {},
   logout: async () => {},
+  deleteAccount: async () => {},
   adoptSession: async () => {},
   passwordLoginAuth: async () => {},
 });
@@ -103,6 +104,31 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const deleteAccount = useCallback(async (reason = null) => {
+    try {
+      await apiPost("/auth/delete-account", { reason }, true);
+    } catch (e) {
+      console.warn("Delete account remote request fallback:", e);
+    }
+    clearToken();
+    try {
+      localStorage.removeItem("workhop_user_data");
+      localStorage.removeItem("workhop_pro_phone");
+      localStorage.removeItem("workhop_pro_skill");
+      localStorage.removeItem("workhop_user_area");
+      localStorage.removeItem("workhop_company_name");
+      localStorage.removeItem("workhop_employer_id");
+      localStorage.removeItem("workhop_freelancer_id");
+      localStorage.removeItem("workhop_auth_role");
+      localStorage.removeItem("workhop_custom_jobs");
+      localStorage.removeItem("workhop_freelancer_profile");
+      localStorage.removeItem("workhop_credits_wallet");
+      localStorage.removeItem("workhop_chats");
+    } catch {}
+    setUser(null);
+    return { ok: true };
+  }, []);
+
   const adoptSession = useCallback(async (token, u) => {
     setToken(token);
     saveStoredUser(u);
@@ -184,7 +210,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, adminLogin, passwordLoginAuth, logout, adoptSession, signupWithDetails, updateUserProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, adminLogin, passwordLoginAuth, logout, deleteAccount, adoptSession, signupWithDetails, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );

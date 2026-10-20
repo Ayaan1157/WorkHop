@@ -444,15 +444,38 @@ export default function Grievance() {
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="border-2 border-ink bg-white p-5 sm:p-6 shadow-[5px_5px_0px_#121212]">
-            <div className="border-b-2 border-ink/10 pb-3 mb-5">
-              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-ink">
-                File a Formal Statutory Grievance Ticket
-              </h3>
-              <p className="text-xs text-inkmuted mt-0.5">
-                All submissions are securely logged, assigned a legally binding SLA, and handled directly by the Grievance Cell.
-              </p>
+          <div className="flex flex-col gap-4">
+            {/* DPDP Quick Actions & Breach Emergency Banner */}
+            <div className="border-2 border-ink bg-[#FFF8F5] p-4 text-xs shadow-[3px_3px_0px_#121212] flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+              <div>
+                <span className="inline-block bg-danger text-white px-2 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                  INSTANT SELF-SERVICE DATA ERASURE (DPDP SEC 12)
+                </span>
+                <p className="mt-1 text-xs font-black text-ink">
+                  Looking to permanently delete your account &amp; personal data?
+                </p>
+                <p className="text-[11px] text-inkmuted mt-0.5 font-medium">
+                  Under the DPDP Act, 2023, you do not need to wait for a grievance resolution ticket. You can execute an instant permanent data erasure directly in 1 click.
+                </p>
+              </div>
+              <Link
+                to="/profile"
+                className="flex items-center gap-1.5 border-2 border-danger bg-danger text-white px-3 py-2 text-xs font-black uppercase tracking-wider shadow-[2px_2px_0px_#121212] hover:bg-red-700 transition shrink-0"
+              >
+                <span>ERASE DATA IN SETTINGS</span>
+                <ChevronRight size={13} />
+              </Link>
             </div>
+
+            <form onSubmit={handleSubmit} className="border-2 border-ink bg-white p-5 sm:p-6 shadow-[5px_5px_0px_#121212]">
+              <div className="border-b-2 border-ink/10 pb-3 mb-5">
+                <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-ink">
+                  File a Formal Statutory Grievance Ticket
+                </h3>
+                <p className="text-xs text-inkmuted mt-0.5">
+                  All submissions are securely logged, assigned a legally binding SLA, and handled directly by the Grievance Cell.
+                </p>
+              </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Complainant Role */}
@@ -633,8 +656,9 @@ export default function Grievance() {
               </button>
             </div>
           </form>
-        )}
-      </div>
-    </Shell>
+        </div>
+      )}
+    </div>
+  </Shell>
   );
 }

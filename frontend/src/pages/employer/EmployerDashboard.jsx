@@ -5,7 +5,7 @@ import {
   Phone, Mail, CheckCircle2, ChevronRight, ChevronLeft, Coins, Trophy,
   Pencil, X, ShieldCheck, Star, Check, ArrowRightLeft,
   Flame, Plus, Menu, LayoutGrid, MessagesSquare, Zap,
-  Map as MapIcon, Tag, LifeBuoy, FileText, LogOut, RotateCcw
+  Map as MapIcon, Tag, LifeBuoy, FileText, LogOut, RotateCcw, Trash2
 } from "lucide-react";
 import { Shell } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
@@ -20,6 +20,7 @@ import CompleteJobReviewModal from "@/components/CompleteJobReviewModal";
 import EditModal from "@/components/EditModal";
 import EditJobModal from "@/components/EditJobModal";
 import ProfileLockedModal from "@/components/ProfileLockedModal";
+import DeleteAccountModal from "@/components/DeleteAccountModal";
 
 const labelCls = "text-xs font-semibold text-inkmuted dark:text-[#888] mb-1.5 block";
 const inputCls = "w-full bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#ddd] dark:border-[#333] rounded-lg px-3.5 py-2.5 text-sm text-ink dark:text-white placeholder:text-[#999] dark:placeholder:text-[#555] focus:outline-none focus:border-[#E65A1E] transition";
@@ -61,6 +62,7 @@ export default function EmployerDashboard() {
   // Modals & UI States
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({ companyName, employerName, area, phone, industry, bio, gstNumber });
   const [reviewJob, setReviewJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
@@ -1038,20 +1040,34 @@ export default function EmployerDashboard() {
                 </div>
               </div>
 
-              {/* Drawer Footer with Logout */}
-              <div className="pt-4 border-t border-[#e5e5e5] dark:border-[#222] mt-4 flex items-center justify-between text-xs text-inkmuted">
-                <span className="font-semibold">WorkHop Bengaluru</span>
-                {logout && (
-                  <button
-                    onClick={() => {
-                      logout();
-                      nav("/");
-                    }}
-                    className="flex items-center gap-1.5 text-red-500 font-bold hover:underline"
-                  >
-                    <LogOut size={13} /> Log out
-                  </button>
-                )}
+              {/* Drawer Footer with Logout & DPDP Right to Erasure */}
+              <div className="pt-4 border-t border-[#e5e5e5] dark:border-[#222] mt-4 flex flex-col gap-2.5 text-xs text-inkmuted">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">WorkHop Bengaluru</span>
+                  {logout && (
+                    <button
+                      onClick={() => {
+                        logout();
+                        nav("/");
+                      }}
+                      className="flex items-center gap-1.5 text-ink hover:text-[#E65A1E] font-bold"
+                    >
+                      <LogOut size={13} /> Log out
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  data-testid="employer-dpdp-delete-btn"
+                  onClick={() => {
+                    setMenuDrawerOpen(false);
+                    setDeleteModalOpen(true);
+                  }}
+                  className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-red-500 hover:text-red-700 pt-2 border-t border-dashed border-gray-200 dark:border-gray-800 transition"
+                  title="DPDP Act 2023 Statutory Right to Erasure"
+                >
+                  <Trash2 size={12} /> Delete Employer Account &amp; Data (DPDP)
+                </button>
               </div>
             </div>
           </div>
@@ -1193,6 +1209,12 @@ export default function EmployerDashboard() {
           isOpen={lockedModalOpen}
           onClose={() => setLockedModalOpen(false)}
           pro={selectedLockedPro}
+        />
+
+        {/* ═══════════ DPDP ACT ACCOUNT & DATA ERASURE MODAL ═══════════ */}
+        <DeleteAccountModal
+          isOpen={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
         />
       </div>
     </Shell>

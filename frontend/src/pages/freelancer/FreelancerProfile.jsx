@@ -14,6 +14,7 @@ import EditModal from "@/components/EditModal";
 import CreditsTopUpModal from "@/components/CreditsTopUpModal";
 import PushSettingsModal from "@/components/PushSettingsModal";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import DeleteAccountModal from "@/components/DeleteAccountModal";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, getFreelancerId } from "@/lib/api";
 import { getFreelancerProfile, saveFreelancerProfile, getCreditsWallet, getCreditTransactions } from "@/lib/clientStore";
@@ -57,6 +58,7 @@ export default function FreelancerProfile() {
   // Modal states
   const [editingSection, setEditingSection] = useState(null);
   const [editData, setEditData] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   // Skill input
   const [skillInput, setSkillInput] = useState("");
@@ -643,6 +645,32 @@ export default function FreelancerProfile() {
                   <p className="text-xs text-inkmuted dark:text-[#555] italic">Link your GitHub account</p>
                 )}
               </SidebarSection>
+
+              {/* DPDP ACT PRIVACY & ACCOUNT ERASURE */}
+              <div className="border-2 border-ink bg-[#FFF8F5] dark:bg-[#1a1412] p-4 text-xs shadow-[2px_2px_0px_#121212]">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono text-[9px] font-black uppercase tracking-wider text-brand">
+                    DPDP ACT, 2023
+                  </span>
+                  <span className="text-[9px] bg-ink text-white px-1.5 py-0.5 font-black">
+                    SEC 12
+                  </span>
+                </div>
+                <p className="text-[11px] font-bold text-ink dark:text-white">
+                  Data Protection &amp; Erasure
+                </p>
+                <p className="text-[10px] text-inkmuted dark:text-stone-400 mt-1 leading-relaxed">
+                  Exercise your statutory right to erase your freelancer profile, portfolio, and personal data.
+                </p>
+                <button
+                  type="button"
+                  data-testid="freelancer-delete-account-btn"
+                  onClick={() => setDeleteModalOpen(true)}
+                  className="mt-3 w-full flex items-center justify-center gap-1.5 border border-danger text-danger hover:bg-danger hover:text-white py-1.5 px-2 text-[10px] font-black tracking-wider transition"
+                >
+                  <Trash2 size={12} /> DELETE PROFILE &amp; DATA
+                </button>
+              </div>
             </aside>
 
             {/* ═══════════ MAIN CONTENT ═══════════ */}
@@ -2196,6 +2224,12 @@ export default function FreelancerProfile() {
           </div>
         </div>
       )}
+
+      {/* DPDP ACT RIGHT TO ERASURE MODAL */}
+      <DeleteAccountModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+      />
     </Shell>
   );
 }

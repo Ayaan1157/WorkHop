@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import {
   MessagesSquare, Map as MapIcon, LayoutGrid, Tag, LifeBuoy, FileText,
   Shield, ChevronRight, LogOut, Briefcase, ShieldCheck, Loader2, Wallet,
-  Sparkles, ArrowRightLeft, UserCheck
+  Sparkles, ArrowRightLeft, UserCheck, Trash2
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import ProfileProgressBar from "@/components/ProfileProgressBar";
+import DeleteAccountModal from "@/components/DeleteAccountModal";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, getFreelancerId } from "@/lib/api";
 
@@ -18,6 +19,7 @@ export default function Profile() {
   const [skill, setSkill] = useState(() => user?.skill || localStorage.getItem("workhop_pro_skill") || "");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const loadPro = useCallback(async () => {
     const fid = getFreelancerId();
@@ -260,18 +262,75 @@ export default function Profile() {
           ))}
         </div>
 
+        {/* DPDP ACT 2023 STATUTORY PRIVACY & RIGHT TO ERASURE CARD */}
+        <div className="flex flex-col gap-2 border-2 border-ink bg-[#FFF8F5] p-4 shadow-[2px_2px_0px_#121212]" data-testid="profile-dpdp-card">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck size={16} className="text-brand" />
+              <span className="text-xs font-black tracking-wider text-ink uppercase">
+                Privacy &amp; Data Rights (DPDP Act, 2023)
+              </span>
+            </div>
+            <span className="border border-ink bg-ink text-brand px-1.5 py-0.5 text-[9px] font-black uppercase">
+              STATUTORY
+            </span>
+          </div>
+          <p className="text-[11px] text-inkmuted leading-relaxed font-medium">
+            Under India's Digital Personal Data Protection Act, 2023, you have the right to access, rectify, or permanently erase your personal data from WorkHop at any time.
+          </p>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <button
+              onClick={() => nav("/legal?tab=PRIVACY")}
+              className="text-[10px] font-bold text-ink underline hover:text-brand"
+            >
+              Read DPDP Privacy Policy
+            </button>
+            <span className="text-inkmuted text-[10px]">·</span>
+            <button
+              onClick={() => nav("/grievance")}
+              className="text-[10px] font-bold text-ink underline hover:text-brand"
+            >
+              Grievance Redressal
+            </button>
+            <span className="text-inkmuted text-[10px]">·</span>
+            <button
+              data-testid="profile-delete-data-btn"
+              onClick={() => setDeleteModalOpen(true)}
+              className="text-[10px] font-black text-danger hover:underline flex items-center gap-1"
+            >
+              <Trash2 size={11} /> Delete My Account &amp; Data
+            </button>
+          </div>
+        </div>
+
         {user && (
-          <button
-            data-testid="profile-logout-btn"
-            onClick={async () => {
-              await logout();
-              nav("/");
-            }}
-            className="flex items-center justify-center gap-2 border-2 border-ink bg-ink py-4 text-[13px] font-black tracking-wider text-white hover:bg-danger transition"
-          >
-            <LogOut size={16} /> LOG OUT
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              data-testid="profile-logout-btn"
+              onClick={async () => {
+                await logout();
+                nav("/");
+              }}
+              className="flex-1 flex items-center justify-center gap-2 border-2 border-ink bg-ink py-3.5 text-[12px] font-black tracking-wider text-white hover:bg-black/80 transition"
+            >
+              <LogOut size={15} /> LOG OUT
+            </button>
+            <button
+              data-testid="profile-danger-delete-btn"
+              onClick={() => setDeleteModalOpen(true)}
+              className="flex items-center justify-center gap-1.5 border-2 border-danger bg-red-50 text-danger py-3.5 px-4 text-[12px] font-black tracking-wider hover:bg-danger hover:text-white transition"
+              title="DPDP Act Section 12 Right to Erasure"
+            >
+              <Trash2 size={15} /> DELETE ACCOUNT
+            </button>
+          </div>
         )}
+
+        <DeleteAccountModal
+          isOpen={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+        />
+
         <p className="text-center text-[11px] text-inkmuted">WorkHop v2 · Made in Bengaluru 🧡</p>
       </div>
     </Shell>

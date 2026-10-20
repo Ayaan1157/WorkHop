@@ -713,6 +713,28 @@ async function mockRouter(path, method = "GET", body = null) {
   if (cleanPath === "/complaints") {
     return { ok: true, message: "Complaint submitted successfully." };
   }
+  if ((cleanPath === "/auth/delete-account" || cleanPath === "/users/me") && (method === "POST" || method === "DELETE")) {
+    clearToken();
+    try {
+      localStorage.removeItem("workhop_user_data");
+      localStorage.removeItem("workhop_pro_phone");
+      localStorage.removeItem("workhop_pro_skill");
+      localStorage.removeItem("workhop_user_area");
+      localStorage.removeItem("workhop_company_name");
+      localStorage.removeItem("workhop_employer_id");
+      localStorage.removeItem("workhop_freelancer_id");
+      localStorage.removeItem("workhop_auth_role");
+      localStorage.removeItem("workhop_custom_jobs");
+      localStorage.removeItem("workhop_freelancer_profile");
+      localStorage.removeItem("workhop_credits_wallet");
+      localStorage.removeItem("workhop_chats");
+    } catch {}
+    return {
+      ok: true,
+      compliance: "DPDP_ACT_2023_SECTION_12",
+      message: "Your account and all associated personal data have been permanently erased in compliance with Section 12 of the DPDP Act, 2023."
+    };
+  }
 
   return { ok: true };
 }

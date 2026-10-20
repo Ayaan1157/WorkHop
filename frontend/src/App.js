@@ -97,6 +97,8 @@ function App() {
             <Route path="/blog/:slug" element={<Blog />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/legal" element={<Legal />} />
+            <Route path="/privacy" element={<Legal defaultTab="PRIVACY" />} />
+            <Route path="/dpdp" element={<Legal defaultTab="PRIVACY" />} />
             <Route path="/support" element={<Support />} />
             <Route path="/grievance" element={<Grievance />} />
             <Route path="/grievance-redressal" element={<Grievance />} />
