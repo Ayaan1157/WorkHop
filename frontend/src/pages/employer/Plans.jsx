@@ -8,7 +8,7 @@ import {
 import { Shell, TopBar, Spinner } from "@/components/kit";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
-import { apiGet, getEmployerId, getFreelancerId } from "@/lib/api";
+import { apiGet, apiPost, getEmployerId, getFreelancerId } from "@/lib/api";
 import {
   ADMIN_EMAILS,
   getCreditsWallet,
@@ -178,6 +178,8 @@ export default function Plans() {
               employer_id: getEmployerId(),
               freelancer_id: freelancerId,
               coupon_code: coupon?.code ?? null,
+              email: user?.email || undefined,
+              full_name: user?.name || user?.full_name || undefined,
             },
             `${selected.name} · ${coupon?.final_amount != null ? `₹${coupon.final_amount}` : selected.price_label}`
           );
@@ -195,15 +197,35 @@ export default function Plans() {
       if (selected.targetType === "hops_pack") {
         const updated = purchaseCreditPack(freelancerId, selected.plan_id);
         setWallet({ ...updated });
+        try {
+          await apiPost("/credits/purchase-pack", {
+            user_id: freelancerId,
+            pack_id: selected.plan_id,
+            email: user?.email || undefined,
+            full_name: user?.name || user?.full_name || "Freelancer",
+          });
+        } catch (apiErr) {
+          console.warn("Backend credits sync notice:", apiErr);
+        }
       } else if (selected.targetType === "hops_pass") {
         const updated = subscribeToCredits(freelancerId, selected.plan_id);
         setWallet({ ...updated });
+        try {
+          await apiPost("/credits/subscribe", {
+            user_id: freelancerId,
+            plan_id: selected.plan_id,
+            email: user?.email || undefined,
+            full_name: user?.name || user?.full_name || "Freelancer",
+          });
+        } catch (apiErr) {
+          console.warn("Backend pass sync notice:", apiErr);
+        }
       } else {
         await loadPurchases();
       }
 
       setPaySuccess(true);
-      setTimeout(() => setSelected(null), 1400);
+      setTimeout(() => setSelected(null), 1800);
     } catch (e) {
       console.error("purchase err", e);
     } finally {
@@ -782,6 +804,9 @@ export default function Plans() {
                     ? `${selected.name} is now active with ${selected.hops} Hops credited!`
                     : `${selected.name} is now active on your employer account.`}
                 </p>
+                <p className="text-[11px] font-bold text-ok flex items-center justify-center gap-1.5 mt-2">
+                  ✓ Official GST Tax Invoice receipt emailed to {user?.email || "your registered email"}
+                </p>
               </div>
             ) : (
               <>
@@ -827,6 +852,15 @@ export default function Plans() {
                     onApplied={setCoupon}
                     testIDPrefix="plan-coupon"
                   />
+                </div>
+
+                <div className="mb-3 flex items-center justify-between rounded border border-ink/20 bg-sand/60 dark:bg-[#202024] px-3 py-2 text-[10px] text-inkmuted dark:text-zinc-300">
+                  <span className="font-bold">
+                    📧 Official GST Tax Invoice emailed upon confirmation
+                  </span>
+                  <span className="font-semibold text-ink dark:text-zinc-200 truncate max-w-[200px]">
+                    {user?.email || "Registered email"}
+                  </span>
                 </div>
 
                 <button

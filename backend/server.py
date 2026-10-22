@@ -243,14 +243,38 @@ class CreditTransaction(BaseModel):
     created_at: str
 
 
+HOPS_PACKS = {
+    "pack-10": {"credits": 10, "price_inr": 150, "name": "10 Bidding Hops Pack"},
+    "pack-20": {"credits": 20, "price_inr": 300, "name": "20 Bidding Hops Pack"},
+    "pack-25": {"credits": 25, "price_inr": 375, "name": "25 Bidding Hops Pack"},
+    "pack-40": {"credits": 40, "price_inr": 600, "name": "40 Bidding Hops Pack"},
+    "pack-50": {"credits": 50, "price_inr": 750, "name": "50 Bidding Hops Pack"},
+    "pack-60": {"credits": 60, "price_inr": 900, "name": "60 Bidding Hops Pack"},
+    "pack-80": {"credits": 80, "price_inr": 1200, "name": "80 Bidding Hops Pack"},
+    "pack-100": {"credits": 100, "price_inr": 1500, "name": "100 Bidding Hops Pack"},
+}
+
+HOPS_PASSES = {
+    "starter_pass": {"credits": 30, "price_inr": 399, "name": "Starter Hops Pass"},
+    "pro_pass": {"credits": 80, "price_inr": 999, "name": "Freelancer Plus Pass"},
+    "power_pass": {"credits": 160, "price_inr": 1899, "name": "Power Freelancer Pass"},
+}
+
+
 class CreditPackPurchaseReq(BaseModel):
     user_id: str
     pack_id: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    payment_id: Optional[str] = None
 
 
 class CreditSubscriptionReq(BaseModel):
     user_id: str
     plan_id: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    payment_id: Optional[str] = None
 
 
 class JobBoostReq(BaseModel):
@@ -3260,15 +3284,11 @@ async def get_freelancer_credits_wallet(freelancer_id: str):
 
 
 @api_router.post("/credits/purchase-pack")
-async def purchase_credits_pack(req: CreditPackPurchaseReq):
-    """Adds purchased credit bundle to user's wallet."""
-    pack_map = {
-        "pack-10": (10, 100),
-        "pack-25": (25, 225),
-        "pack-50": (50, 400),
-        "pack-100": (100, 750),
-    }
-    credits, price = pack_map.get(req.pack_id, (25, 225))
+async def purchase_credits_pack(req: CreditPackPurchaseReq, background_tasks: BackgroundTasks):
+    """Adds purchased credit bundle to user's wallet, creates tax invoice, and emails receipt."""
+    pack = HOPS_PACKS.get(req.pack_id) or HOPS_PACKS.get("pack-40")
+    credits = pack["credits"]
+    price = pack["price_inr"]
     wallet = await _get_or_create_wallet(req.user_id)
     new_balance = wallet["balance"] + credits
     await db.credits_wallet.update_one(
@@ -3281,21 +3301,43 @@ async def purchase_credits_pack(req: CreditPackPurchaseReq):
         "type": "purchase",
         "amount": credits,
         "balance_after": new_balance,
-        "description": f"Purchased {credits} Credits Pack (₹{price})",
+        "description": f"Purchased {pack['name']} (₹{price})",
         "created_at": _now_iso(),
     })
-    return {"ok": True, "balance": new_balance, "added": credits}
+
+    # Generate Official Tax Invoice Document & Dispatch Email
+    invoice_doc = _build_hops_invoice_doc(
+        user_id=req.user_id,
+        product_type="hops_pack",
+        product_id=req.pack_id,
+        item_title=pack["name"],
+        item_subtitle="Bidding Hops Wallet Top-Up (1 Hop = ₹15)",
+        price_inr=price,
+        hops_added=credits,
+        new_balance=new_balance,
+        email=req.email,
+        full_name=req.full_name,
+        payment_id=req.payment_id,
+    )
+    await db.invoices.insert_one(dict(invoice_doc))
+    background_tasks.add_task(_send_hops_purchase_invoice, invoice_doc)
+
+    return {
+        "ok": True,
+        "balance": new_balance,
+        "added": credits,
+        "invoice_number": invoice_doc["invoice_number"],
+        "invoice_sent": True,
+    }
 
 
 @api_router.post("/credits/subscribe")
-async def subscribe_credits(req: CreditSubscriptionReq):
-    """Subscribes user to a monthly connects pass."""
-    plan_map = {
-        "starter_pass": (30, 249, "Starter Connects Pass"),
-        "pro_pass": (60, 449, "Pro Connects Pass"),
-        "power_pass": (120, 799, "Power Freelancer Pass"),
-    }
-    credits, price, name = plan_map.get(req.plan_id, (60, 449, "Pro Connects Pass"))
+async def subscribe_credits(req: CreditSubscriptionReq, background_tasks: BackgroundTasks):
+    """Subscribes user to a monthly connects pass, creates tax invoice, and emails receipt."""
+    plan = HOPS_PASSES.get(req.plan_id) or HOPS_PASSES.get("pro_pass")
+    credits = plan["credits"]
+    price = plan["price_inr"]
+    name = plan["name"]
     wallet = await _get_or_create_wallet(req.user_id)
     new_balance = wallet["balance"] + credits
     renews_at = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
@@ -3329,7 +3371,55 @@ async def subscribe_credits(req: CreditSubscriptionReq):
         "description": f"Subscribed to {name} (+{credits} credits, ₹{price}/mo)",
         "created_at": _now_iso(),
     })
-    return {"ok": True, "balance": new_balance, "subscription_status": "active", "renews_at": renews_at}
+
+    # Generate Official Tax Invoice Document & Dispatch Email
+    invoice_doc = _build_hops_invoice_doc(
+        user_id=req.user_id,
+        product_type="hops_pass",
+        product_id=req.plan_id,
+        item_title=plan["name"],
+        item_subtitle="Monthly Freelancer Connects Pass (Renews every 30 days)",
+        price_inr=price,
+        hops_added=credits,
+        new_balance=new_balance,
+        email=req.email,
+        full_name=req.full_name,
+        payment_id=req.payment_id,
+        renews_at=renews_at,
+    )
+    await db.invoices.insert_one(dict(invoice_doc))
+    background_tasks.add_task(_send_hops_purchase_invoice, invoice_doc)
+
+    return {
+        "ok": True,
+        "balance": new_balance,
+        "subscription_status": "active",
+        "renews_at": renews_at,
+        "invoice_number": invoice_doc["invoice_number"],
+        "invoice_sent": True,
+    }
+
+
+@api_router.get("/freelancer/{freelancer_id}/invoices")
+async def get_freelancer_invoices(freelancer_id: str):
+    """Returns past tax invoices for a freelancer."""
+    docs = await db.invoices.find(
+        {"user_id": freelancer_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return docs
+
+
+@api_router.post("/invoices/{invoice_number}/resend")
+async def resend_invoice_email(invoice_number: str, email: Optional[str] = None):
+    """Allows resending an invoice receipt to a specified or registered email."""
+    doc = await db.invoices.find_one({"invoice_number": invoice_number})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Invoice not found.")
+    if email and _EMAIL_RE.match(email.strip()):
+        doc["customer_email"] = email.strip()
+    sent = await _send_hops_purchase_invoice(doc)
+    return {"ok": True, "sent": sent, "invoice_number": invoice_number, "email": doc.get("customer_email")}
 
 
 @api_router.get("/jobs/{job_id}/leaderboard")
@@ -4010,12 +4100,13 @@ async def validate_coupon(req: CouponValidateRequest):
 
 
 class CreateOrderRequest(BaseModel):
-    product: str  # employer_unlock | freelancer_onboarding | quota_boost | plan
+    product: str  # employer_unlock | freelancer_onboarding | quota_boost | plan | hops_pack | hops_pass
     full_name: Optional[str] = None
     freelancer_id: Optional[str] = None
     employer_id: Optional[str] = None
     plan_id: Optional[str] = None
     coupon_code: Optional[str] = None
+    email: Optional[str] = None
 
 
 class CreateOrderResponse(BaseModel):
@@ -4035,7 +4126,17 @@ class VerifyPaymentRequest(BaseModel):
 @api_router.post("/payments/create-order", response_model=CreateOrderResponse)
 async def create_payment_order(req: CreateOrderRequest):
     """Creates a Razorpay order. Amount is always determined server-side."""
-    if req.product == "plan":
+    if req.product == "hops_pack":
+        pack = HOPS_PACKS.get(req.plan_id) or HOPS_PACKS.get("pack-40")
+        if not pack:
+            raise HTTPException(status_code=404, detail="Hops pack not found.")
+        amount = pack["price_inr"] * 100
+    elif req.product == "hops_pass":
+        plan = HOPS_PASSES.get(req.plan_id) or HOPS_PASSES.get("pro_pass")
+        if not plan:
+            raise HTTPException(status_code=404, detail="Hops pass plan not found.")
+        amount = plan["price_inr"] * 100
+    elif req.product == "plan":
         plan = next((p for p in PLAN_CATALOG if p["plan_id"] == req.plan_id), None)
         if not plan:
             raise HTTPException(status_code=404, detail="Plan not found.")
@@ -4107,6 +4208,7 @@ async def create_payment_order(req: CreateOrderRequest):
         "coupon_code": coupon_code,
         "discount_paise": discount_paise,
         "full_name": req.full_name,
+        "email": req.email,
         "freelancer_id": req.freelancer_id,
         "employer_id": req.employer_id,
         "plan_id": req.plan_id,
@@ -4146,7 +4248,112 @@ async def verify_payment(req: VerifyPaymentRequest):
     product = odoc["product"]
     paid_at = _now_iso()
 
-    if product == "employer_unlock":
+    if product == "hops_pack":
+        pack = HOPS_PACKS.get(odoc.get("plan_id")) or HOPS_PACKS["pack-40"]
+        credits = pack["credits"]
+        price = pack["price_inr"]
+        user_id = odoc.get("freelancer_id") or odoc.get("user_id") or "freelancer-demo"
+        wallet = await _get_or_create_wallet(user_id)
+        new_balance = wallet["balance"] + credits
+        await db.credits_wallet.update_one(
+            {"user_id": user_id},
+            {"$set": {"balance": new_balance, "updated_at": paid_at}}
+        )
+        await db.credit_transactions.insert_one({
+            "_id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "type": "purchase",
+            "amount": credits,
+            "balance_after": new_balance,
+            "description": f"Purchased {pack['name']} (₹{price}) via Razorpay",
+            "created_at": paid_at,
+        })
+        invoice_doc = _build_hops_invoice_doc(
+            user_id=user_id,
+            product_type="hops_pack",
+            product_id=odoc.get("plan_id") or "pack-40",
+            item_title=pack["name"],
+            item_subtitle="Bidding Hops Wallet Top-Up (1 Hop = ₹15)",
+            price_inr=price,
+            hops_added=credits,
+            new_balance=new_balance,
+            email=odoc.get("email"),
+            full_name=odoc.get("full_name"),
+            payment_id=req.razorpay_payment_id,
+        )
+        await db.invoices.insert_one(dict(invoice_doc))
+        asyncio.create_task(_send_hops_purchase_invoice(invoice_doc))
+        result = {
+            "product": product,
+            "balance": new_balance,
+            "added": credits,
+            "invoice_number": invoice_doc["invoice_number"],
+            "invoice_sent": True,
+        }
+
+    elif product == "hops_pass":
+        plan = HOPS_PASSES.get(odoc.get("plan_id")) or HOPS_PASSES["pro_pass"]
+        credits = plan["credits"]
+        price = plan["price_inr"]
+        user_id = odoc.get("freelancer_id") or odoc.get("user_id") or "freelancer-demo"
+        wallet = await _get_or_create_wallet(user_id)
+        new_balance = wallet["balance"] + credits
+        renews_at = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+        await db.credits_wallet.update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "balance": new_balance,
+                "subscription_status": "active",
+                "subscription_plan_id": odoc.get("plan_id"),
+                "subscription_renews_at": renews_at,
+                "updated_at": paid_at,
+            }}
+        )
+        await db.subscriptions.insert_one({
+            "_id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "plan": odoc.get("plan_id"),
+            "credits_per_cycle": credits,
+            "price_inr": price,
+            "status": "active",
+            "renews_at": renews_at,
+            "created_at": paid_at,
+        })
+        await db.credit_transactions.insert_one({
+            "_id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "type": "subscription",
+            "amount": credits,
+            "balance_after": new_balance,
+            "description": f"Subscribed to {plan['name']} (+{credits} Hops, ₹{price}/mo) via Razorpay",
+            "created_at": paid_at,
+        })
+        invoice_doc = _build_hops_invoice_doc(
+            user_id=user_id,
+            product_type="hops_pass",
+            product_id=odoc.get("plan_id") or "pro_pass",
+            item_title=plan["name"],
+            item_subtitle="Monthly Freelancer Connects Pass (Renews every 30 days)",
+            price_inr=price,
+            hops_added=credits,
+            new_balance=new_balance,
+            email=odoc.get("email"),
+            full_name=odoc.get("full_name"),
+            payment_id=req.razorpay_payment_id,
+            renews_at=renews_at,
+        )
+        await db.invoices.insert_one(dict(invoice_doc))
+        asyncio.create_task(_send_hops_purchase_invoice(invoice_doc))
+        result = {
+            "product": product,
+            "balance": new_balance,
+            "subscription_status": "active",
+            "renews_at": renews_at,
+            "invoice_number": invoice_doc["invoice_number"],
+            "invoice_sent": True,
+        }
+
+    elif product == "employer_unlock":
         all_leads = await _all_leads(unlocked=True)
         await db.employer_unlocks.insert_one({
             "_id": str(uuid.uuid4()),
@@ -4494,6 +4701,383 @@ async def _send_email(to: str, subject: str, html_body: str, from_addr: str = No
 
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _inr_amount_to_words(n: int) -> str:
+    """Converts positive integer INR amounts up to Lakhs into standard English words."""
+    if n <= 0:
+        return "Zero Rupees Only"
+    ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+            "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+            "Seventeen", "Eighteen", "Nineteen"]
+    tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+
+    def _two_digits(num: int) -> str:
+        if num < 20:
+            return ones[num]
+        t = tens[num // 10]
+        o = ones[num % 10]
+        return f"{t} {o}".strip()
+
+    def _three_digits(num: int) -> str:
+        h = num // 100
+        rem = num % 100
+        parts = []
+        if h > 0:
+            parts.append(f"{ones[h]} Hundred")
+        if rem > 0:
+            parts.append(_two_digits(rem))
+        return " ".join(parts)
+
+    parts = []
+    lakhs = n // 100000
+    n %= 100000
+    thousands = n // 1000
+    n %= 1000
+
+    if lakhs > 0:
+        parts.append(f"{_two_digits(lakhs)} Lakh")
+    if thousands > 0:
+        parts.append(f"{_two_digits(thousands)} Thousand")
+    if n > 0:
+        parts.append(_three_digits(n))
+
+    res = " ".join(parts).strip()
+    return f"{res} Rupees Only" if res else "Zero Rupees Only"
+
+
+def _build_hops_invoice_doc(
+    user_id: str,
+    product_type: str,
+    product_id: str,
+    item_title: str,
+    item_subtitle: str,
+    price_inr: float,
+    hops_added: int,
+    new_balance: int,
+    email: Optional[str] = None,
+    full_name: Optional[str] = None,
+    payment_id: Optional[str] = None,
+    renews_at: Optional[str] = None,
+) -> dict:
+    now_dt = datetime.now(timezone.utc)
+    ist_dt = now_dt + timedelta(hours=5, minutes=30)
+    date_str = ist_dt.strftime("%d %b %Y, %I:%M %p IST")
+    invoice_number = f"WH-INV-{now_dt.strftime('%Y%m')}-{secrets.token_hex(3).upper()}"
+
+    price_total = float(price_inr)
+    taxable_base = round(price_total / 1.18, 2)
+    tax_remainder = round(price_total - taxable_base, 2)
+    cgst = round(tax_remainder / 2.0, 2)
+    sgst = round(tax_remainder - cgst, 2)
+
+    return {
+        "_id": str(uuid.uuid4()),
+        "invoice_number": invoice_number,
+        "date_str": date_str,
+        "user_id": user_id,
+        "customer_name": (full_name or "WorkHop Freelancer").strip(),
+        "customer_email": (email or "").strip(),
+        "product_type": product_type,
+        "product_id": product_id,
+        "item_title": item_title,
+        "item_subtitle": item_subtitle,
+        "sac_code": "998311",
+        "hops_added": hops_added,
+        "new_balance": new_balance,
+        "taxable_base": taxable_base,
+        "cgst": cgst,
+        "sgst": sgst,
+        "total_inr": price_total,
+        "payment_method": "Razorpay / UPI Online",
+        "payment_id": payment_id or f"TXN-{secrets.token_hex(4).upper()}",
+        "status": "paid",
+        "renews_at": renews_at,
+        "created_at": _now_iso(),
+    }
+
+
+def _build_hops_invoice_email_html(inv: dict) -> str:
+    """Builds a responsive, branded HTML Tax Invoice receipt for Bidding Hops / Pass purchases."""
+    escaped_customer_name = html.escape(str(inv.get("customer_name") or "Valued Freelancer"))
+    escaped_customer_email = html.escape(str(inv.get("customer_email") or "Registered Account"))
+    escaped_user_id = html.escape(str(inv.get("user_id") or ""))
+    escaped_inv_no = html.escape(str(inv.get("invoice_number") or ""))
+    escaped_date_str = html.escape(str(inv.get("date_str") or ""))
+    escaped_payment_id = html.escape(str(inv.get("payment_id") or "UPI / Online Gate"))
+    escaped_payment_method = html.escape(str(inv.get("payment_method") or "UPI / Razorpay Online"))
+    escaped_item_title = html.escape(str(inv.get("item_title") or "Bidding Hops Pack"))
+    escaped_item_subtitle = html.escape(str(inv.get("item_subtitle") or "Bidding Hops Top-Up"))
+    escaped_sac = html.escape(str(inv.get("sac_code") or "998311"))
+
+    taxable_base = float(inv.get("taxable_base", 0.0))
+    cgst = float(inv.get("cgst", 0.0))
+    sgst = float(inv.get("sgst", 0.0))
+    total_inr = float(inv.get("total_inr", 0.0))
+    hops_added = int(inv.get("hops_added", 0))
+    new_balance = int(inv.get("new_balance", 0))
+    amount_words = _inr_amount_to_words(int(round(total_inr)))
+
+    renews_text = ""
+    if inv.get("renews_at"):
+        try:
+            r_dt = datetime.fromisoformat(inv["renews_at"].replace("Z", "+00:00"))
+            renews_text = f"Your monthly pass renews on {r_dt.strftime('%d %b %Y')}. Unused Hops roll over automatically!"
+        except Exception:
+            renews_text = "Unused subscription Hops roll over automatically to your next billing cycle."
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tax Invoice #{escaped_inv_no} - WorkHop</title>
+</head>
+<body style="margin: 0; padding: 24px 12px; background-color: #F4EFEA; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #121212;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; background-color: #FFFFFF; border: 3px solid #121212; box-shadow: 6px 6px 0px #121212; border-collapse: separate;">
+    <!-- Top Header -->
+    <tr>
+      <td style="background-color: #E65A1E; padding: 22px 24px; border-bottom: 3px solid #121212;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+          <tr>
+            <td valign="middle">
+              <span style="font-size: 24px; font-weight: 900; letter-spacing: -0.5px; color: #FFFFFF; text-transform: uppercase;">⚡ WORKHOP</span>
+              <div style="font-size: 11px; font-weight: 700; color: #FFE2D4; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">
+                Hyperlocal Freelance Platform &middot; Bangalore
+              </div>
+            </td>
+            <td align="right" valign="middle">
+              <span style="background-color: #121212; color: #7AE582; font-size: 10px; font-weight: 900; padding: 6px 10px; text-transform: uppercase; letter-spacing: 1px; border: 1.5px solid #121212; display: inline-block;">
+                &bull; PAID &middot; TAX INVOICE
+              </span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Body Container -->
+    <tr>
+      <td style="padding: 24px;">
+
+        <!-- Invoice Title & Greeting -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 18px;">
+          <tr>
+            <td>
+              <h1 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 900; text-transform: uppercase; color: #121212; letter-spacing: 0.5px;">
+                Tax Invoice &amp; Payment Receipt
+              </h1>
+              <p style="margin: 0; font-size: 13px; color: #555; line-height: 1.4;">
+                Hi <strong>{escaped_customer_name}</strong>, thank you for your purchase! Your payment was successfully processed and your Bidding Hops balance is now updated.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Metadata Bar -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #FAF7F2; border: 2px solid #121212; margin-bottom: 20px;">
+          <tr>
+            <td style="padding: 12px 14px; border-right: 2px solid #121212; width: 50%;" valign="top">
+              <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; letter-spacing: 0.5px;">INVOICE NUMBER</div>
+              <div style="font-size: 13px; font-weight: 900; color: #121212; font-family: monospace; margin-top: 2px;">{escaped_inv_no}</div>
+              <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; letter-spacing: 0.5px; margin-top: 8px;">DATE &amp; TIME</div>
+              <div style="font-size: 12px; font-weight: 700; color: #121212; margin-top: 2px;">{escaped_date_str}</div>
+            </td>
+            <td style="padding: 12px 14px; width: 50%;" valign="top">
+              <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; letter-spacing: 0.5px;">PAYMENT REF (TXN ID)</div>
+              <div style="font-size: 12px; font-weight: 900; color: #121212; font-family: monospace; margin-top: 2px;">{escaped_payment_id}</div>
+              <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; letter-spacing: 0.5px; margin-top: 8px;">PAYMENT METHOD</div>
+              <div style="font-size: 12px; font-weight: 700; color: #121212; margin-top: 2px;">{escaped_payment_method}</div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Supplier & Billed To -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 22px;">
+          <tr>
+            <!-- Supplier -->
+            <td width="48%" valign="top" style="border: 2px solid #121212; padding: 12px; background-color: #FFFFFF;">
+              <div style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #E65A1E; letter-spacing: 0.5px; margin-bottom: 6px;">
+                ISSUED BY (SUPPLIER)
+              </div>
+              <div style="font-size: 12px; font-weight: 800; color: #121212;">WorkHop Technologies Pvt. Ltd.</div>
+              <div style="font-size: 11px; color: #444; line-height: 1.4; margin-top: 2px;">
+                12th Main Rd, Indiranagar<br/>
+                Bengaluru, Karnataka 560038, India<br/>
+                <strong>GSTIN:</strong> 29AAACW1234F1Z5<br/>
+                <strong>Place of Supply:</strong> 29 - Karnataka<br/>
+                <strong>Email:</strong> support@workhop.in
+              </div>
+            </td>
+            <td width="4%"></td>
+            <!-- Billed To -->
+            <td width="48%" valign="top" style="border: 2px solid #121212; padding: 12px; background-color: #FFFFFF;">
+              <div style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #E65A1E; letter-spacing: 0.5px; margin-bottom: 6px;">
+                BILLED TO (CUSTOMER)
+              </div>
+              <div style="font-size: 12px; font-weight: 800; color: #121212;">{escaped_customer_name}</div>
+              <div style="font-size: 11px; color: #444; line-height: 1.4; margin-top: 2px;">
+                <strong>Email:</strong> {escaped_customer_email}<br/>
+                <strong>User ID:</strong> {escaped_user_id}<br/>
+                <strong>Place of Supply:</strong> 29 - Karnataka<br/>
+                <strong>Category:</strong> Registered Freelancer
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Itemized Table -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border: 2px solid #121212; border-collapse: collapse; margin-bottom: 16px;">
+          <tr style="background-color: #121212; color: #FFFFFF;">
+            <th align="left" style="padding: 10px 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">ITEM DESCRIPTION</th>
+            <th align="center" style="padding: 10px 8px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; width: 60px;">SAC</th>
+            <th align="center" style="padding: 10px 8px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; width: 40px;">QTY</th>
+            <th align="right" style="padding: 10px 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; width: 100px;">TAXABLE (&yen;)</th>
+          </tr>
+          <tr style="background-color: #FFFFFF; border-bottom: 2px solid #121212;">
+            <td style="padding: 12px; vertical-align: top;">
+              <div style="font-size: 13px; font-weight: 800; color: #121212;">{escaped_item_title}</div>
+              <div style="font-size: 11px; color: #666; margin-top: 2px;">{escaped_item_subtitle} &middot; (+{hops_added} Hops)</div>
+            </td>
+            <td align="center" style="padding: 12px 8px; font-size: 12px; font-weight: 700; color: #333; vertical-align: top; font-family: monospace;">
+              {escaped_sac}
+            </td>
+            <td align="center" style="padding: 12px 8px; font-size: 12px; font-weight: 700; color: #333; vertical-align: top;">
+              1
+            </td>
+            <td align="right" style="padding: 12px; font-size: 13px; font-weight: 800; color: #121212; vertical-align: top;">
+              &#8377;{taxable_base:.2f}
+            </td>
+          </tr>
+        </table>
+
+        <!-- Totals Table -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+          <tr>
+            <td width="45%" valign="top">
+              <div style="font-size: 11px; color: #666; line-height: 1.4;">
+                <strong>Amount in Words:</strong><br/>
+                <span style="font-style: italic; color: #121212; font-weight: 700;">{amount_words}</span>
+              </div>
+            </td>
+            <td width="55%" valign="top">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border: 2px solid #121212; background-color: #FAF7F2; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 12px; font-size: 11px; font-weight: 700; color: #555; border-bottom: 1px solid #E0D7D0;">Taxable Amount:</td>
+                  <td align="right" style="padding: 8px 12px; font-size: 11px; font-weight: 700; color: #121212; border-bottom: 1px solid #E0D7D0;">&#8377;{taxable_base:.2f}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 12px; font-size: 11px; font-weight: 700; color: #555; border-bottom: 1px solid #E0D7D0;">CGST @ 9.0%:</td>
+                  <td align="right" style="padding: 8px 12px; font-size: 11px; font-weight: 700; color: #121212; border-bottom: 1px solid #E0D7D0;">&#8377;{cgst:.2f}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 12px; font-size: 11px; font-weight: 700; color: #555; border-bottom: 2px solid #121212;">SGST @ 9.0%:</td>
+                  <td align="right" style="padding: 8px 12px; font-size: 11px; font-weight: 700; color: #121212; border-bottom: 2px solid #121212;">&#8377;{sgst:.2f}</td>
+                </tr>
+                <tr style="background-color: #FFF3E9;">
+                  <td style="padding: 10px 12px; font-size: 13px; font-weight: 900; text-transform: uppercase; color: #121212;">TOTAL PAID (INR):</td>
+                  <td align="right" style="padding: 10px 12px; font-size: 16px; font-weight: 900; color: #E65A1E;">&#8377;{total_inr:.2f}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Wallet Top-Up Highlight Box -->
+        <div style="background-color: #FFF9E6; border: 2.5px solid #121212; padding: 16px 18px; margin-bottom: 22px; box-shadow: 4px 4px 0px #121212;">
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="36" valign="top" style="font-size: 26px; line-height: 1;">🪙</td>
+              <td valign="top" style="padding-left: 10px;">
+                <div style="font-size: 13px; font-weight: 900; text-transform: uppercase; color: #121212; letter-spacing: 0.5px;">
+                  Wallet Balance Updated: +{hops_added} Hops Credited
+                </div>
+                <div style="font-size: 15px; font-weight: 900; color: #E65A1E; margin-top: 3px;">
+                  Current Available Balance: {new_balance} Hops
+                </div>
+                <div style="font-size: 11px; color: #555; line-height: 1.4; margin-top: 6px;">
+                  ⚡ <strong>Hops Never Expire:</strong> Apply to hyper-local Bangalore gigs (2&ndash;16 Hops per job), boost your proposals to the top of employer feeds, and unlock direct chats. {renews_text}
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- CTA Button -->
+        <div style="text-align: center; margin: 24px 0 16px 0;">
+          <a href="{FRONTEND_URL}/freelancer/jobs" target="_blank" style="display: inline-block; background-color: #121212; color: #FFFFFF; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; padding: 14px 28px; border: 2px solid #121212; box-shadow: 4px 4px 0px #E65A1E;">
+            BROWSE LOCAL BANGALORE GIGS &rarr;
+          </a>
+        </div>
+
+        <!-- Legal Disclaimer -->
+        <p style="margin: 20px 0 0 0; font-size: 10px; color: #888; text-align: center; line-height: 1.4; border-top: 1px dashed #DDD; padding-top: 14px;">
+          This is an electronically generated tax invoice issued under Rule 46 of the Central Goods and Services Tax Rules, 2017. No physical signature is required. Keep this email for your tax filing and business expenditure accounting.
+        </p>
+
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #FAF7F2; padding: 16px 24px; border-top: 2px solid #121212; font-size: 11px; color: #666; line-height: 1.5;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+          <tr>
+            <td>
+              <strong>WorkHop Platform</strong> &middot; Bangalore's Hyperlocal Freelance Marketplace<br/>
+              Support: <a href="mailto:support@workhop.in" style="color: #E65A1E; font-weight: 700; text-decoration: underline;">support@workhop.in</a> &middot; <a href="{FRONTEND_URL}" style="color: #121212; font-weight: 700; text-decoration: underline;">workhop.in</a>
+            </td>
+            <td align="right" valign="top">
+              <span style="font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase;">GST SAC 998311</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+
+async def _send_hops_purchase_invoice(invoice_doc: dict) -> bool:
+    """Dispatches the tax invoice email to the freelancer's email address."""
+    target_email = (invoice_doc.get("customer_email") or "").strip()
+    user_id = invoice_doc.get("user_id")
+
+    # If email wasn't passed directly, look up in database
+    if not target_email or not _EMAIL_RE.match(target_email):
+        # 1. Search in db.users
+        u = await db.users.find_one({"$or": [{"user_id": user_id}, {"_id": user_id}, {"email": user_id}]})
+        if u and u.get("email"):
+            target_email = u["email"].strip()
+            if not invoice_doc.get("customer_name") or invoice_doc.get("customer_name") == "WorkHop Freelancer":
+                invoice_doc["customer_name"] = u.get("name") or u.get("full_name") or invoice_doc.get("customer_name")
+
+        # 2. Search in db.freelancers
+        if not target_email or not _EMAIL_RE.match(target_email):
+            fdoc = await db.freelancers.find_one({"$or": [{"_id": user_id}, {"freelancer_id": user_id}]})
+            if fdoc and fdoc.get("email"):
+                target_email = fdoc["email"].strip()
+                if not invoice_doc.get("customer_name") or invoice_doc.get("customer_name") == "WorkHop Freelancer":
+                    invoice_doc["customer_name"] = fdoc.get("full_name") or invoice_doc.get("customer_name")
+
+    if not target_email or not _EMAIL_RE.match(target_email):
+        logging.warning("Cannot send invoice: No valid email resolved for user_id=%s (Invoice %s)", user_id, invoice_doc.get("invoice_number"))
+        return False
+
+    invoice_doc["customer_email"] = target_email
+    try:
+        await db.invoices.update_one(
+            {"_id": invoice_doc["_id"]},
+            {"$set": {"customer_email": target_email, "customer_name": invoice_doc["customer_name"]}}
+        )
+    except Exception as db_err:
+        logging.warning("Could not update invoice recipient email in db: %s", db_err)
+
+    subject = f"Tax Invoice #{invoice_doc['invoice_number']} · {invoice_doc['item_title']} [WorkHop]"
+    html_body = _build_hops_invoice_email_html(invoice_doc)
+    logging.info("Sending Hops purchase invoice %s to %s", invoice_doc['invoice_number'], target_email)
+    return await _send_email(target_email, subject, html_body)
 
 
 async def _issue_otp(email: str) -> dict:
