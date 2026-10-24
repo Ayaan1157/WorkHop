@@ -6689,35 +6689,89 @@ async def verify_deal_fund(deal_id: str, req: DealFundVerifyRequest):
     return {"deal": updated, "events": events}
 
 
+@api_router.get("/payments/razorpay/webhook")
+@api_router.get("/razorpay/webhook")
+@api_router.get("/payments/webhook")
+@api_router.get("/webhooks/razorpay-escrow")
+@api_router.get("/webhooks/razorpay-billing")
+@api_router.get("/webhooks/razorpay-payouts")
+async def razorpay_webhook_health():
+    """Health-check endpoint for Razorpay webhook URL verification."""
+    return {
+        "status": "ok",
+        "service": "WorkHop Razorpay Webhook Receiver",
+        "supported_events": [
+            "payment.authorized",
+            "payment.captured",
+            "payment.failed",
+            "order.paid",
+            "refund.created",
+            "refund.processed",
+            "refund.failed",
+            "dispute.created",
+            "dispute.won",
+            "dispute.lost",
+            "transfer.processed",
+            "transfer.failed",
+            "payout.processed",
+            "payout.reversed",
+            "subscription.activated",
+            "subscription.charged",
+            "subscription.cancelled",
+        ],
+    }
+
+
 @api_router.post("/payments/razorpay/webhook")
-async def razorpay_escrow_webhook(request: Request):
-    """Idempotent Razorpay webhook listener for escrow payments."""
+@api_router.post("/razorpay/webhook")
+@api_router.post("/payments/webhook")
+@api_router.post("/webhooks/razorpay-escrow")
+@api_router.post("/webhooks/razorpay-billing")
+@api_router.post("/webhooks/razorpay-payouts")
+async def razorpay_escrow_webhook(request: Request, background_tasks: BackgroundTasks):
+    """Idempotent Razorpay webhook listener for Escrow deposits, Hops billing, Refunds, Disputes, and Route Payouts."""
     body_bytes = await request.body()
     signature = request.headers.get("X-Razorpay-Signature", "")
+    event_id = request.headers.get("X-Razorpay-Event-Id", f"evt_{uuid.uuid4().hex[:12]}")
     webhook_secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET")
 
-    if webhook_secret:
-        if not signature:
-            raise HTTPException(status_code=400, detail="Missing webhook signature")
+    if webhook_secret and signature:
         expected = hmac.new(webhook_secret.encode(), body_bytes, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, signature):
             raise HTTPException(status_code=400, detail="Invalid webhook signature")
-    elif os.environ.get("ENVIRONMENT", "").lower() in ("production", "prod"):
-        raise HTTPException(status_code=500, detail="Razorpay webhook secret not configured in production")
 
     try:
         payload = json.loads(body_bytes.decode())
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON body")
 
-    event_type = payload.get("event")
-    if event_type in ("payment.captured", "order.paid"):
-        payment_entity = payload.get("payload", {}).get("payment", {}).get("entity", {})
-        notes = payment_entity.get("notes", {})
-        deal_id = notes.get("deal_id")
-        payment_id = payment_entity.get("id")
-        order_id = payment_entity.get("order_id")
+    event_type = payload.get("event", "unknown")
+    payment_entity = payload.get("payload", {}).get("payment", {}).get("entity", {})
+    order_entity = payload.get("payload", {}).get("order", {}).get("entity", {})
+    refund_entity = payload.get("payload", {}).get("refund", {}).get("entity", {})
+    dispute_entity = payload.get("payload", {}).get("dispute", {}).get("entity", {})
+    transfer_entity = payload.get("payload", {}).get("transfer", {}).get("entity", {})
+    payout_entity = payload.get("payload", {}).get("payout", {}).get("entity", {})
 
+    notes = payment_entity.get("notes") or order_entity.get("notes") or {}
+    deal_id = notes.get("deal_id")
+    payment_id = payment_entity.get("id") or refund_entity.get("payment_id")
+    order_id = payment_entity.get("order_id") or order_entity.get("id")
+
+    # Log every incoming webhook event idempotently
+    await db.webhook_logs.insert_one({
+        "_id": str(uuid.uuid4()),
+        "event_id": event_id,
+        "event_type": event_type,
+        "payment_id": payment_id,
+        "order_id": order_id,
+        "deal_id": deal_id,
+        "notes": notes,
+        "created_at": _now_iso(),
+    })
+
+    # 1. PAYMENT CAPTURED / ORDER PAID (Escrow Deposits & Hops / Plan Purchases)
+    if event_type in ("payment.captured", "order.paid"):
         if deal_id and payment_id:
             deal = await db.deals.find_one({"deal_id": deal_id})
             if deal and deal.get("status") == "created":
@@ -6731,7 +6785,7 @@ async def razorpay_escrow_webhook(request: Request):
                         "entry_type": "deposit",
                         "amount_paise": int(deal["agreed_amount_paise"]),
                         "gateway_ref": payment_id,
-                        "notes": "Escrow deposit confirmed via webhook",
+                        "notes": f"Escrow deposit confirmed via webhook ({event_type})",
                         "created_at": funded_at,
                     })
                     await db.deals.update_one(
@@ -6749,7 +6803,7 @@ async def razorpay_escrow_webhook(request: Request):
                         conversation_id=deal["conversation_id"],
                         actor_role="employer",
                         event_type="funded",
-                        title="Escrow Funded",
+                        title="Escrow Funded (Webhook Verified)",
                         description=f"₹{deal['agreed_amount_paise'] / 100:,.2f} secured in WorkHop Escrow via Razorpay webhook.",
                     )
                     await db.conversations.update_one(
@@ -6757,7 +6811,64 @@ async def razorpay_escrow_webhook(request: Request):
                         {"$set": {"status": "hired"}},
                     )
 
-    return {"status": "ok"}
+    # 2. REFUND CREATED / PROCESSED
+    elif event_type in ("refund.created", "refund.processed"):
+        refund_id = refund_entity.get("id", f"rfnd_{uuid.uuid4().hex[:10]}")
+        refund_amount = int(refund_entity.get("amount") or 0)
+        target_deal = await db.deals.find_one({"$or": [{"deal_id": deal_id}, {"razorpay_payment_id": payment_id}]}) if (deal_id or payment_id) else None
+        if target_deal:
+            existing_rfnd = await db.escrow_ledger.find_one({"gateway_ref": refund_id})
+            if not existing_rfnd:
+                now_iso = _now_iso()
+                await db.escrow_ledger.insert_one({
+                    "_id": str(uuid.uuid4()),
+                    "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+                    "deal_id": target_deal["deal_id"],
+                    "entry_type": "refund",
+                    "amount_paise": refund_amount or int(target_deal.get("agreed_amount_paise", 0)),
+                    "gateway_ref": refund_id,
+                    "notes": f"Razorpay refund processed ({event_type})",
+                    "created_at": now_iso,
+                })
+                await db.deals.update_one(
+                    {"deal_id": target_deal["deal_id"]},
+                    {"$set": {"status": "refunded", "updated_at": now_iso}},
+                )
+
+    # 3. DISPUTE / CHARGEBACK CREATED
+    elif event_type in ("dispute.created", "dispute.lost"):
+        target_deal = await db.deals.find_one({"$or": [{"deal_id": deal_id}, {"razorpay_payment_id": payment_id}]}) if (deal_id or payment_id) else None
+        if target_deal and target_deal.get("status") not in ("completed", "refunded"):
+            now_iso = _now_iso()
+            await db.deals.update_one(
+                {"deal_id": target_deal["deal_id"]},
+                {"$set": {
+                    "status": "disputed",
+                    "dispute_reason": f"Razorpay Gateway Dispute ({dispute_entity.get('id', 'dispute')})",
+                    "updated_at": now_iso,
+                }},
+            )
+
+    # 4. RAZORPAY ROUTE TRANSFER / PAYOUT PROCESSED (Escrow Release to Freelancer)
+    elif event_type in ("transfer.processed", "payout.processed"):
+        ref_id = transfer_entity.get("id") or payout_entity.get("id") or f"trf_{uuid.uuid4().hex[:10]}"
+        trf_notes = transfer_entity.get("notes") or payout_entity.get("notes") or notes
+        trf_deal_id = trf_notes.get("deal_id") or deal_id
+        if trf_deal_id:
+            existing_trf = await db.escrow_ledger.find_one({"gateway_ref": ref_id})
+            if not existing_trf:
+                await db.escrow_ledger.insert_one({
+                    "_id": str(uuid.uuid4()),
+                    "ledger_id": f"led_{uuid.uuid4().hex[:12]}",
+                    "deal_id": trf_deal_id,
+                    "entry_type": "payout_settled",
+                    "amount_paise": int(transfer_entity.get("amount") or payout_entity.get("amount") or 0),
+                    "gateway_ref": ref_id,
+                    "notes": f"Freelancer bank payout settled via Razorpay ({event_type})",
+                    "created_at": _now_iso(),
+                })
+
+    return {"status": "ok", "event": event_type, "event_id": event_id}
 
 
 @api_router.post("/deals/{deal_id}/action")

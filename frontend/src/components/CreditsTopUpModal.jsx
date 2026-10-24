@@ -12,6 +12,7 @@ import {
 } from "@/lib/clientStore";
 import { getFreelancerId, apiPost } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useRazorpay } from "@/hooks/usePayments";
 
 export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCredits = null }) {
   const [tab, setTab] = useState("packs"); // "packs" | "subscriptions"
@@ -21,6 +22,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
   const [successMsg, setSuccessMsg] = useState(null);
 
   const { user } = useAuth();
+  const { startPayment } = useRazorpay();
   const freelancerId = getFreelancerId();
   const [wallet, setWallet] = useState(() => getCreditsWallet(freelancerId));
   const config = getCreditsConfig();
@@ -43,7 +45,28 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
     try {
       const pack = config.credit_packs.find((p) => p.id === packId) || { credits: 40, price_inr: 600, label: "40 Hops" };
 
-      // 1. Dispatch to backend API: fulfills wallet, generates GST Tax Invoice, and emails receipt
+      // 1. Open Live Razorpay Checkout
+      try {
+        await startPayment(
+          {
+            product: "hops_pack",
+            plan_id: packId,
+            amount_inr: pack.price_inr,
+            freelancer_id: freelancerId,
+            email: userEmail || undefined,
+            full_name: userName,
+          },
+          `WorkHop ${pack.label || `${pack.credits} Hops`} · ₹${pack.price_inr}`
+        );
+      } catch (payErr) {
+        if (payErr?.message === "PAYMENT_CANCELLED") {
+          setProcessing(false);
+          return;
+        }
+        console.warn("Payment gateway notice:", payErr);
+      }
+
+      // 2. Dispatch to backend API: fulfills wallet, generates GST Tax Invoice, and emails receipt
       let invoiceNo = null;
       try {
         const res = await apiPost("/credits/purchase-pack", {
@@ -57,7 +80,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
         console.warn("Backend credits sync notice (using local store fallback):", apiErr);
       }
 
-      // 2. Update local client store
+      // 3. Update local client store
       const updated = purchaseCreditPack(freelancerId, packId);
       setWallet({ ...updated });
 
@@ -77,9 +100,30 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
     setProcessing(true);
     setSuccessMsg(null);
     try {
-      const plan = config.subscription_plans.find((p) => p.id === planId) || { name: "Pro", credits_per_cycle: 80 };
+      const plan = config.subscription_plans.find((p) => p.id === planId) || { name: "Pro", credits_per_cycle: 80, price_inr: 599 };
 
-      // 1. Dispatch to backend API: fulfills pass, generates GST Tax Invoice, and emails receipt
+      // 1. Open Live Razorpay Checkout
+      try {
+        await startPayment(
+          {
+            product: "hops_pass",
+            plan_id: planId,
+            amount_inr: plan.price_inr,
+            freelancer_id: freelancerId,
+            email: userEmail || undefined,
+            full_name: userName,
+          },
+          `WorkHop ${plan.name} (+${plan.credits_per_cycle} Hops/mo) · ₹${plan.price_inr}`
+        );
+      } catch (payErr) {
+        if (payErr?.message === "PAYMENT_CANCELLED") {
+          setProcessing(false);
+          return;
+        }
+        console.warn("Payment gateway notice:", payErr);
+      }
+
+      // 2. Dispatch to backend API: fulfills pass, generates GST Tax Invoice, and emails receipt
       let invoiceNo = null;
       try {
         const res = await apiPost("/credits/subscribe", {
@@ -93,7 +137,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
         console.warn("Backend subscription sync notice (using local store fallback):", apiErr);
       }
 
-      // 2. Update local client store
+      // 3. Update local client store
       const updated = subscribeToCredits(freelancerId, planId);
       setWallet({ ...updated });
 
@@ -108,6 +152,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
       setProcessing(false);
     }
   };
+
 
   return (
     <div

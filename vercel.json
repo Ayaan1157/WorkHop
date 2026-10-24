@@ -34,8 +34,41 @@
   ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/payments/razorpay/webhook",
+      "destination": "/api/razorpay/webhook"
+    },
+    {
+      "source": "/api/payments/webhook",
+      "destination": "/api/razorpay/webhook"
+    },
+    {
+      "source": "/api/webhooks/razorpay-escrow",
+      "destination": "/api/razorpay/webhook"
+    },
+    {
+      "source": "/api/webhooks/razorpay-billing",
+      "destination": "/api/razorpay/webhook"
+    },
+    {
+      "source": "/api/webhooks/razorpay-payouts",
+      "destination": "/api/razorpay/webhook"
+    },
+    {
+      "source": "/api/razorpay/webhook",
+      "destination": "/api/razorpay/webhook"
+    },
+    {
+      "source": "/api/payments/create-order",
+      "destination": "/api/payments/create-order"
+    },
+    {
+      "source": "/api/payments/verify",
+      "destination": "/api/payments/verify"
+    },
+    {
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
 }
+
