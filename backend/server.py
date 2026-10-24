@@ -6092,11 +6092,21 @@ async def send_message(conversation_id: str, req: SendMessageRequest, background
 class HireInChatRequest(BaseModel):
     agreed_amount_paise: Optional[int] = None
     payment_mode: Optional[str] = "escrow"
+    scope_description: Optional[str] = None
+    deliverables: Optional[str] = None
+    start_date: Optional[str] = None
+    completion_deadline: Optional[str] = None
+    revisions_included: Optional[int] = 2
+    employer_address: Optional[str] = None
+    freelancer_address: Optional[str] = None
+    employer_signature: Optional[str] = None
+    employer_agreed: Optional[bool] = False
+    milestones: Optional[List[dict]] = None
 
 
 @api_router.post("/chats/{conversation_id}/hire")
 async def hire_in_chat(conversation_id: str, req: HireInChatRequest = Body(default=None)):
-    """Hires a freelancer directly from the top of the chat box and unlocks phone number sharing."""
+    """Hires a freelancer directly from the top of the chat box, records agreement scope & signature, and unlocks phone number sharing."""
     conv = await db.conversations.find_one({"_id": conversation_id})
     if not conv:
         conv = await db.conversations.find_one({"conversation_id": conversation_id})
@@ -6113,39 +6123,108 @@ async def hire_in_chat(conversation_id: str, req: HireInChatRequest = Body(defau
     mode = req.payment_mode if req and req.payment_mode in ("escrow", "direct") else "escrow"
     new_deal_status = "funded" if mode == "escrow" else "acknowledged"
 
+    default_start = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    default_deadline = (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d")
+    job_title = conv.get("job_title", "Local Bengaluru Gig")
+
+    emp_sig = (req.employer_signature or "").strip() if req else ""
+    emp_agreed = bool(req and req.employer_agreed and emp_sig)
+
     if deal:
+        contract_id = deal.get("contract_id") or f"WH-AGR-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:5].upper()}"
         upd = {
             "status": new_deal_status,
+            "payment_mode": mode,
+            "contract_id": contract_id,
             "employer_ack_at": now_iso,
             "updated_at": now_iso,
         }
-        if req and req.agreed_amount_paise and req.agreed_amount_paise > 0:
-            upd["agreed_amount_paise"] = req.agreed_amount_paise
-            upd["freelancer_net_paise"] = req.agreed_amount_paise - int(round(req.agreed_amount_paise * deal.get("commission_rate", 0.05)))
+        if req:
+            if req.agreed_amount_paise and req.agreed_amount_paise > 0:
+                upd["agreed_amount_paise"] = req.agreed_amount_paise
+                comm_rate = 0.05 if mode == "escrow" else 0.0
+                comm_paise = int(round(req.agreed_amount_paise * comm_rate))
+                upd["commission_rate"] = comm_rate
+                upd["commission_paise"] = comm_paise
+                upd["freelancer_net_paise"] = req.agreed_amount_paise - comm_paise
+            if req.scope_description:
+                upd["scope_description"] = req.scope_description
+            if req.deliverables:
+                upd["deliverables"] = req.deliverables
+            if req.start_date:
+                upd["start_date"] = req.start_date
+            if req.completion_deadline:
+                upd["completion_deadline"] = req.completion_deadline
+            if req.revisions_included is not None:
+                upd["revisions_included"] = req.revisions_included
+            if req.employer_address:
+                upd["employer_address"] = req.employer_address
+            if req.freelancer_address:
+                upd["freelancer_address"] = req.freelancer_address
+            if req.milestones:
+                upd["milestones"] = req.milestones
+        if emp_agreed:
+            upd["employer_agreed"] = True
+            upd["employer_signature"] = emp_sig
+            upd["employer_signed_at"] = now_iso
+            upd["agreement_status"] = "fully_executed" if deal.get("freelancer_agreed") else "partially_signed"
+            if deal.get("freelancer_agreed"):
+                upd["agreement_executed_at"] = now_iso
+                upd["platform_countersigned_at"] = now_iso
+                upd["platform_signatory"] = "WorkHop Technologies · Automated Escrow Facilitator"
+
         await db.deals.update_one({"deal_id": deal["deal_id"]}, {"$set": upd})
         deal_id = deal["deal_id"]
     else:
         deal_id = f"deal_{uuid.uuid4().hex[:12]}"
+        contract_id = f"WH-AGR-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:5].upper()}"
         agreed_paise = req.agreed_amount_paise if req and req.agreed_amount_paise else 1500000
         commission_rate = 0.05 if mode == "escrow" else 0.0
         commission_paise = int(round(agreed_paise * commission_rate))
+        agreed_inr = int(round(agreed_paise / 100))
+        deadline_val = (req.completion_deadline if req and req.completion_deadline else default_deadline)
+        default_milestones = (req.milestones if req and req.milestones else [
+            {
+                "no": 1,
+                "title": f"Complete Deliverables for {job_title}",
+                "due_date": deadline_val,
+                "amount_inr": agreed_inr,
+            }
+        ])
         deal_doc = {
             "_id": deal_id,
             "deal_id": deal_id,
+            "contract_id": contract_id,
             "conversation_id": conversation_id,
             "job_id": conv.get("job_id", ""),
-            "job_title": conv.get("job_title", "Gig"),
+            "job_title": job_title,
             "employer_id": conv.get("company_name", "employer"),
             "employer_name": conv.get("company_name", "Employer"),
+            "employer_address": (req.employer_address if req and req.employer_address else f"{conv.get('job_area', 'Indiranagar')}, Bengaluru, Karnataka, India"),
             "freelancer_id": conv.get("freelancer_id", ""),
             "freelancer_name": conv.get("freelancer_name", "Verified Pro"),
+            "freelancer_address": (req.freelancer_address if req and req.freelancer_address else f"{conv.get('applicant_area', 'Koramangala')}, Bengaluru, Karnataka, India"),
             "payment_mode": mode,
             "agreed_amount_paise": agreed_paise,
             "commission_rate": commission_rate,
             "commission_paise": commission_paise,
             "freelancer_net_paise": agreed_paise - commission_paise,
+            "scope_description": (req.scope_description if req and req.scope_description else f"Professional freelance execution of '{job_title}' in Bengaluru as discussed and scoped between the Employer and Freelancer on the WorkHop Platform."),
+            "deliverables": (req.deliverables if req and req.deliverables else f"Complete execution, quality assurance, and final delivery of all work items for '{job_title}'."),
+            "start_date": (req.start_date if req and req.start_date else default_start),
+            "completion_deadline": deadline_val,
+            "revisions_included": (req.revisions_included if req and req.revisions_included is not None else 2),
+            "milestones": default_milestones,
+            "employer_agreed": emp_agreed,
+            "employer_signature": emp_sig if emp_agreed else None,
+            "employer_signed_at": now_iso if emp_agreed else None,
+            "freelancer_agreed": False,
+            "freelancer_signature": None,
+            "freelancer_signed_at": None,
+            "agreement_status": "partially_signed" if emp_agreed else "pending_signatures",
             "status": new_deal_status,
             "employer_ack_at": now_iso,
+            "effective_date": now_iso,
             "created_at": now_iso,
             "updated_at": now_iso,
         }
@@ -6156,8 +6235,14 @@ async def hire_in_chat(conversation_id: str, req: HireInChatRequest = Body(defau
         conversation_id=conversation_id,
         actor_role="employer",
         event_type="hired",
-        title="🎉 Freelancer Hired!",
-        description=f"Employer hired {conv.get('freelancer_name', 'the talent')}. Direct phone number & contact sharing is now officially unlocked!",
+        title="🎉 Freelancer Hired & Agreement Initiated!",
+        description=f"Employer hired {conv.get('freelancer_name', 'the talent')}{' and digitally signed the Escrow Agreement' if emp_agreed else ''}. Direct phone number & contact sharing is now officially unlocked!",
+    )
+
+    sig_notice = (
+        f" 📜 Employer ({emp_sig}) has digitally signed the Freelance Services & Escrow Agreement ({contract_id}). Freelancer must now review, check 'I Agree', and countersign the agreement in the top panel."
+        if emp_agreed
+        else f" 📜 Please review and sign the Freelance Services & Escrow Agreement ({contract_id}) in the top Deal Tracker bar."
     )
 
     system_msg_id = str(uuid.uuid4())
@@ -6166,7 +6251,7 @@ async def hire_in_chat(conversation_id: str, req: HireInChatRequest = Body(defau
         "message_id": system_msg_id,
         "conversation_id": conversation_id,
         "sender_role": "system",
-        "text": f"🎉 Employer has officially hired {conv.get('freelancer_name', 'the Pro')}! Phone number and direct WhatsApp sharing is now unlocked for both parties.",
+        "text": f"🎉 Employer has officially hired {conv.get('freelancer_name', 'the Pro')}! Phone number and direct WhatsApp sharing is now unlocked for both parties.{sig_notice}",
         "created_at": now_iso,
     }
     await db.messages.insert_one(system_msg)
@@ -6175,7 +6260,7 @@ async def hire_in_chat(conversation_id: str, req: HireInChatRequest = Body(defau
         await db.push_logs.insert_one({
             "_id": str(uuid.uuid4()),
             "title": "🎉 You've Been Hired!",
-            "body": f"Employer {conv.get('company_name', 'Client')} officially hired you! Phone numbers & direct contacts are unlocked.",
+            "body": f"Employer {conv.get('company_name', 'Client')} officially hired you! Please review and countersign the Escrow Agreement.",
             "url": f"/chat/{conversation_id}?role=freelancer",
             "category": "hired_alerts",
             "recipient_id": conv.get("freelancer_id"),
@@ -6185,11 +6270,13 @@ async def hire_in_chat(conversation_id: str, req: HireInChatRequest = Body(defau
     except Exception as pe:
         logger.warning(f"Push log error: {pe}")
 
+    updated_deal = await db.deals.find_one({"deal_id": deal_id}, {"_id": 0})
     return {
         "ok": True,
         "status": "hired",
         "message": "Freelancer successfully hired! Phone numbers are now unlocked.",
         "deal_status": new_deal_status,
+        "deal": updated_deal,
     }
 
 
@@ -6345,6 +6432,134 @@ async def get_deal_details(deal_id: str):
     deal = await _check_and_auto_release_deal(deal)
     events = await db.deal_events.find({"deal_id": deal_id}, {"_id": 0}).sort("created_at", 1).to_list(200)
     return {"deal": deal, "events": events}
+
+
+class SignAgreementRequest(BaseModel):
+    actor_role: str  # "employer" | "freelancer"
+    signature_name: str
+    agreed: bool
+    scope_description: Optional[str] = None
+    deliverables: Optional[str] = None
+    start_date: Optional[str] = None
+    completion_deadline: Optional[str] = None
+    revisions_included: Optional[int] = None
+    employer_name: Optional[str] = None
+    employer_address: Optional[str] = None
+    freelancer_name: Optional[str] = None
+    freelancer_address: Optional[str] = None
+    agreed_amount_paise: Optional[int] = None
+    milestones: Optional[List[dict]] = None
+
+
+@api_router.post("/deals/{deal_id}/sign-agreement")
+async def sign_deal_agreement(deal_id: str, req: SignAgreementRequest):
+    """Records digital signature and 'I Agree' checkbox acceptance for Employer or Freelancer on the Freelance Services & Escrow Agreement."""
+    if not req.agreed:
+        raise HTTPException(status_code=400, detail="You must check the box confirming that you fully agree to the Agreement.")
+    sig = (req.signature_name or "").strip()
+    if len(sig) < 2:
+        raise HTTPException(status_code=400, detail="Please enter your full legal name as your electronic signature.")
+
+    deal = await db.deals.find_one({"$or": [{"deal_id": deal_id}, {"conversation_id": deal_id}]})
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found.")
+
+    real_deal_id = deal["deal_id"]
+    now_iso = _now_iso()
+    role = (req.actor_role or "freelancer").lower()
+    if role not in ("employer", "freelancer"):
+        raise HTTPException(status_code=400, detail="Invalid actor_role. Must be 'employer' or 'freelancer'.")
+
+    contract_id = deal.get("contract_id") or f"WH-AGR-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:5].upper()}"
+    upd = {
+        "contract_id": contract_id,
+        "updated_at": now_iso,
+    }
+
+    if req.scope_description:
+        upd["scope_description"] = req.scope_description
+    if req.deliverables:
+        upd["deliverables"] = req.deliverables
+    if req.start_date:
+        upd["start_date"] = req.start_date
+    if req.completion_deadline:
+        upd["completion_deadline"] = req.completion_deadline
+    if req.revisions_included is not None:
+        upd["revisions_included"] = req.revisions_included
+    if req.employer_name:
+        upd["employer_name"] = req.employer_name
+    if req.employer_address:
+        upd["employer_address"] = req.employer_address
+    if req.freelancer_name:
+        upd["freelancer_name"] = req.freelancer_name
+    if req.freelancer_address:
+        upd["freelancer_address"] = req.freelancer_address
+    if req.milestones:
+        upd["milestones"] = req.milestones
+
+    if req.agreed_amount_paise and req.agreed_amount_paise > 0 and not (deal.get("employer_agreed") and deal.get("freelancer_agreed")):
+        comm_rate = float(deal.get("commission_rate", 0.05 if deal.get("payment_mode") == "escrow" else 0.0))
+        comm_paise = int(round(req.agreed_amount_paise * comm_rate))
+        upd["agreed_amount_paise"] = req.agreed_amount_paise
+        upd["commission_paise"] = comm_paise
+        upd["freelancer_net_paise"] = req.agreed_amount_paise - comm_paise
+
+    if role == "employer":
+        upd["employer_agreed"] = True
+        upd["employer_signature"] = sig
+        upd["employer_signed_at"] = now_iso
+    else:
+        upd["freelancer_agreed"] = True
+        upd["freelancer_signature"] = sig
+        upd["freelancer_signed_at"] = now_iso
+
+    emp_signed = bool(upd.get("employer_agreed") or deal.get("employer_agreed"))
+    free_signed = bool(upd.get("freelancer_agreed") or deal.get("freelancer_agreed"))
+
+    if emp_signed and free_signed:
+        upd["agreement_status"] = "fully_executed"
+        upd["agreement_executed_at"] = now_iso
+        upd["platform_countersigned_at"] = now_iso
+        upd["platform_signatory"] = "WorkHop Technologies · Automated Escrow Facilitator"
+    else:
+        upd["agreement_status"] = "partially_signed"
+
+    await db.deals.update_one({"deal_id": real_deal_id}, {"$set": upd})
+
+    role_label = "Employer" if role == "employer" else "Freelancer"
+    if emp_signed and free_signed:
+        ev_title = f"✅ Escrow Agreement Fully Executed ({contract_id})"
+        ev_desc = f"{role_label} ({sig}) countersigned the Freelance Services & Escrow Agreement. Both Employer and Freelancer have now signed and accepted all contract terms!"
+        chat_text = f"✅ Freelance Services & Escrow Agreement ({contract_id}) is now FULLY EXECUTED! Both Employer ({upd.get('employer_signature') or deal.get('employer_signature')}) and Freelancer ({upd.get('freelancer_signature') or deal.get('freelancer_signature')}) have digitally signed and accepted all terms."
+    else:
+        ev_title = f"✍️ {role_label} Signed Escrow Agreement ({contract_id})"
+        other_label = "Freelancer" if role == "employer" else "Employer"
+        ev_desc = f"{role_label} ({sig}) digitally signed and accepted the Freelance Services & Escrow Agreement. Waiting for {other_label} to review and countersign."
+        chat_text = f"📜 {role_label} ({sig}) has digitally signed the Freelance Services & Escrow Agreement ({contract_id}). Waiting for {other_label} to click 'View & Sign Agreement' in the top bar to countersign."
+
+    await _create_deal_event(
+        deal_id=real_deal_id,
+        conversation_id=deal.get("conversation_id", ""),
+        actor_role=role,
+        event_type="agreement_signed",
+        title=ev_title,
+        description=ev_desc,
+    )
+
+    if deal.get("conversation_id"):
+        sys_id = str(uuid.uuid4())
+        await db.messages.insert_one({
+            "_id": sys_id,
+            "message_id": sys_id,
+            "conversation_id": deal["conversation_id"],
+            "sender_role": "system",
+            "text": chat_text,
+            "created_at": now_iso,
+        })
+
+    updated_deal = await db.deals.find_one({"deal_id": real_deal_id}, {"_id": 0})
+    events = await db.deal_events.find({"deal_id": real_deal_id}, {"_id": 0}).sort("created_at", 1).to_list(200)
+    return {"ok": True, "deal": updated_deal, "events": events}
 
 
 @api_router.post("/deals/{deal_id}/fund/create-order", response_model=DealFundOrderResponse)

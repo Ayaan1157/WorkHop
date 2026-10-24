@@ -645,20 +645,185 @@ async function mockRouter(path, method = "GET", body = null) {
     }
     return { id: `m-${Date.now()}`, sender_role: body?.sender_role || "user", text: body?.text, created_at: new Date().toISOString() };
   }
+  if (cleanPath.startsWith("/deals/by-conversation/") && method === "GET") {
+    const convId = cleanPath.replace("/deals/by-conversation/", "");
+    const store = JSON.parse(localStorage.getItem("workhop_deals_store") || "{}");
+    const entry = store[convId] || Object.values(store).find((x) => x?.deal?.deal_id === convId);
+    return entry ? { deal: entry.deal, events: entry.events || [] } : { deal: null, events: [] };
+  }
+  if (cleanPath.includes("/sign-agreement") && method === "POST") {
+    const parts = cleanPath.split("/");
+    const targetId = parts[2];
+    const store = JSON.parse(localStorage.getItem("workhop_deals_store") || "{}");
+    let convKey = Object.keys(store).find(
+      (k) => k === targetId || store[k]?.deal?.deal_id === targetId
+    ) || targetId;
+    const nowIso = new Date().toISOString();
+    const existing = store[convKey]?.deal || {
+      deal_id: targetId.startsWith("deal_") ? targetId : `deal_${Date.now()}`,
+      contract_id: `WH-AGR-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+      conversation_id: convKey,
+      payment_mode: "escrow",
+      agreed_amount_paise: body?.agreed_amount_paise || 1500000,
+      commission_rate: 0.05,
+      commission_paise: Math.round((body?.agreed_amount_paise || 1500000) * 0.05),
+      freelancer_net_paise: Math.round((body?.agreed_amount_paise || 1500000) * 0.95),
+      status: "funded",
+      created_at: nowIso,
+    };
+    const role = (body?.actor_role || "freelancer").toLowerCase();
+    const sig = (body?.signature_name || "").trim();
+    const updatedDeal = {
+      ...existing,
+      ...(body?.scope_description ? { scope_description: body.scope_description } : {}),
+      ...(body?.deliverables ? { deliverables: body.deliverables } : {}),
+      ...(body?.start_date ? { start_date: body.start_date } : {}),
+      ...(body?.completion_deadline ? { completion_deadline: body.completion_deadline } : {}),
+      ...(body?.revisions_included != null ? { revisions_included: body.revisions_included } : {}),
+      ...(body?.employer_name ? { employer_name: body.employer_name } : {}),
+      ...(body?.employer_address ? { employer_address: body.employer_address } : {}),
+      ...(body?.freelancer_name ? { freelancer_name: body.freelancer_name } : {}),
+      ...(body?.freelancer_address ? { freelancer_address: body.freelancer_address } : {}),
+      ...(body?.milestones ? { milestones: body.milestones } : {}),
+      ...(role === "employer"
+        ? { employer_agreed: true, employer_signature: sig, employer_signed_at: nowIso }
+        : { freelancer_agreed: true, freelancer_signature: sig, freelancer_signed_at: nowIso }),
+      updated_at: nowIso,
+    };
+    const bothSigned = Boolean(updatedDeal.employer_agreed && updatedDeal.freelancer_agreed);
+    updatedDeal.agreement_status = bothSigned ? "fully_executed" : "partially_signed";
+    if (bothSigned) {
+      updatedDeal.agreement_executed_at = nowIso;
+      updatedDeal.platform_countersigned_at = nowIso;
+      updatedDeal.platform_signatory = "WorkHop Technologies · Automated Escrow Facilitator";
+    }
+    const events = store[convKey]?.events || [];
+    events.push({
+      event_id: `ev_${Date.now()}`,
+      deal_id: updatedDeal.deal_id,
+      actor_role: role,
+      event_type: "agreement_signed",
+      title: bothSigned
+        ? `✅ Escrow Agreement Fully Executed (${updatedDeal.contract_id})`
+        : `✍️ ${role === "employer" ? "Employer" : "Freelancer"} Signed Escrow Agreement`,
+      description: bothSigned
+        ? `Both Employer (${updatedDeal.employer_signature}) and Freelancer (${updatedDeal.freelancer_signature}) have digitally signed and accepted all terms.`
+        : `${role === "employer" ? "Employer" : "Freelancer"} (${sig}) digitally signed and accepted the Agreement.`,
+      created_at: nowIso,
+    });
+    store[convKey] = { deal: updatedDeal, events };
+    localStorage.setItem("workhop_deals_store", JSON.stringify(store));
+    return { ok: true, deal: updatedDeal, events };
+  }
+  if (cleanPath.startsWith("/deals/") && cleanPath.endsWith("/action") && method === "POST") {
+    const parts = cleanPath.split("/");
+    const dealId = parts[2];
+    const store = JSON.parse(localStorage.getItem("workhop_deals_store") || "{}");
+    const convKey = Object.keys(store).find((k) => store[k]?.deal?.deal_id === dealId || k === dealId);
+    if (convKey && store[convKey]?.deal) {
+      const d = store[convKey].deal;
+      const act = (body?.action || "").toLowerCase();
+      const nowIso = new Date().toISOString();
+      if (act === "start_work") d.status = "in_progress";
+      else if (act === "submit_work") d.status = d.payment_mode === "escrow" ? "submitted" : "work_submitted";
+      else if (act === "approve_work" || act === "confirm_payment") d.status = "completed";
+      else if (act === "acknowledge") d.status = "acknowledged";
+      else if (act === "confirm_work") d.status = "work_confirmed";
+      else if (act === "dispute") d.status = "disputed";
+      d.updated_at = nowIso;
+      const events = store[convKey].events || [];
+      events.push({
+        event_id: `ev_${Date.now()}`,
+        deal_id: d.deal_id,
+        actor_role: body?.actor_role || "user",
+        event_type: act,
+        title: `Deal Action: ${act.replace("_", " ").toUpperCase()}`,
+        description: body?.notes || `Status updated to ${d.status}.`,
+        created_at: nowIso,
+      });
+      store[convKey] = { deal: d, events };
+      localStorage.setItem("workhop_deals_store", JSON.stringify(store));
+      return { deal: d, events };
+    }
+  }
   if (cleanPath.includes("/hire") && method === "POST") {
     const parts = cleanPath.split("/");
     const convId = parts[2];
     setStoredChatStatus(convId, "hired");
+    const nowIso = new Date().toISOString();
+    const store = JSON.parse(localStorage.getItem("workhop_deals_store") || "{}");
+    const chats = getStoredChats();
+    const convObj = chats.find((c) => String(c.conversation_id || c.id) === String(convId)) || {};
+    const mode = body?.payment_mode === "direct" ? "direct" : "escrow";
+    const agreedPaise = body?.agreed_amount_paise || 1500000;
+    const commRate = mode === "escrow" ? 0.05 : 0;
+    const commPaise = Math.round(agreedPaise * commRate);
+    const empSig = (body?.employer_signature || "").trim();
+    const empAgreed = Boolean(body?.employer_agreed && empSig);
+    const contractId = store[convId]?.deal?.contract_id || `WH-AGR-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    const dealDoc = {
+      ...(store[convId]?.deal || {}),
+      deal_id: store[convId]?.deal?.deal_id || `deal_${Date.now()}`,
+      contract_id: contractId,
+      conversation_id: convId,
+      job_id: convObj.job_id || "WH-GIG-BLR",
+      job_title: convObj.job_title || "Local Bengaluru Gig",
+      employer_name: convObj.company_name || "Employer",
+      employer_address: body?.employer_address || `${convObj.job_area || "Indiranagar"}, Bengaluru, Karnataka, India`,
+      freelancer_name: convObj.freelancer_name || "Verified Pro",
+      freelancer_address: body?.freelancer_address || `${convObj.applicant_area || "Koramangala"}, Bengaluru, Karnataka, India`,
+      payment_mode: mode,
+      agreed_amount_paise: agreedPaise,
+      commission_rate: commRate,
+      commission_paise: commPaise,
+      freelancer_net_paise: agreedPaise - commPaise,
+      scope_description: body?.scope_description || `Professional freelance execution of '${convObj.job_title || "Bengaluru Gig"}' as scoped on WorkHop.`,
+      deliverables: body?.deliverables || `Complete execution and delivery of all work items for '${convObj.job_title || "Bengaluru Gig"}'.`,
+      start_date: body?.start_date || nowIso.slice(0, 10),
+      completion_deadline: body?.completion_deadline || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+      revisions_included: body?.revisions_included ?? 2,
+      milestones: body?.milestones || [
+        {
+          no: 1,
+          title: `Complete Deliverables for ${convObj.job_title || "Bengaluru Gig"}`,
+          due_date: body?.completion_deadline || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+          amount_inr: Math.round(agreedPaise / 100),
+        },
+      ],
+      employer_agreed: empAgreed || Boolean(store[convId]?.deal?.employer_agreed),
+      employer_signature: empSig || store[convId]?.deal?.employer_signature || null,
+      employer_signed_at: empAgreed ? nowIso : (store[convId]?.deal?.employer_signed_at || null),
+      freelancer_agreed: Boolean(store[convId]?.deal?.freelancer_agreed),
+      freelancer_signature: store[convId]?.deal?.freelancer_signature || null,
+      freelancer_signed_at: store[convId]?.deal?.freelancer_signed_at || null,
+      agreement_status: empAgreed ? "partially_signed" : "pending_signatures",
+      status: mode === "escrow" ? "funded" : "acknowledged",
+      effective_date: nowIso,
+      created_at: store[convId]?.deal?.created_at || nowIso,
+      updated_at: nowIso,
+    };
+    const events = store[convId]?.events || [];
+    events.push({
+      event_id: `ev_${Date.now()}`,
+      deal_id: dealDoc.deal_id,
+      actor_role: "employer",
+      event_type: "hired",
+      title: "🎉 Freelancer Hired & Agreement Initiated!",
+      description: `Employer hired ${dealDoc.freelancer_name}${empAgreed ? ` and digitally signed Agreement ${contractId}` : ""}.`,
+      created_at: nowIso,
+    });
+    store[convId] = { deal: dealDoc, events };
+    localStorage.setItem("workhop_deals_store", JSON.stringify(store));
     try {
       sendBrowserPushNotification({
         title: "🎉 You've Been Hired!",
-        body: "The employer has officially hired you! Direct phone number and contact sharing is now unlocked.",
+        body: "The employer has officially hired you! Please review and countersign the Escrow Agreement.",
         category: "hired_alerts",
         url: `/chat/${convId}?role=freelancer`,
         tag: `hired-${convId}`,
       });
     } catch {}
-    return { ok: true, status: "hired", conversation_id: convId, message: "Freelancer successfully hired!" };
+    return { ok: true, status: "hired", conversation_id: convId, deal: dealDoc, events, message: "Freelancer successfully hired!" };
   }
   if (cleanPath.includes("/status") && method === "POST") {
     if (body?.status === "hired") {

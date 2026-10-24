@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
 import {
   ShieldCheck, AlertTriangle, Clock, CheckCircle2, ChevronDown, ChevronUp,
-  ExternalLink, Loader2, ArrowRight, X, AlertCircle, Sparkles, Send, Flag, Lock
+  ExternalLink, Loader2, ArrowRight, X, AlertCircle, Sparkles, Send, Flag, Lock,
+  FileText, PenTool
 } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { fundDealEscrow } from "@/hooks/usePayments";
@@ -19,6 +20,7 @@ export default function DealTracker({
   onDealUpdated,
   onOpenReview,
   onOpenHire,
+  onOpenAgreement,
   isHired = false,
   defaultPay = 15000,
   otherName = "Candidate",
@@ -42,6 +44,12 @@ export default function DealTracker({
   const agreedRupees = Math.round((deal?.agreed_amount_paise || 0) / 100);
   const commissionRupees = Math.round((deal?.commission_paise || 0) / 100);
   const netRupees = Math.round((deal?.freelancer_net_paise || 0) / 100);
+
+  const employerSigned = Boolean(deal?.employer_agreed && deal?.employer_signature);
+  const freelancerSigned = Boolean(deal?.freelancer_agreed && deal?.freelancer_signature);
+  const bothSigned = employerSigned && freelancerSigned;
+  const iHaveSigned = myRole === "employer" ? employerSigned : freelancerSigned;
+  const signedCount = (employerSigned ? 1 : 0) + (freelancerSigned ? 1 : 0);
 
   // Calculate active step index for the 5-step stepper
   const stepIndex = useMemo(() => {
@@ -105,12 +113,16 @@ export default function DealTracker({
       if (status === "created") {
         return myRole === "employer"
           ? `Deposit ₹${agreedRupees.toLocaleString("en-IN")} into WorkHop Escrow below. Funds are held safely until you approve the delivered work.`
+          : !freelancerSigned
+          ? `Employer hired you for ₹${agreedRupees.toLocaleString("en-IN")}! Click 'Sign Escrow Agreement' to countersign the contract while the employer deposits escrow funds.`
           : `Waiting for employer to fund ₹${agreedRupees.toLocaleString("en-IN")} into Escrow. Do not start work until funds are deposited.`;
       }
       if (status === "funded") {
         return myRole === "freelancer"
-          ? "₹" + agreedRupees.toLocaleString("en-IN") + " is safely locked in escrow! Click 'Start Work' below to begin."
-          : "Escrow funded! Freelancer has been notified to commence work.";
+          ? !freelancerSigned
+            ? `₹${agreedRupees.toLocaleString("en-IN")} is locked in escrow! Please click 'Sign Escrow Agreement' and check 'I Agree' to countersign the contract and begin work.`
+            : "₹" + agreedRupees.toLocaleString("en-IN") + " is safely locked in escrow & contract signed! Click 'Start Work' below to begin."
+          : "Escrow funded! Freelancer has been notified to sign the agreement and commence work.";
       }
       if (status === "in_progress") {
         return myRole === "freelancer"
@@ -154,7 +166,7 @@ export default function DealTracker({
       }
     }
     return "Deal in progress.";
-  }, [mode, status, myRole, agreedRupees, netRupees, deal?.auto_release_at]);
+  }, [mode, status, myRole, agreedRupees, netRupees, deal?.auto_release_at, freelancerSigned]);
 
   // Handler for deal actions
   const handleAction = async (action, notes = "") => {
@@ -202,7 +214,7 @@ export default function DealTracker({
   if (!deal) {
     const preHireSteps = [
       { label: "Scope & Chat", sub: "Discuss & Align" },
-      { label: "Hire Pro", sub: "Terms & Contract" },
+      { label: "Hire & Sign", sub: "Escrow Agreement" },
       { label: "Fund / Work", sub: "Phone Unlocked" },
       { label: "Submit Work", sub: "72h review" },
       { label: "Payout & Done", sub: "Complete & Review" },
@@ -235,7 +247,7 @@ export default function DealTracker({
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-xs">
             <div>
               <span className="text-[10px] text-inkmuted dark:text-zinc-400 block uppercase font-bold">
                 Agreed / Proposed Pay
@@ -244,6 +256,20 @@ export default function DealTracker({
                 ₹{Number(defaultPay || 15000).toLocaleString("en-IN")}
               </span>
             </div>
+
+            {onOpenAgreement && (
+              <button
+                type="button"
+                data-testid="prehire-preview-agreement-btn"
+                onClick={onOpenAgreement}
+                className="flex items-center gap-1.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1.5 text-[11px] font-black uppercase text-ink dark:text-white shadow-[1.5px_1.5px_0px_#121212] hover:bg-sand dark:hover:bg-zinc-700 transition"
+                title="Preview the auto-filled WorkHop Freelance Services & Escrow Agreement"
+              >
+                <FileText size={13} className="text-brand" />
+                <span className="hidden sm:inline">Escrow Agreement</span>
+                <span className="sm:hidden">Contract</span>
+              </button>
+            )}
 
             {myRole === "employer" && (
               <button
@@ -370,6 +396,28 @@ export default function DealTracker({
           >
             {status.replace("_", " ")}
           </span>
+
+          {/* Agreement Dual-Signature Pill */}
+          {onOpenAgreement && (
+            <button
+              type="button"
+              data-testid="deal-header-agreement-pill"
+              onClick={onOpenAgreement}
+              className={`flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border rounded transition ${
+                bothSigned
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-400 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300"
+                  : "bg-[#FFF3C4] text-amber-900 border-amber-500 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-200"
+              }`}
+              title="Open WorkHop Freelance Services & Escrow Agreement"
+            >
+              <FileText size={11} />
+              <span>
+                {bothSigned
+                  ? "Agreement: 2/2 Signed ✓"
+                  : `Agreement: ${signedCount}/2 Signed`}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Amount Breakdown */}
@@ -416,6 +464,72 @@ export default function DealTracker({
           )}
         </div>
       </div>
+
+      {/* 1B. ESCROW AGREEMENT & DUAL SIGNATURE STATUS STRIP */}
+      {onOpenAgreement && (
+        <div
+          data-testid="deal-agreement-status-bar"
+          className={`flex flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-6 border-b border-ink/10 dark:border-white/10 text-xs ${
+            bothSigned
+              ? "bg-[#E5F8EE]/60 dark:bg-emerald-950/25"
+              : "bg-[#FFF8EB] dark:bg-amber-950/20"
+          }`}
+        >
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <span className="flex items-center gap-1.5 font-black uppercase text-[11px] text-ink dark:text-white">
+              <FileText size={13} className="text-brand shrink-0" />
+              <span>Escrow Agreement</span>
+              {deal?.contract_id && (
+                <span className="font-mono text-[10px] text-inkmuted dark:text-zinc-400 font-bold">
+                  ({deal.contract_id})
+                </span>
+              )}
+            </span>
+
+            <span
+              className={`px-2 py-0.5 text-[10px] font-black uppercase border ${
+                employerSigned
+                  ? "bg-emerald-100/80 text-emerald-800 border-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-300"
+                  : "bg-amber-100/80 text-amber-800 border-amber-400 dark:bg-amber-950/60 dark:text-amber-300"
+              }`}
+            >
+              Employer: {employerSigned ? `✓ Signed (${deal.employer_signature})` : "⏳ Pending Signature"}
+            </span>
+
+            <span
+              className={`px-2 py-0.5 text-[10px] font-black uppercase border ${
+                freelancerSigned
+                  ? "bg-emerald-100/80 text-emerald-800 border-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-300"
+                  : "bg-amber-100/80 text-amber-800 border-amber-400 dark:bg-amber-950/60 dark:text-amber-300"
+              }`}
+            >
+              Freelancer: {freelancerSigned ? `✓ Signed (${deal.freelancer_signature})` : "⏳ Pending Signature"}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            data-testid="open-escrow-agreement-btn"
+            onClick={onOpenAgreement}
+            className={`flex items-center gap-1.5 border-2 border-ink px-3 py-1 text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#121212] transition ${
+              !iHaveSigned
+                ? "bg-brand text-white hover:bg-black"
+                : bothSigned
+                ? "bg-white dark:bg-zinc-800 text-ok hover:bg-sand"
+                : "bg-white dark:bg-zinc-800 text-ink dark:text-white hover:bg-sand"
+            }`}
+          >
+            <PenTool size={12} />
+            <span>
+              {!iHaveSigned
+                ? "Review & Sign Agreement (I Agree)"
+                : bothSigned
+                ? "View Executed Agreement (2/2)"
+                : `View & Sign Agreement (${signedCount}/2)`}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* 2. RESPONSIVE 5-STEP STEPPER */}
       <div className="px-2 py-3 sm:px-6 overflow-x-auto">
@@ -514,11 +628,17 @@ export default function DealTracker({
                 <button
                   data-testid="start-work-btn"
                   disabled={busy}
-                  onClick={() => handleAction("start_work")}
+                  onClick={() => {
+                    if (!freelancerSigned && onOpenAgreement) {
+                      onOpenAgreement();
+                      return;
+                    }
+                    handleAction("start_work");
+                  }}
                   className="flex items-center gap-1.5 bg-ink text-white dark:bg-white dark:text-black px-3.5 py-1.5 rounded text-xs font-black tracking-wide hover:bg-brand hover:text-white transition shadow-sm disabled:opacity-50"
                 >
                   {busy ? <Loader2 size={13} className="animate-spin" /> : <ArrowRight size={14} />}
-                  START WORK
+                  {!freelancerSigned ? "SIGN AGREEMENT & START WORK" : "START WORK"}
                 </button>
               )}
 

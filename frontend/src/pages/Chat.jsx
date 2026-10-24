@@ -3,10 +3,11 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ChevronLeft, Send, ShieldCheck, Star, Loader2, CheckCheck,
   Search, Paperclip, X, Image as ImageIcon, FileText, Sparkles, MapPin,
-  Lock, Unlock, Phone, CheckCircle2
+  Lock, Unlock, Phone, CheckCircle2, PenTool
 } from "lucide-react";
 import DealTracker from "@/components/DealTracker";
 import EmployerProfileModal from "@/components/EmployerProfileModal";
+import EscrowAgreementModal from "@/components/EscrowAgreementModal";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import { API, apiGet, apiPost } from "@/lib/api";
 import { scanText, scanUploadFile, redactViolations } from "@/lib/contactScanner";
@@ -19,6 +20,7 @@ export default function Chat() {
   const myRole = sp.get("role") === "employer" ? "employer" : "freelancer";
 
   const [conv, setConv] = useState(null);
+  const [job, setJob] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
@@ -26,6 +28,7 @@ export default function Chat() {
   const [busy, setBusy] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [employerProfileOpen, setEmployerProfileOpen] = useState(false);
+  const [agreementModalOpen, setAgreementModalOpen] = useState(false);
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [myReviewDone, setMyReviewDone] = useState(false);
@@ -66,10 +69,16 @@ export default function Chat() {
     return null;
   }, [text, isHired]);
 
-  // Hire flow states
+  // Hire flow & Agreement states
   const [hireModalOpen, setHireModalOpen] = useState(false);
   const [hirePay, setHirePay] = useState(15000);
   const [hireMode, setHireMode] = useState("escrow");
+  const [hireScope, setHireScope] = useState("");
+  const [hireDeadline, setHireDeadline] = useState(
+    () => new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
+  );
+  const [hireEmployerSignature, setHireEmployerSignature] = useState("");
+  const [hireEmployerAgreed, setHireEmployerAgreed] = useState(false);
   const [hireBusy, setHireBusy] = useState(false);
   const [hireSuccessBanner, setHireSuccessBanner] = useState(false);
 
@@ -118,6 +127,27 @@ export default function Chat() {
         if (c?.pay && !deal) {
           setHirePay(Number(c.pay));
         }
+        if (c?.company_name) {
+          setHireEmployerSignature((prev) => prev || c.company_name);
+        }
+        if (c?.job_title) {
+          setHireScope((prev) =>
+            prev ||
+            `Execution and delivery of "${c.job_title}" in ${c.job_area || "Bengaluru"} as agreed on the WorkHop Platform.`
+          );
+        }
+        if (c?.job_id) {
+          apiGet(`/jobs/${c.job_id}`)
+            .then((j) => {
+              if (j) {
+                setJob(j);
+                if (j.description) {
+                  setHireScope(`${j.title || c.job_title}: ${j.description}`);
+                }
+              }
+            })
+            .catch(() => {});
+        }
       })
       .catch(() => {});
     loadDeal();
@@ -139,16 +169,34 @@ export default function Chat() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, isTyping]);
 
-  const handleConfirmHire = async () => {
+  const handleConfirmHire = async (customPayload = null) => {
+    if (!customPayload && !hireEmployerAgreed) {
+      alert("Please check the 'I Agree' box to accept the WorkHop Freelance Services & Escrow Agreement before hiring.");
+      return;
+    }
+    const sig = customPayload?.employer_signature || hireEmployerSignature.trim() || conv?.company_name || "Authorized Employer";
     setHireBusy(true);
     try {
-      const payPaise = Math.round(Number(hirePay || 15000) * 100);
+      const payPaise = customPayload?.agreed_amount_paise || Math.round(Number(hirePay || 15000) * 100);
       await apiPost(`/chats/${id}/hire`, {
         agreed_amount_paise: payPaise,
         payment_mode: hireMode,
+        scope_description: customPayload?.scope_description || hireScope,
+        deliverables:
+          customPayload?.deliverables ||
+          `1. Complete execution and delivery of "${conv?.job_title || "Bengaluru Gig"}".\n2. Final source files and handover via WorkHop chat.`,
+        start_date: customPayload?.start_date || new Date().toISOString().slice(0, 10),
+        completion_deadline: customPayload?.completion_deadline || hireDeadline,
+        revisions_included: customPayload?.revisions_included || 2,
+        employer_address: customPayload?.employer_address || `${conv?.job_area || "Koramangala"}, Bengaluru, Karnataka`,
+        freelancer_address: customPayload?.freelancer_address || `${conv?.applicant_area || "Indiranagar"}, Bengaluru, Karnataka`,
+        employer_signature: sig,
+        employer_agreed: true,
+        milestones: customPayload?.milestones || null,
       });
       setConv((prev) => (prev ? { ...prev, status: "hired" } : { status: "hired" }));
       setHireModalOpen(false);
+      setAgreementModalOpen(false);
       setHireSuccessBanner(true);
       setTimeout(() => setHireSuccessBanner(false), 8000);
       await loadDeal();
@@ -427,6 +475,23 @@ export default function Chat() {
 
         <div className="flex-1" />
 
+        {/* Escrow Agreement quick button in status bar */}
+        <button
+          type="button"
+          data-testid="chat-status-agreement-btn"
+          onClick={() => setAgreementModalOpen(true)}
+          className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1 text-[10px] font-black uppercase text-ink dark:text-white hover:bg-[#FFE8DC] dark:hover:bg-zinc-700 transition shadow-[1px_1px_0px_#121212]"
+        >
+          <FileText size={11} className="text-brand" />
+          <span>
+            {deal?.employer_agreed && deal?.freelancer_agreed
+              ? "Escrow Agreement (2/2 Signed)"
+              : deal?.employer_agreed || deal?.freelancer_agreed
+              ? "Escrow Agreement (1/2 Signed)"
+              : "Escrow Agreement"}
+          </span>
+        </button>
+
         {/* Status bar Hire button when employer and not yet hired */}
         {myRole === "employer" && !isHired && (
           <button
@@ -467,6 +532,7 @@ export default function Chat() {
         jobTitle={conv?.job_title}
         defaultPay={hirePay}
         onOpenHire={() => setHireModalOpen(true)}
+        onOpenAgreement={() => setAgreementModalOpen(true)}
         onDealUpdated={(newDeal, newEvents) => {
           setDeal(newDeal);
           setDealEvents(newEvents || []);
@@ -819,9 +885,9 @@ export default function Chat() {
       {hireModalOpen && (
         <div
           data-testid="chat-hire-modal"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in overflow-y-auto"
         >
-          <div className="w-full max-w-md border-3 border-ink bg-white dark:bg-[#18181b] p-6 shadow-[5px_5px_0px_#121212] flex flex-col gap-4">
+          <div className="w-full max-w-lg border-3 border-ink bg-white dark:bg-[#18181b] p-5 sm:p-6 shadow-[5px_5px_0px_#121212] flex flex-col gap-3.5 my-4">
             
             <div className="flex items-center justify-between border-b-2 border-ink dark:border-zinc-700 pb-3">
               <div className="flex items-center gap-2.5">
@@ -830,7 +896,7 @@ export default function Chat() {
                 </span>
                 <div>
                   <h3 className="text-base font-black text-ink dark:text-white uppercase leading-tight">
-                    Hire {conv?.freelancer_name || "Pro"}
+                    Hire {conv?.freelancer_name || "Pro"} &amp; Execute Agreement
                   </h3>
                   <p className="text-[11px] text-inkmuted dark:text-zinc-400 font-semibold truncate">
                     {conv?.job_title || "Bengaluru Gig"}
@@ -845,38 +911,66 @@ export default function Chat() {
               </button>
             </div>
 
-            {/* Agreed Pay Input */}
-            <div>
-              <label className="block text-xs font-black uppercase text-ink dark:text-white mb-1">
-                Agreed Payout (₹ INR)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-black text-ink dark:text-white">
-                  ₹
-                </span>
+            {/* Agreed Pay & Deadline */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-black uppercase text-ink dark:text-white mb-1">
+                  Agreed Payout (₹ INR)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-black text-ink dark:text-white">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    value={hirePay}
+                    onChange={(e) => setHirePay(e.target.value)}
+                    placeholder="e.g. 15000"
+                    className="w-full border-2 border-ink dark:border-zinc-700 bg-sand/30 dark:bg-zinc-900 py-2 pl-8 pr-3 text-sm font-black text-ink dark:text-white outline-none focus:bg-white dark:focus:bg-zinc-800"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-black uppercase text-ink dark:text-white mb-1">
+                  Completion Deadline
+                </label>
                 <input
-                  type="number"
-                  value={hirePay}
-                  onChange={(e) => setHirePay(e.target.value)}
-                  placeholder="e.g. 15000"
-                  className="w-full border-2 border-ink dark:border-zinc-700 bg-sand/30 dark:bg-zinc-900 py-2.5 pl-8 pr-3 text-sm font-black text-ink dark:text-white outline-none focus:bg-white dark:focus:bg-zinc-800"
+                  type="date"
+                  value={hireDeadline}
+                  onChange={(e) => setHireDeadline(e.target.value)}
+                  className="w-full border-2 border-ink dark:border-zinc-700 bg-sand/30 dark:bg-zinc-900 py-2 px-3 text-xs font-bold text-ink dark:text-white outline-none focus:bg-white dark:focus:bg-zinc-800"
                 />
               </div>
-              <p className="mt-1 text-[10px] text-inkmuted dark:text-zinc-400 font-semibold">
-                Confirm or adjust the amount agreed upon in your chat discussion.
-              </p>
+            </div>
+
+            {/* Auto-Filled Scope of Work */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-black uppercase text-ink dark:text-white">
+                  Auto-Filled Scope of Work (Clause 1.2)
+                </label>
+                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-[#FFE8DC] text-brand border border-brand/40">
+                  Auto-Filled from Job
+                </span>
+              </div>
+              <textarea
+                rows={2}
+                value={hireScope}
+                onChange={(e) => setHireScope(e.target.value)}
+                className="w-full border-2 border-ink dark:border-zinc-700 bg-sand/30 dark:bg-zinc-900 p-2 text-xs font-semibold text-ink dark:text-white outline-none focus:bg-white dark:focus:bg-zinc-800"
+              />
             </div>
 
             {/* Payment Mode Selection */}
             <div>
-              <label className="block text-xs font-black uppercase text-ink dark:text-white mb-1.5">
+              <label className="block text-[11px] font-black uppercase text-ink dark:text-white mb-1">
                 Payment Mode
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setHireMode("escrow")}
-                  className={`p-3 text-left border-2 border-ink dark:border-zinc-700 transition ${
+                  className={`p-2.5 text-left border-2 border-ink dark:border-zinc-700 transition ${
                     hireMode === "escrow"
                       ? "bg-[#FFE8DC] dark:bg-[#341b12] border-brand shadow-[2px_2px_0px_#E65A1E]"
                       : "bg-white dark:bg-zinc-800 hover:bg-sand/60 opacity-80"
@@ -885,7 +979,7 @@ export default function Chat() {
                   <p className="text-xs font-black text-brand flex items-center gap-1">
                     <ShieldCheck size={14} /> ESCROW
                   </p>
-                  <p className="text-[10px] text-inkmuted dark:text-zinc-300 mt-1 font-semibold leading-tight">
+                  <p className="text-[10px] text-inkmuted dark:text-zinc-300 mt-0.5 font-semibold leading-tight">
                     Protected deposit. 5% platform fee. Auto-releases on delivery.
                   </p>
                 </button>
@@ -893,7 +987,7 @@ export default function Chat() {
                 <button
                   type="button"
                   onClick={() => setHireMode("direct")}
-                  className={`p-3 text-left border-2 border-ink dark:border-zinc-700 transition ${
+                  className={`p-2.5 text-left border-2 border-ink dark:border-zinc-700 transition ${
                     hireMode === "direct"
                       ? "bg-[#FFF3C4] dark:bg-[#2c2411] border-amber-600 shadow-[2px_2px_0px_#d97706]"
                       : "bg-white dark:bg-zinc-800 hover:bg-sand/60 opacity-80"
@@ -902,23 +996,87 @@ export default function Chat() {
                   <p className="text-xs font-black text-amber-700 dark:text-amber-400 flex items-center gap-1">
                     <Sparkles size={14} /> DIRECT (0% FEE)
                   </p>
-                  <p className="text-[10px] text-inkmuted dark:text-zinc-300 mt-1 font-semibold leading-tight">
+                  <p className="text-[10px] text-inkmuted dark:text-zinc-300 mt-0.5 font-semibold leading-tight">
                     Settle directly via UPI. 0% fee. At your own risk.
                   </p>
                 </button>
               </div>
             </div>
 
+            {/* FREELANCE SERVICES & ESCROW AGREEMENT EXECUTION BOX */}
+            <div className="border-2 border-ink dark:border-zinc-700 bg-[#FAF7F2] dark:bg-zinc-900 p-3 flex flex-col gap-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <FileText size={14} className="text-brand shrink-0" />
+                  <span className="text-[11px] font-black uppercase text-ink dark:text-white">
+                    Freelance Services &amp; Escrow Agreement
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  data-testid="hire-modal-open-full-agreement-btn"
+                  onClick={() => {
+                    setHireModalOpen(false);
+                    setAgreementModalOpen(true);
+                  }}
+                  className="text-[10px] font-black uppercase text-brand border border-brand px-2 py-0.5 bg-white dark:bg-zinc-800 hover:bg-brand hover:text-white transition"
+                >
+                  📜 Read Full 16-Clause Letter →
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase text-inkmuted dark:text-zinc-400 mb-1">
+                  Employer Digital Signature (Full Legal Name)
+                </label>
+                <div className="relative">
+                  <PenTool size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-brand" />
+                  <input
+                    type="text"
+                    data-testid="hire-modal-employer-signature-input"
+                    value={hireEmployerSignature}
+                    onChange={(e) => setHireEmployerSignature(e.target.value)}
+                    placeholder={conv?.company_name || "Type your full name to sign"}
+                    className="w-full border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 py-1.5 pl-8 pr-3 text-xs font-black italic text-ink dark:text-white outline-none"
+                  />
+                </div>
+              </div>
+
+              <label className="flex items-start gap-2 cursor-pointer select-none pt-0.5">
+                <input
+                  type="checkbox"
+                  data-testid="hire-modal-i-agree-checkbox"
+                  checked={hireEmployerAgreed}
+                  onChange={(e) => setHireEmployerAgreed(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-[#E65A1E] cursor-pointer shrink-0"
+                />
+                <span className="text-[11px] font-bold text-ink dark:text-zinc-200 leading-snug">
+                  <strong className="text-brand uppercase">I AGREE:</strong> I have read, understood, and fully agree to the auto-filled{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHireModalOpen(false);
+                      setAgreementModalOpen(true);
+                    }}
+                    className="underline font-black text-ink dark:text-white hover:text-brand"
+                  >
+                    WorkHop Freelance Services &amp; Escrow Agreement
+                  </button>{" "}
+                  (₹{Number(hirePay || 0).toLocaleString("en-IN")} project fee, 5% escrow commission, 72h review period, IP assignment on release). The Freelancer will also sign &amp; check &ldquo;I Agree&rdquo;.
+                </span>
+              </label>
+            </div>
+
             {/* Contact Sharing Notice */}
-            <div className="border border-brand/40 bg-brand/10 dark:bg-brand/20 p-2.5 text-xs text-brand font-bold flex items-start gap-2">
-              <Phone size={14} className="shrink-0 mt-0.5" />
+            <div className="border border-brand/40 bg-brand/10 dark:bg-brand/20 p-2 text-[11px] text-brand font-bold flex items-start gap-2">
+              <Phone size={13} className="shrink-0 mt-0.5" />
               <span>
                 Once you click Hire, phone number &amp; WhatsApp exchange is immediately unlocked for both you and the pro!
               </span>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-3 mt-0.5">
               <button
                 type="button"
                 onClick={() => setHireModalOpen(false)}
@@ -929,18 +1087,37 @@ export default function Chat() {
               <button
                 type="button"
                 data-testid="confirm-hire-btn"
-                disabled={hireBusy || !hirePay || Number(hirePay) <= 0}
-                onClick={handleConfirmHire}
-                className="flex-1 flex items-center justify-center gap-1.5 border-2 border-ink bg-brand py-2.5 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition disabled:opacity-50"
+                disabled={hireBusy || !hirePay || Number(hirePay) <= 0 || !hireEmployerAgreed || !hireEmployerSignature.trim()}
+                onClick={() => handleConfirmHire()}
+                className="flex-1 flex items-center justify-center gap-1.5 border-2 border-ink bg-brand py-2.5 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition disabled:opacity-40"
               >
                 {hireBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                <span>CONFIRM &amp; HIRE</span>
+                <span>SIGN &amp; HIRE PRO</span>
               </button>
             </div>
 
           </div>
         </div>
       )}
+
+      {/* Full 16-Clause Freelance Services & Escrow Agreement Modal */}
+      <EscrowAgreementModal
+        isOpen={agreementModalOpen}
+        onClose={() => setAgreementModalOpen(false)}
+        deal={deal}
+        conv={conv}
+        job={job}
+        myRole={myRole}
+        defaultPay={hirePay}
+        paymentMode={hireMode}
+        isHireFlow={!deal && myRole === "employer"}
+        onConfirmHireWithAgreement={(customPayload) => handleConfirmHire(customPayload)}
+        onAgreementSigned={(updatedDeal, updatedEvents) => {
+          if (updatedDeal) setDeal(updatedDeal);
+          if (updatedEvents) setDealEvents(updatedEvents);
+          loadMessages();
+        }}
+      />
 
       {/* Employer Profile Modal for Freelancer */}
       <EmployerProfileModal
