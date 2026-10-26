@@ -72,7 +72,8 @@ export default function Chat() {
   // Hire flow & Agreement states
   const [hireModalOpen, setHireModalOpen] = useState(false);
   const [hirePay, setHirePay] = useState(15000);
-  const [hireMode, setHireMode] = useState("escrow");
+  const [hireMode, setHireMode] = useState("direct");
+  const [escrowComingSoonMsg, setEscrowComingSoonMsg] = useState(false);
   const [hireScope, setHireScope] = useState("");
   const [hireDeadline, setHireDeadline] = useState(
     () => new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
@@ -969,16 +970,21 @@ export default function Chat() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setHireMode("escrow")}
-                  className={`p-2.5 text-left border-2 border-ink dark:border-zinc-700 transition ${
-                    hireMode === "escrow"
-                      ? "bg-[#FFE8DC] dark:bg-[#341b12] border-brand shadow-[2px_2px_0px_#E65A1E]"
-                      : "bg-white dark:bg-zinc-800 hover:bg-sand/60 opacity-80"
-                  }`}
+                  data-testid="hire-mode-escrow-btn"
+                  onClick={() => {
+                    setEscrowComingSoonMsg(true);
+                    setHireMode("direct");
+                  }}
+                  className="p-2.5 text-left border-2 border-ink/50 dark:border-zinc-700 bg-sand/50 dark:bg-zinc-800/70 hover:border-brand transition relative"
                 >
-                  <p className="text-xs font-black text-brand flex items-center gap-1">
-                    <ShieldCheck size={14} /> ESCROW
-                  </p>
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-xs font-black text-brand flex items-center gap-1">
+                      <ShieldCheck size={14} className="shrink-0" /> ESCROW
+                    </p>
+                    <span className="bg-brand text-white text-[8px] font-black uppercase px-1.5 py-0.5 tracking-wider shrink-0">
+                      COMING SOON
+                    </span>
+                  </div>
                   <p className="text-[10px] text-inkmuted dark:text-zinc-300 mt-0.5 font-semibold leading-tight">
                     Protected deposit. 5% platform fee. Auto-releases on delivery.
                   </p>
@@ -986,7 +992,11 @@ export default function Chat() {
 
                 <button
                   type="button"
-                  onClick={() => setHireMode("direct")}
+                  data-testid="hire-mode-direct-btn"
+                  onClick={() => {
+                    setEscrowComingSoonMsg(false);
+                    setHireMode("direct");
+                  }}
                   className={`p-2.5 text-left border-2 border-ink dark:border-zinc-700 transition ${
                     hireMode === "direct"
                       ? "bg-[#FFF3C4] dark:bg-[#2c2411] border-amber-600 shadow-[2px_2px_0px_#d97706]"
@@ -994,13 +1004,34 @@ export default function Chat() {
                   }`}
                 >
                   <p className="text-xs font-black text-amber-700 dark:text-amber-400 flex items-center gap-1">
-                    <Sparkles size={14} /> DIRECT (0% FEE)
+                    <Sparkles size={14} className="shrink-0" /> DIRECT (0% FEE)
                   </p>
                   <p className="text-[10px] text-inkmuted dark:text-zinc-300 mt-0.5 font-semibold leading-tight">
-                    Settle directly via UPI. 0% fee. At your own risk.
+                    Settle directly via UPI. 0% fee. Active now for launch.
                   </p>
                 </button>
               </div>
+
+              {escrowComingSoonMsg && (
+                <div
+                  data-testid="escrow-coming-soon-banner"
+                  className="mt-2 border-2 border-brand bg-[#FFE8DC] dark:bg-[#341b12] p-2.5 text-[11px] font-bold text-ink dark:text-zinc-100 flex items-start justify-between gap-2 shadow-[2px_2px_0px_#121212]"
+                >
+                  <div className="flex items-start gap-2">
+                    <ShieldCheck size={15} className="text-brand shrink-0 mt-0.5" />
+                    <span>
+                      <strong className="text-brand uppercase">WorkHop Escrow is Coming Soon!</strong> Automated milestone escrow protection is launching shortly. You can hire right away using <strong>Direct Payment (0% Platform Fee)</strong> with the signed agreement below.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEscrowComingSoonMsg(false)}
+                    className="text-inkmuted hover:text-ink text-xs font-black px-1 shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* FREELANCE SERVICES & ESCROW AGREEMENT EXECUTION BOX */}

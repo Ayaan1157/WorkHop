@@ -194,21 +194,7 @@ export default function DealTracker({
 
   // Handler for employer funding escrow
   const handleFundEscrow = async () => {
-    if (!deal) return;
-    setBusy(true);
-    setActionError(null);
-    try {
-      const res = await fundDealEscrow(deal.deal_id, `WorkHop Escrow: ${deal.job_title || "Gig Payment"}`);
-      if (res?.deal) {
-        onDealUpdated && onDealUpdated(res.deal, res.events);
-      }
-    } catch (err) {
-      if (err?.message !== "PAYMENT_CANCELLED") {
-        setActionError(err?.message || "Failed to complete escrow deposit.");
-      }
-    } finally {
-      setBusy(false);
-    }
+    setActionError("🔒 WorkHop Escrow is Coming Soon! Automated milestone deposits are launching shortly — please settle via Direct Payment (0% fee) for now.");
   };
 
   if (!deal) {

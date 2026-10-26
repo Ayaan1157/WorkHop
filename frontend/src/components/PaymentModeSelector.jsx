@@ -9,13 +9,14 @@ import { ShieldCheck, AlertTriangle, Check, Info } from "lucide-react";
  */
 export default function PaymentModeSelector({
   quote = 0,
-  selectedMode = "escrow",
+  selectedMode = "direct",
   onChangeMode,
   acknowledged = false,
   onToggleAck,
   commissionRate = 0.05,
   disabled = false,
 }) {
+  const [escrowComingSoon, setEscrowComingSoon] = React.useState(false);
   const numericQuote = Math.max(0, Number(quote) || 0);
   const commissionAmount = Math.round(numericQuote * commissionRate);
   const netEarnings = Math.max(0, numericQuote - commissionAmount);
@@ -27,37 +28,32 @@ export default function PaymentModeSelector({
           Choose Payment Mode <span className="text-brand">*</span>
         </label>
         <span className="text-[10px] font-bold text-inkmuted dark:text-zinc-400">
-          Selected: {selectedMode === "escrow" ? "Protected Escrow" : "Direct Settlement"}
+          Selected: {selectedMode === "escrow" ? "Protected Escrow" : "Direct Settlement (0% Fee)"}
         </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* MODE A: ESCROW PROTECTED (RECOMMENDED) */}
+        {/* MODE A: ESCROW PROTECTED (COMING SOON) */}
         <div
-          onClick={() => !disabled && onChangeMode && onChangeMode("escrow")}
+          onClick={() => {
+            if (!disabled) {
+              setEscrowComingSoon(true);
+              onChangeMode && onChangeMode("direct");
+            }
+          }}
           data-testid="mode-escrow-card"
-          className={`cursor-pointer relative flex flex-col justify-between p-3.5 border-2 transition-all rounded-md ${
-            selectedMode === "escrow"
-              ? "border-[#E65A1E] bg-[#FFF8F5] dark:bg-[#E65A1E]/10 shadow-[3px_3px_0px_#E65A1E]"
-              : "border-ink/20 dark:border-white/20 bg-white dark:bg-zinc-900 hover:border-ink/50"
-          } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+          className={`cursor-pointer relative flex flex-col justify-between p-3.5 border-2 transition-all rounded-md border-ink/20 dark:border-white/20 bg-sand/40 dark:bg-zinc-900 hover:border-brand/60 ${
+            disabled ? "opacity-60 cursor-not-allowed" : ""
+          }`}
         >
-          {/* Recommended badge */}
+          {/* Coming Soon badge */}
           <div className="absolute -top-2.5 right-3 bg-[#E65A1E] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm flex items-center gap-1">
-            <ShieldCheck size={11} /> Recommended
+            <ShieldCheck size={11} /> Coming Soon
           </div>
 
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <div
-                className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                  selectedMode === "escrow"
-                    ? "border-[#E65A1E] bg-[#E65A1E] text-white"
-                    : "border-ink/30 dark:border-white/30"
-                }`}
-              >
-                {selectedMode === "escrow" && <Check size={12} strokeWidth={3} />}
-              </div>
+              <div className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/30 dark:border-white/30" />
               <h4 className="text-xs font-black uppercase tracking-wide text-ink dark:text-white">
                 WorkHop Escrow
               </h4>
@@ -87,7 +83,12 @@ export default function PaymentModeSelector({
 
         {/* MODE B: DIRECT SETTLEMENT (AT YOUR OWN RISK) */}
         <div
-          onClick={() => !disabled && onChangeMode && onChangeMode("direct")}
+          onClick={() => {
+            if (!disabled) {
+              setEscrowComingSoon(false);
+              onChangeMode && onChangeMode("direct");
+            }
+          }}
           data-testid="mode-direct-card"
           className={`cursor-pointer relative flex flex-col justify-between p-3.5 border-2 transition-all rounded-md ${
             selectedMode === "direct"
@@ -137,6 +138,29 @@ export default function PaymentModeSelector({
           </div>
         </div>
       </div>
+
+      {escrowComingSoon && (
+        <div
+          data-testid="payment-mode-escrow-coming-soon"
+          className="border-2 border-[#E65A1E] bg-[#FFF8F5] dark:bg-[#E65A1E]/15 p-3 rounded-md flex items-start justify-between gap-2 text-xs text-ink dark:text-zinc-100"
+        >
+          <div className="flex items-start gap-2">
+            <ShieldCheck size={16} className="text-[#E65A1E] shrink-0 mt-0.5" />
+            <div className="text-[11px] leading-relaxed font-semibold">
+              <strong className="font-black uppercase text-[#E65A1E]">WorkHop Escrow is Coming Soon!</strong>{" "}
+              Automated Razorpay milestone escrow is launching shortly. Please use{" "}
+              <strong>Direct Payment (0% Fee)</strong> for now.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setEscrowComingSoon(false)}
+            className="text-inkmuted hover:text-ink font-black text-xs px-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* DIRECT MODE MANDATORY ACKNOWLEDGEMENT CHECKBOX */}
       {selectedMode === "direct" && (
