@@ -1219,8 +1219,8 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* 5 Quick Sub-Tags - strictly fits in ONE line */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto scrollbar-none pb-1 xl:pb-0">
+          {/* 5 Quick Sub-Tags - all visible at once without horizontal scrolling */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap xl:flex-nowrap items-stretch sm:items-center gap-2">
             {[
               {
                 title: "AI Video & Reels",
@@ -1247,20 +1247,22 @@ export default function Landing() {
                 sub: "Scripts & Bug Fixes",
                 query: "Custom Vibe Coding, Scripts & Web Fixes",
               },
-            ].map((tag) => (
+            ].map((tag, idx) => (
               <button
                 key={tag.title}
                 type="button"
                 onClick={() => nav(isEmployerUser ? `/employer?q=${encodeURIComponent(tag.query)}` : `/freelancer/jobs?q=${encodeURIComponent(tag.query)}`)}
-                className="group flex flex-col text-left border-2 border-white/80 bg-white/5 hover:bg-brand hover:border-brand px-2.5 py-1.5 transition shadow-[2px_2px_0px_rgba(255,255,255,0.4)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 cursor-pointer shrink-0 whitespace-nowrap"
+                className={`group flex flex-col justify-center text-left border-2 border-white/80 bg-white/5 hover:bg-brand hover:border-brand px-2.5 py-2 sm:py-1.5 transition shadow-[2px_2px_0px_rgba(255,255,255,0.4)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 cursor-pointer sm:shrink-0 ${
+                  idx === 4 ? "col-span-2 sm:col-span-1" : ""
+                }`}
               >
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-black text-white group-hover:text-white">
+                <div className="flex items-center justify-between sm:justify-start gap-1">
+                  <span className="text-xs font-black text-white group-hover:text-white leading-tight">
                     {tag.title}
                   </span>
                   <ArrowRight size={11} className="text-brand group-hover:text-white group-hover:translate-x-0.5 transition shrink-0" />
                 </div>
-                <span className="text-[10px] text-stone-300 font-medium group-hover:text-white/90">
+                <span className="text-[10px] text-stone-300 font-medium group-hover:text-white/90 leading-tight mt-0.5">
                   {tag.sub}
                 </span>
               </button>
