@@ -2,16 +2,24 @@ const https = require("https");
 
 const PLANS_PRICES_INR = {
   // Freelancer Hops Packs (1 Hop = ₹15)
+  "pack-10": 150,
   "pack-20": 300,
   "pack-40": 600,
+  "pack-60": 900,
+  "pack-80": 1200,
   "pack-100": 1500,
   "pack-200": 3000,
   // Freelancer Monthly Passes
-  "pro_pass": 599,
+  "starter_pass": 399,
+  "pro_pass": 999,
+  "power_pass": 1899,
   "elite_pass": 999,
-  // Employer Job Boosts
+  // Employer & Platform Add-Ons
+  "urgent-boost": 399,
   "urgent-boost-49": 49,
   "post-49": 49,
+  "lead-unlock": 199,
+  "quota_boost": 149,
   "assisted-999": 999,
 };
 

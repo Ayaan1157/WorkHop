@@ -19,7 +19,9 @@ module.exports = async function handler(req, res) {
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest("hex");
 
-      if (expected !== razorpay_signature) {
+      const expectedBuf = Buffer.from(expected, "utf8");
+      const actualBuf = Buffer.from(String(razorpay_signature), "utf8");
+      if (expectedBuf.length !== actualBuf.length || !crypto.timingSafeEqual(expectedBuf, actualBuf)) {
         return res.status(400).json({ detail: "Payment signature verification failed." });
       }
     }

@@ -71,7 +71,9 @@ module.exports = async function handler(req, res) {
         .update(rawBody)
         .digest("hex");
 
-      if (expectedSignature !== signature) {
+      const expectedBuf = Buffer.from(expectedSignature, "utf8");
+      const actualBuf = Buffer.from(String(signature), "utf8");
+      if (expectedBuf.length !== actualBuf.length || !crypto.timingSafeEqual(expectedBuf, actualBuf)) {
         console.warn("[WorkHop Webhook] Signature mismatch for event:", eventId);
         return res.status(400).json({ status: "error", detail: "Invalid webhook signature" });
       }

@@ -1,11 +1,16 @@
 const tls = require("tls");
 
 const HOPS_ITEMS = {
+  "pack-10": { title: "10 Hops Top-Up Pack", credits: 10, price_inr: 150, type: "hops_pack" },
   "pack-20": { title: "20 Hops Top-Up Pack", credits: 20, price_inr: 300, type: "hops_pack" },
   "pack-40": { title: "40 Hops Value Pack", credits: 40, price_inr: 600, type: "hops_pack" },
-  "pack-100": { title: "100 Hops Pro Pack", credits: 100, price_inr: 1500, type: "hops_pack" },
+  "pack-60": { title: "60 Hops Growth Pack", credits: 60, price_inr: 900, type: "hops_pack" },
+  "pack-80": { title: "80 Hops Pro Bundle", credits: 80, price_inr: 1200, type: "hops_pack" },
+  "pack-100": { title: "100 Hops Best Value Pack", credits: 100, price_inr: 1500, type: "hops_pack" },
   "pack-200": { title: "200 Hops Agency Pack", credits: 200, price_inr: 3000, type: "hops_pack" },
-  "pro_pass": { title: "WorkHop Pro Monthly Pass (80 Hops/mo)", credits: 80, price_inr: 599, type: "hops_pass" },
+  "starter_pass": { title: "Starter Hops Pass (30 Hops/mo)", credits: 30, price_inr: 399, type: "hops_pass" },
+  "pro_pass": { title: "Freelancer Plus Pass (80 Hops/mo)", credits: 80, price_inr: 999, type: "hops_pass" },
+  "power_pass": { title: "Power Freelancer Pass (160 Hops/mo)", credits: 160, price_inr: 1899, type: "hops_pass" },
   "elite_pass": { title: "WorkHop Elite Monthly Pass (200 Hops/mo)", credits: 200, price_inr: 999, type: "hops_pass" },
 };
 
