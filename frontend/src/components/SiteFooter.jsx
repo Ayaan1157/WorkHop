@@ -149,13 +149,21 @@ export default function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:connect@work-hop.com" className="hover:text-white transition flex items-center gap-1">
-                  <span>Contact: connect@work-hop.com</span>
+                <a
+                  href="mailto:connect@work-hop.com"
+                  className="hover:text-white transition flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 leading-snug"
+                >
+                  <span>Contact:</span>
+                  <span className="whitespace-nowrap">connect@work-hop.com</span>
                 </a>
               </li>
               <li>
-                <a href="mailto:help@work-hop.com" className="hover:text-white transition flex items-center gap-1 text-brand font-medium">
-                  <span>Complaints: help@work-hop.com</span>
+                <a
+                  href="mailto:help@work-hop.com"
+                  className="hover:text-white transition flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 text-brand font-medium leading-snug"
+                >
+                  <span>Complaints:</span>
+                  <span className="whitespace-nowrap">help@work-hop.com</span>
                 </a>
               </li>
               <li>
