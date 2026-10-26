@@ -66,9 +66,22 @@
       "destination": "/api/payments/verify"
     },
     {
+      "source": "/api/credits/send-invoice",
+      "destination": "/api/credits/send-invoice"
+    },
+    {
+      "source": "/api/credits/purchase-pack",
+      "destination": "/api/credits/send-invoice"
+    },
+    {
+      "source": "/api/credits/subscribe",
+      "destination": "/api/credits/send-invoice"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
 }
+
 

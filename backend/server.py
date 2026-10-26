@@ -4655,15 +4655,16 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", os.environ.get("APP_URL", "https:/
 
 def _sync_send_email(to: str, subject: str, html_body: str, from_addr: str = None) -> bool:
     """Synchronous email dispatch using smtplib (MIME multipart HTML + plain text fallback)."""
-    smtp_host = os.environ.get("SMTP_HOST", "").strip()
+    smtp_pass_raw = os.environ.get("SMTP_PASSWORD", os.environ.get("SMTP_PASS", "")).strip()
+    smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com" if smtp_pass_raw else "").strip()
     sender = from_addr or os.environ.get("NOTIFICATION_EMAIL_FROM", f"{EMAIL_FROM_NAME} <{MAIN_EMAIL}>")
-    if not smtp_host:
-        logging.info("Transactional email simulated (SMTP_HOST not set) to %s: %s", to, subject)
+    if not smtp_host or not smtp_pass_raw:
+        logging.info("Transactional email simulated (SMTP_PASSWORD not set) to %s: %s", to, subject)
         return True
     try:
         smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-        smtp_user = os.environ.get("SMTP_USER", "").strip()
-        smtp_pass = os.environ.get("SMTP_PASSWORD", os.environ.get("SMTP_PASS", "")).strip()
+        smtp_user = os.environ.get("SMTP_USER", MAIN_EMAIL).strip() or MAIN_EMAIL
+        smtp_pass = smtp_pass_raw.replace(" ", "") if "gmail" in smtp_host.lower() else smtp_pass_raw
         use_tls = os.environ.get("SMTP_USE_TLS", "1").lower() in ("1", "true", "yes")
         use_ssl = os.environ.get("SMTP_USE_SSL", "0").lower() in ("1", "true", "yes")
 
