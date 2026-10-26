@@ -747,7 +747,7 @@ export default function Jobs() {
 
       {/* Search & Sort & Filter Bar */}
       <div className="border-b-2 border-ink dark:border-zinc-800 bg-white dark:bg-[#121212]">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-col sm:flex-row items-stretch sm:items-center gap-2.5 px-3 py-2.5 sm:px-8">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col sm:flex-row items-stretch sm:items-center gap-2.5 px-4 py-2.5 sm:px-8">
           <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1f1f1f] px-3 shadow-[1.5px_1.5px_0px_#121212]">
             <Search size={16} className="text-inkmuted dark:text-zinc-400" />
             <input

@@ -319,23 +319,23 @@ export default function Employer() {
       </div>
 
       {/* SEARCH & FILTERS BAR */}
-      <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-8 py-2.5 sm:py-3">
-        <div className="flex flex-col gap-2">
+      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 py-2.5 sm:py-3">
+        <div className="flex flex-col gap-2.5">
           <div className="flex items-center gap-2">
-            <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 shadow-[1.5px_1.5px_0px_#121212]">
-              <Search size={16} className="text-inkmuted" />
+            <div className="flex h-11 flex-1 min-w-0 items-center gap-2 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 shadow-[1.5px_1.5px_0px_#121212]">
+              <Search size={16} className="text-inkmuted shrink-0" />
               <input
                 data-testid="leads-search-input"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search pros — e.g. AutoCAD, Framer dev, Zomato menu, Kannada VO, Shopify…"
-                className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink dark:text-white placeholder:text-inkmuted"
+                className="wh-input flex-1 min-w-0 bg-transparent text-sm font-semibold text-ink dark:text-white placeholder:text-inkmuted"
               />
               {search && (
                 <button
                   data-testid="leads-search-clear-btn"
                   onClick={() => setSearch("")}
-                  className="flex h-[22px] w-[22px] items-center justify-center bg-ink"
+                  className="flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-ink"
                 >
                   <X size={14} className="text-white" />
                 </button>
@@ -344,7 +344,7 @@ export default function Employer() {
 
             <button
               onClick={() => setFiltersDrawerOpen(!filtersDrawerOpen)}
-              className={`flex h-11 items-center gap-1.5 border-2 border-ink px-3 sm:px-4 text-xs font-black shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5 ${
+              className={`flex h-11 w-11 sm:w-auto shrink-0 items-center justify-center gap-1.5 border-2 border-ink sm:px-4 text-xs font-black shadow-[1.5px_1.5px_0px_#121212] transition active:translate-y-0.5 ${
                 filtersDrawerOpen || maxDistance || minRating ? "bg-ink text-white" : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand"
               }`}
             >
@@ -373,12 +373,12 @@ export default function Employer() {
             </div>
           )}
 
-          {/* TABS: ALL vs SAVED & SORT */}
-          <div className="flex items-center justify-between gap-2 border-t border-ink/10 pt-2 flex-wrap">
-            <div className="flex gap-2">
+          {/* TABS: ALL vs SAVED & SORT — Edge-to-Edge Aligned */}
+          <div className="flex items-center justify-between gap-1.5 sm:gap-2 border-t border-ink/10 pt-2.5 w-full">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 onClick={() => setOnlySaved(false)}
-                className={`flex h-9 items-center border-2 border-ink px-3 text-xs font-black transition ${
+                className={`flex h-10 items-center justify-center border-2 border-ink px-2.5 sm:px-3.5 text-[11px] sm:text-xs font-black whitespace-nowrap shadow-[1.5px_1.5px_0px_#121212] transition ${
                   !onlySaved ? "bg-ink text-white dark:bg-[#2a2a2a] dark:!text-white" : "bg-white dark:bg-[#222] text-ink dark:!text-white hover:bg-sand"
                 }`}
               >
@@ -386,22 +386,22 @@ export default function Employer() {
               </button>
               <button
                 onClick={() => setOnlySaved(true)}
-                className={`flex h-9 items-center gap-1.5 border-2 border-ink px-3 text-xs font-black transition ${
+                className={`flex h-10 items-center justify-center gap-1 border-2 border-ink px-2.5 sm:px-3.5 text-[11px] sm:text-xs font-black whitespace-nowrap shadow-[1.5px_1.5px_0px_#121212] transition ${
                   onlySaved ? "bg-brand text-white" : "bg-white dark:bg-[#222] text-ink dark:!text-white hover:bg-sand"
                 }`}
               >
-                <Heart size={12} fill={onlySaved ? "white" : "none"} />
-                SAVED ({savedPros.length})
+                <Heart size={12} className="shrink-0" fill={onlySaved ? "white" : "none"} />
+                <span>SAVED ({savedPros.length})</span>
               </button>
             </div>
 
             {/* SORT DROPDOWN */}
-            <div className="flex h-9 items-center gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-3 shadow-[1.5px_1.5px_0px_#121212]">
+            <div className="flex h-10 flex-1 sm:flex-initial min-w-0 items-center justify-between gap-1.5 border-2 border-ink bg-white dark:bg-[#1a1a1a] px-2.5 sm:px-3 shadow-[1.5px_1.5px_0px_#121212]">
               <ArrowUpDown size={13} className="text-inkmuted shrink-0" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-transparent text-xs font-black text-ink dark:text-white outline-none cursor-pointer"
+                className="w-full sm:w-auto min-w-0 bg-transparent text-[11px] sm:text-xs font-black text-ink dark:text-white outline-none cursor-pointer truncate"
               >
                 <option value="distance" className="text-black">Nearest First</option>
                 <option value="rating" className="text-black">Top Rated</option>
