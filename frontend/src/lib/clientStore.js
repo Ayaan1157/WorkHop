@@ -104,7 +104,6 @@ export function getStoredLeads() {
     skill: lead.skill,
     distance_km: lead.distance_km ?? (Math.round((0.5 + (idx % 10) * 0.3) * 10) / 10),
     rating: lead.rating ?? 4.9,
-    jobs_done: lead.jobs_done ?? (20 + (idx * 3) % 25),
     phone: isUnlocked ? lead.phone : maskPhone(lead.phone),
     is_unlocked: isUnlocked,
     portfolio: lead.portfolio || `${(lead.name || "pro").toLowerCase().replace(/[^a-z]/g, "")}.in`,
@@ -862,35 +861,23 @@ export function getProfileCompletion(user) {
 export function getStoredNotifications() {
   const raw = localStorage.getItem(NOTIFICATIONS_KEY);
   if (raw) {
-    try { return JSON.parse(raw); } catch { /* ignore */ }
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter((n) => !["notif-1", "notif-2", "notif-3"].includes(n?.id));
+        if (cleaned.length > 0) return cleaned;
+      }
+    } catch { /* ignore */ }
   }
   const defaults = [
     {
-      id: "notif-1",
-      type: "message",
-      title: "New message from BrewBox Cafe",
-      description: "Can you review our updated packaging brief?",
-      time: "10m ago",
-      read: false,
-      to: "/freelancer/chats",
-    },
-    {
-      id: "notif-2",
+      id: "notif-welcome",
       type: "gig",
-      title: "New Gig Matched: UI/UX Redesign",
-      description: "LedgerLite posted a ₹18,000 gig 0.4km away from you.",
-      time: "1h ago",
+      title: "Welcome to WorkHop Bengaluru ⚡",
+      description: "Explore verified pros & hyperlocal gigs within 5km with 0% employer fees.",
+      time: "Just now",
       read: false,
       to: "/freelancer/jobs",
-    },
-    {
-      id: "notif-3",
-      type: "payment",
-      title: "Escrow Milestone Funded · ₹7,500",
-      description: "Payment safely held in WorkHop Escrow for Festive Campaign.",
-      time: "3h ago",
-      read: true,
-      to: "/profile",
     },
   ];
   localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(defaults));
@@ -1482,32 +1469,15 @@ export function applyToJob(
 }
 
 export function getStoredChats() {
-  const chats = JSON.parse(localStorage.getItem(CHATS_KEY) || "[]");
-  if (chats.length > 0) return chats;
-  return [
-    {
-      id: "conv-demo-1",
-      job_title: "Brand Logo & Style Guide",
-      company_name: "BrewBox Cafe",
-      freelancer_name: "You",
-      employer_name: "Anita Joshi",
-      status: "hired",
-      milestone_step: 3, // Hired
-      updated_at: new Date().toISOString(),
-      last_message: "Hi! Can you share your recent coffee brand designs?",
-    },
-    {
-      id: "conv-demo-2",
-      job_title: "Next.js E-Commerce Landing Page",
-      company_name: "UrbanKrafts",
-      freelancer_name: "You",
-      employer_name: "Siddharth Rao",
-      status: "completed",
-      milestone_step: 6, // Completed
-      updated_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-      last_message: "Great work on the prototype. Let's schedule the kickoff call.",
-    },
-  ];
+  try {
+    const chats = JSON.parse(localStorage.getItem(CHATS_KEY) || "[]");
+    if (Array.isArray(chats)) {
+      return chats.filter((c) => !["conv-demo-1", "conv-demo-2"].includes(c?.id));
+    }
+  } catch {
+    /* ignore */
+  }
+  return [];
 }
 
 export function setStoredChatStatus(conversationId, status) {
@@ -1538,7 +1508,7 @@ export function setStoredChatStatus(conversationId, status) {
 }
 
 export function getOrCreateChatWithCandidate(candidate) {
-  if (!candidate) return "conv-demo-1";
+  if (!candidate) return "conv-1";
   try {
     const raw = localStorage.getItem(CHATS_KEY) || "[]";
     const chats = JSON.parse(raw);
@@ -1624,76 +1594,8 @@ export function getDefaultFreelancerProfile() {
     availability: "Open to contract to hire",
 
     // Work History & Completed Jobs with Employer Feedback
-    work_history: [
-      {
-        id: "wh-seed-1",
-        job_title: "Next.js E-Commerce Landing Page & Catalog",
-        company_name: "UrbanKrafts Studio",
-        employer_name: "Siddharth Rao",
-        category: "Web Development",
-        pay: 28000,
-        rating: 5,
-        review: "Delivered our 5-screen flow ahead of schedule. Outstanding communication, clean components, and flawless mobile responsiveness.",
-        badges: ["⚡ Fast Delivery", "🎯 Pixel Perfect", "💬 Great Communication"],
-        completed_at: "2026-09-18T10:00:00.000Z",
-        date_formatted: "18 Sep 2026",
-        verified_gig: true,
-      },
-      {
-        id: "wh-seed-2",
-        job_title: "Brand Identity, Logo & Social Collateral Kit",
-        company_name: "BrewBlock Cafe",
-        employer_name: "Karan S.",
-        category: "Graphics & Design",
-        pay: 18000,
-        rating: 5,
-        review: "Super responsive and understands the local Bengaluru market aesthetic perfectly. Will hire again for upcoming menu redesign.",
-        badges: ["🤝 Highly Recommended", "💡 Creative Problem Solver"],
-        completed_at: "2026-09-12T14:30:00.000Z",
-        date_formatted: "12 Sep 2026",
-        verified_gig: true,
-      },
-      {
-        id: "wh-seed-3",
-        job_title: "AutoCAD 2D Floor Plan & Spatial Layout",
-        company_name: "LedgerLite Tech Hub",
-        employer_name: "Anita J.",
-        category: "Architecture & Drafting",
-        pay: 15000,
-        rating: 4.9,
-        review: "Accurate architectural dielines and quick turnaround on revisions. Great attention to detail.",
-        badges: ["🎯 Pixel Perfect"],
-        completed_at: "2026-09-02T16:00:00.000Z",
-        date_formatted: "02 Sep 2026",
-        verified_gig: true,
-      },
-    ],
-    reviews: [
-      {
-        review_id: "rev-seed-1",
-        reviewer_name: "Siddharth Rao · UrbanKrafts",
-        job_title: "Next.js E-Commerce Landing Page",
-        rating: 5,
-        text: "Delivered our 5-screen flow ahead of schedule. Outstanding communication, clean components, and flawless mobile responsiveness.",
-        date_formatted: "18 Sep 2026",
-      },
-      {
-        review_id: "rev-seed-2",
-        reviewer_name: "Karan S. · BrewBlock Cafe",
-        job_title: "Brand Identity & Logo",
-        rating: 5,
-        text: "Super responsive and understands the local Bengaluru market aesthetic perfectly.",
-        date_formatted: "12 Sep 2026",
-      },
-      {
-        review_id: "rev-seed-3",
-        reviewer_name: "Anita J. · LedgerLite",
-        job_title: "AutoCAD 2D Floor Plan",
-        rating: 4.9,
-        text: "Accurate architectural dielines and quick turnaround on revisions.",
-        date_formatted: "02 Sep 2026",
-      },
-    ],
+    work_history: [],
+    reviews: [],
   };
 }
 
@@ -1703,6 +1605,16 @@ export function getFreelancerProfile() {
     try {
       const parsed = JSON.parse(raw);
       delete parsed.upwork_url;
+      if (Array.isArray(parsed.work_history)) {
+        parsed.work_history = parsed.work_history.filter(
+          (w) => !["wh-seed-1", "wh-seed-2", "wh-seed-3"].includes(w?.id)
+        );
+      }
+      if (Array.isArray(parsed.reviews)) {
+        parsed.reviews = parsed.reviews.filter(
+          (r) => !["rev-seed-1", "rev-seed-2", "rev-seed-3"].includes(r?.review_id)
+        );
+      }
       return { ...getDefaultFreelancerProfile(), ...parsed, upwork_url: "" };
     } catch {
       /* ignore */
