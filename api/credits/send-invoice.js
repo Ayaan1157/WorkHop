@@ -109,7 +109,21 @@ function sendGmailSmtp({ smtpHost = "smtp.gmail.com", smtpPort = 465, smtpUser, 
   });
 }
 
+function escapeHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitle, hopsAdded, totalInr, paymentId }) {
+  const safeInv = escapeHtml(invoiceNumber);
+  const safeName = escapeHtml(customerName);
+  const safeEmail = escapeHtml(customerEmail);
+  const safeTitle = escapeHtml(itemTitle);
+  const safePayId = escapeHtml(paymentId);
   const taxable = (totalInr / 1.18).toFixed(2);
   const cgst = ((totalInr - totalInr / 1.18) / 2).toFixed(2);
   const sgst = cgst;
@@ -129,7 +143,7 @@ function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitl
             </td>
             <td align="right">
               <span style="background:#E65A1E;color:#FFF;padding:5px 10px;font-size:11px;font-weight:900;text-transform:uppercase;">TAX INVOICE · PAID</span>
-              <div style="font-size:12px;font-weight:800;margin-top:6px;color:#FFF;">#${invoiceNumber}</div>
+              <div style="font-size:12px;font-weight:800;margin-top:6px;color:#FFF;">#${safeInv}</div>
             </td>
           </tr>
         </table>
@@ -141,13 +155,13 @@ function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitl
           <tr>
             <td>
               <div style="font-size:10px;font-weight:900;color:#777;text-transform:uppercase;">Billed To</div>
-              <div style="font-size:14px;font-weight:900;margin-top:2px;">${customerName}</div>
-              <div style="color:#555;">${customerEmail}</div>
+              <div style="font-size:14px;font-weight:900;margin-top:2px;">${safeName}</div>
+              <div style="color:#555;">${safeEmail}</div>
             </td>
             <td align="right">
               <div style="font-size:10px;font-weight:900;color:#777;text-transform:uppercase;">Invoice Date</div>
               <div style="font-weight:800;margin-top:2px;">${dateStr}</div>
-              <div style="font-size:11px;color:#666;margin-top:2px;">Ref: ${paymentId}</div>
+              <div style="font-size:11px;color:#666;margin-top:2px;">Ref: ${safePayId}</div>
             </td>
           </tr>
         </table>
@@ -159,8 +173,8 @@ function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitl
             <td align="right">Amount (INR)</td>
           </tr>
           <tr>
-            <td style="font-weight:800;">${itemTitle}</td>
-            <td align="center" style="font-weight:900;color:#E65A1E;">+${hopsAdded} Hops</td>
+            <td style="font-weight:800;">${safeTitle}</td>
+            <td align="center" style="font-weight:900;color:#E65A1E;">+${Number(hopsAdded) || 0} Hops</td>
             <td align="right" style="font-weight:800;">&#8377;${Number(totalInr).toFixed(2)}</td>
           </tr>
         </table>

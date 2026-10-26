@@ -1093,7 +1093,7 @@ export default function Chat() {
                   >
                     WorkHop Freelance Services &amp; Escrow Agreement
                   </button>{" "}
-                  (₹{Number(hirePay || 0).toLocaleString("en-IN")} project fee, 5% escrow commission, 72h review period, IP assignment on release). The Freelancer will also sign &amp; check &ldquo;I Agree&rdquo;.
+                  (₹{Number(hirePay || 0).toLocaleString("en-IN")} project fee, {hireMode === "escrow" ? "5% escrow commission" : "0% platform fee · Direct Settlement"}, 72h review period, IP assignment on completion). The Freelancer will also sign &amp; check &ldquo;I Agree&rdquo;.
                 </span>
               </label>
             </div>

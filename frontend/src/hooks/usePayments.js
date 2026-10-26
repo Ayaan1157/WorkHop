@@ -68,6 +68,7 @@ async function createOrder(payload) {
 }
 
 async function verifyPayment(result) {
+  let sigFailedError = null;
   try {
     const res = await fetch(`${API}/payments/verify`, {
       method: "POST",
@@ -75,9 +76,14 @@ async function verifyPayment(result) {
       body: JSON.stringify(result),
     });
     if (res.ok) return await res.json();
+    if (res.status === 400) {
+      const errData = await res.json().catch(() => ({}));
+      sigFailedError = new Error(errData?.detail || "Payment signature verification failed.");
+    }
   } catch {
     /* try Vercel serverless verify */
   }
+  if (sigFailedError) throw sigFailedError;
 
   try {
     const res = await fetch("/api/payments/verify", {
@@ -86,9 +92,14 @@ async function verifyPayment(result) {
       body: JSON.stringify(result),
     });
     if (res.ok) return await res.json();
+    if (res.status === 400) {
+      const errData = await res.json().catch(() => ({}));
+      sigFailedError = new Error(errData?.detail || "Payment signature verification failed.");
+    }
   } catch {
     /* ignore */
   }
+  if (sigFailedError) throw sigFailedError;
 
   return {
     ok: true,
