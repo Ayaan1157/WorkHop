@@ -4346,61 +4346,68 @@ export default function Admin() {
       
       {/* Top Admin Command Header */}
       <header className="sticky top-0 z-40 border-b-2 border-ink bg-white px-4 py-3 sm:px-8 shadow-sm">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-ink text-brand shadow-[2px_2px_0px_#121212]">
-              <Shield size={20} />
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-black tracking-wider text-ink uppercase">
+        <div className="mx-auto flex max-w-[1600px] flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex flex-col gap-1.5 w-full lg:w-auto">
+            <div className="flex items-center justify-between sm:justify-start gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-ink text-brand shadow-[2px_2px_0px_#121212]">
+                  <Shield size={20} />
+                </span>
+                <h1 className="text-sm sm:text-base font-black tracking-wider text-ink uppercase leading-tight">
                   WORKHOP EXECUTIVE COMMAND CENTER
                 </h1>
-                <Badge text="LIVE MASTER" tone="green" />
               </div>
-              <p className="text-[11px] text-inkmuted font-semibold">
-                Authorized: <span className="font-bold text-ink">{user?.email || "Zenith Admin"}</span> · Full Control
-              </p>
+              <span className="shrink-0">
+                <Badge text="LIVE MASTER" tone="green" />
+              </span>
             </div>
+            <p className="text-[11px] text-inkmuted font-semibold truncate">
+              Authorized: <span className="font-bold text-ink">{user?.email || "Zenith Admin"}</span> · Full Control
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              to="/employer"
-              className="flex items-center gap-1.5 border-2 border-ink bg-[#FFF3C4] px-3 py-1.5 text-xs font-black tracking-wider text-ink hover:bg-[#FFEAA0] transition shadow-[1.5px_1.5px_0px_#121212]"
-              title="Switch to Employer view (explore pros, plans, post jobs)"
-            >
-              <Users size={13} className="text-brand" />
-              <span>EMPLOYER SITE</span>
-            </Link>
-            <Link
-              to="/freelancer/jobs"
-              className="flex items-center gap-1.5 border-2 border-ink bg-[#E5F8EE] px-3 py-1.5 text-xs font-black tracking-wider text-ink hover:bg-[#D0F2E0] transition shadow-[1.5px_1.5px_0px_#121212]"
-              title="Switch to Freelancer view (find gigs, apply, chats)"
-            >
-              <Briefcase size={13} className="text-ok" />
-              <span>FREELANCER SITE</span>
-            </Link>
-            <Link
-              to="/"
-              className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-1.5 text-xs font-black tracking-wider text-ink hover:bg-sand transition"
-            >
-              <ExternalLink size={13} />
-              <span className="hidden sm:inline">HOME</span>
-            </Link>
-            <button
-              onClick={() => load(tab)}
-              className="flex items-center gap-1 border-2 border-ink bg-sand px-2.5 py-1.5 text-xs font-black text-ink hover:bg-white transition"
-              title="Refresh Data"
-            >
-              <RefreshCw size={13} />
-            </button>
-            <button
-              onClick={handleLogout}
-              className="border-2 border-ink bg-ink px-3 py-1.5 text-xs font-black tracking-wider text-white hover:bg-black transition"
-            >
-              LOGOUT
-            </button>
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full lg:w-auto">
+            <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+              <Link
+                to="/employer"
+                className="flex h-9 items-center justify-center gap-1.5 border-2 border-ink bg-[#FFF3C4] px-3 text-xs font-black tracking-wider text-ink hover:bg-[#FFEAA0] transition shadow-[1.5px_1.5px_0px_#121212] whitespace-nowrap"
+                title="Switch to Employer view (explore pros, plans, post jobs)"
+              >
+                <Users size={13} className="text-brand shrink-0" />
+                <span>EMPLOYER SITE</span>
+              </Link>
+              <Link
+                to="/freelancer/jobs"
+                className="flex h-9 items-center justify-center gap-1.5 border-2 border-ink bg-[#E5F8EE] px-3 text-xs font-black tracking-wider text-ink hover:bg-[#D0F2E0] transition shadow-[1.5px_1.5px_0px_#121212] whitespace-nowrap"
+                title="Switch to Freelancer view (find gigs, apply, chats)"
+              >
+                <Briefcase size={13} className="text-ok shrink-0" />
+                <span>FREELANCER SITE</span>
+              </Link>
+            </div>
+            <div className="grid grid-cols-[auto_auto_1fr] sm:flex items-center gap-2 w-full sm:w-auto">
+              <Link
+                to="/"
+                className="flex h-9 items-center justify-center gap-1.5 border-2 border-ink bg-white px-3 text-xs font-black tracking-wider text-ink hover:bg-sand transition"
+                title="Go to Home Page"
+              >
+                <ExternalLink size={13} className="shrink-0" />
+                <span className="hidden sm:inline">HOME</span>
+              </Link>
+              <button
+                onClick={() => load(tab)}
+                className="flex h-9 items-center justify-center gap-1 border-2 border-ink bg-sand px-3 text-xs font-black text-ink hover:bg-white transition"
+                title="Refresh Data"
+              >
+                <RefreshCw size={13} className="shrink-0" />
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex h-9 items-center justify-center border-2 border-ink bg-ink px-4 text-xs font-black tracking-wider text-white hover:bg-black transition"
+              >
+                LOGOUT
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -4423,19 +4430,19 @@ export default function Admin() {
           />
           <StatTile
             label="ACTIVE GIGS"
-            value={overview?.gigs || 202}
+            value={overview?.gigs || 18}
             sub="Live in Bengaluru"
             icon={Briefcase}
           />
           <StatTile
             label="VERIFIED PROS"
-            value={overview?.freelancers || 104}
+            value={overview?.freelancers || 12}
             sub="ID + Portfolio"
             icon={Award}
           />
           <StatTile
             label="EMPLOYERS"
-            value={overview?.employers || 38}
+            value={overview?.employers || 18}
             sub="Hiring Accounts"
             icon={Users}
           />
