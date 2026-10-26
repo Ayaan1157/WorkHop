@@ -747,31 +747,31 @@ export default function Jobs() {
 
       {/* Search & Sort & Filter Bar */}
       <div className="border-b-2 border-ink dark:border-zinc-800 bg-white dark:bg-[#121212]">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-col sm:flex-row items-stretch sm:items-center gap-2.5 px-4 py-2.5 sm:px-8">
-          <div className="flex h-11 flex-1 items-center gap-2 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1f1f1f] px-3 shadow-[1.5px_1.5px_0px_#121212]">
-            <Search size={16} className="text-inkmuted dark:text-zinc-400" />
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col sm:flex-row items-stretch sm:items-center gap-2.5 px-4 py-3 sm:px-8">
+          <div className="flex h-11 w-full sm:flex-1 items-center gap-2.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#1f1f1f] px-3 shadow-[1.5px_1.5px_0px_#121212]">
+            <Search size={16} className="text-inkmuted dark:text-zinc-400 shrink-0" />
             <input
               data-testid="jobs-search-input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search gigs — UI design, reels, react, flutter…"
-              className="wh-input flex-1 bg-transparent text-sm font-semibold text-ink dark:text-white placeholder:text-inkmuted dark:placeholder:text-zinc-500"
+              className="bg-transparent h-full w-full min-w-0 flex-1 border-none text-sm font-semibold text-ink dark:text-white placeholder:text-inkmuted dark:placeholder:text-zinc-500 outline-none"
             />
             {search && (
-              <button data-testid="search-clear-btn" onClick={() => setSearch("")} className="flex h-5 w-5 items-center justify-center bg-ink text-white">
+              <button data-testid="search-clear-btn" onClick={() => setSearch("")} className="flex h-5 w-5 shrink-0 items-center justify-center bg-ink text-white">
                 <X size={13} className="text-white" />
               </button>
             )}
           </div>
 
           {catFilter !== "ALL" && (
-            <div className="flex items-center gap-1.5 border-2 border-ink dark:border-amber-700 bg-[#FFF3C4] dark:bg-amber-950/60 px-2.5 py-1 text-xs font-black text-ink dark:text-amber-200 shadow-[1.5px_1.5px_0px_#121212]">
-              <span>Category: {activeFilter?.label || catFilter}</span>
+            <div className="flex items-center justify-between sm:justify-start gap-1.5 border-2 border-ink dark:border-amber-700 bg-[#FFF3C4] dark:bg-amber-950/60 px-2.5 py-1.5 text-xs font-black text-ink dark:text-amber-200 shadow-[1.5px_1.5px_0px_#121212]">
+              <span className="truncate">Category: {activeFilter?.label || catFilter}</span>
               <button
                 type="button"
                 data-testid="clear-active-cat-btn"
                 onClick={() => setCatFilter("ALL")}
-                className="flex h-4 w-4 items-center justify-center border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
+                className="flex h-4 w-4 shrink-0 items-center justify-center border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
                 title="Clear category filter"
               >
                 <X size={10} />
@@ -779,13 +779,13 @@ export default function Jobs() {
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-[auto_1fr_auto] sm:flex items-center gap-2 w-full sm:w-auto">
             {/* Dedicated LIKED Button in Toolbar */}
             <button
               type="button"
               data-testid="toolbar-liked-btn"
               onClick={() => setViewTab((curr) => (curr === "saved" ? "all" : "saved"))}
-              className={`flex h-10 sm:h-11 items-center gap-1.5 border-2 border-ink dark:border-zinc-700 px-3 sm:px-4 text-xs font-black tracking-wider transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
+              className={`flex h-10 sm:h-11 shrink-0 items-center justify-center gap-1.5 border-2 border-ink dark:border-zinc-700 px-2.5 sm:px-3.5 text-xs font-black tracking-wider transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 whitespace-nowrap ${
                 viewTab === "saved"
                   ? "bg-brand text-white"
                   : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-800"
@@ -793,10 +793,10 @@ export default function Jobs() {
               title={viewTab === "saved" ? "Switch back to All Gigs" : "View Liked Gigs"}
             >
               <Heart
-                size={15}
-                className={viewTab === "saved" ? "fill-white text-white" : (savedJobIds.length > 0 ? "fill-brand text-brand" : "text-brand")}
+                size={14}
+                className={`shrink-0 ${viewTab === "saved" ? "fill-white text-white" : (savedJobIds.length > 0 ? "fill-brand text-brand" : "text-brand")}`}
               />
-              <span className="text-xs font-black tracking-wider">LIKED</span>
+              <span className="text-[11px] sm:text-xs font-black tracking-wider">LIKED</span>
               <span
                 className={`flex h-4 min-w-[16px] px-1 items-center justify-center text-[9px] font-black ${
                   viewTab === "saved" ? "bg-white text-brand" : "bg-brand text-white"
@@ -807,12 +807,12 @@ export default function Jobs() {
             </button>
 
             {/* Sorting Dropdown */}
-            <div className="flex-1 sm:flex-none flex h-10 sm:h-11 items-center justify-between gap-1.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#1a1a1a] px-3 shadow-[1.5px_1.5px_0px_#121212]">
-              <ArrowUpDown size={14} className="text-inkmuted dark:text-zinc-400 shrink-0" />
+            <div className="min-w-0 flex h-10 sm:h-11 items-center justify-between gap-1.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#1a1a1a] px-2.5 sm:px-3 shadow-[1.5px_1.5px_0px_#121212]">
+              <ArrowUpDown size={13} className="text-inkmuted dark:text-zinc-400 shrink-0" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-transparent text-xs font-black text-ink dark:text-white outline-none cursor-pointer"
+                className="bg-transparent w-full min-w-0 truncate text-[11px] sm:text-xs font-black text-ink dark:text-white outline-none cursor-pointer"
               >
                 {SORT_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value} className="text-black dark:text-white dark:bg-zinc-900">{o.label}</option>
@@ -824,12 +824,12 @@ export default function Jobs() {
             <button
               data-testid="jobs-filter-btn"
               onClick={() => setFiltersOpen((v) => !v)}
-              className={`flex h-10 sm:h-11 items-center gap-2 border-2 border-ink dark:border-zinc-700 px-3 sm:px-4 text-xs font-black tracking-wider transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 ${
+              className={`flex h-10 sm:h-11 shrink-0 items-center justify-center gap-1.5 border-2 border-ink dark:border-zinc-700 px-2.5 sm:px-3.5 text-xs font-black tracking-wider transition shadow-[1.5px_1.5px_0px_#121212] active:translate-y-0.5 whitespace-nowrap ${
                 activeFilterCount > 0 ? "bg-ink text-white dark:bg-white dark:text-black" : "bg-white dark:bg-[#1a1a1a] text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-800"
               }`}
             >
-              <SlidersHorizontal size={15} />
-              <span className="text-xs font-black tracking-wider">FILTERS</span>
+              <SlidersHorizontal size={14} className="shrink-0" />
+              <span className="text-[11px] sm:text-xs font-black tracking-wider">FILTERS</span>
               {activeFilterCount > 0 && (
                 <span className="flex h-4 w-4 items-center justify-center bg-brand text-[9px] font-black text-white">
                   {activeFilterCount}

@@ -95,7 +95,6 @@ body {
 @media (max-width: 640px) {
     input,
     textarea,
-    select,
     .wh-input {
         font-size: 16px !important;
     }
@@ -290,13 +289,19 @@ html.dark [class~="bg-ink"] {
 }
 
 /* Dark mode inputs */
-html.dark input:not([type="checkbox"]):not([type="radio"]),
-html.dark textarea,
-html.dark select,
-html.dark .wh-input {
+html.dark input:not([type="checkbox"]):not([type="radio"]):not(.bg-transparent),
+html.dark textarea:not(.bg-transparent),
+html.dark select:not(.bg-transparent),
+html.dark .wh-input:not(.bg-transparent) {
     background-color: #1a1a1e !important;
     color: #FFFFFF !important;
     border-color: #383838 !important;
+}
+html.dark input.bg-transparent,
+html.dark textarea.bg-transparent,
+html.dark select.bg-transparent {
+    background-color: transparent !important;
+    color: #FFFFFF !important;
 }
 html.dark input::placeholder,
 html.dark textarea::placeholder {
@@ -304,13 +309,19 @@ html.dark textarea::placeholder {
 }
 
 /* Light mode inputs */
-html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
-html:not(.dark) textarea,
-html:not(.dark) select,
-html:not(.dark) .wh-input {
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]):not(.bg-transparent),
+html:not(.dark) textarea:not(.bg-transparent),
+html:not(.dark) select:not(.bg-transparent),
+html:not(.dark) .wh-input:not(.bg-transparent) {
     background-color: #FFFFFF !important;
     color: #111111 !important;
     border-color: #303030 !important;
+}
+html:not(.dark) input.bg-transparent,
+html:not(.dark) textarea.bg-transparent,
+html:not(.dark) select.bg-transparent {
+    background-color: transparent !important;
+    color: #111111 !important;
 }
 html:not(.dark) input::placeholder,
 html:not(.dark) textarea::placeholder {

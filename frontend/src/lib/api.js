@@ -55,6 +55,14 @@ import {
   deleteCityWaitlistEntry,
 } from "./clientStore";
 import { sendBrowserPushNotification, sendTestPushNotification } from "./pushNotifications";
+import {
+  isSupabaseConfigured,
+  supabaseGetJobs,
+  supabaseCreateJob,
+  supabaseApplyToJob,
+  supabaseSendMessage,
+  supabaseAddReview,
+} from "./supabase";
 export * from "./supabase";
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
