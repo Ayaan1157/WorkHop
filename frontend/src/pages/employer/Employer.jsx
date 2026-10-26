@@ -550,10 +550,10 @@ export default function Employer() {
                 <button
                   data-testid="unlock-cta-btn"
                   onClick={() => nav("/employer/post-job")}
-                  className="mt-4 flex w-full max-w-md items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-brand py-3.5 text-[15px] font-black text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
+                  className="mt-4 flex w-full max-w-md flex-col sm:flex-row items-center justify-center sm:gap-1.5 border-2 border-ink dark:border-zinc-700 bg-brand px-4 py-3.5 text-[14px] sm:text-[15px] font-black leading-snug text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5 text-center"
                 >
-                  <span>POST A GIG FOR FREE (0% PLATFORM FEES) →</span>
-                  <ArrowRight size={16} />
+                  <span className="whitespace-nowrap">POST A GIG FOR FREE</span>
+                  <span className="whitespace-nowrap">(0% PLATFORM FEES) →</span>
                 </button>
               </div>
             )}
