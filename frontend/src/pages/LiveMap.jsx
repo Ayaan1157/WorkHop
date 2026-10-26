@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   Navigation, LocateFixed, AlertCircle, Search, Sparkles, MapPin,
   Users, Briefcase, Star, ArrowUpRight, CheckCircle2, Eye,
-  Building2, SlidersHorizontal, Send, ChevronRight, Lock
+  Building2, SlidersHorizontal, Send, ChevronRight, Lock, User
 } from "lucide-react";
 import { Shell, TopBar, Spinner } from "@/components/kit";
 import GoogleMap from "@/components/GoogleMap";

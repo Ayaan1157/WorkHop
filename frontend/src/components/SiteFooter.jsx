@@ -88,6 +88,11 @@ export default function SiteFooter() {
                   </Link>
                 </li>
                 <li>
+                  <Link to="/map" className="hover:text-white transition">
+                    Live Radar Map
+                  </Link>
+                </li>
+                <li>
                   <Link to="/employer/plans" className="hover:text-white transition">
                     Pricing &amp; Plans
                   </Link>

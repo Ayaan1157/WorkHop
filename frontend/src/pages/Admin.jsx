@@ -6,7 +6,7 @@ import {
   ExternalLink, Check, X, Megaphone, Settings, Eye, Sliders, Radio,
   ArrowUpRight, Phone, Mail, Award, Clock, FileText, ChevronRight,
   ShieldCheck, HelpCircle, Download, Zap, Coins, RotateCcw,
-  Tag, Percent, Edit3, Copy, Calendar, UserCheck, UserX, Scale
+  Tag, Percent, Edit3, Copy, Calendar, UserCheck, UserX, Scale, KeyRound
 } from "lucide-react";
 import { TopBar, Spinner } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";

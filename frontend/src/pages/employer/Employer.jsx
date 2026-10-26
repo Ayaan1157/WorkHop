@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, memo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { BLOG_POSTS } from "@/data/blogPosts";
 import {
   Search, X, Star, MapPin, IndianRupee, Clock, CheckCheck, Lock, LockOpen,
@@ -41,6 +41,7 @@ export default function Employer() {
   });
 
   const nav = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const isAdmin = Boolean(
     user?.is_admin ||
@@ -51,8 +52,16 @@ export default function Employer() {
   const [loading, setLoading] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
   const [paying, setPaying] = useState(false);
-  const [search, setSearch] = useState("");
-  const [catFilter, setCatFilter] = useState("ALL");
+  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get("q") || "");
+  const [catFilter, setCatFilter] = useState(() => new URLSearchParams(window.location.search).get("cat") || "ALL");
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get("q");
+    const cat = params.get("cat");
+    if (q !== null) setSearch(q);
+    if (cat !== null) setCatFilter(cat);
+  }, [location.search]);
   const [sortBy, setSortBy] = useState("distance"); // distance | rating | jobs | rate
   const [maxDistance, setMaxDistance] = useState(null);
   const [minRating, setMinRating] = useState(null);

@@ -15,7 +15,7 @@ import BroadcastBanner from "@/components/BroadcastBanner";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import GoogleAccountPicker from "@/components/GoogleAccountPicker";
 import SiteFooter from "@/components/SiteFooter";
-import { Logo } from "@/components/kit";
+import { Logo, MobileBottomNav } from "@/components/kit";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Landing() {
@@ -1509,6 +1509,7 @@ export default function Landing() {
 
       {/* Full-Featured Global Site Footer */}
       <SiteFooter />
+      <MobileBottomNav />
 
       {/* Auth Modal for Global Direct Sign-in / Sign-up */}
       <AuthModal

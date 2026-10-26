@@ -512,14 +512,25 @@ export function MobileBottomNav() {
     user?.role === "admin" ||
     ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
   );
+  const userRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
+  const isEmployerUser = Boolean(user && (userRole?.includes("employ") || userRole?.includes("client")));
+  const isFreelancerUser = Boolean(user && !isAdmin && !isEmployerUser);
 
   const tabs = [
     { label: "Home", path: "/", icon: Home, testId: "bottom-nav-home" },
-    { label: "Pros", path: "/employer", icon: Users, testId: "bottom-nav-pros" },
-    { label: "Gigs", path: "/freelancer/jobs", icon: Briefcase, testId: "bottom-nav-gigs" },
+    ...((!user || isAdmin || isEmployerUser)
+      ? [{ label: "Pros", path: "/employer", icon: Users, testId: "bottom-nav-pros" }]
+      : []),
+    ...(isEmployerUser && !isAdmin
+      ? [{ label: "Post Gig", path: "/employer/post-job", icon: PlusCircle, testId: "bottom-nav-post-job" }]
+      : []),
+    ...((!user || isAdmin || isFreelancerUser)
+      ? [{ label: "Gigs", path: "/freelancer/jobs", icon: Briefcase, testId: "bottom-nav-gigs" }]
+      : []),
+    { label: "Live Map", path: "/map", icon: MapPin, testId: "bottom-nav-map" },
     ...(isAdmin
       ? [{ label: "Admin", path: "/admin", icon: Shield, testId: "bottom-nav-admin" }]
-      : [{ label: "Live Map", path: "/map", icon: MapPin, testId: "bottom-nav-map" }]),
+      : []),
     {
       label: "Profile",
       path: user ? "/profile" : null,
@@ -566,6 +577,7 @@ export function MobileBottomNav() {
               key={t.label}
               to={t.path}
               data-testid={t.testId}
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               className={`flex flex-1 min-h-[50px] flex-col items-center justify-center py-1 text-center transition-transform active:scale-95 ${
                 active ? "text-brand" : "text-inkmuted dark:text-stone-400"
               }`}
