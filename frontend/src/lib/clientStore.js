@@ -1716,40 +1716,16 @@ const GRIEVANCES_KEY = "workhop_grievances";
 export function getStoredGrievances() {
   const raw = localStorage.getItem(GRIEVANCES_KEY);
   if (raw) {
-    try { return JSON.parse(raw); } catch { /* ignore */ }
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (g) => !["WH-GRV-2026-1001", "WH-GRV-2026-1002"].includes(g?.id || g?.ticket_id)
+        );
+      }
+    } catch { /* ignore */ }
   }
-  return [
-    {
-      id: "WH-GRV-2026-1001",
-      ticket_id: "WH-GRV-2026-1001",
-      name: "Rohit Malhotra",
-      email: "rohit.m@example.com",
-      phone: "+91 98451 22334",
-      role: "freelancer",
-      category: "Escrow & Milestone Dispute",
-      subject: "Milestone payment delay for catalog design gig",
-      description: "Work was completed and approved on March 28th, but milestone release was pending employer sign-off. Requesting administrative intervention.",
-      status: "resolved",
-      resolution_notes: "Escrow released to freelancer wallet following work verification on March 29th.",
-      created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
-      updated_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-    },
-    {
-      id: "WH-GRV-2026-1002",
-      ticket_id: "WH-GRV-2026-1002",
-      name: "Ananya Deshmukh",
-      email: "ananya.d@example.com",
-      phone: "+91 97410 88776",
-      role: "employer",
-      category: "Content & Copyright Infringement",
-      subject: "Uncredited portfolio artwork reuse inquiry",
-      description: "Reporting a profile that uploaded our brand packaging assets as their own sample.",
-      status: "in_review",
-      resolution_notes: "Grievance Officer reviewing submitted intellectual property documents with claimant.",
-      created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
-      updated_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-    },
-  ];
+  return [];
 }
 
 export function saveGrievanceTicket(ticketData) {
@@ -1801,13 +1777,14 @@ export function updateGrievanceStatus(ticketId, status, resolutionNotes = "") {
 export function getAdminLogs() {
   const raw = localStorage.getItem(ADMIN_LOGS_KEY);
   if (raw) {
-    try { return JSON.parse(raw); } catch { /* ignore */ }
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((l) => !["log-1", "log-2", "log-3"].includes(l?.id));
+      }
+    } catch { /* ignore */ }
   }
-  return [
-    { id: "log-1", action: "SYSTEM_INITIALIZED", details: "Admin command center initialized", admin: "Zenith Developers", timestamp: new Date(Date.now() - 3600000 * 24).toISOString() },
-    { id: "log-2", action: "SECURITY_SYNC", details: "Updated admin access credentials and session token", admin: "Zenith Developers", timestamp: new Date(Date.now() - 3600000 * 5).toISOString() },
-    { id: "log-3", action: "COUPON_CREATED", details: "Generated WELCOME50 promotion for ₹99 onboarding", admin: "Zenith Developers", timestamp: new Date(Date.now() - 3600000 * 2).toISOString() },
-  ];
+  return [];
 }
 
 export function addAdminLog(action, details, target = null) {
@@ -1892,42 +1869,23 @@ export function addAdminGig(jobData) {
 // 16. Admin Coupons Store
 const STORED_COUPONS_KEY = "workhop_admin_coupons";
 
-const SEED_COUPONS = [
-  {
-    code: "WELCOME50",
-    discount_type: "percent",
-    value: 50,
-    applies_to: "all",
-    active: true,
-    max_uses: 100,
-    used_count: 45,
-    description: "50% off on onboarding, unlocks & plans",
-    created_at: new Date(Date.now() - 86400000 * 14).toISOString(),
-    expires_at: null,
-  },
-  {
-    code: "FLAT100",
-    discount_type: "flat",
-    value: 100,
-    applies_to: "plan",
-    active: true,
-    max_uses: 50,
-    used_count: 12,
-    description: "₹100 flat off on employer credit plans",
-    created_at: new Date(Date.now() - 86400000 * 7).toISOString(),
-    expires_at: null,
-  },
-];
+const SEED_COUPONS = [];
 
 export function getStoredCoupons() {
   const raw = localStorage.getItem(STORED_COUPONS_KEY);
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter(
+          (c) =>
+            !(c?.code === "WELCOME50" && c?.used_count === 45) &&
+            !(c?.code === "FLAT100" && c?.used_count === 12)
+        );
+        return cleaned;
+      }
     } catch { /* ignore */ }
   }
-  localStorage.setItem(STORED_COUPONS_KEY, JSON.stringify(SEED_COUPONS));
   return SEED_COUPONS;
 }
 
@@ -2119,232 +2077,14 @@ export function updateFreelancerStatus(freelancerId, approved, reason = "") {
 }
 
 // ═══════════ 18. ADMIN CHAT OVERSIGHT & SURVEILLANCE ═══════════
-const ADMIN_SEED_CONVERSATIONS = [
-  {
-    id: "conv-seed-1",
-    conversation_id: "conv-seed-1",
-    job_id: "job-1",
-    job_title: "Design Brand Identity & Cafe Packaging",
-    company_name: "BrewBox Cafe",
-    employer_name: "Anita Joshi",
-    employer_area: "Indiranagar",
-    freelancer_id: "lead-2",
-    freelancer_name: "Sneha Kapoor",
-    freelancer_skill: "Brand Identity & Logo Designer",
-    freelancer_area: "Indiranagar",
-    distance_km: 1.4,
-    pay: 24000,
-    status: "hired",
-    created_at: new Date(Date.now() - 3600000 * 26).toISOString(),
-    last_message: "Thanks Anita! I've uploaded the second version of the cup sleeve packaging in Figma. Let me know what you think.",
-    last_message_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-    messages: [
-      {
-        id: "msg-101",
-        sender_role: "employer",
-        sender_name: "Anita Joshi (BrewBox Cafe)",
-        text: "Hi Sneha, loved your branding portfolio on WorkHop. We're opening our second cafe branch in Indiranagar and need a complete packaging kit and menu refresh.",
-        created_at: new Date(Date.now() - 3600000 * 25).toISOString(),
-      },
-      {
-        id: "msg-102",
-        sender_role: "freelancer",
-        sender_name: "Sneha Kapoor",
-        text: "Hello Anita! Thank you so much for reaching out. Indiranagar is right in my neighborhood! I'd love to help with the packaging and menu design. What timeline are you targeting for the launch?",
-        created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-      },
-      {
-        id: "msg-103",
-        sender_role: "employer",
-        sender_name: "Anita Joshi (BrewBox Cafe)",
-        text: "We are aiming to soft launch in 10 days. The budget of ₹24,000 works for us. I'll fund the escrow milestone now.",
-        created_at: new Date(Date.now() - 3600000 * 20).toISOString(),
-      },
-      {
-        id: "msg-104",
-        sender_role: "freelancer",
-        sender_name: "Sneha Kapoor",
-        text: "Milestone received, thank you! I've started on the moodboard and preliminary color palettes.",
-        created_at: new Date(Date.now() - 3600000 * 19).toISOString(),
-      },
-      {
-        id: "msg-105",
-        sender_role: "employer",
-        sender_name: "Anita Joshi (BrewBox Cafe)",
-        text: "The initial moodboard looks fantastic! Love the warm earth tones.",
-        created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-      },
-      {
-        id: "msg-106",
-        sender_role: "freelancer",
-        sender_name: "Sneha Kapoor",
-        text: "Thanks Anita! I've uploaded the second version of the cup sleeve packaging in Figma. Let me know what you think.",
-        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-      },
-    ],
-  },
-  {
-    id: "conv-seed-2",
-    conversation_id: "conv-seed-2",
-    job_id: "job-2",
-    job_title: "React & Next.js Booking Dashboard",
-    company_name: "UrbanKrafts Studio",
-    employer_name: "Siddharth Rao",
-    employer_area: "Koramangala",
-    freelancer_id: "lead-3",
-    freelancer_name: "Arjun Mehta",
-    freelancer_skill: "Full-Stack Web Developer (React & Next.js)",
-    freelancer_area: "HSR Layout",
-    distance_km: 2.1,
-    pay: 35000,
-    status: "completed",
-    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
-    last_message: "Payment and 5-star rating submitted! Thanks for the clean code and thorough docs.",
-    last_message_at: new Date(Date.now() - 3600000 * 8).toISOString(),
-    messages: [
-      {
-        id: "msg-201",
-        sender_role: "employer",
-        sender_name: "Siddharth Rao (UrbanKrafts)",
-        text: "Hi Arjun, we need a 4-screen dashboard built in Next.js 15 with Tailwind and Supabase auth.",
-        created_at: new Date(Date.now() - 3600000 * 70).toISOString(),
-      },
-      {
-        id: "msg-202",
-        sender_role: "freelancer",
-        sender_name: "Arjun Mehta",
-        text: "Hey Siddharth! Sounds like a great fit. I have built similar reservation portals before. Can deliver in 3 days.",
-        created_at: new Date(Date.now() - 3600000 * 68).toISOString(),
-      },
-      {
-        id: "msg-203",
-        sender_role: "employer",
-        sender_name: "Siddharth Rao (UrbanKrafts)",
-        text: "Great. Milestone funded. Let's kick off.",
-        created_at: new Date(Date.now() - 3600000 * 65).toISOString(),
-      },
-      {
-        id: "msg-204",
-        sender_role: "freelancer",
-        sender_name: "Arjun Mehta",
-        text: "PR is ready on GitHub with the Supabase schema and clean responsive components.",
-        created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-      },
-      {
-        id: "msg-205",
-        sender_role: "employer",
-        sender_name: "Siddharth Rao (UrbanKrafts)",
-        text: "Tested the staging preview on mobile and desktop. Looks pixel-perfect!",
-        created_at: new Date(Date.now() - 3600000 * 10).toISOString(),
-      },
-      {
-        id: "msg-206",
-        sender_role: "employer",
-        sender_name: "Siddharth Rao (UrbanKrafts)",
-        text: "Payment and 5-star rating submitted! Thanks for the clean code and thorough docs.",
-        created_at: new Date(Date.now() - 3600000 * 8).toISOString(),
-      },
-    ],
-  },
-  {
-    id: "conv-seed-3",
-    conversation_id: "conv-seed-3",
-    job_id: "job-3",
-    job_title: "Outbound Telecalling & Customer Outreach",
-    company_name: "Zenith EdTech",
-    employer_name: "Kunal Verma",
-    employer_area: "HSR Layout",
-    freelancer_id: "lead-7",
-    freelancer_name: "Pooja Sharma",
-    freelancer_skill: "Telecaller & Inside Sales Executive",
-    freelancer_area: "Koramangala",
-    distance_km: 0.6,
-    pay: 18000,
-    status: "hired",
-    created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
-    last_message: "Completed 45 calls today! 12 students scheduled consultation appointments. Sheet updated in portal.",
-    last_message_at: new Date(Date.now() - 3600000 * 1).toISOString(),
-    messages: [
-      {
-        id: "msg-301",
-        sender_role: "employer",
-        sender_name: "Kunal Verma (Zenith EdTech)",
-        text: "Hi Pooja, saw your profile under local telecalling pros. We need someone fluent in Kannada, English, and Hindi to contact our student leads.",
-        created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
-      },
-      {
-        id: "msg-302",
-        sender_role: "freelancer",
-        sender_name: "Pooja Sharma",
-        text: "Hello Kunal! Yes, I am fluent in all three languages and have done outbound student counseling for over 2 years.",
-        created_at: new Date(Date.now() - 3600000 * 17).toISOString(),
-      },
-      {
-        id: "msg-303",
-        sender_role: "employer",
-        sender_name: "Kunal Verma (Zenith EdTech)",
-        text: "Awesome. We have 150 verified leads for this batch. Escrow funded for ₹18,000.",
-        created_at: new Date(Date.now() - 3600000 * 15).toISOString(),
-      },
-      {
-        id: "msg-304",
-        sender_role: "freelancer",
-        sender_name: "Pooja Sharma",
-        text: "Completed 45 calls today! 12 students scheduled consultation appointments. Sheet updated in portal.",
-        created_at: new Date(Date.now() - 3600000 * 1).toISOString(),
-      },
-    ],
-  },
-  {
-    id: "conv-seed-4",
-    conversation_id: "conv-seed-4",
-    job_id: "job-4",
-    job_title: "Fast Typing & Catalog Data Entry",
-    company_name: "RetailPrime Hub",
-    employer_name: "Manish Sethi",
-    employer_area: "Rajajinagar",
-    freelancer_id: "lead-8",
-    freelancer_name: "Karthik Iyer",
-    freelancer_skill: "Data Entry & Fast Typing Specialist",
-    freelancer_area: "Malleshwaram",
-    distance_km: 3.1,
-    pay: 9500,
-    status: "applied",
-    created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-    last_message: "Sure Manish! Attached the 2-row test sample in CSV format matching your columns.",
-    last_message_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-    messages: [
-      {
-        id: "msg-401",
-        sender_role: "freelancer",
-        sender_name: "Karthik Iyer",
-        text: "Applied with note: I type at 80+ WPM and have digitized thousands of retail invoices. Can complete this 200-item spreadsheet by tomorrow evening.",
-        created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-      },
-      {
-        id: "msg-402",
-        sender_role: "employer",
-        sender_name: "Manish Sethi (RetailPrime)",
-        text: "Hi Karthik, can you do a quick 2-row test sample from the attached PDF format?",
-        created_at: new Date(Date.now() - 3600000 * 3).toISOString(),
-      },
-      {
-        id: "msg-403",
-        sender_role: "freelancer",
-        sender_name: "Karthik Iyer",
-        text: "Sure Manish! Attached the 2-row test sample in CSV format matching your columns.",
-        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-      },
-    ],
-  },
-];
+const ADMIN_SEED_CONVERSATIONS = [];
 
 export function getAdminAllChats() {
-  const localChats = JSON.parse(localStorage.getItem(CHATS_KEY) || "[]");
+  const localChats = JSON.parse(localStorage.getItem(CHATS_KEY) || "[]").filter(
+    (c) => !String(c?.id || c?.conversation_id || "").startsWith("conv-seed-") &&
+           !["conv-1", "conv-2", "conv-3"].includes(c?.id || c?.conversation_id)
+  );
   const mergedMap = new Map();
-
-  // Add default seed conversations
-  ADMIN_SEED_CONVERSATIONS.forEach((c) => mergedMap.set(c.id, c));
 
   // Merge any dynamic user chats from localStorage
   localChats.forEach((c) => {
@@ -2356,7 +2096,7 @@ export function getAdminAllChats() {
       ...c,
       id: cid,
       conversation_id: cid,
-      message_count: msgs ? msgs.length : (existing?.messages?.length || 2),
+      message_count: msgs ? msgs.length : (existing?.messages?.length || 0),
     });
   });
 
@@ -2399,14 +2139,7 @@ export function getAdminChatMessages(conversationId) {
     freelancer_name: "Freelancer",
   };
 
-  let msgs = storedMsgs;
-  if (!msgs) {
-    const seed = ADMIN_SEED_CONVERSATIONS.find((s) => s.id === cid);
-    msgs = seed ? seed.messages : [
-      { id: "m1", sender_role: "employer", text: "Hello! We reviewed your proposal and are excited to discuss.", created_at: conv.created_at || new Date().toISOString() },
-      { id: "m2", sender_role: "freelancer", text: "Thank you! I am ready to answer any questions or share work samples.", created_at: new Date().toISOString() },
-    ];
-  }
+  const msgs = storedMsgs || conv.messages || [];
 
   const enriched = msgs.map((m, idx) => {
     const text = m.text || "";
@@ -2432,69 +2165,20 @@ export function getAdminChatMessages(conversationId) {
 // ═══════════ PROFESSION & TAB SUGGESTIONS ═══════════
 const PROFESSION_SUGGESTIONS_KEY = "workhop_profession_suggestions";
 
-const DEFAULT_SEED_SUGGESTIONS = [
-  {
-    id: "sug_seed_1",
-    suggestion_id: "sug_seed_1",
-    profession: "Drone Cinematography & FPV Pilot",
-    category_hint: "Video & Animation",
-    description: "High demand across Bangalore real estate builders, cafes in Indiranagar, and wedding event reels. Currently lumped under generic video.",
-    user_role: "freelancer",
-    user_email: "karthik.fpv@gmail.com",
-    user_phone: "+91 98451 12903",
-    emails: ["karthik.fpv@gmail.com", "reels.bangalore@agency.com"],
-    area: "Indiranagar",
-    status: "under_review",
-    request_count: 5,
-    admin_notes: "Very high local demand. Scheduled to add under Video / Creative tabs.",
-    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
-    updated_at: new Date(Date.now() - 3600000 * 6).toISOString(),
-  },
-  {
-    id: "sug_seed_2",
-    suggestion_id: "sug_seed_2",
-    profession: "Regional Language Voiceover (Kannada & Tulu)",
-    category_hint: "Music & Audio",
-    description: "Advertisers and local radio spots constantly request native Kannada and coastal Karnataka dubbing artists.",
-    user_role: "employer",
-    user_email: "media@adcraftkarnataka.com",
-    user_phone: "+91 97410 44882",
-    emails: ["media@adcraftkarnataka.com"],
-    area: "Basavanagudi",
-    status: "tab_added",
-    request_count: 8,
-    admin_notes: "Added to Audio and Taxonomy under Bangalore Regional Voiceover.",
-    created_at: new Date(Date.now() - 3600000 * 120).toISOString(),
-    updated_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-  },
-  {
-    id: "sug_seed_3",
-    suggestion_id: "sug_seed_3",
-    profession: "Pet Photography & Studio Grooming",
-    category_hint: "Lifestyle & Events",
-    description: "Pet parents in Koramangala and HSR looking for dedicated indoor studio and outdoor dog park photographers.",
-    user_role: "freelancer",
-    user_email: "woofstudios@gmail.com",
-    user_phone: "+91 91234 56789",
-    emails: ["woofstudios@gmail.com"],
-    area: "Koramangala",
-    status: "pending",
-    request_count: 3,
-    admin_notes: null,
-    created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
-    updated_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-  },
-];
+const DEFAULT_SEED_SUGGESTIONS = [];
 
 export function getStoredProfessionSuggestions() {
   const raw = localStorage.getItem(PROFESSION_SUGGESTIONS_KEY);
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (s) => !["sug_seed_1", "sug_seed_2", "sug_seed_3"].includes(s?.id || s?.suggestion_id)
+        );
+      }
     } catch { /* ignore */ }
   }
-  localStorage.setItem(PROFESSION_SUGGESTIONS_KEY, JSON.stringify(DEFAULT_SEED_SUGGESTIONS));
   return DEFAULT_SEED_SUGGESTIONS;
 }
 
@@ -2577,63 +2261,20 @@ export function updateProfessionSuggestionStatus(sugId, status, notes = null) {
 // ============================================================================
 const CITY_WAITLIST_KEY = "workhop_city_waitlist";
 
-const DEFAULT_SEED_WAITLIST = [
-  {
-    waitlist_id: "wl_seed_1",
-    email: "rohit.kamat.mys@gmail.com",
-    contact: "rohit.kamat.mys@gmail.com",
-    city: "Mysore",
-    role: "employer",
-    note: "Looking for video editors and event photographers for Mysore Dasara events",
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-  {
-    waitlist_id: "wl_seed_2",
-    email: "priya.shetty.mngl@outlook.com",
-    contact: "priya.shetty.mngl@outlook.com",
-    city: "Mangalore",
-    role: "freelancer",
-    note: "Freelance UI/UX designer and frontend developer based in Mangalore",
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-  },
-  {
-    waitlist_id: "wl_seed_3",
-    email: "karthik.patil.hubli@yahoo.com",
-    contact: "karthik.patil.hubli@yahoo.com",
-    city: "Hubli",
-    role: "employer",
-    note: "Need local electricians and plumbing contractors for commercial spaces",
-    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-  },
-  {
-    waitlist_id: "wl_seed_4",
-    email: "ananya.sharma.mysore@gmail.com",
-    contact: "ananya.sharma.mysore@gmail.com",
-    city: "Mysore",
-    role: "freelancer",
-    note: "Content creator and copywriter, excited for WorkHop in Mysore!",
-    created_at: new Date(Date.now() - 6 * 86400000).toISOString(),
-  },
-  {
-    waitlist_id: "wl_seed_5",
-    email: "suresh.rao.belgaum@gmail.com",
-    contact: "suresh.rao.belgaum@gmail.com",
-    city: "Belgaum",
-    role: "employer",
-    note: "Logistics and warehouse assistant requirements",
-    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-  },
-];
+const DEFAULT_SEED_WAITLIST = [];
 
 export function getStoredCityWaitlist() {
   const raw = localStorage.getItem(CITY_WAITLIST_KEY);
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (w) => !String(w?.waitlist_id || w?.id || "").startsWith("wl_seed_")
+        );
+      }
     } catch { /* ignore */ }
   }
-  localStorage.setItem(CITY_WAITLIST_KEY, JSON.stringify(DEFAULT_SEED_WAITLIST));
   return DEFAULT_SEED_WAITLIST;
 }
 

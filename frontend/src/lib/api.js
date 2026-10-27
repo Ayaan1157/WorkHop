@@ -398,15 +398,17 @@ async function mockRouter(path, method = "GET", body = null) {
   if (cleanPath === "/admin/overview") {
     const jobs = getStoredJobs();
     const leads = getStoredLeads();
+    const grievances = getStoredGrievances();
+    const employerSet = new Set(jobs.map((j) => j.company_name || j.employer_name).filter(Boolean));
     return {
-      users: 142,
-      employers: 38,
-      freelancers: leads.length || 104,
-      gigs: jobs.length || 202,
-      payments_paid: 29,
-      revenue_rupees: 184500,
-      escrow_held: 53500,
-      complaints: 2,
+      users: leads.length + employerSet.size,
+      employers: employerSet.size || 18,
+      freelancers: leads.length || 12,
+      gigs: jobs.length || 18,
+      payments_paid: 0,
+      revenue_rupees: 0,
+      escrow_held: 0,
+      complaints: grievances.length,
     };
   }
   if ((cleanPath === "/site-settings" || cleanPath === "/admin/site-settings") && method === "GET") {
@@ -515,20 +517,34 @@ async function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath === "/admin/users") {
     return [
-      { user_id: "u-admin", email: "Zenithdeveleoperss@gmail.com", name: "Zenith Developers (Admin)", role: "employer", created_at: new Date().toISOString() },
-      { user_id: "u-1", email: "karthik.sharma@gmail.com", name: "Karthik Sharma", role: "freelancer", created_at: new Date().toISOString() },
-      { user_id: "u-2", email: "priya.nair@craftly.in", name: "Priya Nair", role: "employer", created_at: new Date().toISOString() },
+      { user_id: "u-admin", email: "Zenithdeveleoperss@gmail.com", name: "Zenith Developers (Admin)", role: "admin", created_at: new Date().toISOString() },
     ];
   }
   if (cleanPath === "/admin/employers") {
-    return [
-      { email: "priya.nair@craftly.in", name: "Priya Nair", company_name: "Craftly Studios", jobs_posted: 6, spent_rupees: 45000 },
-      { email: "vikram@urbanbites.com", name: "Vikram Mehta", company_name: "Urban Bites Cafe", jobs_posted: 4, spent_rupees: 28000 },
-    ];
+    const jobs = getStoredJobs();
+    const map = new Map();
+    jobs.forEach((j) => {
+      const key = (j.company_name || j.employer_name || "Bengaluru Employer").trim();
+      if (!map.has(key)) {
+        const slug = key.toLowerCase().replace(/[^a-z0-9]+/g, "");
+        map.set(key, {
+          employer_id: `emp-${slug}`,
+          email: `hiring@${slug}.in`,
+          name: j.employer_name || key,
+          company_name: key,
+          area: j.area || "Bengaluru",
+          jobs_posted: 1,
+          spent_rupees: 0,
+        });
+      } else {
+        map.get(key).jobs_posted += 1;
+      }
+    });
+    return Array.from(map.values());
   }
   if (cleanPath === "/admin/freelancers") {
     const statuses = getFreelancerStatuses();
-    return getStoredLeads().map((l, idx) => {
+    return getStoredLeads().map((l) => {
       const st = statuses[l.id];
       let isApproved = true;
       let statusText = "approved";
@@ -538,16 +554,6 @@ async function mockRouter(path, method = "GET", body = null) {
         isApproved = Boolean(st.approved);
         statusText = st.status;
         reasonText = st.reason;
-      } else {
-        // Initial mock distribution: first 3 approved, next 3 pending, next 1 declined
-        if (idx === 1 || idx === 3 || idx === 5) {
-          isApproved = false;
-          statusText = "pending";
-        } else if (idx === 7) {
-          isApproved = false;
-          statusText = "declined";
-          reasonText = "Profile missing verified portfolio samples";
-        }
       }
 
       return {
@@ -572,15 +578,40 @@ async function mockRouter(path, method = "GET", body = null) {
     return updateFreelancerStatus(fId, body?.approved, body?.reason);
   }
   if (cleanPath === "/admin/payments") {
-    return [
-      { order_id: "ord_101", amount_rupees: 999, status: "paid", created_at: "2 hours ago", user_email: "priya.nair@craftly.in", plan_name: "Starter Bundle" },
-      { order_id: "ord_102", amount_rupees: 1999, status: "paid", created_at: "5 hours ago", user_email: "vikram@urbanbites.com", plan_name: "Growth Pack" },
-    ];
+    return [];
+  }
+  if (cleanPath.startsWith("/admin/deals")) {
+    return {
+      deals: [],
+      summary: {
+        total_deals: 0,
+        escrow_holding_paise: 0,
+        platform_commission_paise: 0,
+        disputed_count: 0,
+        reported_count: 0,
+      },
+    };
+  }
+  if (cleanPath === "/admin/escrow-ledger") {
+    return {
+      entries: [],
+      summary: {
+        total_deposited_paise: 0,
+        total_released_paise: 0,
+        total_commission_paise: 0,
+        current_balance_paise: 0,
+      },
+    };
+  }
+  if (cleanPath === "/admin/deal-settings") {
+    return {
+      deal_commission_rate: 0.05,
+      deal_auto_release_hours: 72,
+      deal_funding_timeout_hours: 24,
+    };
   }
   if (cleanPath === "/admin/complaints") {
-    return [
-      { complaint_id: "cmp_1", user_email: "anita.j@ledgerlite.com", message: "Need clarification on milestone escrow release time.", status: "resolved", created_at: "Yesterday" },
-    ];
+    return [];
   }
   if (cleanPath === "/admin/coupons" && method === "GET") {
     return getStoredCoupons();

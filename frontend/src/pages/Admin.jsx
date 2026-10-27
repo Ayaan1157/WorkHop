@@ -4414,41 +4414,41 @@ export default function Admin() {
 
       {/* Global Real-Time KPIs Ribbon */}
       <div className="border-b-2 border-ink bg-sand/60">
-        <div className="mx-auto grid max-w-[1600px] grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-6 sm:px-8">
+        <div className="mx-auto grid max-w-[1600px] grid-cols-2 gap-3 p-4 sm:grid-cols-4 lg:grid-cols-7 sm:px-8">
           <StatTile
             label="GROSS REVENUE"
-            value={`₹${Number(overview?.revenue_rupees || 184500).toLocaleString("en-IN")}`}
+            value={`₹${Number(overview?.revenue_rupees ?? 0).toLocaleString("en-IN")}`}
             sub="Platform Volume"
             accent
             icon={TrendingUp}
           />
           <StatTile
             label="ESCROW SECURED"
-            value="₹53,500"
-            sub="Active Milestones"
+            value={`₹${Number(overview?.escrow_held ?? 0).toLocaleString("en-IN")}`}
+            sub="Coming Soon"
             icon={ShieldCheck}
           />
           <StatTile
             label="ACTIVE GIGS"
-            value={overview?.gigs || 18}
+            value={overview?.gigs ?? 18}
             sub="Live in Bengaluru"
             icon={Briefcase}
           />
           <StatTile
             label="VERIFIED PROS"
-            value={overview?.freelancers || 12}
+            value={overview?.freelancers ?? 12}
             sub="ID + Portfolio"
             icon={Award}
           />
           <StatTile
             label="EMPLOYERS"
-            value={overview?.employers || 18}
+            value={overview?.employers ?? 18}
             sub="Hiring Accounts"
             icon={Users}
           />
           <StatTile
             label="ISSUES / TICKETS"
-            value={overview?.complaints || 2}
+            value={overview?.complaints ?? 0}
             sub="Pending Action"
             icon={AlertTriangle}
           />
