@@ -202,6 +202,61 @@ export function disablePushNotifications() {
   return { ok: true, enabled: false };
 }
 
+// Helper to dispatch email notification via serverless endpoint
+export async function sendEmailNotification({
+  toEmail,
+  recipientName,
+  type = "new_message",
+  title,
+  message,
+  senderName = "",
+  gigTitle = "",
+  area = "Bengaluru",
+  payFormatted = "",
+  actionUrl = "https://www.workhop.in/inbox",
+}) {
+  try {
+    let email = toEmail;
+    let name = recipientName;
+    if (!email && typeof window !== "undefined") {
+      try {
+        const userRaw = localStorage.getItem("workhop_auth_user");
+        if (userRaw) {
+          const parsed = JSON.parse(userRaw);
+          email = parsed?.email || "";
+          name = name || parsed?.name || parsed?.full_name || "Bengaluru Member";
+        }
+      } catch {}
+    }
+    if (!email || !email.includes("@")) return false;
+
+    const fullUrl =
+      actionUrl && actionUrl.startsWith("/")
+        ? `https://www.workhop.in${actionUrl}`
+        : actionUrl || "https://www.workhop.in";
+
+    await fetch("/api/notifications/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to_email: email,
+        recipient_name: name || "Bengaluru Member",
+        type,
+        title,
+        message,
+        sender_name: senderName,
+        gig_title: gigTitle,
+        area,
+        pay_formatted: payFormatted,
+        action_url: fullUrl,
+      }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Core method to dispatch a push notification to the freelancer
 export async function sendBrowserPushNotification({
   title,
@@ -215,16 +270,36 @@ export async function sendBrowserPushNotification({
   actions = null,
   requireInteraction = false,
 }) {
-  if (!isPushSupported() || Notification.permission !== "granted") {
-    return false;
-  }
-
   // Check category preferences
   const prefs = getFreelancerPushPreferences();
   if (category && category !== "system") {
     if (prefs[category] === false) {
       return false; // User disabled this specific notification category
     }
+  }
+
+  // Trigger non-blocking email notification in parallel
+  const emailTypeMap = {
+    hired_alerts: "hired",
+    employer_messages: "new_message",
+    featured_blasts: "featured_blast",
+    proposal_updates: "new_proposal",
+  };
+  sendEmailNotification({
+    toEmail: data?.to_email,
+    recipientName: data?.recipient_name,
+    type: data?.email_type || emailTypeMap[category] || "new_message",
+    title,
+    message: body,
+    senderName: data?.sender_name || data?.company_name || "",
+    gigTitle: data?.gig_title || "",
+    area: data?.area || "Bengaluru",
+    payFormatted: data?.pay ? `₹${Number(data.pay).toLocaleString("en-IN")}` : "",
+    actionUrl: url,
+  }).catch(() => {});
+
+  if (!isPushSupported() || Notification.permission !== "granted") {
+    return false;
   }
 
   // Play subtle sound if enabled
