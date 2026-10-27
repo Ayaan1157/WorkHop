@@ -118,6 +118,32 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
+function inrAmountToWords(n) {
+  const num = Math.max(0, Math.round(Number(n) || 0));
+  if (num === 0) return "Zero Rupees Only";
+  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+  const twoDigits = (x) => (x < 20 ? ones[x] : `${tens[Math.floor(x / 10)]} ${ones[x % 10]}`.trim());
+  const threeDigits = (x) => {
+    const h = Math.floor(x / 100);
+    const rem = x % 100;
+    const parts = [];
+    if (h > 0) parts.push(`${ones[h]} Hundred`);
+    if (rem > 0) parts.push(twoDigits(rem));
+    return parts.join(" ");
+  };
+  let rem = num;
+  const parts = [];
+  const lakhs = Math.floor(rem / 100000);
+  rem %= 100000;
+  const thousands = Math.floor(rem / 1000);
+  rem %= 1000;
+  if (lakhs > 0) parts.push(`${twoDigits(lakhs)} Lakh`);
+  if (thousands > 0) parts.push(`${twoDigits(thousands)} Thousand`);
+  if (rem > 0) parts.push(threeDigits(rem));
+  return `${parts.join(" ").trim()} Rupees Only`;
+}
+
 function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitle, hopsAdded, totalInr, paymentId }) {
   const safeInv = escapeHtml(invoiceNumber);
   const safeName = escapeHtml(customerName);
@@ -127,91 +153,199 @@ function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitl
   const taxable = (totalInr / 1.18).toFixed(2);
   const cgst = ((totalInr - totalInr / 1.18) / 2).toFixed(2);
   const sgst = cgst;
+  const amountWords = inrAmountToWords(totalInr);
   const dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
   return `<!DOCTYPE html>
 <html>
-<body style="margin:0;padding:24px;background:#FAF7F2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#121212;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto;background:#FFFFFF;border:3px solid #121212;box-shadow:6px 6px 0px #121212;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tax Invoice #${safeInv} - WorkHop</title>
+</head>
+<body style="margin:0;padding:24px 12px;background-color:#F4EFEA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#121212;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:620px;background-color:#FFFFFF;border:3px solid #121212;box-shadow:6px 6px 0px #121212;border-collapse:separate;">
+    <!-- Top Header -->
     <tr>
-      <td style="background:#121212;padding:20px 24px;color:#FFFFFF;">
-        <table width="100%">
+      <td style="background-color:#E65A1E;padding:22px 24px;border-bottom:3px solid #121212;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0">
           <tr>
-            <td>
-              <div style="font-size:22px;font-weight:900;letter-spacing:-0.5px;">WORK<span style="color:#E65A1E;">HOP</span></div>
-              <div style="font-size:11px;color:#BDBDBD;font-weight:700;text-transform:uppercase;">WorkHop Technologies · Bengaluru, KA</div>
+            <td valign="middle">
+              <span style="font-size:24px;font-weight:900;letter-spacing:-0.5px;color:#FFFFFF;text-transform:uppercase;">⚡ WORKHOP</span>
+              <div style="font-size:11px;font-weight:700;color:#FFE2D4;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">
+                Hyperlocal Freelance Platform &middot; Bengaluru
+              </div>
             </td>
-            <td align="right">
-              <span style="background:#E65A1E;color:#FFF;padding:5px 10px;font-size:11px;font-weight:900;text-transform:uppercase;">TAX INVOICE · PAID</span>
-              <div style="font-size:12px;font-weight:800;margin-top:6px;color:#FFF;">#${safeInv}</div>
+            <td align="right" valign="middle">
+              <span style="background-color:#121212;color:#7AE582;font-size:10px;font-weight:900;padding:6px 10px;text-transform:uppercase;letter-spacing:1px;border:1.5px solid #121212;display:inline-block;">
+                &bull; PAID &middot; TAX INVOICE
+              </span>
             </td>
           </tr>
         </table>
       </td>
     </tr>
+
+    <!-- Body Container -->
     <tr>
       <td style="padding:24px;">
-        <table width="100%" style="margin-bottom:18px;font-size:12px;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
           <tr>
             <td>
-              <div style="font-size:10px;font-weight:900;color:#777;text-transform:uppercase;">Billed To</div>
-              <div style="font-size:14px;font-weight:900;margin-top:2px;">${safeName}</div>
-              <div style="color:#555;">${safeEmail}</div>
-            </td>
-            <td align="right">
-              <div style="font-size:10px;font-weight:900;color:#777;text-transform:uppercase;">Invoice Date</div>
-              <div style="font-weight:800;margin-top:2px;">${dateStr}</div>
-              <div style="font-size:11px;color:#666;margin-top:2px;">Ref: ${safePayId}</div>
+              <h1 style="margin:0 0 6px 0;font-size:20px;font-weight:900;text-transform:uppercase;color:#121212;letter-spacing:0.5px;">
+                Tax Invoice &amp; Payment Receipt
+              </h1>
+              <p style="margin:0;font-size:13px;color:#555;line-height:1.4;">
+                Hi <strong>${safeName}</strong>, thank you for your purchase! Your payment was successfully processed and your Bidding Hops balance is now updated.
+              </p>
             </td>
           </tr>
         </table>
 
-        <table width="100%" cellpadding="10" cellspacing="0" style="border:2px solid #121212;border-collapse:collapse;font-size:12px;margin-bottom:18px;">
-          <tr style="background:#FAF7F2;border-bottom:2px solid #121212;font-weight:900;text-transform:uppercase;font-size:10px;">
-            <td align="left">Description (SAC 998311)</td>
-            <td align="center">Hops Credited</td>
-            <td align="right">Amount (INR)</td>
-          </tr>
+        <!-- Metadata Bar -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FAF7F2;border:2px solid #121212;margin-bottom:20px;">
           <tr>
-            <td style="font-weight:800;">${safeTitle}</td>
-            <td align="center" style="font-weight:900;color:#E65A1E;">+${Number(hopsAdded) || 0} Hops</td>
-            <td align="right" style="font-weight:800;">&#8377;${Number(totalInr).toFixed(2)}</td>
+            <td style="padding:12px 14px;border-right:2px solid #121212;width:50%;" valign="top">
+              <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#777;letter-spacing:0.5px;">INVOICE NUMBER</div>
+              <div style="font-size:13px;font-weight:900;color:#121212;font-family:monospace;margin-top:2px;">${safeInv}</div>
+              <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#777;letter-spacing:0.5px;margin-top:8px;">INVOICE DATE</div>
+              <div style="font-size:12px;font-weight:700;color:#121212;margin-top:2px;">${dateStr}</div>
+            </td>
+            <td style="padding:12px 14px;width:50%;" valign="top">
+              <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#777;letter-spacing:0.5px;">PAYMENT REF (TXN ID)</div>
+              <div style="font-size:12px;font-weight:900;color:#121212;font-family:monospace;margin-top:2px;">${safePayId}</div>
+              <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#777;letter-spacing:0.5px;margin-top:8px;">PAYMENT METHOD</div>
+              <div style="font-size:12px;font-weight:700;color:#121212;margin-top:2px;">Razorpay / UPI Online</div>
+            </td>
           </tr>
         </table>
 
-        <table width="100%" style="margin-bottom:18px;">
+        <!-- Supplier & Billed To -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom:22px;">
           <tr>
-            <td width="45%"></td>
-            <td width="55%">
-              <table width="100%" cellpadding="6" cellspacing="0" style="border:2px solid #121212;background:#FAF7F2;border-collapse:collapse;font-size:11px;">
+            <td width="48%" valign="top" style="border:2px solid #121212;padding:12px;background-color:#FFFFFF;">
+              <div style="font-size:10px;font-weight:900;text-transform:uppercase;color:#E65A1E;letter-spacing:0.5px;margin-bottom:6px;">
+                ISSUED BY (SUPPLIER)
+              </div>
+              <div style="font-size:12px;font-weight:800;color:#121212;">WorkHop Technologies</div>
+              <div style="font-size:11px;color:#444;line-height:1.4;margin-top:2px;">
+                Smart Plaza, Coles Road, Frazer Town<br/>
+                Bengaluru, Karnataka 560005, India<br/>
+                <strong>Place of Supply:</strong> 29 - Karnataka<br/>
+                <strong>Email:</strong> connect@work-hop.com
+              </div>
+            </td>
+            <td width="4%"></td>
+            <td width="48%" valign="top" style="border:2px solid #121212;padding:12px;background-color:#FFFFFF;">
+              <div style="font-size:10px;font-weight:900;text-transform:uppercase;color:#E65A1E;letter-spacing:0.5px;margin-bottom:6px;">
+                BILLED TO (CUSTOMER)
+              </div>
+              <div style="font-size:12px;font-weight:800;color:#121212;">${safeName}</div>
+              <div style="font-size:11px;color:#444;line-height:1.4;margin-top:2px;">
+                <strong>Email:</strong> ${safeEmail}<br/>
+                <strong>Place of Supply:</strong> 29 - Karnataka<br/>
+                <strong>Category:</strong> Registered Freelancer
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Itemized Table -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border:2px solid #121212;border-collapse:collapse;margin-bottom:16px;">
+          <tr style="background-color:#121212;color:#FFFFFF;">
+            <th align="left" style="padding:10px 12px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;">ITEM DESCRIPTION</th>
+            <th align="center" style="padding:10px 8px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;width:65px;">SAC</th>
+            <th align="center" style="padding:10px 8px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;width:75px;">HOPS</th>
+            <th align="right" style="padding:10px 12px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;width:100px;">TAXABLE (INR)</th>
+          </tr>
+          <tr style="background-color:#FFFFFF;border-bottom:2px solid #121212;">
+            <td style="padding:12px;vertical-align:top;">
+              <div style="font-size:13px;font-weight:800;color:#121212;">${safeTitle}</div>
+              <div style="font-size:11px;color:#666;margin-top:2px;">WorkHop Bidding Hops Credit Pack</div>
+            </td>
+            <td align="center" style="padding:12px 8px;font-size:12px;font-weight:700;color:#333;vertical-align:top;font-family:monospace;">998311</td>
+            <td align="center" style="padding:12px 8px;font-size:12px;font-weight:900;color:#E65A1E;vertical-align:top;">+${Number(hopsAdded) || 0}</td>
+            <td align="right" style="padding:12px;font-size:13px;font-weight:800;color:#121212;vertical-align:top;">&#8377;${taxable}</td>
+          </tr>
+        </table>
+
+        <!-- Totals Table -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+          <tr>
+            <td width="45%" valign="top">
+              <div style="font-size:11px;color:#666;line-height:1.4;">
+                <strong>Amount in Words:</strong><br/>
+                <span style="font-style:italic;color:#121212;font-weight:700;">${amountWords}</span>
+              </div>
+            </td>
+            <td width="55%" valign="top">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border:2px solid #121212;background-color:#FAF7F2;border-collapse:collapse;">
                 <tr>
-                  <td>Taxable Amount:</td>
-                  <td align="right" style="font-weight:700;">&#8377;${taxable}</td>
+                  <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#555;border-bottom:1px solid #E0D7D0;">Taxable Amount:</td>
+                  <td align="right" style="padding:8px 12px;font-size:11px;font-weight:700;color:#121212;border-bottom:1px solid #E0D7D0;">&#8377;${taxable}</td>
                 </tr>
                 <tr>
-                  <td>CGST (9%):</td>
-                  <td align="right" style="font-weight:700;">&#8377;${cgst}</td>
+                  <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#555;border-bottom:1px solid #E0D7D0;">CGST @ 9.0%:</td>
+                  <td align="right" style="padding:8px 12px;font-size:11px;font-weight:700;color:#121212;border-bottom:1px solid #E0D7D0;">&#8377;${cgst}</td>
                 </tr>
-                <tr style="border-bottom:2px solid #121212;">
-                  <td>SGST (9%):</td>
-                  <td align="right" style="font-weight:700;">&#8377;${sgst}</td>
+                <tr>
+                  <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#555;border-bottom:2px solid #121212;">SGST @ 9.0%:</td>
+                  <td align="right" style="padding:8px 12px;font-size:11px;font-weight:700;color:#121212;border-bottom:2px solid #121212;">&#8377;${sgst}</td>
                 </tr>
-                <tr style="background:#FFE8DC;font-size:13px;font-weight:900;">
-                  <td>TOTAL PAID:</td>
-                  <td align="right" style="color:#E65A1E;">&#8377;${Number(totalInr).toFixed(2)}</td>
+                <tr style="background-color:#FFF3E9;">
+                  <td style="padding:10px 12px;font-size:13px;font-weight:900;text-transform:uppercase;color:#121212;">TOTAL PAID (INR):</td>
+                  <td align="right" style="padding:10px 12px;font-size:16px;font-weight:900;color:#E65A1E;">&#8377;${Number(totalInr).toFixed(2)}</td>
                 </tr>
               </table>
             </td>
           </tr>
         </table>
 
-        <div style="background:#FFF9E6;border:2px solid #121212;padding:14px;font-size:12px;font-weight:700;">
-          🪙 <strong>+${hopsAdded} Hops</strong> have been added to your WorkHop wallet and never expire.
+        <!-- Wallet Top-Up Highlight Box -->
+        <div style="background-color:#FFF9E6;border:2.5px solid #121212;padding:16px 18px;margin-bottom:22px;box-shadow:4px 4px 0px #121212;">
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="36" valign="top" style="font-size:26px;line-height:1;">🪙</td>
+              <td valign="top" style="padding-left:10px;">
+                <div style="font-size:13px;font-weight:900;text-transform:uppercase;color:#121212;letter-spacing:0.5px;">
+                  Wallet Balance Updated: +${Number(hopsAdded) || 0} Hops Credited
+                </div>
+                <div style="font-size:11px;color:#555;line-height:1.4;margin-top:6px;">
+                  ⚡ <strong>Hops Never Expire:</strong> Apply to hyperlocal Bengaluru gigs (2&ndash;16 Hops per job), boost your proposals to the top of employer feeds, and unlock direct chats.
+                </div>
+              </td>
+            </tr>
+          </table>
         </div>
 
-        <p style="font-size:10px;color:#777;text-align:center;margin-top:18px;">
-          Questions? Contact <a href="mailto:connect@work-hop.com" style="color:#E65A1E;font-weight:700;">connect@work-hop.com</a> · <a href="https://www.work-hop.com" style="color:#121212;font-weight:700;">www.work-hop.com</a>
+        <!-- CTA Button -->
+        <div style="text-align:center;margin:24px 0 16px 0;">
+          <a href="https://www.work-hop.com/freelancer/jobs" target="_blank" style="display:inline-block;background-color:#121212;color:#FFFFFF;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;text-decoration:none;padding:14px 28px;border:2px solid #121212;box-shadow:4px 4px 0px #E65A1E;">
+            BROWSE LOCAL BENGALURU GIGS &rarr;
+          </a>
+        </div>
+
+        <!-- Legal Disclaimer -->
+        <p style="margin:20px 0 0 0;font-size:10px;color:#888;text-align:center;line-height:1.4;border-top:1px dashed #DDD;padding-top:14px;">
+          This is an electronically generated tax invoice issued under Rule 46 of the Central Goods and Services Tax Rules, 2017. No physical signature is required.
         </p>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="background-color:#FAF7F2;padding:16px 24px;border-top:2px solid #121212;font-size:11px;color:#666;line-height:1.5;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+          <tr>
+            <td>
+              <strong>WorkHop Platform</strong> &middot; Bengaluru's Hyperlocal Freelance Marketplace<br/>
+              Support: <a href="mailto:connect@work-hop.com" style="color:#E65A1E;font-weight:700;text-decoration:underline;">connect@work-hop.com</a> &middot; <a href="mailto:help@work-hop.com" style="color:#E65A1E;font-weight:700;text-decoration:underline;">help@work-hop.com</a> &middot; <a href="https://www.work-hop.com" style="color:#121212;font-weight:700;text-decoration:underline;">www.work-hop.com</a>
+            </td>
+            <td align="right" valign="top">
+              <span style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;">GST SAC 998311</span>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>
@@ -237,7 +371,7 @@ module.exports = async function handler(req, res) {
     const paymentId = body.payment_id || `pay_${Date.now()}`;
 
     const smtpUser = (process.env.SMTP_USER || "connect@work-hop.com").trim();
-    const smtpPass = (process.env.SMTP_PASSWORD || "").replace(/\s+/g, "");
+    const smtpPass = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || "").replace(/\s+/g, "");
 
     let emailSent = false;
     if (customerEmail && customerEmail.includes("@") && smtpPass) {
