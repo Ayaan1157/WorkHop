@@ -4126,6 +4126,278 @@ function IssuesAndGrievancesTab({ adminFetch }) {
   );
 }
 
+// ---------------- EMPLOYERS MANAGEMENT TAB ----------------
+const EMPLOYER_GIG_CATEGORIES = [
+  "Graphics & Design",
+  "Programming & Tech",
+  "AI & Smart Automations",
+  "Digital Marketing",
+  "Writing & Translation",
+  "Video & Animation",
+  "Music & Audio",
+  "Business",
+  "Consulting",
+];
+
+const EMPTY_EMPLOYER_FORM = {
+  company_name: "",
+  name: "",
+  email: "",
+  phone: "",
+  area: "Koramangala",
+  job_title: "",
+  job_category: "Graphics & Design",
+  job_pay: "",
+  job_description: "",
+};
+
+function EmployersTab({ adminFetch, onChanged, goToCredits }) {
+  const [employers, setEmployers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(EMPTY_EMPLOYER_FORM);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminFetch("/employers");
+      setEmployers(Array.isArray(data) ? data : []);
+    } catch {
+      setEmployers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [adminFetch]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    setMsg(null);
+    if (!form.company_name.trim()) {
+      setMsg({ tone: "error", text: "Company name is required." });
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await adminFetch("/employers", "POST", form);
+      setMsg({
+        tone: "ok",
+        text: `✅ "${form.company_name.trim()}" added to the website${res?.gig ? ` with live gig "${res.gig.title}"` : ""}.`,
+      });
+      setForm(EMPTY_EMPLOYER_FORM);
+      setShowForm(false);
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      setMsg({ tone: "error", text: err?.message || "Could not add employer." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRemove = async (emp) => {
+    const label = emp.company_name || emp.name || emp.employer_id;
+    if (!window.confirm(`Remove "${label}" from the website?\n\nThis also removes every gig this employer has posted.`)) return;
+    try {
+      const res = await adminFetch(`/employers/${encodeURIComponent(emp.employer_id || label)}`, "DELETE");
+      setMsg({ tone: "ok", text: `🗑️ "${label}" removed${res?.removed_gigs ? ` along with ${res.removed_gigs} gig(s)` : ""}.` });
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      setMsg({ tone: "error", text: err?.message || "Could not remove employer." });
+    }
+  };
+
+  const inputCls = "w-full border-2 border-ink bg-white px-2.5 py-2 text-xs font-semibold text-ink outline-none focus:bg-[#FFFBEA]";
+  const labelCls = "mb-1 block text-[10px] font-black uppercase tracking-wider text-inkmuted";
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-2 border-ink bg-[#FFF3C4] p-4 shadow-[3px_3px_0px_#121212]">
+        <div>
+          <p className="flex items-center gap-1.5 text-xs font-black uppercase text-ink">
+            <Coins size={14} className="text-brand" /> Employers on the Website
+          </p>
+          <p className="mt-0.5 text-[10px] font-semibold text-inkmuted">
+            Add or remove employers. Removing an employer also takes down all of their gigs immediately.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => { setShowForm((s) => !s); setMsg(null); }}
+            className="flex items-center gap-1.5 border-2 border-ink bg-ink px-3 py-1.5 text-xs font-black uppercase text-brand shadow-[2px_2px_0px_#121212] transition hover:opacity-90"
+          >
+            {showForm ? <X size={12} /> : <Plus size={12} />} {showForm ? "CANCEL" : "ADD EMPLOYER TO WEBSITE"}
+          </button>
+          <button
+            type="button"
+            onClick={goToCredits}
+            className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-1.5 text-xs font-black uppercase text-ink shadow-[2px_2px_0px_#121212] transition hover:bg-sand"
+          >
+            <RotateCcw size={12} className="text-brand" /> REFUND CONSOLE →
+          </button>
+        </div>
+      </div>
+
+      {msg && (
+        <p className={`border-2 p-3 text-xs font-bold ${msg.tone === "ok" ? "border-green-700 bg-green-50 text-green-800" : "border-red-400 bg-red-50 text-[#C62828]"}`}>
+          {msg.text}
+        </p>
+      )}
+
+      {showForm && (
+        <form onSubmit={handleAdd} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
+          <p className="mb-3 text-xs font-black uppercase text-ink">🏢 Employer Details</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className={labelCls}>Company Name *</label>
+              <input className={inputCls} value={form.company_name} onChange={set("company_name")} placeholder="e.g. BrewBlock Roasters" required />
+            </div>
+            <div>
+              <label className={labelCls}>Contact Person</label>
+              <input className={inputCls} value={form.name} onChange={set("name")} placeholder="e.g. Karan Somani" />
+            </div>
+            <div>
+              <label className={labelCls}>Bengaluru Area</label>
+              <select className={inputCls} value={form.area} onChange={set("area")}>
+                {BENGALURU_AREAS.map((a) => (
+                  <option key={a.name} value={a.name}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Email</label>
+              <input type="email" className={inputCls} value={form.email} onChange={set("email")} placeholder="hiring@company.in" />
+            </div>
+            <div>
+              <label className={labelCls}>Phone</label>
+              <input className={inputCls} value={form.phone} onChange={set("phone")} placeholder="+91 98XXX XXXXX" />
+            </div>
+          </div>
+
+          <p className="mb-3 mt-5 text-xs font-black uppercase text-ink">
+            📌 Publish a Gig <span className="font-semibold normal-case text-inkmuted">(optional — leave the title blank to add the employer only)</span>
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className={labelCls}>Gig Title</label>
+              <input className={inputCls} value={form.job_title} onChange={set("job_title")} placeholder="e.g. Instagram Reels Editor" />
+            </div>
+            <div>
+              <label className={labelCls}>Category</label>
+              <select className={inputCls} value={form.job_category} onChange={set("job_category")}>
+                {EMPLOYER_GIG_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Pay (₹)</label>
+              <input type="number" min="0" className={inputCls} value={form.job_pay} onChange={set("job_pay")} placeholder="5000" />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className={labelCls}>Gig Description</label>
+              <textarea rows={3} className={inputCls} value={form.job_description} onChange={set("job_description")} placeholder="What does the employer need?" />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="mt-4 flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black uppercase text-ink shadow-[2px_2px_0px_#121212] transition hover:opacity-90 disabled:opacity-50"
+          >
+            <Plus size={12} /> {busy ? "ADDING..." : "ADD EMPLOYER"}
+          </button>
+        </form>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center p-8"><Spinner /></div>
+      ) : employers.length === 0 ? (
+        <div className="border-2 border-dashed border-ink bg-white p-8 text-center">
+          <p className="text-sm font-black text-ink">No employers on the website yet.</p>
+          <p className="mt-1 text-xs font-semibold text-inkmuted">
+            Click "+ ADD EMPLOYER TO WEBSITE" above to add one.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {employers.map((e) => {
+            const empId = e.employer_id;
+            const empHops = getEmployerHops(empId);
+            return (
+              <div key={empId} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-ink">{e.company_name}</p>
+                    <p className="truncate text-xs font-bold text-inkmuted">{e.name}</p>
+                    <p className="mt-0.5 truncate text-[10px] font-semibold text-inkmuted">
+                      📍 {e.area || "Bengaluru"}{e.email ? ` · ${e.email}` : ""}{e.phone ? ` · ${e.phone}` : ""}
+                    </p>
+                  </div>
+                  <Badge text="EMPLOYER" tone="gray" />
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2 text-xs">
+                  <span>Spend: ₹{Number(e.spent_rupees || 0).toLocaleString("en-IN")}</span>
+                  <span className="font-bold text-brand">{e.jobs_posted || 0} Gigs Live</span>
+                </div>
+                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-ink/10 pt-2 text-xs">
+                  <span className="flex items-center gap-1 font-bold text-ink">
+                    <Coins size={13} className="text-brand" /> {empHops} Hops
+                  </span>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const hopsInput = window.prompt(`Refund Hops to "${e.company_name}":\n\nEnter number of Hops to refund:`, "4");
+                        if (!hopsInput) return;
+                        const hopsNum = parseInt(hopsInput, 10);
+                        if (!hopsNum || hopsNum <= 0) return;
+                        const reason = window.prompt("Enter reason for refund:", "Employer requested refund for unhired job") || "Employer requested refund";
+                        try {
+                          const res = await adminFetch("/refund-hops", "POST", {
+                            target_type: "employer",
+                            target_id: empId,
+                            hops: hopsNum,
+                            reason,
+                            admin_email: "Zenithdeveleoperss@gmail.com",
+                          });
+                          alert(res?.message || `Refunded ${hopsNum} Hops to ${e.company_name}.`);
+                          refresh();
+                        } catch (err) {
+                          alert(err?.message || "Failed to process employer refund.");
+                        }
+                      }}
+                      className="flex items-center gap-1 border-2 border-ink bg-amber-50 px-2 py-1 text-[10px] font-black text-amber-900 shadow-[1px_1px_0px_#121212] transition hover:bg-amber-100"
+                    >
+                      <RotateCcw size={10} /> Refund
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(e)}
+                      className="flex items-center gap-1 border-2 border-ink bg-red-50 px-2 py-1 text-[10px] font-black text-[#C62828] shadow-[1px_1px_0px_#121212] transition hover:bg-red-100"
+                    >
+                      <Trash2 size={10} /> Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------------- MAIN ADMIN COMPONENT ----------------
 
 export default function Admin() {
@@ -4430,19 +4702,19 @@ export default function Admin() {
           />
           <StatTile
             label="ACTIVE GIGS"
-            value={overview?.gigs ?? 18}
+            value={overview?.gigs ?? 0}
             sub="Live in Bengaluru"
             icon={Briefcase}
           />
           <StatTile
             label="VERIFIED PROS"
-            value={overview?.freelancers ?? 12}
+            value={overview?.freelancers ?? 6}
             sub="ID + Portfolio"
             icon={Award}
           />
           <StatTile
             label="EMPLOYERS"
-            value={overview?.employers ?? 18}
+            value={overview?.employers ?? 0}
             sub="Hiring Accounts"
             icon={Users}
           />
@@ -4498,84 +4770,11 @@ export default function Admin() {
         {tab === "PROS" && <ProsTalentTab adminFetch={adminFetch} />}
 
         {tab === "EMPLOYERS" && (
-          <div className="flex flex-col gap-4">
-            <div className="border-2 border-ink bg-[#FFF3C4] p-4 shadow-[3px_3px_0px_#121212] flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <p className="text-xs font-black uppercase text-ink flex items-center gap-1.5">
-                  <Coins size={14} className="text-brand" /> Employer Accounts &amp; Hops Balance Management
-                </p>
-                <p className="text-[10px] text-inkmuted font-semibold mt-0.5">
-                  Manage registered hiring clients, active gig postings, and manually refund Hops directly.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setTab("CREDITS")}
-                className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-1.5 text-xs font-black uppercase text-ink shadow-[2px_2px_0px_#121212] hover:bg-sand transition"
-              >
-                <RotateCcw size={12} className="text-brand" /> OPEN REFUND CONSOLE →
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {rows.map((e, i) => {
-                const empId = e.employer_id || e.id || "employer-demo";
-                const empHops = getEmployerHops(empId);
-                return (
-                  <div key={e.email || `emp-${i}`} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm font-black text-ink">{e.name || "Client"}</p>
-                        <p className="text-xs font-bold text-inkmuted">{e.company_name || e.email}</p>
-                      </div>
-                      <Badge text="EMPLOYER" tone="gray" />
-                    </div>
-                    <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2 text-xs">
-                      <span>Spend: ₹{Number(e.spent_rupees || 0).toLocaleString("en-IN")}</span>
-                      <span className="font-bold text-brand">{e.jobs_posted || 0} Gigs Posted</span>
-                    </div>
-                    <div className="mt-2.5 flex items-center justify-between border-t border-ink/10 pt-2 text-xs">
-                      <span className="flex items-center gap-1 font-bold text-ink">
-                        <Coins size={13} className="text-brand" /> {empHops} Hops Active
-                      </span>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const hopsInput = window.prompt(
-                            `Refund Hops to Employer "${e.name || e.company_name || empId}":\n\nEnter number of Hops to refund:`,
-                            "4"
-                          );
-                          if (!hopsInput) return;
-                          const hopsNum = parseInt(hopsInput, 10);
-                          if (!hopsNum || hopsNum <= 0) return;
-                          const reason = window.prompt(
-                            "Enter reason for refund:",
-                            "Employer requested refund for unhired job"
-                          ) || "Employer requested refund";
-                          try {
-                            const res = await adminFetch("/refund-hops", "POST", {
-                              target_type: "employer",
-                              target_id: empId,
-                              hops: hopsNum,
-                              reason,
-                              admin_email: "Zenithdeveleoperss@gmail.com",
-                            });
-                            alert(res?.message || `Successfully refunded ${hopsNum} Hops to ${e.name || empId}!`);
-                            load("EMPLOYERS");
-                          } catch (err) {
-                            alert(err?.message || "Failed to process employer refund.");
-                          }
-                        }}
-                        className="flex items-center gap-1 border-2 border-ink bg-amber-50 px-2 py-1 text-[10px] font-black text-amber-900 shadow-[1px_1px_0px_#121212] hover:bg-amber-100 transition"
-                      >
-                        <RotateCcw size={10} /> Refund Hops
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <EmployersTab
+            adminFetch={adminFetch}
+            onChanged={() => adminFetch("/overview").then(setOverview).catch(() => {})}
+            goToCredits={() => setTab("CREDITS")}
+          />
         )}
 
         {tab === "COUPONS" && <CouponsTab adminFetch={adminFetch} />}

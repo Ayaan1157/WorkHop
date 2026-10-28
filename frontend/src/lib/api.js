@@ -54,6 +54,9 @@ import {
   getStoredCityWaitlist,
   saveCityWaitlistEntry,
   deleteCityWaitlistEntry,
+  getStoredEmployers,
+  addStoredEmployer,
+  deleteStoredEmployer,
 } from "./clientStore";
 import { sendBrowserPushNotification, sendTestPushNotification } from "./pushNotifications";
 import {
@@ -400,12 +403,12 @@ async function mockRouter(path, method = "GET", body = null) {
     const jobs = getStoredJobs();
     const leads = getStoredLeads();
     const grievances = getStoredGrievances();
-    const employerSet = new Set(jobs.map((j) => j.company_name || j.employer_name).filter(Boolean));
+    const employers = getStoredEmployers();
     return {
-      users: leads.length + employerSet.size,
-      employers: employerSet.size || 18,
-      freelancers: leads.length || 12,
-      gigs: jobs.length || 18,
+      users: leads.length + employers.length,
+      employers: employers.length,
+      freelancers: leads.length,
+      gigs: jobs.length,
       payments_paid: 0,
       revenue_rupees: 0,
       escrow_held: 0,
@@ -521,27 +524,15 @@ async function mockRouter(path, method = "GET", body = null) {
       { user_id: "u-admin", email: "Zenithdeveleoperss@gmail.com", name: "Zenith Developers (Admin)", role: "admin", created_at: new Date().toISOString() },
     ];
   }
+  if (cleanPath === "/admin/employers" && method === "POST") {
+    return addStoredEmployer(body || {});
+  }
+  if (cleanPath.startsWith("/admin/employers/") && method === "DELETE") {
+    const empId = cleanPath.slice("/admin/employers/".length);
+    return deleteStoredEmployer(empId);
+  }
   if (cleanPath === "/admin/employers") {
-    const jobs = getStoredJobs();
-    const map = new Map();
-    jobs.forEach((j) => {
-      const key = (j.company_name || j.employer_name || "Bengaluru Employer").trim();
-      if (!map.has(key)) {
-        const slug = key.toLowerCase().replace(/[^a-z0-9]+/g, "");
-        map.set(key, {
-          employer_id: `emp-${slug}`,
-          email: `hiring@${slug}.in`,
-          name: j.employer_name || key,
-          company_name: key,
-          area: j.area || "Bengaluru",
-          jobs_posted: 1,
-          spent_rupees: 0,
-        });
-      } else {
-        map.get(key).jobs_posted += 1;
-      }
-    });
-    return Array.from(map.values());
+    return getStoredEmployers();
   }
   if (cleanPath === "/admin/freelancers") {
     const statuses = getFreelancerStatuses();

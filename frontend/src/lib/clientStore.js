@@ -14,6 +14,20 @@ const SAVED_PROS_KEY = "workhop_saved_pros";
 const NOTIFICATIONS_KEY = "workhop_notifications";
 const FREELANCER_PROFILE_KEY = "workhop_freelancer_profile";
 
+// One-time clean slate: clear cached demo gigs/employers & old test decline flags
+const CLEAN_SLATE_FLAG = "workhop_clean_slate_v2";
+try {
+  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG)) {
+    [
+      "workhop_custom_jobs",
+      "workhop_deleted_job_ids",
+      "workhop_freelancer_admin_statuses",
+      "workhop_dummy_completed_jobs",
+    ].forEach((k) => localStorage.removeItem(k));
+    localStorage.setItem(CLEAN_SLATE_FLAG, "1");
+  }
+} catch { /* ignore */ }
+
 // ═══════════ CONNECTS & CREDITS SYSTEM KEYS ═══════════
 const CREDITS_WALLET_KEY = "workhop_credits_wallet";
 const CREDITS_TRANSACTIONS_KEY = "workhop_credits_transactions";
@@ -1887,6 +1901,122 @@ export function addAdminGig(jobData) {
   localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify([newJob, ...custom]));
   addAdminLog("GIG_CREATED_BY_ADMIN", `Posted official featured gig: "${newJob.title}"`, newJob.id);
   return newJob;
+}
+
+// 15. Admin-managed Employers on the website
+const ADMIN_EMPLOYERS_KEY = "workhop_admin_employers_v2";
+
+function readAdminEmployers() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ADMIN_EMPLOYERS_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getStoredEmployers() {
+  const jobs = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  return readAdminEmployers().map((e) => {
+    const key = (e.company_name || "").trim().toLowerCase();
+    const count = jobs.filter(
+      (j) => j.employer_id === e.employer_id || (j.company_name || "").trim().toLowerCase() === key
+    ).length;
+    return { ...e, jobs_posted: count };
+  });
+}
+
+export function addStoredEmployer(data = {}) {
+  const company = String(data.company_name || "").trim();
+  if (!company) throw new Error("Company name is required.");
+  const existing = readAdminEmployers();
+  if (existing.some((e) => (e.company_name || "").trim().toLowerCase() === company.toLowerCase())) {
+    throw new Error(`An employer named "${company}" already exists.`);
+  }
+  const slug = company.toLowerCase().replace(/[^a-z0-9]+/g, "") || "employer";
+  const employer = {
+    employer_id: `emp-${slug}-${Date.now().toString(36)}`,
+    company_name: company,
+    name: String(data.name || "").trim() || `${company} Hiring Team`,
+    email: String(data.email || "").trim(),
+    phone: String(data.phone || "").trim(),
+    area: data.area || "Bengaluru",
+    spent_rupees: 0,
+    created_at: new Date().toISOString(),
+  };
+  localStorage.setItem(ADMIN_EMPLOYERS_KEY, JSON.stringify([employer, ...existing]));
+
+  let gig = null;
+  const title = String(data.job_title || "").trim();
+  if (title) {
+    const pay = Number(data.job_pay) || 5000;
+    const category = data.job_category || "Graphics & Design";
+    const coords = getAreaCoordinates(employer.area) || { lat: 12.9716, lng: 77.5946 };
+    gig = {
+      id: `job-emp-${Date.now()}`,
+      employer_id: employer.employer_id,
+      title,
+      pay,
+      pay_label: pay.toLocaleString("en-IN"),
+      credits_to_apply: calculateHopsForJob(pay),
+      is_boosted: false,
+      boost_expires_at: null,
+      company_name: company,
+      employer_name: employer.name,
+      description: String(data.job_description || "").trim() || `${company} is hiring for: ${title}.`,
+      category,
+      bucket: category,
+      area: employer.area,
+      distance_km: 0.5,
+      posted_minutes_ago: 1,
+      applicants_count: 0,
+      employer_rating: "5.0",
+      employer_reviews: 0,
+      verified_employer: true,
+      created_at: new Date().toISOString(),
+      lat: coords.lat,
+      lng: coords.lng,
+      keywords: [title, category],
+    };
+    const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+    localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify([gig, ...custom]));
+  }
+
+  addAdminLog(
+    "EMPLOYER_ADDED",
+    `Added employer "${company}" to the website${gig ? ` with gig "${gig.title}"` : ""}`,
+    employer.employer_id
+  );
+  return { ok: true, employer, gig };
+}
+
+export function deleteStoredEmployer(idOrCompany) {
+  const target = decodeURIComponent(String(idOrCompany || "")).trim();
+  const employers = readAdminEmployers();
+  const match = employers.find(
+    (e) => e.employer_id === target || (e.company_name || "").trim().toLowerCase() === target.toLowerCase()
+  );
+  const companyKey = (match?.company_name || target).trim().toLowerCase();
+  const empId = match?.employer_id || target;
+
+  localStorage.setItem(
+    ADMIN_EMPLOYERS_KEY,
+    JSON.stringify(employers.filter((e) => e !== match))
+  );
+
+  const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  const keep = custom.filter(
+    (j) => j.employer_id !== empId && (j.company_name || "").trim().toLowerCase() !== companyKey
+  );
+  localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify(keep));
+
+  const removedGigs = custom.length - keep.length;
+  addAdminLog(
+    "EMPLOYER_REMOVED",
+    `Removed employer "${match?.company_name || target}" and ${removedGigs} gig(s) from the website`,
+    empId
+  );
+  return { ok: true, employer_id: empId, removed_gigs: removedGigs };
 }
 
 // 16. Admin Coupons Store
