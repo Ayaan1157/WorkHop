@@ -57,6 +57,7 @@ import {
   getStoredEmployers,
   addStoredEmployer,
   deleteStoredEmployer,
+  deleteAllStoredEmployers,
 } from "./clientStore";
 import { sendBrowserPushNotification, sendTestPushNotification } from "./pushNotifications";
 import {
@@ -526,6 +527,9 @@ async function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath === "/admin/employers" && method === "POST") {
     return addStoredEmployer(body || {});
+  }
+  if (cleanPath === "/admin/employers/all" && method === "DELETE") {
+    return deleteAllStoredEmployers();
   }
   if (cleanPath.startsWith("/admin/employers/") && method === "DELETE") {
     const empId = cleanPath.slice("/admin/employers/".length);

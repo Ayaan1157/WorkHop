@@ -4155,6 +4155,9 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
   const [employers, setEmployers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showRemoveForm, setShowRemoveForm] = useState(false);
+  const [selectedRemoveId, setSelectedRemoveId] = useState("");
+  const [manualRemoveQuery, setManualRemoveQuery] = useState("");
   const [form, setForm] = useState(EMPTY_EMPLOYER_FORM);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -4203,15 +4206,50 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
   };
 
   const handleRemove = async (emp) => {
-    const label = emp.company_name || emp.name || emp.employer_id;
-    if (!window.confirm(`Remove "${label}" from the website?\n\nThis also removes every gig this employer has posted.`)) return;
+    const label = emp?.company_name || emp?.name || emp?.employer_id || emp;
+    const targetId = emp?.employer_id || label;
+    if (!window.confirm(`Remove "${label}" from the website?\n\nThis will permanently delete this employer and all gigs they have posted.`)) return;
+    setBusy(true);
     try {
-      const res = await adminFetch(`/employers/${encodeURIComponent(emp.employer_id || label)}`, "DELETE");
+      const res = await adminFetch(`/employers/${encodeURIComponent(targetId)}`, "DELETE");
       setMsg({ tone: "ok", text: `🗑️ "${label}" removed${res?.removed_gigs ? ` along with ${res.removed_gigs} gig(s)` : ""}.` });
+      setSelectedRemoveId("");
+      setManualRemoveQuery("");
       await refresh();
       onChanged?.();
     } catch (err) {
       setMsg({ tone: "error", text: err?.message || "Could not remove employer." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRemoveSelected = async () => {
+    if (!selectedRemoveId) return;
+    const match = employers.find((e) => e.employer_id === selectedRemoveId);
+    await handleRemove(match || selectedRemoveId);
+  };
+
+  const handleManualRemove = async () => {
+    if (!manualRemoveQuery.trim()) return;
+    await handleRemove(manualRemoveQuery.trim());
+  };
+
+  const handleRemoveAll = async () => {
+    if (!window.confirm("⚠️ Are you sure you want to REMOVE ALL employers and all employer gigs from the website?\n\nThis will reset the entire platform to 0 employers.")) return;
+    setBusy(true);
+    try {
+      const res = await adminFetch("/employers/all", "DELETE");
+      setMsg({ tone: "ok", text: `🗑️ Successfully removed all ${res?.removed_employers ?? ""} employer(s) and gigs from the website.` });
+      setSelectedRemoveId("");
+      setManualRemoveQuery("");
+      setShowRemoveForm(false);
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      setMsg({ tone: "error", text: err?.message || "Could not remove all employers." });
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -4229,13 +4267,22 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
             Add or remove employers. Removing an employer also takes down all of their gigs immediately.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => { setShowForm((s) => !s); setMsg(null); }}
+            onClick={() => { setShowForm((s) => !s); setShowRemoveForm(false); setMsg(null); }}
             className="flex items-center gap-1.5 border-2 border-ink bg-ink px-3 py-1.5 text-xs font-black uppercase text-brand shadow-[2px_2px_0px_#121212] transition hover:opacity-90"
           >
             {showForm ? <X size={12} /> : <Plus size={12} />} {showForm ? "CANCEL" : "ADD EMPLOYER TO WEBSITE"}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setShowRemoveForm((s) => !s); setShowForm(false); setMsg(null); }}
+            className={`flex items-center gap-1.5 border-2 border-ink px-3 py-1.5 text-xs font-black uppercase shadow-[2px_2px_0px_#121212] transition ${
+              showRemoveForm ? "bg-ink text-white" : "bg-[#C62828] text-white hover:bg-red-700"
+            }`}
+          >
+            {showRemoveForm ? <X size={12} /> : <Trash2 size={12} />} {showRemoveForm ? "CANCEL REMOVE" : "REMOVE EMPLOYER"}
           </button>
           <button
             type="button"
@@ -4252,6 +4299,99 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
           {msg.text}
         </p>
       )}
+
+      {/* DEDICATED REMOVE EMPLOYER FORM / PANEL */}
+      {showRemoveForm && (
+        <div className="border-2 border-ink bg-red-50 p-4 shadow-[3px_3px_0px_#121212]">
+          <div className="mb-3 flex items-center justify-between border-b-2 border-ink/15 pb-2">
+            <p className="flex items-center gap-1.5 text-xs font-black uppercase text-[#C62828]">
+              <Trash2 size={14} /> Remove Employer From Website
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowRemoveForm(false)}
+              className="text-xs font-black text-ink hover:underline"
+            >
+              ✕ CLOSE
+            </button>
+          </div>
+
+          <p className="mb-4 text-[11px] font-semibold text-inkmuted">
+            Select an employer from the list below, or enter their company name. Removing an employer instantly unpublishes their company and completely deletes all of their gig listings across the website.
+          </p>
+
+          {employers.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className={labelCls}>Choose an Employer to Remove *</label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <select
+                    className={inputCls}
+                    value={selectedRemoveId}
+                    onChange={(e) => setSelectedRemoveId(e.target.value)}
+                  >
+                    <option value="">-- Select employer to remove --</option>
+                    {employers.map((emp) => (
+                      <option key={emp.employer_id} value={emp.employer_id}>
+                        {emp.company_name} ({emp.name || emp.area || "Employer"}) · {emp.jobs_posted || 0} Gigs Live
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={!selectedRemoveId || busy}
+                    onClick={handleRemoveSelected}
+                    className="flex shrink-0 items-center justify-center gap-1.5 border-2 border-ink bg-[#C62828] px-4 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] transition hover:bg-red-700 disabled:opacity-50"
+                  >
+                    <Trash2 size={12} /> {busy ? "REMOVING..." : "REMOVE THIS EMPLOYER"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-ink/15 pt-3">
+                <span className="text-[11px] font-bold text-inkmuted">
+                  Want to clear all employers from the website in one click?
+                </span>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={handleRemoveAll}
+                  className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-1.5 text-xs font-black uppercase text-[#C62828] shadow-[1px_1px_0px_#121212] transition hover:bg-red-100 disabled:opacity-50"
+                >
+                  <Trash2 size={12} /> REMOVE ALL EMPLOYERS FROM WEBSITE
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="border border-dashed border-red-300 bg-white p-3 text-xs font-bold text-ink">
+                ℹ️ There are currently no employers listed in the database.
+              </div>
+              <div>
+                <label className={labelCls}>Remove by Company Name or Employer ID manually:</label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    className={inputCls}
+                    placeholder="e.g. BrewBlock Roasters or emp-..."
+                    value={manualRemoveQuery}
+                    onChange={(e) => setManualRemoveQuery(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    disabled={!manualRemoveQuery.trim() || busy}
+                    onClick={handleManualRemove}
+                    className="flex shrink-0 items-center justify-center gap-1.5 border-2 border-ink bg-[#C62828] px-4 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] transition hover:bg-red-700 disabled:opacity-50"
+                  >
+                    <Trash2 size={12} /> REMOVE
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
 
       {showForm && (
         <form onSubmit={handleAdd} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">

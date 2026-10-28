@@ -1992,6 +1992,7 @@ export function addStoredEmployer(data = {}) {
 
 export function deleteStoredEmployer(idOrCompany) {
   const target = decodeURIComponent(String(idOrCompany || "")).trim();
+  if (!target) return { ok: false, error: "Identifier required" };
   const employers = readAdminEmployers();
   const match = employers.find(
     (e) => e.employer_id === target || (e.company_name || "").trim().toLowerCase() === target.toLowerCase()
@@ -2001,7 +2002,7 @@ export function deleteStoredEmployer(idOrCompany) {
 
   localStorage.setItem(
     ADMIN_EMPLOYERS_KEY,
-    JSON.stringify(employers.filter((e) => e !== match))
+    JSON.stringify(employers.filter((e) => e.employer_id !== empId && (e.company_name || "").trim().toLowerCase() !== companyKey))
   );
 
   const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
@@ -2018,6 +2019,16 @@ export function deleteStoredEmployer(idOrCompany) {
   );
   return { ok: true, employer_id: empId, removed_gigs: removedGigs };
 }
+
+export function deleteAllStoredEmployers() {
+  const employers = readAdminEmployers();
+  localStorage.setItem(ADMIN_EMPLOYERS_KEY, JSON.stringify([]));
+  const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify([]));
+  addAdminLog("ALL_EMPLOYERS_REMOVED", `Removed all ${employers.length} employer(s) and ${custom.length} gig(s) from the website`);
+  return { ok: true, removed_employers: employers.length, removed_gigs: custom.length };
+}
+
 
 // 16. Admin Coupons Store
 const STORED_COUPONS_KEY = "workhop_admin_coupons";
