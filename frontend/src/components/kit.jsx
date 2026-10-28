@@ -270,14 +270,14 @@ export function GlobalNav() {
               </button>
             )}
 
-            {/* User Account or Sign In Button (Desktop) */}
+            {/* User Account or Sign In Button */}
             {user ? (
-              <div className="hidden sm:inline-flex h-10 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] shrink-0">
+              <div className="inline-flex h-10 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] shrink-0">
                 <button
                   data-testid="nav-profile-btn"
                   onClick={() => nav("/profile")}
                   title={user.name || user.email}
-                  className="flex h-full items-center gap-1.5 px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
+                  className="hidden sm:flex h-full items-center gap-1.5 px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
                 >
                   <UserCircle2 size={15} className="text-brand shrink-0" />
                   <span className="max-w-[105px] xl:max-w-[130px] truncate block">{user.name || user.email?.split("@")[0]}</span>
@@ -285,10 +285,11 @@ export function GlobalNav() {
                 <button
                   data-testid="nav-logout-btn"
                   onClick={logout}
-                  title="Logout"
-                  className="flex h-full w-10 items-center justify-center text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
+                  title="Sign Out of WorkHop"
+                  className="flex h-full items-center gap-1 px-2.5 bg-[#C62828] text-white hover:bg-red-700 transition text-[10px] sm:text-[11px] font-black uppercase whitespace-nowrap"
                 >
-                  <LogOut size={14} />
+                  <LogOut size={13} />
+                  <span>SIGN OUT</span>
                 </button>
               </div>
             ) : (
@@ -298,7 +299,7 @@ export function GlobalNav() {
                   setAuthMode("signin");
                   setAuthOpen(true);
                 }}
-                className="hidden sm:inline-flex h-10 items-center border-2 border-ink bg-ink px-4 text-xs font-black tracking-wide !text-white text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
+                className="inline-flex h-10 items-center border-2 border-ink bg-ink px-2.5 sm:px-4 text-[11px] sm:text-xs font-black tracking-wide !text-white text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
               >
                 SIGN IN
               </button>
@@ -361,10 +362,11 @@ export function GlobalNav() {
                       logout();
                       setMobileMenuOpen(false);
                     }}
-                    className="border border-ink bg-white dark:bg-[#222] p-1.5 text-xs font-black text-danger hover:bg-stone"
-                    title="Logout"
+                    className="flex items-center gap-1 border-2 border-ink bg-[#C62828] text-white px-2.5 py-1.5 text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#121212] hover:bg-red-700 transition shrink-0"
+                    title="Sign Out of WorkHop"
                   >
                     <LogOut size={13} />
+                    <span>SIGN OUT</span>
                   </button>
                 </div>
               ) : (
@@ -503,7 +505,7 @@ export function GlobalNav() {
 // Mobile Bottom Navigation Bar component
 export function MobileBottomNav() {
   const loc = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("signin");
 
@@ -531,16 +533,38 @@ export function MobileBottomNav() {
     ...(isAdmin
       ? [{ label: "Admin", path: "/admin", icon: Shield, testId: "bottom-nav-admin" }]
       : []),
-    {
-      label: "Profile",
-      path: user ? "/profile" : null,
-      icon: UserCircle2,
-      testId: "bottom-nav-profile",
-      action: user ? null : () => {
-        setAuthMode("signin");
-        setAuthOpen(true);
-      },
-    },
+    ...(user
+      ? [
+          {
+            label: "Profile",
+            path: "/profile",
+            icon: UserCircle2,
+            testId: "bottom-nav-profile",
+          },
+          {
+            label: "Sign Out",
+            icon: LogOut,
+            testId: "bottom-nav-signout",
+            isDanger: true,
+            action: async () => {
+              if (window.confirm("Do you want to sign out of WorkHop?")) {
+                await logout();
+                window.location.href = "/";
+              }
+            },
+          },
+        ]
+      : [
+          {
+            label: "Sign In",
+            icon: UserCircle2,
+            testId: "bottom-nav-signin",
+            action: () => {
+              setAuthMode("signin");
+              setAuthOpen(true);
+            },
+          },
+        ]),
   ];
 
   return (
@@ -560,12 +584,14 @@ export function MobileBottomNav() {
                 key={t.label}
                 data-testid={t.testId}
                 onClick={t.action}
-                className="flex flex-1 min-h-[50px] flex-col items-center justify-center py-1 text-center transition-transform active:scale-95"
+                className={`flex flex-1 min-h-[50px] flex-col items-center justify-center py-1 text-center transition-transform active:scale-95 ${
+                  t.isDanger ? "text-[#C62828] dark:text-red-400 font-black" : ""
+                }`}
               >
-                <span className="flex h-6 w-6 items-center justify-center text-inkmuted dark:text-stone-400">
+                <span className={`flex h-6 w-6 items-center justify-center ${t.isDanger ? "text-[#C62828] dark:text-red-400" : "text-inkmuted dark:text-stone-400"}`}>
                   <Icon size={19} />
                 </span>
-                <span className="text-[10px] font-black tracking-tight text-inkmuted dark:text-stone-400 mt-0.5">
+                <span className={`text-[10px] font-black tracking-tight mt-0.5 ${t.isDanger ? "text-[#C62828] dark:text-red-400 font-black" : "text-inkmuted dark:text-stone-400"}`}>
                   {t.label}
                 </span>
               </button>

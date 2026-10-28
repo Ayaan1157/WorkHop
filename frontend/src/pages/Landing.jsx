@@ -978,32 +978,33 @@ export default function Landing() {
                   data-testid="user-chip"
                   onClick={() => nav("/profile")}
                   title={user.name || user.email}
-                  className="flex h-full items-center gap-1.5 px-3 hover:bg-sand dark:hover:bg-[#252525] text-xs font-black text-ink dark:text-white transition"
+                  className="flex h-full items-center gap-1.5 px-2.5 sm:px-3 hover:bg-sand dark:hover:bg-[#252525] text-xs font-black text-ink dark:text-white transition"
                 >
                   <UserCircle2 size={15} className="text-brand shrink-0" />
-                  <span className="truncate text-xs font-black max-w-[110px] xl:max-w-[140px] block">
+                  <span className="truncate text-xs font-black max-w-[85px] sm:max-w-[110px] xl:max-w-[140px] block">
                     {user.name || user.email?.split("@")[0]}
                   </span>
-                  <ArrowRight size={13} className="text-inkmuted dark:text-stone-400 shrink-0" />
+                  <ArrowRight size={13} className="text-inkmuted dark:text-stone-400 shrink-0 hidden sm:block" />
                 </button>
                 <button
                   data-testid="logout-btn"
                   onClick={logout}
-                  title="Logout"
-                  className="flex h-full w-10 items-center justify-center hover:bg-sand dark:hover:bg-[#252525] text-ink dark:text-white transition"
+                  title="Sign Out of WorkHop"
+                  className="flex h-full items-center gap-1 px-2.5 bg-[#C62828] text-white hover:bg-red-700 transition text-[10px] sm:text-[11px] font-black uppercase whitespace-nowrap"
                 >
-                  <LogOut size={14} />
+                  <LogOut size={13} />
+                  <span>SIGN OUT</span>
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   data-testid="landing-signin-btn"
                   onClick={() => {
                     setAuthModalMode("signin");
                     setAuthModalOpen(true);
                   }}
-                  className="flex h-10 items-center border-2 border-ink dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-3.5 text-xs font-black tracking-wide text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
+                  className="flex h-10 items-center border-2 border-ink dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-2.5 sm:px-3.5 text-[11px] sm:text-xs font-black tracking-wide text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
                 >
                   SIGN IN
                 </button>
@@ -1013,7 +1014,7 @@ export default function Landing() {
                     setAuthModalMode("signup");
                     setAuthModalOpen(true);
                   }}
-                  className="flex h-10 items-center border-2 border-ink dark:border-white bg-[#121212] px-3.5 text-xs font-black tracking-wide !text-white hover:bg-black transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] whitespace-nowrap shrink-0"
+                  className="flex h-10 items-center border-2 border-ink dark:border-white bg-[#121212] px-2.5 sm:px-3.5 text-[11px] sm:text-xs font-black tracking-wide !text-white hover:bg-black transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] whitespace-nowrap shrink-0"
                   style={{ color: "#FFFFFF" }}
                 >
                   <span className="!text-white font-black" style={{ color: "#FFFFFF" }}>
@@ -1038,6 +1039,53 @@ export default function Landing() {
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="border-t-2 border-ink bg-white dark:bg-[#181818] p-4 xl:hidden animate-in slide-in-from-top-2">
+            {/* User Account / Sign Out in Mobile Drawer */}
+            {user ? (
+              <div className="mb-3 border-2 border-ink bg-[#FFF4ED] dark:bg-[#251710] p-3 shadow-[2px_2px_0px_#121212] flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-black text-ink dark:text-white">{user.name || user.email}</p>
+                  <p className="text-[10px] font-bold text-inkmuted dark:text-stone-400 capitalize">{user.role || "Member"} · Signed In</p>
+                </div>
+                <button
+                  data-testid="drawer-logout-btn"
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center gap-1.5 border-2 border-ink bg-[#C62828] text-white px-3 py-1.5 text-xs font-black uppercase shadow-[1px_1px_0px_#121212] hover:bg-red-700 shrink-0"
+                >
+                  <LogOut size={13} />
+                  <span>SIGN OUT</span>
+                </button>
+              </div>
+            ) : (
+              <div className="mb-3 border-2 border-ink bg-sand dark:bg-[#222] p-3 shadow-[2px_2px_0px_#121212] flex items-center justify-between gap-2">
+                <span className="text-xs font-black text-ink dark:text-white">Account Access</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setAuthModalMode("signin");
+                      setAuthModalOpen(true);
+                    }}
+                    className="border-2 border-ink bg-white px-3 py-1 text-xs font-black text-ink shadow-[1px_1px_0px_#121212]"
+                  >
+                    SIGN IN
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setAuthModalMode("signup");
+                      setAuthModalOpen(true);
+                    }}
+                    className="border-2 border-ink bg-ink text-white px-3 py-1 text-xs font-black shadow-[1px_1px_0px_#121212]"
+                  >
+                    SIGN UP
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col gap-2">
               <span className="text-[10px] font-black uppercase text-inkmuted dark:text-stone-400 tracking-wider">
                 Explore WorkHop
