@@ -175,6 +175,7 @@ export default function Plans() {
             {
               product: selected.targetType || "plan",
               plan_id: selected.plan_id,
+              amount_inr: coupon?.final_amount ?? selected.price,
               employer_id: getEmployerId(),
               freelancer_id: freelancerId,
               coupon_code: coupon?.code ?? null,

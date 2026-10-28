@@ -75,7 +75,20 @@ module.exports = async function handler(req, res) {
     const body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}");
     const product = body.product || "hops_pack";
     const planId = body.plan_id || "pack-40";
-    const priceInr = Number(body.amount_inr || PLANS_PRICES_INR[planId] || 600);
+    const basePrice = Number(PLANS_PRICES_INR[planId] || PLANS_PRICES_INR[product] || 199);
+    let priceInr = body.amount_inr != null ? Number(body.amount_inr) : basePrice;
+
+    // If coupon_code was supplied but amount_inr was not pre-discounted, apply launch coupon
+    const couponCode = String(body.coupon_code || "").trim().toUpperCase();
+    if (couponCode && body.amount_inr == null) {
+      if (["LAUNCH50", "WELCOME50", "BLR50", "WORKHOP50"].includes(couponCode)) {
+        priceInr = Math.max(1, basePrice - Math.round(basePrice * 0.5));
+      } else if (/^LAUNCH(\d{1,2})$/.test(couponCode)) {
+        const pct = parseInt(couponCode.replace("LAUNCH", ""), 10);
+        priceInr = Math.max(1, basePrice - Math.round((basePrice * pct) / 100));
+      }
+    }
+
     const amountPaise = Math.max(100, Math.round(priceInr * 100));
 
     const keyId = process.env.RAZORPAY_KEY_ID || process.env.REACT_APP_RAZORPAY_KEY_ID || "rzp_live_Tran4lUkI8SdOr";

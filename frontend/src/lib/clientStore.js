@@ -1869,7 +1869,20 @@ export function addAdminGig(jobData) {
 // 16. Admin Coupons Store
 const STORED_COUPONS_KEY = "workhop_admin_coupons";
 
-const SEED_COUPONS = [];
+const SEED_COUPONS = [
+  {
+    code: "LAUNCH50",
+    discount_type: "percent",
+    value: 50,
+    applies_to: "all",
+    active: true,
+    max_uses: 0,
+    used_count: 0,
+    description: "50% Launch Discount across all WorkHop plans & unlocks",
+    created_at: new Date().toISOString(),
+    expires_at: null,
+  },
+];
 
 export function getStoredCoupons() {
   const raw = localStorage.getItem(STORED_COUPONS_KEY);
@@ -1882,11 +1895,131 @@ export function getStoredCoupons() {
             !(c?.code === "WELCOME50" && c?.used_count === 45) &&
             !(c?.code === "FLAT100" && c?.used_count === 12)
         );
+        const hasLaunch50 = cleaned.some((c) => (c?.code || "").toUpperCase() === "LAUNCH50");
+        if (!hasLaunch50) {
+          return [...SEED_COUPONS, ...cleaned];
+        }
         return cleaned;
       }
     } catch { /* ignore */ }
   }
   return SEED_COUPONS;
+}
+
+export function validateStoredCoupon({ code, product = "all", amount = null } = {}) {
+  const targetCode = (code || "").trim().toUpperCase();
+  if (!targetCode) {
+    const err = new Error("Please enter a coupon code.");
+    err.detail = "Please enter a coupon code.";
+    throw err;
+  }
+
+  // Built-in 100% test/admin free codes
+  if (["FREE", "TEST", "ADMIN", "FREE100", "TESTFREE"].includes(targetCode)) {
+    const baseAmt = Number(amount) || 199;
+    return {
+      ok: true,
+      code: targetCode,
+      description: "100% Test / Admin Free Pass",
+      discount_type: "percent",
+      value: 100,
+      discount_amount: baseAmt,
+      final_amount: 0,
+    };
+  }
+
+  const coupons = getStoredCoupons();
+  let match = coupons.find((c) => (c.code || "").trim().toUpperCase() === targetCode);
+
+  // Fallback for standard launch codes if created on a different device
+  if (!match && ["LAUNCH50", "WELCOME50", "BLR50", "WORKHOP50"].includes(targetCode)) {
+    match = {
+      code: targetCode,
+      discount_type: "percent",
+      value: 50,
+      applies_to: "all",
+      active: true,
+      max_uses: 0,
+      used_count: 0,
+      description: "50% Launch Discount",
+    };
+  } else if (!match && /^LAUNCH(\d{1,2}|100)$/.test(targetCode)) {
+    const pct = Math.min(100, Math.max(1, parseInt(targetCode.replace("LAUNCH", ""), 10)));
+    match = {
+      code: targetCode,
+      discount_type: "percent",
+      value: pct,
+      applies_to: "all",
+      active: true,
+      max_uses: 0,
+      used_count: 0,
+      description: `${pct}% Launch Discount`,
+    };
+  }
+
+  if (!match) {
+    const err = new Error("Invalid or unrecognized coupon code.");
+    err.detail = "Invalid or unrecognized coupon code.";
+    throw err;
+  }
+
+  if (match.active === false) {
+    const err = new Error("This coupon code is currently inactive.");
+    err.detail = "This coupon code is currently inactive.";
+    throw err;
+  }
+
+  if (match.max_uses && match.max_uses > 0 && (match.used_count || 0) >= match.max_uses) {
+    const err = new Error("This coupon has reached its maximum usage limit.");
+    err.detail = "This coupon has reached its maximum usage limit.";
+    throw err;
+  }
+
+  if (match.expires_at && Date.now() / 1000 > Number(match.expires_at)) {
+    const err = new Error("This coupon code has expired.");
+    err.detail = "This coupon code has expired.";
+    throw err;
+  }
+
+  // Check product applicability ("all" matches everything; "plan" matches hops_pack/hops_pass/plan)
+  if (match.applies_to && match.applies_to !== "all" && product) {
+    const normProd = String(product).toLowerCase();
+    const normApplies = String(match.applies_to).toLowerCase();
+    const isPlanProduct = ["plan", "hops_pack", "hops_pass", "add-ons"].includes(normProd);
+    const isUnlockProduct = ["employer_unlock", "lead-unlock", "pro_unlock"].includes(normProd);
+    if (normApplies === "plan" && !isPlanProduct) {
+      const err = new Error("This coupon only applies to Plans & Hops Packs.");
+      err.detail = "This coupon only applies to Plans & Hops Packs.";
+      throw err;
+    }
+    if (normApplies === "employer_unlock" && !isUnlockProduct && !isPlanProduct) {
+      const err = new Error("This coupon only applies to Candidate Unlocks.");
+      err.detail = "This coupon only applies to Candidate Unlocks.";
+      throw err;
+    }
+  }
+
+  const baseAmount = Math.max(0, Number(amount) || 199);
+  let discountAmount = 0;
+  if (match.discount_type === "flat") {
+    discountAmount = Math.min(baseAmount, Math.round(Number(match.value) || 0));
+  } else {
+    const pct = Math.min(100, Math.max(0, Number(match.value) || 0));
+    discountAmount = Math.round((baseAmount * pct) / 100);
+  }
+  const finalAmount = Math.max(0, baseAmount - discountAmount);
+
+  return {
+    ok: true,
+    code: match.code.toUpperCase(),
+    description:
+      match.description ||
+      (match.discount_type === "flat" ? `₹${match.value} off` : `${match.value}% off`),
+    discount_type: match.discount_type,
+    value: match.value,
+    discount_amount: discountAmount,
+    final_amount: finalAmount,
+  };
 }
 
 export function saveStoredCoupon(coupon) {

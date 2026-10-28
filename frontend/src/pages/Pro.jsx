@@ -98,6 +98,8 @@ export default function Pro() {
       const data = await startPayment(
         {
           product: "employer_unlock",
+          plan_id: "lead-unlock",
+          amount_inr: coupon?.final_amount ?? 199,
           employer_id: employerId,
           coupon_code: coupon?.code ?? null,
         },

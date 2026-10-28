@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Tag, X, Loader2 } from "lucide-react";
-import { API } from "@/lib/api";
+import { apiPost } from "@/lib/api";
+import { validateStoredCoupon } from "@/lib/clientStore";
 
 // "Apply coupon" row for any payment window (web port of mobile CouponInput).
 export default function CouponInput({ product, amount, onApplied, testIDPrefix = "coupon" }) {
@@ -13,28 +14,22 @@ export default function CouponInput({ product, amount, onApplied, testIDPrefix =
     if (!code.trim()) return;
     setBusy(true);
     setError(null);
-    const upper = code.trim().toUpperCase();
-    if (["FREE", "TEST", "ADMIN", "FREE100", "TESTFREE"].includes(upper)) {
-      const c = {
-        code: upper,
-        description: "100% Test / Admin Free Pass",
-        discount_amount: amount || 99,
-        final_amount: 0,
-      };
-      setApplied(c);
-      onApplied(c);
-      setBusy(false);
-      return;
-    }
+    const trimmed = code.trim().toUpperCase();
     try {
-      const r = await fetch(`${API}/coupons/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim(), product, amount: amount ?? null }),
-      });
-      const data = await r.json();
-      if (!r.ok) {
-        setError(data?.detail || "Invalid coupon.");
+      // First validate against stored & built-in coupons (instant & offline-safe)
+      let data = null;
+      try {
+        data = validateStoredCoupon({ code: trimmed, product, amount: amount ?? null });
+      } catch (localErr) {
+        // Fallback to backend API in case coupon exists only on backend
+        data = await apiPost("/coupons/validate", {
+          code: trimmed,
+          product,
+          amount: amount ?? null,
+        });
+      }
+      if (!data || data.error || data.detail) {
+        setError(data?.detail || data?.error || "Invalid coupon code.");
         return;
       }
       const c = {
@@ -45,8 +40,8 @@ export default function CouponInput({ product, amount, onApplied, testIDPrefix =
       };
       setApplied(c);
       onApplied(c);
-    } catch {
-      setError("Network error. Try again.");
+    } catch (err) {
+      setError(err?.detail || err?.message || "Invalid or expired coupon code.");
     } finally {
       setBusy(false);
     }

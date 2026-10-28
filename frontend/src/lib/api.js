@@ -31,6 +31,7 @@ import {
   getCreditsConfig,
   saveCreditsConfig,
   getStoredCoupons,
+  validateStoredCoupon,
   saveStoredCoupon,
   updateStoredCoupon,
   deleteStoredCoupon,
@@ -612,6 +613,9 @@ async function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath === "/admin/complaints") {
     return [];
+  }
+  if (cleanPath === "/coupons/validate" && method === "POST") {
+    return validateStoredCoupon(body || {});
   }
   if (cleanPath === "/admin/coupons" && method === "GET") {
     return getStoredCoupons();

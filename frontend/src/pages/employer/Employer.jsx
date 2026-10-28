@@ -173,7 +173,13 @@ export default function Employer() {
     setPaying(true);
     try {
       const data = await startPayment(
-        { product: "employer_unlock", employer_id: getEmployerId(), coupon_code: coupon?.code ?? null },
+        {
+          product: "employer_unlock",
+          plan_id: "lead-unlock",
+          amount_inr: coupon?.final_amount ?? 199,
+          employer_id: getEmployerId(),
+          coupon_code: coupon?.code ?? null,
+        },
         `Unlock verified local leads · ₹${coupon?.final_amount ?? 199}`,
       );
       if (data?.leads) {
