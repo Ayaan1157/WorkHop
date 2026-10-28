@@ -93,11 +93,13 @@ export function maskPhone(phone) {
 }
 
 // 1. Leads / Verified Pros
-export function getStoredLeads() {
+export function getStoredLeads({ includeDeclined = false } = {}) {
   const currentUser = getStoredUser();
   const isAdmin = Boolean(currentUser?.is_admin || currentUser?.role === "admin" || (currentUser?.email && ADMIN_EMAILS.includes(currentUser.email.trim().toLowerCase())));
   const isUnlocked = isAdmin || localStorage.getItem("workhop_employer_unlocked") === "1";
-  return leadsSeed.map((lead, idx) => ({
+  const statuses = getFreelancerStatuses();
+
+  const mapped = leadsSeed.map((lead, idx) => ({
     id: lead.id || `lead-${idx + 1}`,
     name: lead.name,
     initials: lead.initials || lead.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase(),
@@ -137,6 +139,16 @@ export function getStoredLeads() {
       { title: "Client Project Milestone", type: "Verified", tag: "Completed" },
     ],
   }));
+
+  if (includeDeclined) {
+    return mapped;
+  }
+
+  return mapped.filter((pro) => {
+    const st = statuses[pro.id];
+    if (!st) return true; // Approved by default unless declined/pending
+    return Boolean(st.approved) && st.status !== "declined" && st.status !== "pending";
+  });
 }
 
 export const REVIEWS_KEY = "workhop_freelancer_reviews";
@@ -465,8 +477,12 @@ export function getEmployerProfile(companyName, fallbackArea = "Bengaluru") {
 }
 
 // 2. Gigs / Jobs
+export const DELETED_JOBS_KEY = "workhop_deleted_job_ids";
+
 export function getStoredJobs() {
   const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
+  const deletedIds = new Set(JSON.parse(localStorage.getItem(DELETED_JOBS_KEY) || "[]"));
+  const customIds = new Set(custom.map((c) => c.id));
   const now = new Date();
   const base = jobsSeed.map((j, idx) => {
     const pay = Number(j.pay) || 1000;
@@ -508,7 +524,10 @@ export function getStoredJobs() {
     };
   });
 
-  const allJobs = [...custom, ...base];
+  const allJobs = [
+    ...custom.filter((j) => !deletedIds.has(j.id)),
+    ...base.filter((j) => !deletedIds.has(j.id) && !customIds.has(j.id)),
+  ];
   // Requirement 4: Boosted jobs appear higher in job listing/search results
   return allJobs.sort((a, b) => {
     const aBoost = a.is_boosted && (!a.boost_expires_at || new Date(a.boost_expires_at) > now) ? 1 : 0;
@@ -1831,6 +1850,10 @@ export function deleteGigAdmin(jobId) {
   const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
   const filtered = custom.filter((j) => j.id !== jobId);
   localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify(filtered));
+  const deletedIds = JSON.parse(localStorage.getItem(DELETED_JOBS_KEY) || "[]");
+  if (!deletedIds.includes(jobId)) {
+    localStorage.setItem(DELETED_JOBS_KEY, JSON.stringify([...deletedIds, jobId]));
+  }
   addAdminLog("GIG_DELETED", `Removed gig listing ID ${jobId}`, jobId);
   return { ok: true, jobId };
 }

@@ -545,7 +545,7 @@ async function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath === "/admin/freelancers") {
     const statuses = getFreelancerStatuses();
-    return getStoredLeads().map((l) => {
+    return getStoredLeads({ includeDeclined: true }).map((l) => {
       const st = statuses[l.id];
       let isApproved = true;
       let statusText = "approved";
