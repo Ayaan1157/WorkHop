@@ -5452,7 +5452,7 @@ DEFAULT_SITE_SETTINGS = {
     "grievance_officer_name": "Alia Mansoor",
     "grievance_officer_designation": "Nodal officer",
     "grievance_officer_email": "grievance@workhop.in",
-    "grievance_officer_phone": "+91 9180169739",
+    "grievance_officer_phone": "+91 91 80530 827",
     "grievance_officer_address": "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005",
     "grievance_working_hours": "Monday to Friday, 10:00 AM – 6:00 PM IST (Excluding Public Holidays)",
     "grievance_nodal_email": "nodal@workhop.in",

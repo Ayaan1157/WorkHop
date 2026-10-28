@@ -155,6 +155,14 @@ export default function SiteFooter() {
               </li>
               <li>
                 <a
+                  href="tel:+919180530827"
+                  className="hover:text-white transition flex items-center gap-1.5 text-stone-300 hover:text-white font-medium"
+                >
+                  <span>📞 Helpline: +91 91 80530 827</span>
+                </a>
+              </li>
+              <li>
+                <a
                   href="mailto:connect@work-hop.com"
                   className="hover:text-white transition flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 leading-snug"
                 >
@@ -228,7 +236,17 @@ export default function SiteFooter() {
         </div>
 
         {/* Official Contact Strip */}
-        <div className="mt-8 sm:mt-10 pt-5 pb-1 border-t border-white/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+        <div className="mt-8 sm:mt-10 pt-5 pb-1 border-t border-white/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-black uppercase tracking-wider text-brand">HELPLINE:</span>
+            <a
+              href="tel:+919180530827"
+              className="font-bold text-white hover:text-brand transition flex items-center gap-1"
+            >
+              <span>+91 91 80530 827</span>
+              <span className="text-[10px] text-stone-400 font-normal">· Call &amp; WhatsApp Support</span>
+            </a>
+          </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-black uppercase tracking-wider text-brand">MAIN EMAIL:</span>
             <a

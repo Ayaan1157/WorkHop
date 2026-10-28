@@ -425,7 +425,7 @@ export default function Legal({ defaultTab = "TERMS" }) {
                   <p className="font-bold text-ink">🛠️ Complaints: <a href="mailto:help@work-hop.com" className="text-brand underline">help@work-hop.com</a></p>
                   <p className="font-bold text-ink">✉️ Main Email: <a href="mailto:connect@work-hop.com" className="underline">connect@work-hop.com</a></p>
                   <p className="font-bold text-ink">📧 Statutory Grievance: {settings.grievance_officer_email || "grievance@workhop.in"}</p>
-                  <p className="font-bold text-ink">📞 Helpline: {settings.grievance_officer_phone || "+91 9180169739"}</p>
+                  <p className="font-bold text-ink">📞 Helpline: {settings.grievance_officer_phone || "+91 91 80530 827"}</p>
                 </div>
                 <div className="border border-ink/20 bg-white p-3 sm:col-span-2">
                   <span className="text-[10px] font-black uppercase text-inkmuted">Physical Registered Address</span>

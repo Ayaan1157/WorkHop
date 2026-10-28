@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronUp, Mail, CheckCircle2, Loader2, Scale } from "lucide-react";
+import { ChevronDown, ChevronUp, Mail, CheckCircle2, Loader2, Scale, Phone } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
 import { apiPost } from "@/lib/api";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import { sanitizeInput, checkSpamKeywords, checkRateLimit } from "@/lib/security";
 
+const HELPLINE_PHONE = "+91 91 80530 827";
 const COMPLAINT_EMAIL = "help@work-hop.com";
 const MAIN_EMAIL = "connect@work-hop.com";
 const SUPPORT_EMAIL = COMPLAINT_EMAIL;
@@ -135,7 +136,35 @@ export default function Support() {
         </div>
 
         <p className="mb-0.5 mt-4 text-[11px] font-black tracking-[0.15em] text-ink">OFFICIAL CONTACT CHANNELS</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {/* Official Helpline Box */}
+          <div className="flex flex-col justify-between border-2 border-ink bg-[#FFFBEA] p-3.5 shadow-[2px_2px_0px_#121212]">
+            <div>
+              <span className="text-[9px] font-black uppercase tracking-wider text-brand">OFFICIAL HELPLINE &amp; WHATSAPP</span>
+              <p className="mt-1 text-xs font-black text-ink flex items-center gap-1.5">
+                <Phone size={14} className="text-brand shrink-0" />
+                <span className="truncate">{HELPLINE_PHONE}</span>
+              </p>
+              <p className="mt-0.5 text-[10px] text-inkmuted font-medium">Direct phone call &amp; WhatsApp support for users &amp; candidates.</p>
+            </div>
+            <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+              <a
+                href={`tel:${HELPLINE_PHONE.replace(/\s+/g, "")}`}
+                className="inline-flex items-center justify-center border-2 border-ink bg-brand px-2.5 py-1.5 text-[10px] font-black text-white hover:bg-black transition shadow-[1px_1px_0px_#121212]"
+              >
+                CALL NOW →
+              </a>
+              <a
+                href={`https://wa.me/919180530827?text=Hi%20WorkHop%20Support`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center border-2 border-ink bg-white px-2 py-1.5 text-[10px] font-black text-ink hover:bg-sand transition shadow-[1px_1px_0px_#121212]"
+              >
+                WHATSAPP ↗
+              </a>
+            </div>
+          </div>
+
           {/* Complaint Email Box */}
           <div className="flex flex-col justify-between border-2 border-ink bg-[#FFF4ED] p-3.5 shadow-[2px_2px_0px_#121212]">
             <div>
@@ -160,7 +189,7 @@ export default function Support() {
           {/* Main Email Box */}
           <div className="flex flex-col justify-between border-2 border-ink bg-sand p-3.5 shadow-[2px_2px_0px_#121212]">
             <div>
-              <span className="text-[9px] font-black uppercase tracking-wider text-inkmuted">MAIN EMAIL / GENERAL INQUIRIES</span>
+              <span className="text-[9px] font-black uppercase tracking-wider text-inkmuted">MAIN EMAIL / GENERAL</span>
               <p className="mt-1 text-xs font-black text-ink flex items-center gap-1.5">
                 <Mail size={14} className="text-ink shrink-0" />
                 <span className="truncate">{MAIN_EMAIL}</span>
@@ -184,15 +213,7 @@ export default function Support() {
                 href={`mailto:${MAIN_EMAIL}?subject=WorkHop General Inquiry`}
                 className="inline-flex items-center justify-center border-2 border-ink bg-ink text-white px-3 py-1.5 text-[10px] font-black hover:bg-brand transition shadow-[1px_1px_0px_#121212]"
               >
-                CONNECT WITH US →
-              </a>
-              <a
-                href="https://www.linkedin.com/in/workhop"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center border-2 border-ink bg-white text-ink px-2.5 py-1.5 text-[10px] font-black hover:bg-black hover:text-white transition shadow-[1px_1px_0px_#121212]"
-              >
-                LINKEDIN ↗
+                CONNECT →
               </a>
             </div>
           </div>

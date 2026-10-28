@@ -1699,7 +1699,7 @@ export function getDefaultSiteSettings() {
     grievance_officer_name: "Alia Mansoor",
     grievance_officer_designation: "Nodal officer",
     grievance_officer_email: "grievance@workhop.in",
-    grievance_officer_phone: "+91 9180169739",
+    grievance_officer_phone: "+91 91 80530 827",
     grievance_officer_address: "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005",
     grievance_working_hours: "Monday to Friday, 10:00 AM – 6:00 PM IST (Excluding Public Holidays)",
     grievance_nodal_email: "nodal@workhop.in",
@@ -1720,6 +1720,10 @@ export function getSiteSettings() {
         parsed.grievance_officer_designation = defaults.grievance_officer_designation;
         parsed.grievance_officer_phone = defaults.grievance_officer_phone;
         parsed.grievance_officer_address = defaults.grievance_officer_address;
+      }
+      // Migrate to new official WorkHop mobile/helpline number
+      if (!parsed.grievance_officer_phone || parsed.grievance_officer_phone === "+91 9180169739" || parsed.grievance_officer_phone === "+91 9180 169739") {
+        parsed.grievance_officer_phone = "+91 91 80530 827";
       }
       // Migrate SLA timelines to 48 hours & 30 days if matching previous defaults
       if (!parsed.grievance_ack_hours || parsed.grievance_ack_hours === 24) {

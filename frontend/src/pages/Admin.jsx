@@ -398,7 +398,7 @@ function SiteControlsTab({ adminFetch }) {
               type="text"
               value={settings.grievance_officer_phone || ""}
               onChange={(e) => setSettings({ ...settings, grievance_officer_phone: e.target.value })}
-              placeholder="e.g. +91 9180169739"
+              placeholder="e.g. +91 91 80530 827"
               className="mt-1 w-full border-2 border-ink bg-[#FAFAF8] px-3 py-2 text-xs font-bold text-ink focus:border-brand outline-none"
               required
             />
@@ -498,7 +498,7 @@ function SiteControlsTab({ adminFetch }) {
             </div>
             <div className="mt-2 text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-1 text-ink/80 pt-2 border-t border-ink/10">
               <p>📧 <strong>Email:</strong> {settings.grievance_officer_email || "grievance@workhop.in"}</p>
-              <p>📞 <strong>Helpline:</strong> {settings.grievance_officer_phone || "+91 9180169739"}</p>
+              <p>📞 <strong>Helpline:</strong> {settings.grievance_officer_phone || "+91 91 80530 827"}</p>
               <p className="sm:col-span-2 truncate">📍 <strong>Registered Office:</strong> {settings.grievance_officer_address || "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005"}</p>
             </div>
           </div>

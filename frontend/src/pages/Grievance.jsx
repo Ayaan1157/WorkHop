@@ -145,7 +145,7 @@ export default function Grievance() {
   const officerName = settings.grievance_officer_name || "Alia Mansoor";
   const designation = settings.grievance_officer_designation || "Nodal officer";
   const officerEmail = settings.grievance_officer_email || "grievance@workhop.in";
-  const officerPhone = settings.grievance_officer_phone || "+91 9180169739";
+  const officerPhone = settings.grievance_officer_phone || "+91 91 80530 827";
   const officerAddress =
     settings.grievance_officer_address ||
     "Smart Plaza, Coles Road, Frazer Town, Bangalore - 560005";
