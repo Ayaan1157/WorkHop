@@ -15,6 +15,7 @@ import { apiGet, getEmployerId } from "@/lib/api";
 import { ADMIN_EMAILS } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { formatWhatsAppUrl } from "@/lib/utils";
 
 const Blur = () => <span className="pointer-events-none absolute inset-0 backdrop-blur-[6px]" />;
 
@@ -200,12 +201,24 @@ export default function Pro() {
                     {paying ? <Loader2 size={14} className="animate-spin" /> : <><LockOpen size={14} /> UNLOCK CONTACT</>}
                   </button>
                 ) : (
-                  <a
-                    href={`tel:${pro.phone || "9876543210"}`}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 border-2 border-ink bg-ok px-5 py-2.5 text-xs font-black tracking-wider text-white"
-                  >
-                    <Phone size={14} /> CALL {pro.phone || "PRO"} {isAdmin ? "(ADMIN)" : ""}
-                  </a>
+                  <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                    <a
+                      href={`tel:${pro.phone || "9876543210"}`}
+                      className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 border-2 border-ink bg-ok px-4 py-2.5 text-xs font-black tracking-wider text-white hover:bg-ok/90 transition shadow-[2px_2px_0px_#121212]"
+                    >
+                      <Phone size={14} /> CALL {pro.phone || "PRO"} {isAdmin ? "(ADMIN)" : ""}
+                    </a>
+                    {pro.phone && (
+                      <a
+                        href={formatWhatsAppUrl(pro.phone, `Hi ${pro.name?.split(" ")?.[0] || ""}, connecting with you on WorkHop!`)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 border-2 border-ink bg-[#25D366] px-4 py-2.5 text-xs font-black tracking-wider text-white hover:bg-[#20ba59] transition shadow-[2px_2px_0px_#121212]"
+                      >
+                        <MessageSquare size={14} /> WHATSAPP
+                      </a>
+                    )}
+                  </div>
                 )}
                 <button
                   onClick={() =>
@@ -336,9 +349,21 @@ export default function Pro() {
                     </span>
                     <div className="relative flex-1 overflow-hidden">
                       <p className="text-[9px] font-bold text-inkmuted">DIRECT PHONE / WHATSAPP</p>
-                      <p className="text-sm font-black text-ink">
-                        {unlocked ? pro.phone || "+91 98450 12345" : "+91 ••••• •••••"}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-black text-ink">
+                          {unlocked ? pro.phone || "+91 98450 12345" : "+91 ••••• •••••"}
+                        </p>
+                        {unlocked && pro.phone && (
+                          <a
+                            href={formatWhatsAppUrl(pro.phone, `Hi ${pro.name?.split(" ")?.[0] || ""}, connecting with you on WorkHop!`)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 bg-[#25D366] text-white px-2 py-0.5 text-[10px] font-black border border-ink hover:bg-[#20ba59] transition shadow-[1px_1px_0px_#121212]"
+                          >
+                            <Phone size={10} /> WhatsApp
+                          </a>
+                        )}
+                      </div>
                       {!unlocked && <Blur />}
                     </div>
                   </div>

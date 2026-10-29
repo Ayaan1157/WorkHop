@@ -31,6 +31,7 @@ import {
   getStoredLeads,
 } from "@/lib/clientStore";
 import FreelancerProfileModal from "@/components/FreelancerProfileModal";
+import { formatWhatsAppUrl } from "@/lib/utils";
 
 const TABS = [
   { id: "CREDITS", label: "🪙 CREDITS & PRICING" },
@@ -2696,7 +2697,7 @@ function ProsTalentTab({ adminFetch }) {
                   {/* WhatsApp contact link */}
                   {f.phone && (
                     <a
-                      href={`https://wa.me/91${f.phone?.replace(/\D/g, "")}`}
+                      href={formatWhatsAppUrl(f.phone)}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-1 text-[10px] font-black text-ok hover:underline"
@@ -4578,8 +4579,18 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-black text-ink">{e.company_name}</p>
                     <p className="truncate text-xs font-bold text-inkmuted">{e.name}</p>
-                    <p className="mt-0.5 truncate text-[10px] font-semibold text-inkmuted">
-                      📍 {e.area || "Bengaluru"}{e.email ? ` · ${e.email}` : ""}{e.phone ? ` · ${e.phone}` : ""}
+                    <p className="mt-0.5 truncate text-[10px] font-semibold text-inkmuted flex items-center gap-1.5 flex-wrap">
+                      <span>📍 {e.area || "Bengaluru"}{e.email ? ` · ${e.email}` : ""}{e.phone ? ` · ${e.phone}` : ""}</span>
+                      {e.phone && (
+                        <a
+                          href={formatWhatsAppUrl(e.phone)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-0.5 font-bold text-ok hover:underline"
+                        >
+                          <Phone size={10} /> WhatsApp
+                        </a>
+                      )}
                     </p>
                   </div>
                   <Badge text="EMPLOYER" tone="gray" />
