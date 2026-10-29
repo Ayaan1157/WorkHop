@@ -40,6 +40,7 @@ import {
   addEmployerReview,
   getStoredReviews,
   markJobCompletedAndReview,
+  incrementFreelancerJobsDone,
   adminRefundHops,
   getManualHopsRefunds,
   getFreelancerStatuses,
@@ -903,7 +904,16 @@ async function mockRouter(path, method = "GET", body = null) {
       const nowIso = new Date().toISOString();
       if (act === "start_work") d.status = "in_progress";
       else if (act === "submit_work") d.status = d.payment_mode === "escrow" ? "submitted" : "work_submitted";
-      else if (act === "approve_work" || act === "confirm_payment") d.status = "completed";
+      else if (act === "approve_work" || act === "confirm_payment") {
+        d.status = "completed";
+        setStoredChatStatus(convKey, "completed");
+        const chats = getStoredChats();
+        const convObj = chats.find((c) => String(c.conversation_id || c.id) === String(convKey));
+        const fId = d.freelancer_id || convObj?.freelancer_id;
+        if (fId) {
+          incrementFreelancerJobsDone(fId);
+        }
+      }
       else if (act === "acknowledge") d.status = "acknowledged";
       else if (act === "confirm_work") d.status = "work_confirmed";
       else if (act === "dispute") d.status = "disputed";

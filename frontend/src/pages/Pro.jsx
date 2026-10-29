@@ -12,7 +12,7 @@ import { ProfileSkeleton } from "@/components/Skeletons";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { apiGet, getEmployerId } from "@/lib/api";
-import { ADMIN_EMAILS, getLeadById, getSubmittedProfiles } from "@/lib/clientStore";
+import { ADMIN_EMAILS, getLeadById, getSubmittedProfiles, getStoredReviews } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { formatWhatsAppUrl } from "@/lib/utils";
@@ -96,19 +96,45 @@ export default function Pro() {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
 
+    const syncProfileAndReviews = (rawPro, apiReviews = []) => {
+      if (!rawPro) return;
+      const proObj = { ...rawPro };
+      const localRevs = getStoredReviews(proObj.id || id);
+      const combined = [...apiReviews];
+      for (const lr of localRevs) {
+        if (!combined.some((r) => r.review_id === lr.review_id)) {
+          combined.push(lr);
+        }
+      }
+      if (combined.length > 0) {
+        const total = combined.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+        proObj.rating = (total / combined.length).toFixed(1);
+        proObj.reviews_count = combined.length;
+        proObj.jobs_done = Math.max(Number(proObj.jobs_done) || 0, combined.length);
+      } else if (!proObj.is_dummy) {
+        proObj.rating = null;
+        proObj.reviews_count = 0;
+        proObj.jobs_done = Number(proObj.jobs_done) || 0;
+      }
+      setPro(proObj);
+      setReviews(combined);
+    };
+
     const fallbackLocalPro = () => {
       try {
+        const targetId = String(id).trim().toLowerCase();
+        const strippedTarget = targetId.replace(/^pro-/, "");
         const found =
           getLeadById(id) ||
-          getSubmittedProfiles().find(
-            (p) =>
-              String(p.id) === String(id) ||
-              String(p.freelancer_id) === String(id) ||
-              String(p.user_id) === String(id)
-          );
+          getSubmittedProfiles().find((p) => {
+            const pId = String(p.id || p.freelancer_id || "").toLowerCase();
+            const strippedPId = pId.replace(/^pro-/, "");
+            return pId === targetId || strippedPId === strippedTarget || String(p.user_id || "").toLowerCase() === targetId;
+          });
         if (found) {
-          setPro(found);
-          setReviews(found.reviews || []);
+          const proData = found.pro || found;
+          const initialReviews = found.reviews || proData.reviews || [];
+          syncProfileAndReviews(proData, initialReviews);
         }
       } catch (e) {
         console.error("Local pro fallback error", e);
@@ -118,8 +144,7 @@ export default function Pro() {
     apiGet(`/pros/${id}`)
       .then((d) => {
         if (d && d.pro) {
-          setPro(d.pro);
-          setReviews(d.reviews || []);
+          syncProfileAndReviews(d.pro, d.reviews || []);
         } else {
           fallbackLocalPro();
         }

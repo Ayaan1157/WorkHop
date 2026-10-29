@@ -213,11 +213,21 @@ export default function Chat() {
     if (rating < 1) return;
     setBusy(true);
     try {
+      const targetFreelancerId =
+        conv?.freelancer_id ||
+        deal?.freelancer_id ||
+        (id && id.startsWith("conv-") ? id.replace("conv-", "") : id);
       await apiPost("/reviews", {
         conversation_id: id,
         reviewer_role: myRole,
         rating,
         text: reviewText,
+        freelancer_id: targetFreelancerId,
+        freelancer_name: conv?.freelancer_name || otherName || "Freelancer Pro",
+        employer_name: conv?.employer_name || user?.name || "Verified Client",
+        company_name: conv?.company_name || "Client",
+        job_title: conv?.job_title || deal?.job_title || "Freelance Project",
+        pay: deal?.agreed_amount_paise ? Math.round(deal.agreed_amount_paise / 100) : (conv?.pay || hirePay || 15000),
       });
       setMyReviewDone(true);
       setReviewOpen(false);

@@ -91,8 +91,8 @@ class Lead(BaseModel):
     initials: str
     skill: str
     distance_km: float
-    rating: float
-    jobs_done: int
+    rating: Optional[float] = None
+    jobs_done: int = 0
     name: str
     phone: str
     portfolio: str
@@ -2716,7 +2716,7 @@ def _freelancer_to_lead(doc: dict, unlocked: bool = False) -> Lead:
         initials=initials,
         skill=skill,
         distance_km=dist,
-        rating=float(ext_rating if ext_rating is not None else (doc.get("rating") or 5.0)),
+        rating=float(ext_rating) if ext_rating is not None else (float(doc["rating"]) if doc.get("rating") is not None else None),
         jobs_done=int(doc.get("jobs_done") or 0),
         name=name,
         phone=phone,
@@ -7529,6 +7529,14 @@ async def create_review(req: ReviewRequest):
         "created_at": _now_iso(),
     }
     await db.reviews.insert_one({"_id": review["review_id"], **review})
+    if subject_type == "freelancer" and subject_id:
+        f_revs = await db.reviews.find({"subject_id": subject_id}).to_list(500)
+        if f_revs:
+            avg_r = round(sum(r.get("rating", 5) for r in f_revs) / len(f_revs), 1)
+            await db.freelancers.update_one(
+                {"$or": [{"_id": subject_id}, {"freelancer_id": subject_id}]},
+                {"$set": {"rating": avg_r, "reviews_count": len(f_revs)}, "$inc": {"jobs_done": 1}}
+            )
     return Review(**review)
 
 
@@ -7553,7 +7561,7 @@ async def pro_profile(lead_id: str):
         pro_dict = pro.model_dump()
         pro_dict["is_dummy"] = True
     else:
-        doc = await db.freelancers.find_one({"_id": lead_id})
+        doc = await db.freelancers.find_one({"$or": [{"_id": lead_id}, {"freelancer_id": lead_id}]})
         if not doc:
             raise HTTPException(status_code=404, detail="Pro not found.")
         pro = _freelancer_to_lead(doc)
@@ -7561,6 +7569,14 @@ async def pro_profile(lead_id: str):
         pro_dict["is_dummy"] = False
     reviews = await db.reviews.find({"subject_id": lead_id}, {"_id": 0}).to_list(200)
     reviews.sort(key=lambda d: d["created_at"], reverse=True)
+    if reviews:
+        avg_r = round(sum(r.get("rating", 5) for r in reviews) / len(reviews), 1)
+        pro_dict["rating"] = avg_r
+        pro_dict["reviews_count"] = len(reviews)
+        pro_dict["jobs_done"] = max(pro_dict.get("jobs_done") or 0, len(reviews))
+    elif not pro_dict.get("is_dummy"):
+        pro_dict["rating"] = None
+        pro_dict["reviews_count"] = 0
     return {"pro": pro_dict, "reviews": reviews}
 
 

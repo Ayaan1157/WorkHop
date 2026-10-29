@@ -318,12 +318,54 @@ export function getStoredReviews(freelancerId = null) {
     const raw = localStorage.getItem(REVIEWS_KEY);
     const list = raw ? JSON.parse(raw) : [];
     if (freelancerId) {
-      return list.filter((r) => !r.freelancer_id || String(r.freelancer_id) === String(freelancerId));
+      const target = String(freelancerId).trim().toLowerCase();
+      const strippedTarget = target.replace(/^pro-/, "");
+      return list.filter((r) => {
+        if (!r.freelancer_id) return false;
+        const rId = String(r.freelancer_id).trim().toLowerCase();
+        const strippedRId = rId.replace(/^pro-/, "");
+        return (
+          rId === target ||
+          strippedRId === strippedTarget ||
+          (r.freelancer_name && strippedTarget.includes(r.freelancer_name.toLowerCase()))
+        );
+      });
     }
     return list;
   } catch {
     return [];
   }
+}
+
+export function incrementFreelancerJobsDone(freelancerId) {
+  if (!freelancerId) return;
+  const target = String(freelancerId).trim().toLowerCase();
+  const strippedTarget = target.replace(/^pro-/, "");
+  try {
+    const submitted = getSubmittedProfiles();
+    const updated = submitted.map((p) => {
+      const pId = String(p.id || p.freelancer_id || "").toLowerCase();
+      const strippedPId = pId.replace(/^pro-/, "");
+      if (pId === target || strippedPId === strippedTarget) {
+        return { ...p, jobs_done: (Number(p.jobs_done) || 0) + 1 };
+      }
+      return p;
+    });
+    localStorage.setItem(SUBMITTED_PROFILES_KEY, JSON.stringify(updated));
+  } catch {}
+
+  try {
+    const leads = getStoredLeads({ includeDeclined: true });
+    const updatedLeads = leads.map((l) => {
+      const lId = String(l.id || l.freelancer_id || "").toLowerCase();
+      const strippedLId = lId.replace(/^pro-/, "");
+      if (lId === target || strippedLId === strippedTarget) {
+        return { ...l, jobs_done: (Number(l.jobs_done) || 0) + 1 };
+      }
+      return l;
+    });
+    localStorage.setItem(LEADS_KEY, JSON.stringify(updatedLeads));
+  } catch {}
 }
 
 export function addEmployerReview({
@@ -339,68 +381,150 @@ export function addEmployerReview({
   badges = [],
 }) {
   const reviews = getStoredReviews();
+  const fId = freelancer_id || "fl-1";
+  const numRating = Math.max(1, Math.min(5, Number(rating) || 5));
   const newReview = {
     review_id: `rev-${Date.now()}`,
-    freelancer_id: freelancer_id || "fl-1",
+    freelancer_id: fId,
     freelancer_name: freelancer_name || "Freelancer Pro",
     employer_name: employer_name || "Verified Client",
     company_name: company_name || employer_name || "Bengaluru Client",
     job_id: job_id || null,
     job_title: job_title || "Freelance Gig",
-    rating: Number(rating) || 5,
+    rating: numRating,
     text: text || "Great quality work and smooth communication.",
-    pay: Number(pay) || null,
+    pay: Number(pay) || 15000,
     badges: badges || [],
     created_at: new Date().toISOString(),
     date_formatted: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+    is_completed: true,
+    status: "completed",
   };
 
   const updatedReviews = [newReview, ...reviews];
   localStorage.setItem(REVIEWS_KEY, JSON.stringify(updatedReviews));
 
-  // Also update freelancer profile work_history and reviews
+  // 1. Update SUBMITTED_PROFILES_KEY (real freelancer signups like Shamanth)
   try {
-    const profile = getFreelancerProfile();
-    const currentHistory = profile.work_history || [];
-    const historyItem = {
-      id: `wh-${Date.now()}`,
-      job_title: newReview.job_title,
-      company_name: newReview.company_name,
-      employer_name: newReview.employer_name,
-      pay: newReview.pay || 15000,
-      rating: newReview.rating,
-      review: newReview.text,
-      badges: newReview.badges,
-      completed_at: newReview.created_at,
-      date_formatted: newReview.date_formatted,
-      verified_gig: true,
-    };
-
-    const updatedProfile = {
-      ...profile,
-      work_history: [historyItem, ...currentHistory],
-      reviews: [newReview, ...(profile.reviews || [])],
-    };
-    saveFreelancerProfile(updatedProfile);
-  } catch (err) {
-    console.error("Could not update freelancer profile work history", err);
+    const target = String(fId).trim().toLowerCase();
+    const strippedTarget = target.replace(/^pro-/, "");
+    const submitted = getSubmittedProfiles();
+    const updatedSubmitted = submitted.map((p) => {
+      const pId = String(p.id || p.freelancer_id || "").toLowerCase();
+      const strippedPId = pId.replace(/^pro-/, "");
+      if (pId === target || strippedPId === strippedTarget) {
+        const proRevs = updatedReviews.filter((r) => {
+          const rId = String(r.freelancer_id || "").toLowerCase();
+          return rId === target || rId.replace(/^pro-/, "") === strippedTarget;
+        });
+        const count = proRevs.length;
+        const total = proRevs.reduce((sum, r) => sum + (Number(r.rating) || 5), 0);
+        const avg = count > 0 ? (total / count).toFixed(1) : null;
+        const nextJobs = Math.max((Number(p.jobs_done) || 0) + 1, count);
+        const workHist = [
+          {
+            id: `wh-${Date.now()}`,
+            job_title: newReview.job_title,
+            company_name: newReview.company_name,
+            employer_name: newReview.employer_name,
+            pay: newReview.pay,
+            rating: newReview.rating,
+            review: newReview.text,
+            badges: newReview.badges,
+            completed_at: newReview.created_at,
+            date_formatted: newReview.date_formatted,
+            verified_gig: true,
+          },
+          ...(p.work_history || []),
+        ];
+        return {
+          ...p,
+          reviews_count: count,
+          rating: avg,
+          jobs_done: nextJobs,
+          work_history: workHist,
+          reviews: proRevs,
+        };
+      }
+      return p;
+    });
+    localStorage.setItem(SUBMITTED_PROFILES_KEY, JSON.stringify(updatedSubmitted));
+  } catch (e) {
+    console.error("Could not update submitted profiles with review", e);
   }
 
-  // Update lead rating and review count in stored leads
+  // 2. Also update LEADS_KEY
   try {
-    const leads = getStoredLeads();
+    const target = String(fId).trim().toLowerCase();
+    const strippedTarget = target.replace(/^pro-/, "");
+    const leads = getStoredLeads({ includeDeclined: true });
     const updatedLeads = leads.map((l) => {
-      if (String(l.id) === String(freelancer_id)) {
-        const nextCount = (l.reviews_count || 12) + 1;
-        const currentAvg = Number(l.rating) || 4.9;
-        const nextRating = (((currentAvg * (nextCount - 1)) + Number(rating)) / nextCount).toFixed(1);
-        return { ...l, reviews_count: nextCount, rating: nextRating };
+      const lId = String(l.id || l.freelancer_id || "").toLowerCase();
+      const strippedLId = lId.replace(/^pro-/, "");
+      if (lId === target || strippedLId === strippedTarget) {
+        const proRevs = updatedReviews.filter((r) => {
+          const rId = String(r.freelancer_id || "").toLowerCase();
+          return rId === target || rId.replace(/^pro-/, "") === strippedTarget;
+        });
+        const count = proRevs.length;
+        const total = proRevs.reduce((sum, r) => sum + (Number(r.rating) || 5), 0);
+        const avg = count > 0 ? (total / count).toFixed(1) : null;
+        const nextJobs = Math.max((Number(l.jobs_done) || 0) + 1, count);
+        return {
+          ...l,
+          reviews_count: count,
+          rating: avg,
+          jobs_done: nextJobs,
+        };
       }
       return l;
     });
     localStorage.setItem(LEADS_KEY, JSON.stringify(updatedLeads));
   } catch {
     /* ignore */
+  }
+
+  // 3. Also update current freelancer's own profile if applicable
+  try {
+    const profile = getFreelancerProfile();
+    const target = String(fId).trim().toLowerCase();
+    const strippedTarget = target.replace(/^pro-/, "");
+    const pId = String(profile?.id || profile?.freelancer_id || "").toLowerCase();
+    const strippedPId = pId.replace(/^pro-/, "");
+    if (pId === target || strippedPId === strippedTarget || target.includes("me")) {
+      const currentHistory = profile.work_history || [];
+      const historyItem = {
+        id: `wh-${Date.now()}`,
+        job_title: newReview.job_title,
+        company_name: newReview.company_name,
+        employer_name: newReview.employer_name,
+        pay: newReview.pay || 15000,
+        rating: newReview.rating,
+        review: newReview.text,
+        badges: newReview.badges,
+        completed_at: newReview.created_at,
+        date_formatted: newReview.date_formatted,
+        verified_gig: true,
+      };
+      const proRevs = updatedReviews.filter((r) => {
+        const rId = String(r.freelancer_id || "").toLowerCase();
+        return rId === target || rId.replace(/^pro-/, "") === strippedTarget;
+      });
+      const count = proRevs.length;
+      const total = proRevs.reduce((sum, r) => sum + (Number(r.rating) || 5), 0);
+      const avg = count > 0 ? (total / count).toFixed(1) : null;
+
+      saveFreelancerProfile({
+        ...profile,
+        work_history: [historyItem, ...currentHistory],
+        reviews: proRevs,
+        reviews_count: count,
+        rating: avg,
+        jobs_done: Math.max((Number(profile.jobs_done) || 0) + 1, count),
+      });
+    }
+  } catch (err) {
+    console.error("Could not update freelancer profile work history", err);
   }
 
   return newReview;
@@ -437,21 +561,21 @@ export function markJobCompletedAndReview(jobId, reviewData) {
 
 export function getLeadById(id) {
   if (!id) return null;
+  const targetId = String(id).trim().toLowerCase();
+  const strippedTarget = targetId.replace(/^pro-/, "");
   const leads = getStoredLeads({ includeDeclined: true });
-  let pro = leads.find(
-    (l) =>
-      String(l.id) === String(id) ||
-      String(l.freelancer_id) === String(id) ||
-      String(l.user_id) === String(id)
-  );
+  let pro = leads.find((l) => {
+    const lId = String(l.id || l.freelancer_id || "").toLowerCase();
+    const strippedLId = lId.replace(/^pro-/, "");
+    return lId === targetId || strippedLId === strippedTarget || String(l.user_id || "").toLowerCase() === targetId;
+  });
   if (!pro) {
     const submitted = getSubmittedProfiles();
-    pro = submitted.find(
-      (p) =>
-        String(p.id) === String(id) ||
-        String(p.freelancer_id) === String(id) ||
-        String(p.user_id) === String(id)
-    );
+    pro = submitted.find((p) => {
+      const pId = String(p.id || p.freelancer_id || "").toLowerCase();
+      const strippedPId = pId.replace(/^pro-/, "");
+      return pId === targetId || strippedPId === strippedTarget || String(p.user_id || "").toLowerCase() === targetId;
+    });
   }
   if (!pro) return null;
 
@@ -485,6 +609,27 @@ export function getLeadById(id) {
     },
   ] : [];
   const reviews = dynamicReviews.length > 0 ? dynamicReviews : defaultReviews;
+
+  if (reviews.length > 0) {
+    const total = reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+    const avg = (total / reviews.length).toFixed(1);
+    pro = {
+      ...pro,
+      reviews,
+      reviews_count: reviews.length,
+      rating: avg,
+      jobs_done: Math.max(Number(pro.jobs_done) || 0, reviews.length),
+    };
+  } else if (!pro.is_dummy) {
+    pro = {
+      ...pro,
+      reviews: [],
+      reviews_count: 0,
+      rating: null,
+      jobs_done: Number(pro.jobs_done) || 0,
+    };
+  }
+
   return { pro, reviews };
 }
 
