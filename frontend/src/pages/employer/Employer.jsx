@@ -26,7 +26,7 @@ import {
   BENGALURU_CENTER,
 } from "@/lib/locationAreas";
 import { apiGet, getEmployerId } from "@/lib/api";
-import { getSavedProIds, toggleSavePro, ADMIN_EMAILS } from "@/lib/clientStore";
+import { getSavedProIds, toggleSavePro, ADMIN_EMAILS, getStoredLeads } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { matchLeadToTaxonomy, searchTaxonomy } from "@/lib/keywordTaxonomy";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -48,8 +48,15 @@ export default function Employer() {
     user?.role === "admin" ||
     (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
   );
-  const [leads, setLeads] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [leads, setLeads] = useState(() => {
+    try {
+      const stored = getStoredLeads();
+      return Array.isArray(stored) ? stored : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [paying, setPaying] = useState(false);
   const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get("q") || "");
@@ -66,7 +73,14 @@ export default function Employer() {
   const [maxDistance, setMaxDistance] = useState(null);
   const [minRating, setMinRating] = useState(null);
   const [onlySaved, setOnlySaved] = useState(false);
-  const [savedPros, setSavedPros] = useState([]);
+  const [savedPros, setSavedPros] = useState(() => {
+    try {
+      const p = getSavedProIds();
+      return Array.isArray(p) ? p : [];
+    } catch {
+      return [];
+    }
+  });
   const [sheetOpen, setSheetOpen] = useState(false);
   const [boostModalOpen, setBoostModalOpen] = useState(false);
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
@@ -94,8 +108,16 @@ export default function Employer() {
     if (isAdmin || localStorage.getItem("workhop_employer_unlocked") === "1") setUnlocked(true);
     setSavedPros(getSavedProIds());
     apiGet("/leads/preview")
-      .then(setLeads)
-      .catch(() => {})
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setLeads(data);
+        } else {
+          setLeads(getStoredLeads());
+        }
+      })
+      .catch(() => {
+        setLeads(getStoredLeads());
+      })
       .finally(() => setLoading(false));
   }, [isAdmin]);
 
@@ -112,22 +134,24 @@ export default function Employer() {
   }, [term]);
   const activeFilter = LEAD_CATEGORY_FILTERS.find((f) => f.key === catFilter || f.cats.includes(catFilter));
 
-  const base = leads.filter((l) => {
-    if (onlySaved && !savedPros.includes(String(l.id))) return false;
+  const base = (Array.isArray(leads) ? leads : []).filter((l) => {
+    if (!l) return false;
+    if (onlySaved && Array.isArray(savedPros) && !savedPros.includes(String(l.id))) return false;
     if (catFilter !== "ALL" && activeFilter) {
       const proCat = (l.category || l.bucket || "").toLowerCase();
       const proSkill = (l.skill || "").toLowerCase();
-      const filterKey = activeFilter.key.toLowerCase();
+      const filterKey = (activeFilter.key || "").toLowerCase();
       const inThisCat =
         proCat === filterKey ||
         proSkill === filterKey ||
-        activeFilter.cats.some((c) => {
-          const cl = c.toLowerCase();
-          return cl === proSkill || cl === proCat || proSkill.includes(cl) || proCat.includes(cl);
-        });
+        (Array.isArray(activeFilter.cats) &&
+          activeFilter.cats.some((c) => {
+            const cl = (c || "").toLowerCase();
+            return cl === proSkill || cl === proCat || proSkill.includes(cl) || proCat.includes(cl);
+          }));
       if (!inThisCat) return false;
     }
-    if (minRating && (l.rating || 0) < minRating) return false;
+    if (minRating && (Number(l.rating) || 0) < minRating) return false;
     if (!term) return true;
     return matchLeadToTaxonomy(l, term);
   });

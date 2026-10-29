@@ -33,6 +33,11 @@ export default class ErrorBoundary extends React.Component {
             <p className="mt-2 text-xs text-inkmuted dark:text-gray-400 font-semibold">
               The application encountered a display issue. Please refresh or return to the home screen.
             </p>
+            {this.state.error?.message && (
+              <p className="mt-2 text-[10px] font-mono text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 p-2 border border-rose-200 dark:border-rose-900 rounded break-words text-left">
+                {this.state.error.message}
+              </p>
+            )}
             <div className="mt-5 flex gap-2">
               <button
                 onClick={() => window.location.reload()}

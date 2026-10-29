@@ -106,7 +106,7 @@ function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/chat/:id" element={<Chat />} />
             <Route path="/pro/:id" element={<Pro />} />
-            <Route path="/employer" element={<EmployerRoute><Employer /></EmployerRoute>} />
+            <Route path="/employer" element={<Employer />} />
             <Route path="/plans" element={<Plans />} />
             <Route path="/employer/plans" element={<EmployerRoute><Plans /></EmployerRoute>} />
             <Route path="/freelancer/plans" element={<FreelancerRoute><Plans /></FreelancerRoute>} />

@@ -198,6 +198,7 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
   const seen = new Set();
   const deduped = [];
   for (const item of allRaw) {
+    if (!item || typeof item !== "object") continue;
     const key = item.id || item.freelancer_id || item.email || item.phone;
     if (!key || seen.has(key)) continue;
     seen.add(key);
@@ -957,7 +958,9 @@ export function updateCustomJob(jobId, updates) {
 // 3. Bookmarking / Saved Items
 export function getSavedJobIds() {
   try {
-    return JSON.parse(localStorage.getItem(SAVED_JOBS_KEY) || "[]");
+    const raw = localStorage.getItem(SAVED_JOBS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -972,7 +975,9 @@ export function toggleSaveJob(id) {
 
 export function getSavedProIds() {
   try {
-    return JSON.parse(localStorage.getItem(SAVED_PROS_KEY) || "[]");
+    const raw = localStorage.getItem(SAVED_PROS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
