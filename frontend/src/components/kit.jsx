@@ -63,11 +63,15 @@ export function Logo({ size = "default", className = "" }) {
     return (
       <div className={`flex items-center gap-1.5 sm:gap-2.5 group select-none shrink-0 ${className}`} data-testid="landing-logo">
         {/* Aesthetic Circular Emblem Badge */}
-        <div className="relative flex h-8.5 w-8.5 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink dark:border-white/80 bg-white p-0.5 shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] overflow-hidden transition-transform duration-200 group-hover:scale-105">
+        <div
+          style={{ width: "34px", height: "34px", minWidth: "34px", minHeight: "34px" }}
+          className="relative flex shrink-0 items-center justify-center rounded-full border-2 border-ink dark:border-white/80 bg-white p-0.5 shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] overflow-hidden transition-transform duration-200 group-hover:scale-105"
+        >
           <img
             src="/workhop-logo.png"
             alt="WorkHop Emblem"
-            className="h-full w-full object-cover object-top scale-125"
+            style={{ width: "100%", height: "100%", maxWidth: "100%", maxHeight: "100%" }}
+            className="object-cover object-top scale-125 pointer-events-none"
             draggable={false}
           />
         </div>
@@ -91,11 +95,15 @@ export function Logo({ size = "default", className = "" }) {
   return (
     <div className={`flex flex-col items-center sm:items-start group select-none ${className}`} data-testid="landing-logo">
       <div className="flex items-center gap-3">
-        <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full border-2 border-ink dark:border-white/80 bg-white p-1 shadow-[3px_3px_0px_#121212] dark:shadow-[3px_3px_0px_#E65A1E] overflow-hidden transition-transform duration-200 group-hover:scale-105">
+        <div
+          style={{ width: "48px", height: "48px", minWidth: "48px", minHeight: "48px" }}
+          className="relative flex shrink-0 items-center justify-center rounded-full border-2 border-ink dark:border-white/80 bg-white p-1 shadow-[3px_3px_0px_#121212] dark:shadow-[3px_3px_0px_#E65A1E] overflow-hidden transition-transform duration-200 group-hover:scale-105"
+        >
           <img
             src="/workhop-logo.png"
             alt="WorkHop Emblem"
-            className="h-full w-full object-cover object-top scale-125"
+            style={{ width: "100%", height: "100%", maxWidth: "100%", maxHeight: "100%" }}
+            className="object-cover object-top scale-125 pointer-events-none"
             draggable={false}
           />
         </div>
