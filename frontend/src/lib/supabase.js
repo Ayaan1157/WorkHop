@@ -10,7 +10,16 @@ export const SUPABASE_ANON_KEY =
   process.env.REACT_APP_SUPABASE_ANON_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZnJia3hwdXdicnZoaWRpaHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMDEwNzMsImV4cCI6MjEwNjY3NzA3M30.uaXuh0iPqiHezrWt5zJA_bV1EnhP-XFI59GIs9RH7sk";
 
-export const isSupabaseConfigured = () => Boolean(SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.length > 20);
+let supabaseAvailable = true;
+
+export const markSupabaseUnavailable = () => {
+  supabaseAvailable = false;
+};
+
+export const isSupabaseConfigured = () => {
+  if (!supabaseAvailable) return false;
+  return Boolean(SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.length > 20);
+};
 
 // Initialize Supabase Client
 export const supabase = createClient(
@@ -426,15 +435,21 @@ export async function supabaseGetProfessionSuggestions() {
 export async function supabaseGetEmployers() {
   if (!isSupabaseConfigured()) return [];
   try {
-    const { data, error } = await supabase
+    const timeout = new Promise((resolve) => setTimeout(() => resolve({ error: "timeout" }), 400));
+    const query = supabase
       .from("profiles")
       .select("*")
       .eq("role", "employer")
       .limit(100);
 
-    if (error) return [];
-    return data || [];
+    const res = await Promise.race([query, timeout]);
+    if (res?.error) {
+      markSupabaseUnavailable();
+      return [];
+    }
+    return res?.data || [];
   } catch {
+    markSupabaseUnavailable();
     return [];
   }
 }

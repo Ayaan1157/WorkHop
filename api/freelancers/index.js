@@ -187,6 +187,73 @@ module.exports = async function handler(req, res) {
           payment: true,
         },
         is_dummy: false,
+      });
+    }
+
+    // Also include registered freelancers from customers who haven't paid yet
+    for (const c of customers) {
+      const email = (c.email || "").trim().toLowerCase();
+      const phoneRaw = c.contact || "";
+      const phoneDigits = phoneRaw.replace(/\D/g, "");
+      const notes = c.notes || {};
+
+      const isEmployer = notes.role === "employer" || Boolean(notes.company_name) || (c.name && c.name.toLowerCase().includes("alia mansoor"));
+      if (isEmployer) continue;
+
+      const isFreelancer = notes.role === "freelancer" || Boolean(notes.skill) || notes.source?.includes("onboarding") || notes.source?.includes("signup");
+      if (!isFreelancer) continue;
+
+      if (email && seenEmails.has(email)) continue;
+      if (email) seenEmails.add(email);
+
+      const name = notes.full_name || notes.name || c.name || (email ? email.split("@")[0] : "Registered Freelancer");
+      const initials = name
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || "RF";
+
+      const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || c.id}`;
+      const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[c.id];
+
+      paidFreelancers.push({
+        id: proId,
+        freelancer_id: proId,
+        name: name,
+        full_name: name,
+        initials: initials,
+        skill: notes.skill || "Creative & Tech Pro",
+        category: notes.category || "Graphics & Design",
+        bucket: "Creative",
+        area: notes.area || "Bengaluru",
+        distance_km: 2.1,
+        rating: null,
+        jobs_done: 0,
+        reviews_count: 0,
+        rate_hr: Number(notes.rate_hr) || 800,
+        delivery_days: Number(notes.delivery_days) || 3,
+        languages: ["English", "Hindi"],
+        email: email,
+        phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw,
+        portfolio: notes.portfolio_url || "",
+        intro: notes.intro || "Registered freelancer awaiting admin review.",
+        keywords: ["freelancer", "bengaluru pro"],
+        paid: false,
+        paid_amount: 0,
+        paid_plan: "Free Signup",
+        created_at: new Date(c.created_at * 1000).toISOString(),
+        approved: ovr ? Boolean(ovr.approved) : (notes.status === "approved"),
+        status: ovr ? (ovr.status || (ovr.approved ? "approved" : "declined")) : (notes.status || "pending"),
+        reason: ovr ? ovr.reason : (notes.reason || null),
+        verifications: {
+          id: false,
+          email: true,
+          phone: Boolean(phoneDigits),
+          portfolio: Boolean(notes.portfolio_url),
+          payment: false,
+        },
+        is_dummy: false,
         is_unlocked: true,
       });
     }

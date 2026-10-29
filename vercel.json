@@ -114,6 +114,38 @@
       "destination": "/api/site-settings/index"
     },
     {
+      "source": "/api/employers",
+      "destination": "/api/employers/index"
+    },
+    {
+      "source": "/api/employers/:path*",
+      "destination": "/api/employers/index"
+    },
+    {
+      "source": "/api/admin/employers",
+      "destination": "/api/employers/index"
+    },
+    {
+      "source": "/api/admin/employers/:path*",
+      "destination": "/api/employers/index"
+    },
+    {
+      "source": "/api/users",
+      "destination": "/api/users/index"
+    },
+    {
+      "source": "/api/users/:path*",
+      "destination": "/api/users/index"
+    },
+    {
+      "source": "/api/admin/users",
+      "destination": "/api/users/index"
+    },
+    {
+      "source": "/api/admin/users/:path*",
+      "destination": "/api/users/index"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

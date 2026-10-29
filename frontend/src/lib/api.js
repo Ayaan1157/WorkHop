@@ -368,6 +368,13 @@ async function mockRouter(path, method = "GET", body = null) {
   if (cleanPath === "/auth/mobile/verify-otp") {
     const email = body?.email || "user@example.com";
     saveRegisteredUser(email, body?.password, body);
+    try {
+      fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      }).catch(() => {});
+    } catch {}
     const session = createMockSession(email, { ...(body || {}), phone_verified: true });
     setToken(session.session_token);
     saveStoredUser(session.user);
@@ -566,51 +573,72 @@ async function mockRouter(path, method = "GET", body = null) {
     const jobId = cleanPath.split("/")[3];
     return deleteGigAdmin(jobId);
   }
-  if (cleanPath === "/admin/users") {
-    return [
-      { user_id: "u-admin", email: "Zenithdeveleoperss@gmail.com", name: "Zenith Developers (Admin)", role: "admin", created_at: new Date().toISOString() },
-    ];
+  if (cleanPath === "/admin/users" || cleanPath === "/users") {
+    try {
+      const res = await fetch("/api/admin/users");
+      if (res.ok) {
+        const cloudUsers = await res.json();
+        if (Array.isArray(cloudUsers) && cloudUsers.length > 0) {
+          return cloudUsers;
+        }
+      }
+    } catch {}
+    const adminUser = { user_id: "u-admin", email: "Zenithdeveleoperss@gmail.com", name: "Zenith Developers (Admin)", role: "admin", created_at: new Date().toISOString() };
+    const regUsers = getRegisteredUsers();
+    const list = [adminUser];
+    for (const [em, u] of Object.entries(regUsers)) {
+      list.push({
+        user_id: u.id || `u-${em}`,
+        id: u.id || `u-${em}`,
+        name: u.name || em.split("@")[0],
+        email: em,
+        phone: u.phone || "",
+        role: u.role || (u.company_name ? "employer" : "freelancer"),
+        company_name: u.company_name || "",
+        skill: u.skill || "",
+        created_at: u.created_at || new Date().toISOString(),
+      });
+    }
+    return list;
   }
   if (cleanPath === "/admin/employers" && method === "POST") {
+    try {
+      const res = await fetch("/api/admin/employers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d?.employer) return d.employer;
+      }
+    } catch {}
     return addStoredEmployer(body || {});
   }
   if (cleanPath === "/admin/employers/all" && method === "DELETE") {
+    try {
+      await fetch("/api/admin/employers/all", { method: "DELETE" });
+    } catch {}
     return deleteAllStoredEmployers();
   }
   if (cleanPath.startsWith("/admin/employers/") && method === "DELETE") {
     const empId = cleanPath.slice("/admin/employers/".length);
+    try {
+      await fetch(`/api/admin/employers/${encodeURIComponent(empId)}`, { method: "DELETE" });
+    } catch {}
     return deleteStoredEmployer(empId);
   }
   if (cleanPath === "/admin/employers") {
-    let employers = getStoredEmployers();
-    if (isSupabaseConfigured()) {
-      try {
-        const remoteProfiles = await supabaseGetEmployers();
-        if (Array.isArray(remoteProfiles) && remoteProfiles.length > 0) {
-          const empMap = new Map();
-          for (const e of employers) {
-            empMap.set((e.company_name || e.name || e.email || "").toLowerCase(), e);
-          }
-          for (const rp of remoteProfiles) {
-            const key = (rp.company_name || rp.name || rp.email || "").toLowerCase();
-            if (key && !empMap.has(key)) {
-              empMap.set(key, {
-                employer_id: rp.id,
-                company_name: rp.company_name || rp.name || "Employer",
-                name: rp.name || "Employer",
-                email: rp.email || "",
-                phone: rp.phone || "",
-                area: rp.area || "Bengaluru",
-                spent_rupees: rp.spent_rupees || 0,
-                created_at: rp.created_at || new Date().toISOString(),
-                source: "supabase",
-              });
-            }
-          }
-          employers = Array.from(empMap.values());
+    try {
+      const res = await fetch("/api/admin/employers");
+      if (res.ok) {
+        const cloudEmps = await res.json();
+        if (Array.isArray(cloudEmps) && cloudEmps.length > 0) {
+          return cloudEmps;
         }
-      } catch {}
-    }
+      }
+    } catch {}
+    let employers = getStoredEmployers();
     return employers;
   }
   if (cleanPath === "/admin/freelancers") {

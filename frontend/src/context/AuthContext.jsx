@@ -194,6 +194,9 @@ export function AuthProvider({ children }) {
     try {
       saveRegisteredUser(details?.email, details?.password || "", details);
     } catch (_) {}
+    try {
+      apiPost("/users", details, false).catch(() => {});
+    } catch (_) {}
     const session = createMockSession(details?.email || "user@workhop.local", details);
     setToken(session.session_token);
     saveStoredUser(session.user);

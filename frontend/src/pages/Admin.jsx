@@ -2331,6 +2331,8 @@ function ProsTalentTab({ adminFetch }) {
 
   useEffect(() => {
     loadPros();
+    const interval = setInterval(loadPros, 12000);
+    return () => clearInterval(interval);
   }, [loadPros]);
 
   const handleApprove = async (freelancerId, name) => {
@@ -4266,7 +4268,16 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
     setLoading(true);
     try {
       const data = await adminFetch("/employers");
-      setEmployers(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        setEmployers(data);
+      } else if (data && Array.isArray(data.employers)) {
+        setEmployers(data.employers);
+      } else if (data && (Array.isArray(data.accounts) || Array.isArray(data.devices))) {
+        const combined = [...(data.devices || []), ...(data.accounts || [])];
+        setEmployers(combined);
+      } else {
+        setEmployers([]);
+      }
     } catch {
       setEmployers([]);
     } finally {
@@ -4276,6 +4287,8 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
 
   useEffect(() => {
     refresh();
+    const interval = setInterval(refresh, 12000);
+    return () => clearInterval(interval);
   }, [refresh]);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -4383,6 +4396,14 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
             }`}
           >
             {showRemoveForm ? <X size={12} /> : <Trash2 size={12} />} {showRemoveForm ? "CANCEL REMOVE" : "REMOVE EMPLOYER"}
+          </button>
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={loading}
+            className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-1.5 text-xs font-black uppercase text-ink shadow-[2px_2px_0px_#121212] transition hover:bg-sand disabled:opacity-50"
+          >
+            <RefreshCw size={12} className={`text-brand ${loading ? "animate-spin" : ""}`} /> SYNC REAL TIME
           </button>
           <button
             type="button"
