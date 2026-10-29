@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Phone, Globe, Lock, LockOpen, ShieldCheck, MapPin, ArrowLeftRight,
   MessageSquare, CheckCircle2, Loader2, Star, Clock, IndianRupee,
-  CheckCheck, Briefcase, Award, Sparkles, ExternalLink
+  CheckCheck, Briefcase, Award, Sparkles, ExternalLink, Image as ImageIcon, X
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -18,6 +18,24 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import { formatWhatsAppUrl } from "@/lib/utils";
 
 const Blur = () => <span className="pointer-events-none absolute inset-0 backdrop-blur-[6px]" />;
+
+function formatImageSrc(img) {
+  if (!img || typeof img !== "string") return "";
+  const trimmed = img.trim();
+  if (trimmed.startsWith("data:") || trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("iVBORw0KGgo")) {
+    return `data:image/png;base64,${trimmed}`;
+  } else if (trimmed.startsWith("/9j/")) {
+    return `data:image/jpeg;base64,${trimmed}`;
+  } else if (trimmed.startsWith("R0lGOD")) {
+    return `data:image/gif;base64,${trimmed}`;
+  } else if (trimmed.startsWith("UklGR")) {
+    return `data:image/webp;base64,${trimmed}`;
+  }
+  return `data:image/jpeg;base64,${trimmed}`;
+}
 
 export default function Pro() {
   const { id } = useParams();
@@ -35,7 +53,7 @@ export default function Pro() {
   const [paying, setPaying] = useState(false);
   const [coupon, setCoupon] = useState(null);
   const [activeTab, setActiveTab] = useState("overview"); // overview | reviews | skills | history
-  const [clickedJobNotice, setClickedJobNotice] = useState(null);
+  const [lightboxImage, setLightboxImage] = useState(null);
   const { startPayment } = useRazorpay();
 
   usePageMeta({
@@ -182,9 +200,15 @@ export default function Pro() {
               <div className="flex-1 text-center sm:text-left min-w-0">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <h1 className="text-2xl font-black text-ink">{pro.name}</h1>
-                  <span className="flex items-center gap-1 bg-ok text-white border border-ink px-2 py-0.5 text-[9px] font-black">
-                    <ShieldCheck size={11} /> VERIFIED PRO
-                  </span>
+                  {pro.approved || pro.status === "approved" ? (
+                    <span className="flex items-center gap-1 bg-ok text-white border border-ink px-2 py-0.5 text-[9px] font-black shadow-[1px_1px_0px_#121212]">
+                      <ShieldCheck size={11} /> VERIFIED PRO
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 bg-amber-500 text-white border border-ink px-2 py-0.5 text-[9px] font-black shadow-[1px_1px_0px_#121212]">
+                      <Clock size={11} /> PENDING ADMIN APPROVAL
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-sm font-bold text-inkmuted mt-0.5">{pro.skill}</p>
@@ -314,54 +338,100 @@ export default function Pro() {
                 </p>
               </div>
 
-              {/* WORK SAMPLES / PORTFOLIO GRID */}
-              <div className="flex flex-col gap-2 border-2 border-ink bg-white p-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-[11px] font-black tracking-[0.15em] text-ink">PORTFOLIO &amp; WORK SAMPLES</h2>
-                  <span className="text-[10px] font-extrabold text-inkmuted">2 COMPLETED DELIVERIES</span>
-                </div>
-                {clickedJobNotice && (
-                  <div className="mt-2 border-2 border-ink bg-[#E5F7E0] p-2.5 text-ink flex items-center justify-between shadow-[2px_2px_0px_#121212] animate-in fade-in">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-[#0E6220]" />
-                      <span className="text-xs font-black uppercase tracking-wider text-[#0E6220]">
-                        Job Completed · {clickedJobNotice.title}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setClickedJobNotice(null)}
-                      className="text-[10px] font-black border border-ink bg-white px-1.5 py-0.2"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                  {[
-                    { title: `${pro.skill} Client Delivery`, tag: "Job Completed" },
-                    { title: "Verified Hyperlocal Project", tag: "Job Completed" },
-                  ].map((item, i) => (
-                    <div
-                      key={i}
-                      onClick={() => setClickedJobNotice({ title: item.title })}
-                      className="border-2 border-ink bg-sand p-3.5 flex flex-col justify-between h-36 relative overflow-hidden group hover:bg-[#E5F7E0] transition cursor-pointer shadow-[2px_2px_0px_#121212]"
-                      title="Click to view status: Job Completed"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="border border-ink bg-[#0E6220] text-white px-2 py-0.5 text-[8px] font-black uppercase flex items-center gap-1 shadow-xs">
-                          <CheckCircle2 size={10} /> {item.tag}
-                        </span>
-                        <Sparkles size={13} className="text-brand" />
-                      </div>
+              {/* WORK SAMPLES & PORTFOLIO */}
+              {(() => {
+                const portfolioImages = (
+                  Array.isArray(pro.portfolio_images) && pro.portfolio_images.length > 0
+                    ? pro.portfolio_images
+                    : Array.isArray(pro.samples)
+                    ? pro.samples.filter((s) => s?.image).map((s) => s.image)
+                    : []
+                ).filter(Boolean);
+
+                const portfolioUrl = (pro.portfolio_url || pro.portfolio || "").trim();
+                const validPortfolioLink = portfolioUrl
+                  ? portfolioUrl.startsWith("http://") || portfolioUrl.startsWith("https://")
+                    ? portfolioUrl
+                    : `https://${portfolioUrl}`
+                  : null;
+
+                return (
+                  <div className="flex flex-col gap-3 border-2 border-ink bg-white p-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <div>
-                        <p className="text-xs font-black text-ink">{item.title}</p>
-                        <p className="text-[10px] text-inkmuted font-bold mt-0.5">Click on it: Job Completed</p>
+                        <h2 className="text-[11px] font-black tracking-[0.15em] text-ink uppercase">
+                          PORTFOLIO &amp; WORK SAMPLES
+                        </h2>
+                        <p className="text-[10px] font-bold text-inkmuted mt-0.5">
+                          {portfolioImages.length > 0
+                            ? `${portfolioImages.length} Verified Case Study Image${portfolioImages.length > 1 ? "s" : ""}`
+                            : "Freelancer Work & Case Studies"}
+                        </p>
                       </div>
+                      {validPortfolioLink && (
+                        <a
+                          href={validPortfolioLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 border-2 border-ink bg-sand hover:bg-brand hover:text-white px-3 py-1.5 text-xs font-black text-ink shadow-[1.5px_1.5px_0px_#121212] transition"
+                        >
+                          <Globe size={13} />
+                          <span>OPEN EXTERNAL PORTFOLIO</span>
+                          <ExternalLink size={12} />
+                        </a>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
+
+                    {/* IMAGE GALLERY */}
+                    {portfolioImages.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-1">
+                        {portfolioImages.map((img, i) => {
+                          const src = formatImageSrc(img);
+                          return (
+                            <div
+                              key={i}
+                              onClick={() => setLightboxImage(src)}
+                              className="group relative cursor-pointer border-2 border-ink bg-sand overflow-hidden shadow-[2px_2px_0px_#121212] hover:shadow-[4px_4px_0px_#121212] transition"
+                            >
+                              <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100 flex items-center justify-center">
+                                <img
+                                  src={src}
+                                  alt={`Work sample ${i + 1}`}
+                                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  loading="lazy"
+                                />
+                              </div>
+                              <div className="p-2 border-t border-ink bg-white flex items-center justify-between">
+                                <span className="text-[10px] font-black text-ink uppercase">
+                                  Sample #{i + 1}
+                                </span>
+                                <span className="text-[9px] font-bold text-brand flex items-center gap-1">
+                                  <span>Click to enlarge</span>
+                                  <Sparkles size={10} />
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-ink/30 bg-sand/40 p-6 text-center">
+                        <ImageIcon size={32} className="mx-auto text-inkmuted mb-2" />
+                        <p className="text-xs font-black text-ink">No image samples uploaded directly.</p>
+                        {validPortfolioLink ? (
+                          <p className="text-[11px] font-semibold text-inkmuted mt-1">
+                            View their projects and case studies directly via the external portfolio link above.
+                          </p>
+                        ) : (
+                          <p className="text-[11px] font-semibold text-inkmuted mt-1">
+                            This freelancer has not uploaded work sample screenshots yet.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* CONTACT DETAILS & UNLOCK CARD */}
               <div className="flex flex-col gap-2 border-2 border-ink bg-white p-4" data-testid="pro-contact-card">
@@ -650,6 +720,39 @@ export default function Pro() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* LIGHTBOX PREVIEW MODAL */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[92vh] w-full bg-white border-2 border-ink p-3 shadow-[8px_8px_0px_#121212] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 mb-2 border-b-2 border-ink">
+              <span className="text-xs font-black uppercase text-ink flex items-center gap-1.5">
+                <ImageIcon size={14} className="text-brand" /> Work Sample Preview
+              </span>
+              <button
+                type="button"
+                onClick={() => setLightboxImage(null)}
+                className="flex h-7 w-7 items-center justify-center border-2 border-ink bg-sand hover:bg-brand hover:text-white font-black text-xs transition"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-auto flex-1 flex items-center justify-center p-1 bg-stone-50 border border-ink/20">
+              <img
+                src={lightboxImage}
+                alt="Enlarged work sample"
+                className="max-h-[75vh] w-auto max-w-full object-contain"
+              />
+            </div>
+          </div>
         </div>
       )}
     </Shell>

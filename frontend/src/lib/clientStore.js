@@ -224,7 +224,7 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
     } else if (lead.is_dummy) {
       isApproved = true;
       statusText = "approved";
-    } else if (lead.approved === true || lead.status === "approved" || leadId === "pro-shamanthnmurthy") {
+    } else if (lead.approved === true || lead.status === "approved") {
       isApproved = true;
       statusText = "approved";
     } else if (lead.status === "declined") {
@@ -254,6 +254,13 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       email: lead.email || `${(lead.name || "pro").toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
       is_unlocked: isUnlocked,
       portfolio: lead.portfolio || `${(lead.name || "pro").toLowerCase().replace(/[^a-z]/g, "")}.in`,
+      portfolio_url: lead.portfolio_url || lead.portfolio || "",
+      portfolio_images: Array.isArray(lead.portfolio_images) ? lead.portfolio_images : [],
+      linkedin_url: lead.linkedin_url || lead.linkedin || "",
+      external_platform: lead.external_platform || "",
+      external_rating: lead.external_rating || null,
+      external_reviews: lead.external_reviews || null,
+      external_url: lead.external_url || "",
       keywords: Array.from(
         new Set([
           ...(lead.keywords || [lead.skill || "Freelancer"]),
@@ -429,10 +436,27 @@ export function markJobCompletedAndReview(jobId, reviewData) {
 }
 
 export function getLeadById(id) {
-  const leads = getStoredLeads();
-  const pro = leads.find((l) => l.id === id) || leads[0];
-  const dynamicReviews = getStoredReviews(id);
-  const defaultReviews = [
+  if (!id) return null;
+  const leads = getStoredLeads({ includeDeclined: true });
+  let pro = leads.find(
+    (l) =>
+      String(l.id) === String(id) ||
+      String(l.freelancer_id) === String(id) ||
+      String(l.user_id) === String(id)
+  );
+  if (!pro) {
+    const submitted = getSubmittedProfiles();
+    pro = submitted.find(
+      (p) =>
+        String(p.id) === String(id) ||
+        String(p.freelancer_id) === String(id) ||
+        String(p.user_id) === String(id)
+    );
+  }
+  if (!pro) return null;
+
+  const dynamicReviews = getStoredReviews(pro.id || id);
+  const defaultReviews = pro.is_dummy ? [
     {
       review_id: "rev-d1",
       reviewer_name: "Anita J. · LedgerLite",
@@ -459,7 +483,7 @@ export function getLeadById(id) {
       status: "completed",
       pay: 15000,
     },
-  ];
+  ] : [];
   const reviews = dynamicReviews.length > 0 ? dynamicReviews : defaultReviews;
   return { pro, reviews };
 }

@@ -764,9 +764,15 @@ const LeadCard = memo(function LeadCard({ lead, unlocked, index, isSaved, onTogg
             <p data-testid={`lead-name-${index}`} className="truncate text-[15px] font-black text-ink dark:text-white">
               {lead.name}
             </p>
-            <span className="flex items-center gap-0.5 bg-ok/15 text-ok border border-ok px-1.5 py-0.2 text-[9px] font-black">
-              <ShieldCheck size={10} /> VERIFIED
-            </span>
+            {lead.approved || lead.status === "approved" ? (
+              <span className="flex items-center gap-0.5 bg-ok/15 text-ok border border-ok px-1.5 py-0.2 text-[9px] font-black">
+                <ShieldCheck size={10} /> VERIFIED
+              </span>
+            ) : (
+              <span className="flex items-center gap-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/40 px-1.5 py-0.2 text-[9px] font-black">
+                <Clock size={10} /> PENDING
+              </span>
+            )}
             {lead.paid && (
               <span className="flex items-center gap-0.5 bg-[#FFF3C4] text-brand border border-brand px-1.5 py-0.2 text-[9px] font-black">
                 <Sparkles size={10} /> TOP PRO

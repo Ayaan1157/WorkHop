@@ -41,9 +41,7 @@ function rzpRequest(method, path, data = null) {
   });
 }
 
-const freelancerStatusOverrides = {
-  "pro-shamanthnmurthy": { approved: true, status: "approved" },
-};
+const freelancerStatusOverrides = {};
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -164,14 +162,14 @@ module.exports = async function handler(req, res) {
           const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
           const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id];
           if (ovr) return Boolean(ovr.approved);
-          if (notes.status === "approved" || proId === "pro-shamanthnmurthy") return true;
+          if (notes.status === "approved") return true;
           return false;
         })(),
         status: (() => {
           const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
           const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id];
           if (ovr) return ovr.status || (ovr.approved ? "approved" : "declined");
-          if (notes.status === "approved" || proId === "pro-shamanthnmurthy") return "approved";
+          if (notes.status === "approved") return "approved";
           if (notes.status === "declined") return "declined";
           return "pending";
         })(),
@@ -224,8 +222,8 @@ module.exports = async function handler(req, res) {
         paid_plan: "20 Bidding Hops Pack · ₹150",
         payment_id: "pay_TtdIJpjtCetICU",
         created_at: "2026-10-29T06:56:39.000Z",
-        approved: true,
-        status: "approved",
+        approved: false,
+        status: "pending",
         verifications: {
           id: true,
           email: true,
@@ -270,8 +268,8 @@ module.exports = async function handler(req, res) {
         paid_plan: "20 Bidding Hops Pack · ₹150",
         payment_id: "pay_TtdIJpjtCetICU",
         created_at: "2026-10-29T06:56:39.000Z",
-        approved: true,
-        status: "approved",
+        approved: false,
+        status: "pending",
         verifications: {
           id: true,
           email: true,

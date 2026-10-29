@@ -3,14 +3,32 @@ import { useNavigate } from "react-router-dom";
 import {
   X, ShieldCheck, MapPin, Star, IndianRupee, Clock, CheckCheck,
   Globe, Tag, Briefcase, ExternalLink, MessageSquare, PlusCircle,
-  ArrowRight, User, CheckCircle2, Lock, Phone
+  ArrowRight, User, CheckCircle2, Lock, Phone, Image as ImageIcon, Sparkles
 } from "lucide-react";
 import { getOrCreateChatWithCandidate } from "@/lib/clientStore";
 import { formatWhatsAppUrl } from "@/lib/utils";
 
+function formatImageSrc(img) {
+  if (!img || typeof img !== "string") return "";
+  const trimmed = img.trim();
+  if (trimmed.startsWith("data:") || trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("iVBORw0KGgo")) {
+    return `data:image/png;base64,${trimmed}`;
+  } else if (trimmed.startsWith("/9j/")) {
+    return `data:image/jpeg;base64,${trimmed}`;
+  } else if (trimmed.startsWith("R0lGOD")) {
+    return `data:image/gif;base64,${trimmed}`;
+  } else if (trimmed.startsWith("UklGR")) {
+    return `data:image/webp;base64,${trimmed}`;
+  }
+  return `data:image/jpeg;base64,${trimmed}`;
+}
+
 export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
   const nav = useNavigate();
-  const [sampleNotice, setSampleNotice] = useState(null);
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   if (!isOpen || !pro) return null;
 
@@ -81,9 +99,15 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
                 >
                   {pro.name}
                 </h2>
-                <span className="inline-flex items-center gap-0.5 bg-ok/15 text-ok border border-ok px-1.5 py-0.2 text-[9px] font-black shrink-0">
-                  <ShieldCheck size={11} /> VERIFIED PRO
-                </span>
+                {pro.approved || pro.status === "approved" ? (
+                  <span className="inline-flex items-center gap-0.5 bg-ok/15 text-ok border border-ok px-1.5 py-0.2 text-[9px] font-black shrink-0">
+                    <ShieldCheck size={11} /> VERIFIED PRO
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/40 px-1.5 py-0.2 text-[9px] font-black shrink-0">
+                    <Clock size={11} /> PENDING ADMIN APPROVAL
+                  </span>
+                )}
               </div>
 
               <p className="text-xs sm:text-sm font-bold text-inkmuted dark:text-zinc-300 line-clamp-1 mt-0.5">
@@ -214,57 +238,82 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
           )}
 
           {/* Work Samples / Portfolio Preview */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
-                <Briefcase size={13} className="text-brand" />
-                <span>Portfolio &amp; Work Samples</span>
-              </h3>
-              {pro.portfolio && (
-                <span className="text-[10px] font-bold text-brand flex items-center gap-1">
-                  <ExternalLink size={10} />
-                  <span>{pro.portfolio}</span>
-                </span>
-              )}
-            </div>
+          {(() => {
+            const portfolioImages = (
+              Array.isArray(pro.portfolio_images) && pro.portfolio_images.length > 0
+                ? pro.portfolio_images
+                : Array.isArray(pro.samples)
+                ? pro.samples.filter((s) => s?.image).map((s) => s.image)
+                : []
+            ).filter(Boolean);
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {(pro.samples || [
-                { title: `${pro.skill} Deliverables`, type: "Client Project", tag: "Job Completed" },
-                { title: "Verified Past Work Milestone", type: "Portfolio Work", tag: "Job Completed" },
-              ]).slice(0, 2).map((s, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setSampleNotice(s.title)}
-                  className="flex items-center justify-between border border-ink/20 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-2.5 text-xs shadow-sm cursor-pointer hover:bg-[#E5F7E0] transition"
-                  title="Click to view status: Job Completed"
-                >
-                  <div className="min-w-0 pr-2">
-                    <p className="font-black text-ink dark:text-white truncate">{s.title}</p>
-                    <p className="text-[10px] text-inkmuted dark:text-zinc-400">Click on it: Job Completed</p>
-                  </div>
-                  <span className="border border-ink/20 bg-[#0E6220] text-white px-2 py-0.5 text-[9px] font-black uppercase shrink-0 flex items-center gap-1 shadow-xs">
-                    <CheckCircle2 size={10} /> Job Completed
-                  </span>
+            const portfolioUrl = (pro.portfolio_url || pro.portfolio || "").trim();
+            const validPortfolioLink = portfolioUrl
+              ? portfolioUrl.startsWith("http://") || portfolioUrl.startsWith("https://")
+                ? portfolioUrl
+                : `https://${portfolioUrl}`
+              : null;
+
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-1.5">
+                  <h3 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
+                    <Briefcase size={13} className="text-brand" />
+                    <span>Portfolio &amp; Work Samples</span>
+                  </h3>
+                  {validPortfolioLink && (
+                    <a
+                      href={validPortfolioLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-bold text-brand hover:underline flex items-center gap-1 border border-brand/30 px-1.5 py-0.5 rounded-sm"
+                    >
+                      <ExternalLink size={10} />
+                      <span className="truncate max-w-[180px]">{portfolioUrl}</span>
+                    </a>
+                  )}
                 </div>
-              ))}
-            </div>
 
-            {sampleNotice && (
-              <div className="mt-2 p-2.5 bg-[#E5F7E0] border border-[#0E6220] text-[#0E6220] rounded text-xs flex items-center justify-between animate-in fade-in">
-                <span className="font-bold flex items-center gap-1.5">
-                  <CheckCircle2 size={14} /> Job Completed · {sampleNotice}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSampleNotice(null)}
-                  className="text-[10px] font-black underline ml-2"
-                >
-                  ✕
-                </button>
+                {portfolioImages.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {portfolioImages.map((img, idx) => {
+                      const src = formatImageSrc(img);
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => setLightboxImage(src)}
+                          className="group relative cursor-pointer border border-ink/30 dark:border-zinc-700 bg-sand dark:bg-zinc-800 overflow-hidden shadow-xs hover:border-brand transition"
+                        >
+                          <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100 dark:bg-zinc-900 flex items-center justify-center">
+                            <img
+                              src={src}
+                              alt={`Work sample ${idx + 1}`}
+                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className="p-1.5 bg-white dark:bg-zinc-800 text-[9px] font-black text-ink dark:text-zinc-200 flex items-center justify-between">
+                            <span>Sample #{idx + 1}</span>
+                            <Sparkles size={9} className="text-brand" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="border border-dashed border-ink/30 dark:border-zinc-700 bg-sand/30 dark:bg-zinc-900/50 p-4 text-center">
+                    <ImageIcon size={22} className="mx-auto text-inkmuted mb-1 opacity-70" />
+                    <p className="text-[11px] font-bold text-ink dark:text-zinc-300">No image samples uploaded directly.</p>
+                    {validPortfolioLink && (
+                      <p className="text-[10px] text-brand font-medium mt-0.5">
+                        Projects can be viewed via the external portfolio link above.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Direct Contact Policy Notice Banner */}
           <div className="border border-ok/40 bg-[#E6F4EA] dark:bg-[#11291E] p-2.5 text-xs text-[#059669] dark:text-emerald-300 flex items-start gap-2">
@@ -343,6 +392,39 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
           </div>
         </div>
       </div>
+
+      {/* LIGHTBOX PREVIEW MODAL */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div
+            className="relative max-w-3xl max-h-[90vh] w-full bg-white dark:bg-zinc-900 border-2 border-ink dark:border-zinc-700 p-3 shadow-[8px_8px_0px_#121212] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 mb-2 border-b-2 border-ink dark:border-zinc-700">
+              <span className="text-xs font-black uppercase text-ink dark:text-white flex items-center gap-1.5">
+                <ImageIcon size={14} className="text-brand" /> Work Sample Preview
+              </span>
+              <button
+                type="button"
+                onClick={() => setLightboxImage(null)}
+                className="flex h-7 w-7 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 hover:bg-brand hover:text-white font-black text-xs transition"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-auto flex-1 flex items-center justify-center p-1 bg-stone-50 dark:bg-zinc-950 border border-ink/20 dark:border-zinc-800">
+              <img
+                src={lightboxImage}
+                alt="Enlarged work sample"
+                className="max-h-[70vh] w-auto max-w-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
