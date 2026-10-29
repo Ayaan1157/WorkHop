@@ -15,7 +15,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.razorpay.com https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: blob: https: http:; connect-src 'self' https: wss: http://localhost:* http://127.0.0.1:*; font-src 'self' https://fonts.gstatic.com data:; frame-src 'self' https://api.razorpay.com; object-src 'none'; base-uri 'self';"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.razorpay.com https://maps.googleapis.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://accounts.google.com; img-src 'self' data: blob: https: http:; connect-src 'self' https: wss: http://localhost:* http://127.0.0.1:*; font-src 'self' https://fonts.gstatic.com data:; frame-src 'self' https://api.razorpay.com https://accounts.google.com; object-src 'none'; base-uri 'self';"
         },
         {
           "key": "Referrer-Policy",
@@ -144,6 +144,34 @@
     {
       "source": "/api/admin/users/:path*",
       "destination": "/api/users/index"
+    },
+    {
+      "source": "/api/auth/send-otp",
+      "destination": "/api/auth/send-otp"
+    },
+    {
+      "source": "/api/auth/verify-otp",
+      "destination": "/api/auth/send-otp"
+    },
+    {
+      "source": "/api/auth/request-otp",
+      "destination": "/api/auth/send-otp"
+    },
+    {
+      "source": "/api/auth/mobile/request-otp",
+      "destination": "/api/auth/send-otp"
+    },
+    {
+      "source": "/api/auth/mobile/verify-otp",
+      "destination": "/api/auth/send-otp"
+    },
+    {
+      "source": "/api/auth/email/request-otp",
+      "destination": "/api/auth/send-otp"
+    },
+    {
+      "source": "/api/auth/email/verify-otp",
+      "destination": "/api/auth/send-otp"
     },
     {
       "source": "/((?!api/).*)",

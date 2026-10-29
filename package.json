@@ -6,5 +6,8 @@
     "install": "cd frontend && npm install --legacy-peer-deps",
     "build": "cd frontend && npm install --legacy-peer-deps && npm run build",
     "start": "cd frontend && npm start"
+  },
+  "dependencies": {
+    "nodemailer": "^10.3.1"
   }
 }

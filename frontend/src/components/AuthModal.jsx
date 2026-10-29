@@ -117,8 +117,21 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
 
   if (!isOpen) return null;
 
-  const phoneDigits = phone.replace(/\D/g, "");
-  const isPhoneValid = phoneDigits.length === 10;
+  const rawDigits = phone.replace(/\D/g, "");
+  const phoneDigits = rawDigits.length > 10 && rawDigits.startsWith("91") ? rawDigits.slice(2) : rawDigits;
+  const isPhoneValid = /^[6-9]\d{9}$/.test(phoneDigits) &&
+    !/^([0-9])\1{9}$/.test(phoneDigits) &&
+    phoneDigits !== "1234567890" &&
+    phoneDigits !== "9876543210" &&
+    phoneDigits !== "0123456789";
+
+  const cleanEmail = (email || "").trim().toLowerCase();
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const dummyDomains = ["test.com", "example.com", "example.org", "dummy.com", "fake.com", "mailinator.com", "tempmail.com", "yopmail.com"];
+  const isDummyEmail = dummyDomains.some((d) => cleanEmail.endsWith(`@${d}`));
+  const isDummyUsername = ["test", "dummy", "fake", "user", "admin", "abc", "xyz", "sample"].includes(cleanEmail.split("@")[0]);
+  const isEmailValid = Boolean(cleanEmail && emailRegex.test(cleanEmail) && !isDummyEmail && !isDummyUsername);
+
   const isEmployer = role === "employer";
 
   // Handle Google button - Open Account Chooser
@@ -142,9 +155,10 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       setLoading(true);
       try {
         if (!isEmailRegistered(googleEmail)) {
-          setError("Email not found. Please register first.");
+          // Switch to signup mode so user can complete registration seamlessly
           setMode("signup");
           setOtpStage("idle");
+          setError(`✓ Google account verified (${googleEmail})! Please enter your 10-digit mobile number and neighborhood below to finish registration.`);
           setLoading(false);
           return;
         }
@@ -161,15 +175,14 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
 
     // If in signup mode, prompt to enter phone & area if missing
     if (!isPhoneValid || !area) {
-      setError(`✓ Google account linked (${googleEmail})! Please enter your 10-digit mobile number and neighborhood below to finish registration.`);
+      setError(`✓ Google account verified (${googleEmail})! Please enter your 10-digit mobile number and neighborhood below to finish registration.`);
     }
   };
 
   // Request Email OTP (Sign In via OTP)
   const handleRequestOtp = async () => {
-    const cleanEmail = email.trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
-      setError("Please enter a valid email address.");
+    if (!isEmailValid) {
+      setError("Please enter a valid, active email address.");
       return;
     }
 
@@ -182,8 +195,8 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setLoading(true);
     setError(null);
     try {
-      const res = await apiPost("/auth/email/request-otp", { email: cleanEmail });
-      setDevOtp(res?.dev_otp || "123456");
+      const res = await apiPost("/auth/send-otp", { email: cleanEmail, action: "send" });
+      setDevOtp(res?.devOtp || res?.dev_otp || "123456");
       setOtpType("email");
       setOtpStage("sent");
       setOtpInput("");
@@ -195,27 +208,27 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     }
   };
 
-  // Resend OTP (Mobile SMS or Email)
+  // Resend OTP (Email Verification Code)
   const handleResendOtp = async () => {
     if (resendCooldown > 0) return;
     setLoading(true);
     setError(null);
     try {
-      if (otpType === "mobile") {
-        const res = await apiPost("/auth/mobile/request-otp", { phone: phoneDigits, email: email.trim() });
-        setDevOtp(res?.dev_otp || String(Math.floor(100000 + Math.random() * 900000)));
-        setResendCooldown(30);
-      } else {
-        await handleRequestOtp();
-      }
+      const res = await apiPost("/auth/send-otp", {
+        phone: phoneDigits,
+        email: cleanEmail,
+        action: "send",
+      });
+      setDevOtp(res?.devOtp || res?.dev_otp || "123456");
+      setResendCooldown(30);
     } catch (e) {
-      setError(e?.message || "Could not resend OTP code.");
+      setError(e?.message || "Could not resend verification code.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Verify OTP & Complete Auth (Mobile or Email)
+  // Verify OTP & Complete Auth (Email)
   const handleVerifyOtp = async () => {
     if (otpInput.trim().length !== 6) {
       setError("Please enter the 6-digit verification code.");
@@ -224,47 +237,44 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setLoading(true);
     setError(null);
 
-    const cleanEmail = email.trim().toLowerCase();
     const cleanName = sanitizeInput(fullName);
     const cleanSkill = sanitizeInput(skill);
     const cleanCompany = sanitizeInput(companyName);
 
     try {
+      // 1. Verify code via backend API
+      const verifyRes = await apiPost("/auth/send-otp", {
+        email: cleanEmail,
+        code: otpInput.trim(),
+        action: "verify",
+      });
+
+      if (!verifyRes?.verified && !verifyRes?.ok) {
+        throw new Error(verifyRes?.detail || "Invalid 6-digit verification code.");
+      }
+
       const payload = {
         email: cleanEmail,
         password: password,
-        otp: otpInput.trim(),
         role: role,
         name: cleanName || undefined,
         phone: phoneDigits || undefined,
         phone_verified: true,
+        email_verified: true,
         area: area,
         company_name: isEmployer ? (cleanCompany || "Hyperlocal Co.") : undefined,
         skill: !isEmployer ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
+        gst_number: isEmployer && gstNumber ? gstNumber.trim().toUpperCase() : undefined,
       };
 
-      if (otpType === "mobile") {
-        const data = await apiPost("/auth/mobile/verify-otp", payload);
-        resetRateLimit(`signup_${cleanEmail}`);
-        if (data?.session_token && data?.user) {
-          await adoptSession(data.session_token, data.user);
-          completeAndRedirect(data.user.role || role, data.user);
-        } else {
-          const session = await signupWithDetails(payload);
-          completeAndRedirect(session?.user?.role || role, session?.user);
-        }
-      } else {
-        const data = await apiPost("/auth/email/verify-otp", payload);
-        if (data?.session_token && data?.user) {
-          await adoptSession(data.session_token, data.user);
-          completeAndRedirect(data.user.role || role, data.user);
-        } else {
-          const session = await signupWithDetails(payload);
-          completeAndRedirect(session?.user?.role || role, session?.user);
-        }
-      }
+      // 2. Real-time sync to backend (/api/users) for Admin dashboard
+      await apiPost("/users", payload).catch(() => {});
+      resetRateLimit(`signup_${cleanEmail}`);
+
+      const session = await signupWithDetails(payload);
+      completeAndRedirect(session?.user?.role || role, session?.user);
     } catch (e) {
-      setError(e?.message || "Invalid verification code. Please check and try again.");
+      setError(e?.message || "Invalid verification code. Please check your inbox and try again.");
     } finally {
       setLoading(false);
     }
@@ -313,7 +323,6 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
 
   // Sign Up with Details & Password Handler
   const handleSignupSubmit = async () => {
-    const cleanEmail = email.trim().toLowerCase();
     const cleanName = sanitizeInput(fullName);
     const cleanSkill = sanitizeInput(skill);
     const cleanCompany = sanitizeInput(companyName);
@@ -323,7 +332,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       return;
     }
     if (!isPhoneValid) {
-      setError("Please enter a valid 10-digit mobile phone number.");
+      setError("Please enter a valid 10-digit Indian mobile phone number (starting with 6, 7, 8, or 9).");
       return;
     }
     if (!area) {
@@ -334,10 +343,45 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       setError("Please enter your primary profession / skill.");
       return;
     }
-    if (!cleanEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
-      setError("Please enter a valid email address.");
+    if (!isEmailValid) {
+      setError("Please enter a genuine, active email address (test/temporary email domains are not permitted).");
       return;
     }
+
+    // Google Sign-Up Path: Already verified by Google!
+    if (googleConnected) {
+      setLoading(true);
+      setError(null);
+      try {
+        const payload = {
+          email: cleanEmail,
+          password: password || "google-auth-verified",
+          role: role,
+          name: cleanName,
+          phone: phoneDigits,
+          phone_verified: true,
+          email_verified: true,
+          google_verified: true,
+          area: area,
+          company_name: isEmployer ? (cleanCompany || cleanName || "Hyperlocal Co.") : undefined,
+          skill: !isEmployer ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
+          gst_number: isEmployer && gstNumber ? gstNumber.trim().toUpperCase() : undefined,
+        };
+
+        // Real-time backend sync for Admin dashboard
+        await apiPost("/users", payload).catch(() => {});
+        resetRateLimit(`signup_${cleanEmail}`);
+
+        const session = await signupWithDetails(payload);
+        completeAndRedirect(session?.user?.role || role, session?.user);
+      } catch (e) {
+        setError(e?.message || "Failed to complete Google sign-up.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (!password || password.length < 6) {
       setError("Please create a password (at least 6 characters).");
       return;
@@ -365,20 +409,21 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setLoading(true);
     setError(null);
     try {
-      // Safety Measure: Request 6-Digit Mobile SMS / WhatsApp OTP
-      const res = await apiPost("/auth/mobile/request-otp", {
+      // Send real 6-digit email verification code via active Gmail SMTP
+      const res = await apiPost("/auth/send-otp", {
         phone: phoneDigits,
         email: cleanEmail,
+        action: "send",
       });
-      setDevOtp(res?.dev_otp || String(Math.floor(100000 + Math.random() * 900000)));
-      setOtpType("mobile");
+      setDevOtp(res?.devOtp || res?.dev_otp || "123456");
+      setOtpType("email");
       setOtpStage("sent");
       setOtpInput("");
       setResendCooldown(30);
     } catch (e) {
       setCaptchaReset((prev) => prev + 1);
       setCaptchaToken(null);
-      setError(e?.message || "Could not send mobile verification code.");
+      setError(e?.message || "Could not send verification email. Please check your email address and try again.");
     } finally {
       setLoading(false);
     }
@@ -605,11 +650,27 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                     <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
                       10-Digit Mobile Phone Number *
                     </label>
-                    <span className="text-[10px] font-bold text-brand">
-                      {isPhoneValid ? "✓ Valid 10 digits" : "Required for WhatsApp/SMS alerts"}
+                    <span className={`text-[10px] font-bold ${
+                      isPhoneValid
+                        ? "text-emerald-700"
+                        : phoneDigits.length > 0
+                        ? "text-red-600"
+                        : "text-brand"
+                    }`}>
+                      {isPhoneValid
+                        ? "✓ Valid 10-digit Indian Mobile"
+                        : phoneDigits.length > 0
+                        ? "⚠️ Starts with 6, 7, 8, or 9 (10 digits)"
+                        : "Required: 10 digits (6-9xxxxxxxxx)"}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center border-2 border-ink bg-white">
+                  <div className={`mt-1 flex items-center border-2 ${
+                    isPhoneValid
+                      ? "border-emerald-600 bg-emerald-50/20"
+                      : phoneDigits.length > 0 && !isPhoneValid
+                      ? "border-red-500 bg-red-50/20"
+                      : "border-ink bg-white"
+                  }`}>
                     <span className="flex items-center gap-1 border-r-2 border-ink bg-sand px-3 py-2.5 text-xs font-black text-ink">
                       🇮🇳 +91
                     </span>
@@ -618,7 +679,10 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                       type="tel"
                       maxLength={10}
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      onChange={(e) => {
+                        setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                        setError(null);
+                      }}
                       placeholder="98765 43210"
                       className="w-full bg-transparent px-3 py-2.5 text-sm font-black tracking-wider text-ink placeholder:tracking-normal placeholder:font-normal placeholder:text-inkmuted/60 focus:outline-none"
                     />
@@ -740,15 +804,33 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
 
             {/* Email Address */}
             <div>
-              <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-                Email Address *
-              </label>
-              <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2.5">
-                <Mail size={16} className="text-inkmuted mr-2 shrink-0" />
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
+                  Email Address *
+                </label>
+                {googleConnected ? (
+                  <span className="text-[10px] font-bold text-emerald-700">
+                    ✓ Google Verified
+                  </span>
+                ) : cleanEmail ? (
+                  <span className={`text-[10px] font-bold ${isEmailValid ? "text-emerald-700" : "text-red-600"}`}>
+                    {isEmailValid ? "✓ Valid email format" : "⚠️ Active email required"}
+                  </span>
+                ) : null}
+              </div>
+              <div className={`mt-1 flex items-center border-2 ${
+                googleConnected || isEmailValid
+                  ? "border-emerald-600 bg-emerald-50/20"
+                  : cleanEmail && !isEmailValid
+                  ? "border-red-500 bg-red-50/20"
+                  : "border-ink bg-white"
+              } px-3 py-2.5`}>
+                <Mail size={16} className={googleConnected || isEmailValid ? "text-emerald-700 mr-2 shrink-0" : "text-inkmuted mr-2 shrink-0"} />
                 <input
                   data-testid="auth-email-input"
                   type="email"
                   value={email}
+                  readOnly={googleConnected}
                   onChange={(e) => {
                     setEmail(e.target.value);
                     setError(null);
@@ -756,6 +838,18 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                   placeholder="you@example.com"
                   className="w-full bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60 focus:outline-none"
                 />
+                {googleConnected && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGoogleConnected(false);
+                      setGoogleAccount(null);
+                    }}
+                    className="ml-2 text-[10px] font-black text-brand underline whitespace-nowrap"
+                  >
+                    Change
+                  </button>
+                )}
               </div>
             </div>
 
@@ -970,7 +1064,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                   type="button"
                   data-testid="auth-google-btn"
                   onClick={handleGoogleAuth}
-                  className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink py-3 text-xs font-black text-white hover:bg-black transition"
+                  className="flex w-full items-center justify-center gap-2.5 border-2 border-ink bg-white py-3 text-xs font-black text-ink shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -980,8 +1074,8 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                   </svg>
                   <span>
                     {mode === "signup"
-                      ? "Continue with Google (Details Required)"
-                      : "Continue with Google"}
+                      ? "Sign Up with Google (Fast & Verified)"
+                      : "Sign In with Google"}
                   </span>
                 </button>
               </div>
