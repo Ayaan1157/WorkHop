@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   X, ShieldCheck, MapPin, Star, IndianRupee, Clock, CheckCheck,
   Globe, Tag, Briefcase, ExternalLink, MessageSquare, PlusCircle,
-  ArrowRight, User, CheckCircle2, Lock
+  ArrowRight, User, CheckCircle2, Lock, Phone
 } from "lucide-react";
 import { getOrCreateChatWithCandidate } from "@/lib/clientStore";
+import { formatWhatsAppUrl } from "@/lib/utils";
 
 export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
   const nav = useNavigate();
+  const [sampleNotice, setSampleNotice] = useState(null);
 
   if (!isOpen || !pro) return null;
 
@@ -272,6 +274,37 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
               safely unlocked once the gig is initiated or hired for direct communication and settlement.
             </p>
           </div>
+
+          {/* Admin / Unlocked Direct Contact Info */}
+          {(pro.phone || pro.email) && (
+            <div className="border-2 border-ink dark:border-zinc-700 bg-sand/60 dark:bg-zinc-800 p-3 flex flex-col gap-1.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
+                Contact &amp; Credentials
+              </span>
+              <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-ink dark:text-white">
+                {pro.phone && (
+                  <span className="flex items-center gap-1">
+                    <Phone size={13} className="text-brand" /> {pro.phone}
+                  </span>
+                )}
+                {pro.phone && (
+                  <a
+                    href={formatWhatsAppUrl(pro.phone, `Hi ${firstName}, contacting you from WorkHop!`)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 bg-[#25D366] text-white px-2 py-0.5 text-[10px] font-black border border-ink hover:bg-[#20ba59] transition shadow-[1px_1px_0px_#121212]"
+                  >
+                    <Phone size={10} /> WhatsApp
+                  </a>
+                )}
+                {pro.email && (
+                  <span className="flex items-center gap-1 text-inkmuted dark:text-zinc-300">
+                    📧 {pro.email}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
         </div>
 

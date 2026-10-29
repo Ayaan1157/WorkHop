@@ -12,7 +12,7 @@ import { ProfileSkeleton } from "@/components/Skeletons";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { apiGet, getEmployerId } from "@/lib/api";
-import { ADMIN_EMAILS } from "@/lib/clientStore";
+import { ADMIN_EMAILS, getLeadById, getSubmittedProfiles } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { formatWhatsAppUrl } from "@/lib/utils";
@@ -77,14 +77,38 @@ export default function Pro() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+
+    const fallbackLocalPro = () => {
+      try {
+        const found =
+          getLeadById(id) ||
+          getSubmittedProfiles().find(
+            (p) =>
+              String(p.id) === String(id) ||
+              String(p.freelancer_id) === String(id) ||
+              String(p.user_id) === String(id)
+          );
+        if (found) {
+          setPro(found);
+          setReviews(found.reviews || []);
+        }
+      } catch (e) {
+        console.error("Local pro fallback error", e);
+      }
+    };
+
     apiGet(`/pros/${id}`)
       .then((d) => {
-        if (d) {
+        if (d && d.pro) {
           setPro(d.pro);
           setReviews(d.reviews || []);
+        } else {
+          fallbackLocalPro();
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        fallbackLocalPro();
+      })
       .finally(() => {
         setLoading(false);
         window.scrollTo({ top: 0, left: 0, behavior: "instant" });
