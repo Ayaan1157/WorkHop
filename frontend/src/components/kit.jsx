@@ -61,9 +61,9 @@ export function IconBtn({ onClick, children, testID, className = "", active = fa
 export function Logo({ size = "default", className = "" }) {
   if (size === "header") {
     return (
-      <div className={`flex items-center gap-2 sm:gap-2.5 group select-none shrink-0 ${className}`} data-testid="landing-logo">
+      <div className={`flex items-center gap-1.5 sm:gap-2.5 group select-none shrink-0 ${className}`} data-testid="landing-logo">
         {/* Aesthetic Circular Emblem Badge */}
-        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink dark:border-white/80 bg-white p-0.5 shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] overflow-hidden transition-transform duration-200 group-hover:scale-105">
+        <div className="relative flex h-8.5 w-8.5 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink dark:border-white/80 bg-white p-0.5 shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] overflow-hidden transition-transform duration-200 group-hover:scale-105">
           <img
             src="/workhop-logo.png"
             alt="WorkHop Emblem"
@@ -75,11 +75,11 @@ export function Logo({ size = "default", className = "" }) {
         {/* Brand Lockup */}
         <div className="flex flex-col text-left shrink-0">
           <div className="flex items-center gap-1 leading-none whitespace-nowrap">
-            <span className="text-base sm:text-lg font-black tracking-tight text-ink dark:text-white">
+            <span className="text-sm sm:text-lg font-black tracking-tight text-ink dark:text-white">
               WORK<span className="text-brand">HOP</span>
             </span>
           </div>
-          <span className="text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-[0.12em] text-inkmuted dark:text-stone-400 mt-0.5 whitespace-nowrap">
+          <span className="hidden xs:block text-[8px] sm:text-[9.5px] font-bold uppercase tracking-[0.12em] text-inkmuted dark:text-stone-400 mt-0.5 whitespace-nowrap">
             Bangalore’s Gig Network
           </span>
         </div>

@@ -926,12 +926,12 @@ export default function Landing() {
 
   // ---- Main Public Landing View (Default) ----
   return (
-    <div className="min-h-screen w-full bg-sand/30 font-sans text-ink">
+    <div className="min-h-screen w-full overflow-x-hidden bg-sand/30 font-sans text-ink">
       <BroadcastBanner />
       
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 w-full border-b-2 border-ink bg-white dark:bg-[#121212] transition-colors">
-        <div className="mx-auto flex h-[76px] w-full max-w-[1600px] items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 xl:px-8">
+        <div className="mx-auto flex h-[64px] sm:h-[76px] w-full max-w-[1600px] items-center justify-between gap-1.5 xs:gap-2 sm:gap-4 px-2 xs:px-3 sm:px-6 xl:px-8">
           
           {/* Logo */}
           <Link to="/" className="flex items-center shrink-0">
@@ -970,28 +970,28 @@ export default function Landing() {
           </nav>
 
           {/* Right Actions: Theme Toggle + Auth */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2.5 shrink-0">
             
             {/* Dark / Light Mode Toggle */}
             <button
               data-testid="theme-toggle-btn"
               onClick={toggleTheme}
               title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              className="flex h-10 w-10 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition active:translate-y-0.5 hover:bg-stone/30 shrink-0"
+              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center border-2 border-ink bg-sand dark:bg-[#222] text-ink dark:text-white shadow-[1px_1px_0px_#121212] sm:shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] transition active:translate-y-0.5 hover:bg-stone/30 shrink-0"
             >
-              {isDark ? <Sun size={15} className="text-brand" /> : <Moon size={15} className="text-ink dark:text-white" />}
+              {isDark ? <Sun size={14} className="text-brand" /> : <Moon size={14} className="text-ink dark:text-white" />}
             </button>
 
             {user ? (
-              <div className="inline-flex h-10 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] shrink-0">
+              <div className="inline-flex h-9 sm:h-10 items-center border-2 border-ink divide-x-2 divide-ink bg-white dark:bg-[#1a1a1a] shadow-[1px_1px_0px_#121212] sm:shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] shrink-0">
                 <button
                   data-testid="user-chip"
                   onClick={() => nav("/profile")}
                   title={user.name || user.email}
-                  className="flex h-full items-center gap-1.5 px-2.5 sm:px-3 hover:bg-sand dark:hover:bg-[#252525] text-xs font-black text-ink dark:text-white transition"
+                  className="flex h-full items-center gap-1 xs:gap-1.5 px-2 sm:px-3 hover:bg-sand dark:hover:bg-[#252525] text-xs font-black text-ink dark:text-white transition"
                 >
-                  <UserCircle2 size={15} className="text-brand shrink-0" />
-                  <span className="truncate text-xs font-black max-w-[85px] sm:max-w-[110px] xl:max-w-[140px] block">
+                  <UserCircle2 size={14} className="text-brand shrink-0" />
+                  <span className="truncate text-[10px] xs:text-[11px] sm:text-xs font-black max-w-[60px] xs:max-w-[85px] sm:max-w-[110px] xl:max-w-[140px] block">
                     {user.name || user.email?.split("@")[0]}
                   </span>
                   <ArrowRight size={13} className="text-inkmuted dark:text-stone-400 shrink-0 hidden sm:block" />
@@ -1000,21 +1000,21 @@ export default function Landing() {
                   data-testid="logout-btn"
                   onClick={logout}
                   title="Sign Out of WorkHop"
-                  className="flex h-full items-center gap-1 px-2.5 bg-[#C62828] text-white hover:bg-red-700 transition text-[10px] sm:text-[11px] font-black uppercase whitespace-nowrap"
+                  className="flex h-full items-center gap-1 px-2 sm:px-2.5 bg-[#C62828] text-white hover:bg-red-700 transition text-[9px] xs:text-[10px] sm:text-[11px] font-black uppercase whitespace-nowrap"
                 >
-                  <LogOut size={13} />
+                  <LogOut size={12} />
                   <span>SIGN OUT</span>
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 shrink-0">
                 <button
                   data-testid="landing-signin-btn"
                   onClick={() => {
                     setAuthModalMode("signin");
                     setAuthModalOpen(true);
                   }}
-                  className="flex h-10 items-center border-2 border-ink dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-2.5 sm:px-3.5 text-[11px] sm:text-xs font-black tracking-wide text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
+                  className="flex h-9 sm:h-10 items-center border-2 border-ink dark:border-[#555] bg-white dark:bg-[#1a1a1a] px-2 xs:px-2.5 sm:px-3.5 text-[10px] xs:text-[11px] sm:text-xs font-black tracking-wide text-[#121212] dark:text-white hover:bg-sand dark:hover:bg-[#222] transition shadow-[1px_1px_0px_#121212] sm:shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
                 >
                   SIGN IN
                 </button>
@@ -1024,7 +1024,7 @@ export default function Landing() {
                     setAuthModalMode("signup");
                     setAuthModalOpen(true);
                   }}
-                  className="flex h-10 items-center border-2 border-ink dark:border-white bg-[#121212] px-2.5 sm:px-3.5 text-[11px] sm:text-xs font-black tracking-wide !text-white hover:bg-black transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] whitespace-nowrap shrink-0"
+                  className="flex h-9 sm:h-10 items-center border-2 border-ink dark:border-white bg-[#121212] px-2 xs:px-2.5 sm:px-3.5 text-[10px] xs:text-[11px] sm:text-xs font-black tracking-wide !text-white hover:bg-black transition shadow-[1px_1px_0px_#121212] sm:shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#E65A1E] whitespace-nowrap shrink-0"
                   style={{ color: "#FFFFFF" }}
                 >
                   <span className="!text-white font-black" style={{ color: "#FFFFFF" }}>
@@ -1038,10 +1038,10 @@ export default function Landing() {
             <button
               data-testid="landing-mobile-menu-btn"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex xl:hidden h-10 w-10 items-center justify-center border-2 border-ink bg-white dark:bg-[#222] text-ink dark:text-white shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] shrink-0"
+              className="flex xl:hidden h-9 w-9 sm:h-10 sm:w-10 items-center justify-center border-2 border-ink bg-white dark:bg-[#222] text-ink dark:text-white shadow-[1px_1px_0px_#121212] sm:shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] shrink-0"
               title="Toggle Menu"
             >
-              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+              {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
             </button>
           </div>
         </div>
@@ -1177,7 +1177,7 @@ export default function Landing() {
         )}
 
         <div className="max-w-4xl">
-          <div className="inline-flex items-center gap-2 border-2 border-ink bg-sand dark:bg-[#222] px-3 py-1 text-[10px] sm:text-xs font-black tracking-wider">
+          <div className="inline-flex max-w-full items-center gap-1.5 sm:gap-2 border-2 border-ink bg-sand dark:bg-[#222] px-2.5 sm:px-3 py-1 text-[9.5px] xs:text-[10px] sm:text-xs font-black tracking-wider">
             <span className="h-2 w-2 rounded-full bg-ok animate-pulse shrink-0" />
             <span className="truncate">YOUR NEXT LOCAL GIG, ONE MINUTE AWAY · BENGALURU</span>
           </div>

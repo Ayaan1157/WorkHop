@@ -6,7 +6,8 @@ import {
   ExternalLink, Check, X, Megaphone, Settings, Eye, Sliders, Radio,
   ArrowUpRight, Phone, Mail, Award, Clock, FileText, ChevronRight,
   ShieldCheck, HelpCircle, Download, Zap, Coins, RotateCcw,
-  Tag, Percent, Edit3, Copy, Calendar, UserCheck, UserX, Scale, KeyRound
+  Tag, Percent, Edit3, Copy, Calendar, UserCheck, UserX, Scale, KeyRound,
+  Bell, UserPlus
 } from "lucide-react";
 import { TopBar, Spinner } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
@@ -22,6 +23,12 @@ import {
   getStoredJobs,
   getStoredProfessionSuggestions,
   updateProfessionSuggestionStatus,
+  getAdminNotifications,
+  addAdminNotification,
+  markAdminNotificationRead,
+  markAllAdminNotificationsRead,
+  clearAdminNotifications,
+  getStoredLeads,
 } from "@/lib/clientStore";
 import FreelancerProfileModal from "@/components/FreelancerProfileModal";
 
@@ -4641,6 +4648,35 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [notifications, setNotifications] = useState(() => getAdminNotifications());
+  const [notifOpen, setNotifOpen] = useState(false);
+  const unreadNotifsCount = notifications.filter((n) => !n.read).length;
+
+  // Automatically sync notifications for real registered pros awaiting review
+  useEffect(() => {
+    const notifs = getAdminNotifications();
+    const leads = getStoredLeads({ includeDeclined: true }).filter(
+      (l) => !l.is_dummy && (!l.approved || l.status === "pending")
+    );
+    let updated = false;
+    for (const pl of leads) {
+      const already = notifs.some((n) => n.email === pl.email || n.name === pl.name);
+      if (!already) {
+        addAdminNotification({
+          type: "new_registration",
+          title: "New Registration",
+          message: `${pl.name} registered as a Freelancer (${pl.skill || "Pro"}) · Awaiting Profile Review`,
+          role: "freelancer",
+          email: pl.email,
+          name: pl.name,
+        });
+        updated = true;
+      }
+    }
+    if (updated) {
+      setNotifications(getAdminNotifications());
+    }
+  }, []);
 
   // Admin login form states
   const [loginEmail, setLoginEmail] = useState("Zenithdeveleoperss@gmail.com");
@@ -4889,7 +4925,7 @@ export default function Admin() {
                 <span>FREELANCER SITE</span>
               </Link>
             </div>
-            <div className="grid grid-cols-[auto_auto_1fr] sm:flex items-center gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-[auto_auto_auto_1fr] sm:flex items-center gap-2 w-full sm:w-auto">
               <Link
                 to="/"
                 className="flex h-9 items-center justify-center gap-1.5 border-2 border-ink bg-white px-3 text-xs font-black tracking-wider text-ink hover:bg-sand transition"
@@ -4905,6 +4941,119 @@ export default function Admin() {
               >
                 <RefreshCw size={13} className="shrink-0" />
               </button>
+
+              {/* Real-time Notifications Bell with Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  data-testid="admin-notif-bell-btn"
+                  onClick={() => setNotifOpen(!notifOpen)}
+                  className={`relative flex h-9 items-center justify-center gap-1.5 border-2 border-ink px-3 text-xs font-black transition shadow-[1.5px_1.5px_0px_#121212] ${
+                    unreadNotifsCount > 0 ? "bg-amber-300 text-ink hover:bg-amber-400" : "bg-white text-ink hover:bg-sand"
+                  }`}
+                  title="View Registration Alerts & System Notifications"
+                >
+                  <Bell size={13} className={unreadNotifsCount > 0 ? "text-amber-950 animate-bounce" : "text-ink"} />
+                  <span className="hidden sm:inline">ALERTS</span>
+                  {unreadNotifsCount > 0 && (
+                    <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white">
+                      {unreadNotifsCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Dropdown Popover */}
+                {notifOpen && (
+                  <div
+                    className="absolute right-0 top-11 z-50 w-80 sm:w-96 border-2 border-ink bg-white shadow-[6px_6px_0px_#121212] animate-in fade-in zoom-in-95"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between border-b-2 border-ink bg-sand p-3">
+                      <div className="flex items-center gap-2">
+                        <Bell size={14} className="text-brand" />
+                        <p className="text-xs font-black uppercase tracking-wider text-ink">
+                          Registration Alerts ({notifications.length})
+                        </p>
+                      </div>
+                      {unreadNotifsCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            markAllAdminNotificationsRead();
+                            setNotifications(getAdminNotifications());
+                          }}
+                          className="text-[10px] font-black text-brand hover:underline uppercase"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-80 overflow-y-auto divide-y divide-ink/10">
+                      {notifications.length === 0 ? (
+                        <div className="p-6 text-center text-xs text-inkmuted font-semibold">
+                          No registration notifications yet.
+                        </div>
+                      ) : (
+                        notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            onClick={() => {
+                              markAdminNotificationRead(n.id);
+                              setNotifications(getAdminNotifications());
+                              if (n.role === "employer") setTab("EMPLOYERS");
+                              else setTab("PROS");
+                              setNotifOpen(false);
+                            }}
+                            className={`p-3 text-left transition cursor-pointer hover:bg-sand/60 ${
+                              !n.read ? "bg-amber-50/80 border-l-4 border-l-brand" : ""
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-xs font-black text-ink flex items-center gap-1.5">
+                                <span className="inline-block h-2 w-2 rounded-full bg-brand" />
+                                {n.title}
+                              </p>
+                              <span className="text-[10px] text-inkmuted whitespace-nowrap font-mono">
+                                {fmtDate(n.created_at)}
+                              </span>
+                            </div>
+                            <p className="text-xs text-ink/90 font-semibold mt-1 leading-snug">
+                              {n.message}
+                            </p>
+                            <div className="mt-2 flex items-center justify-between">
+                              <span className="text-[10px] font-black uppercase text-brand hover:underline">
+                                {n.role === "employer" ? "Inspect in Employers →" : "Review in Pros Tab →"}
+                              </span>
+                              {!n.read && (
+                                <span className="text-[9px] font-black uppercase text-amber-900 bg-amber-200 px-1.5 py-0.5 rounded">
+                                  NEW
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {notifications.length > 0 && (
+                      <div className="border-t border-ink/10 bg-sand/40 p-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearAdminNotifications();
+                            setNotifications([]);
+                          }}
+                          className="text-[10px] font-bold text-inkmuted hover:text-red-600 transition"
+                        >
+                          Clear notification history
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={handleLogout}
                 className="flex h-9 items-center justify-center border-2 border-ink bg-ink px-4 text-xs font-black tracking-wider text-white hover:bg-black transition"
@@ -4915,6 +5064,56 @@ export default function Admin() {
           </div>
         </div>
       </header>
+
+      {/* Real-time New Registration Alert Banner */}
+      {notifications.some((n) => !n.read) && (() => {
+        const latest = notifications.find((n) => !n.read);
+        if (!latest) return null;
+        return (
+          <div data-testid="admin-new-registration-banner" className="border-b-2 border-ink bg-[#FFF3C4] px-4 py-3 sm:px-8 shadow-xs animate-in slide-in-from-top-1">
+            <div className="mx-auto flex max-w-[1600px] items-center justify-between flex-wrap gap-2.5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white font-black text-xs shadow-[1px_1px_0px_#121212] animate-bounce">
+                  🔔
+                </span>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider text-ink">
+                    <span className="bg-brand text-white px-1.5 py-0.5 mr-1.5 text-[10px] font-black">
+                      NEW REGISTRATION
+                    </span>
+                    {latest.message}
+                  </p>
+                  <p className="text-[11px] text-inkmuted font-semibold mt-0.5">
+                    Registered {fmtDate(latest.created_at)} · Check profile &amp; credentials to approve or decline.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    markAdminNotificationRead(latest.id);
+                    setNotifications(getAdminNotifications());
+                    setTab(latest.role === "employer" ? "EMPLOYERS" : "PROS");
+                  }}
+                  className="border-2 border-ink bg-brand px-3.5 py-1.5 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
+                >
+                  {latest.role === "employer" ? "Inspect Employer →" : "Review Freelancer →"}
+                </button>
+                <button
+                  onClick={() => {
+                    markAdminNotificationRead(latest.id);
+                    setNotifications(getAdminNotifications());
+                  }}
+                  className="text-xs font-bold text-inkmuted hover:text-ink px-1.5 py-1"
+                  title="Dismiss notification"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Global Real-Time KPIs Ribbon */}
       <div className="border-b-2 border-ink bg-sand/60">
@@ -4968,19 +5167,29 @@ export default function Admin() {
       {/* Navigation Tabs Bar */}
       <div className="sticky top-[65px] z-30 border-b-2 border-ink bg-white">
         <div className="wh-scroll mx-auto flex max-w-[1600px] gap-1 overflow-x-auto p-2 sm:px-8">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`shrink-0 border-2 border-ink px-3.5 py-2 text-[11px] font-black tracking-wider transition ${
-                tab === t.id
-                  ? "bg-ink text-brand shadow-[2px_2px_0px_#121212]"
-                  : "bg-white text-ink hover:bg-sand"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+          {TABS.map((t) => {
+            const hasNewPros = t.id === "PROS" && notifications.some((n) => !n.read && n.role === "freelancer");
+            const hasNewEmployers = t.id === "EMPLOYERS" && notifications.some((n) => !n.read && n.role === "employer");
+            const badge = hasNewPros ? "NEW PRO" : hasNewEmployers ? "NEW" : null;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`shrink-0 flex items-center gap-1.5 border-2 border-ink px-3.5 py-2 text-[11px] font-black tracking-wider transition ${
+                  tab === t.id
+                    ? "bg-ink text-brand shadow-[2px_2px_0px_#121212]"
+                    : "bg-white text-ink hover:bg-sand"
+                }`}
+              >
+                <span>{t.label}</span>
+                {badge && (
+                  <span className="rounded bg-amber-400 text-ink px-1.5 py-0.5 text-[9px] font-black uppercase animate-pulse">
+                    {badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 

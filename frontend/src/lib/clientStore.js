@@ -139,6 +139,16 @@ export function saveSubmittedProfile(profile) {
       list[existingIdx] = { ...list[existingIdx], ...normalized, updated_at: new Date().toISOString() };
     } else {
       list.unshift({ ...normalized, created_at: new Date().toISOString() });
+      addAdminNotification({
+        type: "new_registration",
+        title: "New Freelancer Registration",
+        message: `${profile.name || profile.full_name || "New pro"} (${profile.skill || "Creative Pro"}) completed registration & submitted profile for verification.`,
+        role: "freelancer",
+        email: profile.email || "",
+        name: profile.name || profile.full_name || "New Pro",
+        details: { skill: profile.skill, category: profile.category, rate_hr: profile.rate_hr },
+      });
+      addAdminLog("FREELANCER_REGISTERED", `New freelancer registration awaiting verification: ${profile.name || profile.email}`);
     }
     localStorage.setItem(SUBMITTED_PROFILES_KEY, JSON.stringify(list));
   } catch (e) {
@@ -879,6 +889,8 @@ export function saveRegisteredUser(email, password, profile = {}) {
   if (!email) return;
   const users = getRegisteredUsers();
   const cleanEmail = email.trim().toLowerCase();
+  const isNew = !users[cleanEmail];
+
   users[cleanEmail] = {
     ...profile,
     email: cleanEmail,
@@ -887,6 +899,20 @@ export function saveRegisteredUser(email, password, profile = {}) {
   // Security: Never persist plaintext passwords in client localStorage
   delete users[cleanEmail].password;
   localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+
+  if (isNew) {
+    const roleName = profile.role === "employer" ? "Employer" : "Freelancer";
+    addAdminNotification({
+      type: "new_registration",
+      title: "New Registration",
+      message: `${profile.name || cleanEmail.split("@")[0]} signed up as a ${roleName}${profile.area ? ` in ${profile.area}` : ""}.`,
+      role: profile.role || "freelancer",
+      email: cleanEmail,
+      name: profile.name || cleanEmail.split("@")[0],
+      details: { phone: profile.phone, area: profile.area, role: profile.role },
+    });
+    addAdminLog("USER_REGISTERED", `New user registration (${profile.role || "freelancer"}): ${cleanEmail}`);
+  }
 }
 
 export function isUserAdmin(email) {
@@ -2742,6 +2768,82 @@ export function deleteCityWaitlistEntry(id) {
   localStorage.setItem(CITY_WAITLIST_KEY, JSON.stringify(filtered));
   addAdminLog("CITY_WAITLIST_DELETED", `Waitlist entry ${id} removed`);
   return { ok: true, remaining: filtered.length };
+}
+
+// ═══════════ 22. ADMIN REAL-TIME REGISTRATION NOTIFICATIONS ═══════════
+export const ADMIN_NOTIFICATIONS_KEY = "workhop_admin_notifications";
+
+export function getAdminNotifications() {
+  try {
+    const raw = localStorage.getItem(ADMIN_NOTIFICATIONS_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addAdminNotification({
+  type = "new_registration",
+  title = "New Registration",
+  message = "",
+  role = "freelancer",
+  email = "",
+  name = "",
+  details = {},
+}) {
+  try {
+    const current = getAdminNotifications();
+    const newNotif = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      type,
+      title,
+      message: message || `New ${role} registration: ${name || email}`,
+      role: role || "freelancer",
+      email: email || "",
+      name: name || (email ? email.split("@")[0] : "New Member"),
+      details: details || {},
+      read: false,
+      created_at: new Date().toISOString(),
+    };
+    const updated = [newNotif, ...current].slice(0, 50);
+    localStorage.setItem(ADMIN_NOTIFICATIONS_KEY, JSON.stringify(updated));
+    return newNotif;
+  } catch (e) {
+    console.warn("addAdminNotification error", e);
+    return null;
+  }
+}
+
+export function markAdminNotificationRead(id) {
+  try {
+    const current = getAdminNotifications();
+    const updated = current.map((n) => (n.id === id ? { ...n, read: true } : n));
+    localStorage.setItem(ADMIN_NOTIFICATIONS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [];
+  }
+}
+
+export function markAllAdminNotificationsRead() {
+  try {
+    const current = getAdminNotifications();
+    const updated = current.map((n) => ({ ...n, read: true }));
+    localStorage.setItem(ADMIN_NOTIFICATIONS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [];
+  }
+}
+
+export function clearAdminNotifications() {
+  try {
+    localStorage.setItem(ADMIN_NOTIFICATIONS_KEY, JSON.stringify([]));
+    return [];
+  } catch {
+    return [];
+  }
 }
 
 
