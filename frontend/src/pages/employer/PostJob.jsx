@@ -93,6 +93,13 @@ export default function PostJob() {
     loadCredits();
   }, [loadCredits]);
 
+  // When job is posted, immediately scroll to top so "Job is live!" screen is in full view
+  useEffect(() => {
+    if (posted) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [posted]);
+
   const [gpsFeedback, setGpsFeedback] = useState(null);
 
   // When GPS location is granted, auto-detect the closest area
@@ -291,7 +298,7 @@ export default function PostJob() {
       />
 
       {posted ? (
-        <div data-testid="postjob-success" className="mt-10 flex flex-col items-center gap-3 p-8 text-center animate-in fade-in">
+        <div data-testid="postjob-success" className="min-h-[70vh] flex flex-col items-center justify-center gap-4 p-8 text-center animate-in fade-in">
           <CheckCircle2 size={56} className="text-ok" />
           <p className="text-2xl font-black text-ink">
             {isEditing ? "Job listing updated!" : "Job is live!"}
