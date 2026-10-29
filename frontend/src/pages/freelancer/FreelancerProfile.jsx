@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Pencil, Plus, Trash2, ChevronLeft, Github, ExternalLink,
   Briefcase, GraduationCap, Award, Globe, Link2, Clock,
@@ -55,6 +55,8 @@ const SKILL_SUGGESTIONS = [
 /* ═══════════ main component ═══════════ */
 export default function FreelancerProfile() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editParam = searchParams.get("edit");
   const { user, updateUserProfile } = useAuth();
   const freelancerId = getFreelancerId();
 
@@ -276,6 +278,70 @@ export default function FreelancerProfile() {
     setIsProcessingPortfolioImage(false);
     setAvatarError(null);
   };
+
+  // Auto-open requested edit section when navigated from profile readiness bar
+  useEffect(() => {
+    if (!editParam) return;
+    const timer = setTimeout(() => {
+      if (editParam === "portfolio" || editParam === "portfolio-add") {
+        openEdit("portfolio-add");
+        const el = document.getElementById("portfolio-section");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (editParam === "employment") {
+        openEdit("employment", {
+          id: uid(),
+          title: "",
+          company: "",
+          start_date: "",
+          end_date: "",
+          is_current: false,
+          description: "",
+        });
+        const el = document.getElementById("employment-section");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (editParam === "education") {
+        openEdit("education", {
+          id: uid(),
+          school: "",
+          degree: "",
+          field: "",
+          start_year: "",
+          end_year: "",
+          is_current: false,
+        });
+        const el = document.getElementById("education-section");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (editParam === "skills") {
+        const el = document.getElementById("skills-section");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (editParam === "description" || editParam === "bio" || editParam === "title" || editParam === "skill") {
+        openEdit("title", {
+          title: profile.title || user?.skill || "",
+          description: profile.description || "",
+          rate_hr: profile.rate_hr || 500,
+        });
+        const el = document.getElementById("overview-section");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (editParam === "languages") {
+        openEdit("languages", {
+          languages: [
+            ...(profile.languages || []),
+            { language: "", proficiency: "Conversational" },
+          ],
+        });
+        const el = document.getElementById("languages-section");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (editParam === "linked") {
+        openEdit("linked", { github_url: profile.github_url || "" });
+      } else if (editParam === "phone") {
+        setMenuDrawerOpen(true);
+      } else if (editParam === "name" || editParam === "photo") {
+        openEdit("name", { name: user?.name || "", picture: user?.picture || "" });
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editParam]);
 
   /* ═══════════ save handlers ═══════════ */
   const saveTitle = (title, description, rateHr) => {
@@ -671,6 +737,7 @@ export default function FreelancerProfile() {
 
               {/* Languages */}
               <SidebarSection
+                id="languages-section"
                 icon={<Globe size={16} />}
                 title="Languages"
                 onEdit={() => openEdit("languages", { languages: [...profile.languages] })}
@@ -754,7 +821,7 @@ export default function FreelancerProfile() {
             {/* ═══════════ MAIN CONTENT ═══════════ */}
             <main className="flex-1 flex flex-col gap-6 min-w-0">
               {/* Title + Rate + Description */}
-              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
+              <section id="overview-section" className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
@@ -791,7 +858,7 @@ export default function FreelancerProfile() {
               </section>
 
               {/* Portfolio */}
-              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
+              <section id="portfolio-section" className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader
                   title="Portfolio"
                   onAdd={() => openEdit("portfolio-add")}
@@ -1001,7 +1068,7 @@ export default function FreelancerProfile() {
               </section>
 
               {/* Employment History */}
-              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
+              <section id="employment-section" className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader
                   title="Employment history"
                   onAdd={() =>
@@ -1037,7 +1104,7 @@ export default function FreelancerProfile() {
               </section>
 
               {/* Certifications */}
-              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
+              <section id="certifications-section" className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader
                   title="Certifications"
                   onAdd={() =>
@@ -1100,7 +1167,7 @@ export default function FreelancerProfile() {
               </section>
 
               {/* Skills */}
-              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
+              <section id="skills-section" className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader title="Skills" onEdit={() => openEdit("skills")} />
                 <div className="mt-4">
                   {profile.skills.length > 0 ? (
@@ -1177,7 +1244,7 @@ export default function FreelancerProfile() {
               </section>
 
               {/* Education */}
-              <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
+              <section id="education-section" className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader
                   title="Education"
                   onAdd={() =>
@@ -2343,9 +2410,9 @@ function SectionHeader({ title, onAdd, onEdit, expanded, onToggle }) {
   );
 }
 
-function SidebarSection({ icon, title, children, onEdit, onAdd }) {
+function SidebarSection({ id, icon, title, children, onEdit, onAdd }) {
   return (
-    <div className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-5 shadow-sm">
+    <div id={id} className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-[#E65A1E]">{icon}</span>

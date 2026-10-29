@@ -78,7 +78,7 @@ export default function ProfileProgressBar({ user, role = "freelancer", classNam
 
               {!item.completed && (
                 <Link
-                  to={role === "employer" ? "/profile" : "/freelancer"}
+                  to={role === "employer" ? "/profile" : `/freelancer/profile?edit=${encodeURIComponent(item.key)}`}
                   className="flex items-center gap-1 bg-ink px-2 py-1 text-[10px] font-black text-white hover:bg-brand transition"
                 >
                   <span>ADD NOW</span>
