@@ -122,20 +122,20 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
             <div className="flex flex-col items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand/60 dark:bg-zinc-800/80 p-2 text-center">
               <span className="flex items-center gap-1 text-xs sm:text-sm font-black text-ink dark:text-white">
                 <Star size={12} className="fill-brand text-brand" />
-                {pro.rating || "4.9"}
+                {Number(pro.reviews_count) > 0 && pro.rating ? pro.rating : "New"}
               </span>
               <span className="text-[9px] font-black tracking-wider text-inkmuted dark:text-zinc-400 uppercase mt-0.5">
-                {pro.reviews_count || 16} Reviews
+                {Number(pro.reviews_count) > 0 ? `${pro.reviews_count} Reviews` : "No reviews yet"}
               </span>
             </div>
 
             <div className="flex flex-col items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand/60 dark:bg-zinc-800/80 p-2 text-center">
               <span className="flex items-center gap-1 text-xs sm:text-sm font-black text-ok">
                 <CheckCheck size={13} />
-                {pro.jobs_done || 22}
+                {Number(pro.jobs_done) || 0}
               </span>
               <span className="text-[9px] font-black tracking-wider text-inkmuted dark:text-zinc-400 uppercase mt-0.5">
-                Jobs Done
+                {Number(pro.jobs_done) > 0 ? "Jobs Done" : "New Pro"}
               </span>
             </div>
 

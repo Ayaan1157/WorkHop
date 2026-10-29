@@ -778,10 +778,16 @@ const LeadCard = memo(function LeadCard({ lead, unlocked, index, isSaved, onTogg
 
         {/* TOP RIGHT: RATING & SAVE BUTTON */}
         <div className="flex items-center gap-1.5">
-          <span className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-2 py-1 text-[11px] font-black dark:text-zinc-200">
-            <Star size={11} className="fill-[#121212] dark:fill-amber-400" /> {lead.rating}
-            {lead.reviews_count ? ` (${lead.reviews_count})` : ""}
-          </span>
+          {Number(lead.reviews_count) > 0 && lead.rating ? (
+            <span className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-2 py-1 text-[11px] font-black dark:text-zinc-200">
+              <Star size={11} className="fill-[#121212] dark:fill-amber-400" /> {lead.rating}
+              {` (${lead.reviews_count})`}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 border border-ink/40 dark:border-zinc-700 bg-sand/60 dark:bg-zinc-800 px-2 py-1 text-[10px] font-bold text-inkmuted dark:text-zinc-300">
+              No reviews yet
+            </span>
+          )}
           <button
             onClick={onToggleSave}
             className={`flex h-8 w-8 items-center justify-center border border-ink dark:border-zinc-700 transition ${
@@ -814,7 +820,7 @@ const LeadCard = memo(function LeadCard({ lead, unlocked, index, isSaved, onTogg
           {lead.rate_hr ? `₹${lead.rate_hr}/hr` : "Rate on chat"}
         </Stat>
         <Stat icon={<Clock size={11} />}>{lead.delivery_days || 3}d delivery</Stat>
-        <Stat icon={<CheckCheck size={11} />}>{lead.jobs_done || 0} jobs</Stat>
+        <Stat icon={<CheckCheck size={11} />}>{Number(lead.jobs_done) > 0 ? `${lead.jobs_done} jobs` : "New Pro"}</Stat>
       </div>
 
       <div className="mt-2.5 flex flex-col gap-1.5 bg-sand/60 dark:bg-zinc-800/60 p-2.5 border border-ink/20 dark:border-zinc-700">

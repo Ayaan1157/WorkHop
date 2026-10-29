@@ -1447,9 +1447,15 @@ export default function Landing() {
                       <p className="text-xs font-bold text-brand truncate max-w-[200px]">{pro.skill}</p>
                     </div>
                   </div>
-                  <span className="flex items-center gap-1 border border-ink bg-white dark:bg-zinc-800 px-2 py-0.5 text-xs font-black dark:text-white">
-                    <Star size={11} fill="#E65A1E" className="text-brand" /> {pro.rating}
-                  </span>
+                  {Number(pro.reviews_count) > 0 && pro.rating ? (
+                    <span className="flex items-center gap-1 border border-ink bg-white dark:bg-zinc-800 px-2 py-0.5 text-xs font-black dark:text-white">
+                      <Star size={11} fill="#E65A1E" className="text-brand" /> {pro.rating}
+                    </span>
+                  ) : (
+                    <span className="border border-ink/40 bg-sand/60 dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-inkmuted dark:text-stone-300">
+                      No reviews yet
+                    </span>
+                  )}
                 </div>
 
                 <p className="mt-3 text-xs text-inkmuted dark:text-stone-300 font-medium line-clamp-2 leading-relaxed">

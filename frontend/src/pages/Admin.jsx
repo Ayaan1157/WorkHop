@@ -2575,9 +2575,15 @@ function ProsTalentTab({ adminFetch }) {
                     <span className="border border-ink/30 bg-sand px-1.5 py-0.5 text-[9px] uppercase font-bold text-ink">
                       {f.category || "Creative"}
                     </span>
-                    <span>⭐ {f.rating || 4.9}</span>
+                    {Number(f.reviews_count) > 0 && f.rating ? (
+                      <span>⭐ {f.rating} ({f.reviews_count} {f.reviews_count === 1 ? "review" : "reviews"})</span>
+                    ) : (
+                      <span className="border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[9px] font-black uppercase text-amber-800">
+                        No reviews yet
+                      </span>
+                    )}
                     <span>•</span>
-                    <span>{f.jobs_done || 25}+ jobs done</span>
+                    <span>{Number(f.jobs_done) > 0 ? `${f.jobs_done}+ jobs done` : "0 jobs done (New)"}</span>
                   </div>
 
                   {/* Contact Info */}

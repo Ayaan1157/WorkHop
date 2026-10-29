@@ -195,7 +195,7 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
         .toUpperCase(),
     skill: lead.skill || "Creative Pro",
     distance_km: lead.distance_km ?? (Math.round((0.5 + (idx % 10) * 0.3) * 10) / 10),
-    rating: lead.rating ?? 5.0,
+    rating: (lead.reviews_count > 0 || (lead.is_dummy && lead.rating)) ? lead.rating : null,
     phone: isUnlocked ? lead.phone : maskPhone(lead.phone),
     email: lead.email || `${(lead.name || "pro").toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
     is_unlocked: isUnlocked,
@@ -213,8 +213,8 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
     lng: lead.lng || (77.5946 + ((idx % 7) - 3) * 0.02),
     rate_hr: lead.rate_hr ?? (750 + (idx % 5) * 150),
     delivery_days: lead.delivery_days ?? (1 + (idx % 3)),
-    jobs_done: lead.jobs_done ?? (idx % 2 === 0 ? 2 : 3),
-    reviews_count: lead.reviews_count ?? (idx % 2 === 0 ? 2 : 3),
+    jobs_done: lead.jobs_done !== undefined && lead.jobs_done !== null ? Number(lead.jobs_done) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
+    reviews_count: lead.reviews_count !== undefined && lead.reviews_count !== null ? Number(lead.reviews_count) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
     intro:
       lead.intro ||
       `${lead.skill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`,
