@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { trackPixelPageView } from "@/lib/metaPixel";
 
 /**
  * ScrollToTop
  * Automatically resets the window scroll position to the top
- * on every route change (pathname or search query change).
+ * and tracks Meta Pixel pageviews on route changes.
  */
 export default function ScrollToTop() {
   const { pathname, search } = useLocation();
@@ -18,6 +19,8 @@ export default function ScrollToTop() {
     if (document.body) {
       document.body.scrollTop = 0;
     }
+    // Track pageview on SPA route transition
+    trackPixelPageView();
   }, [pathname, search]);
 
   return null;

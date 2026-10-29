@@ -4,6 +4,7 @@ import { DISCIPLINES_CATALOG } from "@/lib/catalogFilters";
 import { getAreaCoordinates, calculateDistance } from "@/lib/locationAreas";
 import { sendBrowserPushNotification } from "@/lib/pushNotifications";
 import { expandSkillKeywords } from "@/lib/keywordTaxonomy";
+import { trackPixelRegistration, trackPixelPurchase, trackPixelLead } from "@/lib/metaPixel";
 
 const CUSTOM_JOBS_KEY = "workhop_custom_jobs";
 const USER_KEY = "workhop_user_data";
@@ -149,6 +150,10 @@ export function saveSubmittedProfile(profile) {
         details: { skill: profile.skill, category: profile.category, rate_hr: profile.rate_hr },
       });
       addAdminLog("FREELANCER_REGISTERED", `New freelancer registration awaiting verification: ${profile.name || profile.email}`);
+      trackPixelRegistration("freelancer", { skill: profile.skill, category: profile.category, area: profile.area });
+      if (profile.paid) {
+        trackPixelPurchase(profile.paid_amount || 150, { content_name: profile.paid_plan || "Freelancer Verification Pack" });
+      }
     }
     localStorage.setItem(SUBMITTED_PROFILES_KEY, JSON.stringify(list));
   } catch (e) {
@@ -719,6 +724,7 @@ export function postCustomJob(jobData) {
     keywords: [jobData.title, jobData.bucket],
   };
   localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify([newJob, ...custom]));
+  trackPixelLead("job_post", { content_name: jobData.title, category: jobData.bucket || jobData.category, value: jobData.pay });
   if (isBoosted) {
     try {
       blastFeaturedJobNotification(newJob);
@@ -912,6 +918,7 @@ export function saveRegisteredUser(email, password, profile = {}) {
       details: { phone: profile.phone, area: profile.area, role: profile.role },
     });
     addAdminLog("USER_REGISTERED", `New user registration (${profile.role || "freelancer"}): ${cleanEmail}`);
+    trackPixelRegistration(profile.role || "freelancer", { area: profile.area });
   }
 }
 

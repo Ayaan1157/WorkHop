@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { API, apiPost } from "@/lib/api";
+import { trackPixelPurchase } from "@/lib/metaPixel";
 
 const LIVE_RAZORPAY_KEY_ID =
   process.env.REACT_APP_RAZORPAY_KEY_ID || "rzp_live_Tran4lUkI8SdOr";
@@ -144,7 +145,14 @@ export function useRazorpay() {
       name: payload?.full_name,
       email: payload?.email,
     });
-    return verifyPayment(result);
+    const verified = await verifyPayment(result);
+    try {
+      const amount = payload?.amount_inr || (order?.amount ? order.amount / 100 : 150);
+      trackPixelPurchase(amount, { product: payload?.product || description || "payment" });
+    } catch (e) {
+      console.debug("Pixel purchase track ignored", e);
+    }
+    return verified;
   }, []);
   return { startPayment };
 }
