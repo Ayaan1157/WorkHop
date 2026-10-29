@@ -54,18 +54,65 @@ module.exports = async function handler(req, res) {
   if (req.method === "POST" || req.method === "PUT") {
     try {
       const body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}");
-      const fId = req.query?.id || body?.freelancer_id || body?.id || "";
+      const urlClean = (req.url || "").split("?")[0].replace(/\/approve\/?$/, "").replace(/\/decline\/?$/, "");
+      const urlParts = urlClean.split("/");
+      const urlId = urlParts[urlParts.length - 1];
+      const fId = body?.freelancer_id || body?.id || req.query?.id || (urlId !== "freelancers" && urlId !== "index" ? urlId : "");
       const isApproved = Boolean(body?.approved);
       const status = isApproved ? "approved" : "declined";
       const reason = body?.reason || (isApproved ? "Approved by admin" : "Declined by admin");
+      const email = (body?.email || "").trim().toLowerCase();
+      const cleanTarget = String(fId).toLowerCase().replace(/^pro-/, "");
 
+      // 1. Cache in memory
       if (fId) {
-        freelancerStatusOverrides[fId] = {
-          approved: isApproved,
-          status,
-          reason,
-          updated_at: new Date().toISOString(),
-        };
+        freelancerStatusOverrides[fId] = { approved: isApproved, status, reason, updated_at: new Date().toISOString() };
+      }
+      if (cleanTarget) {
+        freelancerStatusOverrides[cleanTarget] = { approved: isApproved, status, reason, updated_at: new Date().toISOString() };
+      }
+      if (email) {
+        freelancerStatusOverrides[email] = { approved: isApproved, status, reason, updated_at: new Date().toISOString() };
+      }
+
+      // 2. Persist directly to Razorpay payment notes in the cloud!
+      const paymentsRes = await rzpRequest("GET", "/payments?count=100").catch(() => ({ items: [] }));
+      const payments = Array.isArray(paymentsRes?.items) ? paymentsRes.items : [];
+      for (const p of payments) {
+        const pEmail = (p.email || p.notes?.email || "").trim().toLowerCase();
+        const pPhone = (p.contact || p.notes?.phone || "").replace(/\D/g, "");
+        const pId = p.id;
+        const match = pId === fId ||
+                      (body?.payment_id && pId === body.payment_id) ||
+                      (pEmail && (pEmail === email || pEmail.includes(cleanTarget) || cleanTarget.includes(pEmail.split("@")[0]))) ||
+                      (pPhone && cleanTarget.includes(pPhone));
+        if (match) {
+          await rzpRequest("PATCH", `/payments/${p.id}`, {
+            notes: {
+              ...(p.notes || {}),
+              status: status,
+              approved_by_admin: String(isApproved),
+              reason: reason,
+              updated_at: new Date().toISOString(),
+            }
+          }).catch(() => {});
+        }
+      }
+
+      // 3. Match and cache customer ID
+      const custRes = await rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] }));
+      const customers = Array.isArray(custRes?.items) ? custRes.items : [];
+      for (const c of customers) {
+        const cEmail = (c.email || "").toLowerCase();
+        const cPhone = (c.contact || "").replace(/\D/g, "");
+        const cName = (c.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const match = c.id === fId ||
+                      (cEmail && (cEmail === email || cEmail.includes(cleanTarget) || cleanTarget.includes(cEmail.split("@")[0]))) ||
+                      (cPhone && cleanTarget.includes(cPhone)) ||
+                      (cName && cleanTarget.includes(cName));
+        if (match) {
+          freelancerStatusOverrides[c.id] = { approved: isApproved, status, reason };
+        }
       }
 
       return res.status(200).json({
@@ -160,24 +207,28 @@ module.exports = async function handler(req, res) {
         created_at: new Date(p.created_at * 1000).toISOString(),
         approved: (() => {
           const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
-          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id];
+          const cleanEmail = (email || "").toLowerCase().split("@")[0];
+          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmail] || freelancerStatusOverrides[email];
           if (ovr) return Boolean(ovr.approved);
-          if (notes.status === "approved") return true;
+          if (notes.status === "approved" || p.notes?.status === "approved" || p.notes?.approved_by_admin === "true") return true;
+          if (notes.status === "declined" || p.notes?.status === "declined") return false;
           return false;
         })(),
         status: (() => {
           const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
-          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id];
+          const cleanEmail = (email || "").toLowerCase().split("@")[0];
+          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmail] || freelancerStatusOverrides[email];
           if (ovr) return ovr.status || (ovr.approved ? "approved" : "declined");
-          if (notes.status === "approved") return "approved";
-          if (notes.status === "declined") return "declined";
+          if (notes.status === "approved" || p.notes?.status === "approved" || p.notes?.approved_by_admin === "true") return "approved";
+          if (notes.status === "declined" || p.notes?.status === "declined") return "declined";
           return "pending";
         })(),
         reason: (() => {
           const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
-          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id];
+          const cleanEmail = (email || "").toLowerCase().split("@")[0];
+          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmail] || freelancerStatusOverrides[email];
           if (ovr) return ovr.reason || null;
-          return notes.reason || null;
+          return notes.reason || p.notes?.reason || null;
         })(),
         verifications: {
           id: true,

@@ -29,6 +29,8 @@ import {
   markAllAdminNotificationsRead,
   clearAdminNotifications,
   getStoredLeads,
+  getFreelancerStatuses,
+  updateFreelancerStatus,
 } from "@/lib/clientStore";
 import FreelancerProfileModal from "@/components/FreelancerProfileModal";
 import { formatWhatsAppUrl } from "@/lib/utils";
@@ -2321,7 +2323,21 @@ function ProsTalentTab({ adminFetch }) {
     setLoading(true);
     try {
       const data = await adminFetch("/freelancers");
-      setPros(Array.isArray(data) ? data : []);
+      const localStatuses = getFreelancerStatuses();
+      const list = (Array.isArray(data) ? data : []).map((p) => {
+        const pid = p.freelancer_id || p.id;
+        const st = localStatuses[pid] || localStatuses[p.id] || localStatuses[p.freelancer_id];
+        if (st) {
+          return {
+            ...p,
+            approved: Boolean(st.approved),
+            status: st.status,
+            reason: st.reason || p.reason,
+          };
+        }
+        return p;
+      });
+      setPros(list);
     } catch {
       /* ignore */
     } finally {
@@ -2338,8 +2354,15 @@ function ProsTalentTab({ adminFetch }) {
   const handleApprove = async (freelancerId, name) => {
     setBusyId(freelancerId);
     setFeedback(null);
+    updateFreelancerStatus(freelancerId, true, "Approved by admin");
+    const targetPro = pros.find((p) => (p.freelancer_id || p.id) === freelancerId);
     try {
       await adminFetch(`/freelancers/${freelancerId}/approve`, "POST", {
+        freelancer_id: freelancerId,
+        id: freelancerId,
+        email: targetPro?.email || "",
+        phone: targetPro?.phone || "",
+        payment_id: targetPro?.payment_id || "",
         approved: true,
         reason: "Approved by admin",
       });
@@ -2370,8 +2393,15 @@ function ProsTalentTab({ adminFetch }) {
 
     setBusyId(freelancerId);
     setFeedback(null);
+    updateFreelancerStatus(freelancerId, false, reason || "Declined by admin");
+    const targetPro = pros.find((p) => (p.freelancer_id || p.id) === freelancerId);
     try {
       await adminFetch(`/freelancers/${freelancerId}/approve`, "POST", {
+        freelancer_id: freelancerId,
+        id: freelancerId,
+        email: targetPro?.email || "",
+        phone: targetPro?.phone || "",
+        payment_id: targetPro?.payment_id || "",
         approved: false,
         reason: reason || "Declined by admin",
       });
