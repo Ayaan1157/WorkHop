@@ -169,7 +169,7 @@ export default function Jobs() {
   useEffect(() => {
     if (liveCoords?.lat && liveCoords?.lng) {
       const nearest = findNearestArea(liveCoords);
-      if (nearest && !nearest.isOutsideBengaluru) {
+      if (nearest) {
         setApplicantArea(nearest.name);
         setSavedArea(nearest.name);
       }

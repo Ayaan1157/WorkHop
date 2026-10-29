@@ -109,6 +109,8 @@ export default function Landing() {
     else goFreelancer();
   }, [user, nav, goFreelancer]);
 
+  const [gpsNotice, setGpsNotice] = useState(null);
+
   // GPS auto-detect area
   useEffect(() => {
     if (coords) {
@@ -119,6 +121,42 @@ export default function Landing() {
       }
     }
   }, [coords]);
+
+  const handleDetectGps = async () => {
+    setGpsNotice(null);
+    try {
+      const res = await requestLocation();
+      const loc = res?.coords || coords;
+      if (loc) {
+        const nearest = findNearestArea(loc);
+        if (nearest) {
+          setAreaInput(nearest.name);
+          setSavedArea(nearest.name);
+          if (nearest.isOutsideBengaluru) {
+            setGpsNotice({
+              type: "outside",
+              text: `📍 Location detected (~${nearest.distanceToBengaluruCenter}km away). Selected nearest hub: ${nearest.name}.`,
+            });
+          } else {
+            setGpsNotice({
+              type: "success",
+              text: `✓ Live GPS detected: ${nearest.name} (${nearest.zone} Bengaluru)`,
+            });
+          }
+        }
+      } else {
+        setGpsNotice({
+          type: "error",
+          text: "⚠️ Location permission denied or unavailable. Please pick your area below.",
+        });
+      }
+    } catch {
+      setGpsNotice({
+        type: "error",
+        text: "⚠️ Location request failed. Please select your area below.",
+      });
+    }
+  };
 
   const phoneDigits = phoneInput.replace(/\D/g, "");
   const isPhoneValid = phoneDigits.length === 10;
@@ -624,7 +662,7 @@ export default function Landing() {
                         <button
                           type="button"
                           data-testid="login-gps-btn"
-                          onClick={requestLocation}
+                          onClick={handleDetectGps}
                           className="flex items-center gap-1 text-[10px] font-extrabold text-brand hover:underline"
                         >
                           <LocateFixed size={12} className={locStatus === "locating" ? "animate-spin" : ""} />
@@ -636,7 +674,10 @@ export default function Landing() {
                         <select
                           data-testid="login-area-select"
                           value={areaInput}
-                          onChange={(e) => setAreaInput(e.target.value)}
+                          onChange={(e) => {
+                            setAreaInput(e.target.value);
+                            setGpsNotice(null);
+                          }}
                           className="wh-input flex-1 bg-transparent text-xs sm:text-sm font-black text-ink dark:text-white dark:bg-zinc-900 focus:outline-none"
                         >
                           {BENGALURU_AREAS.map((a) => (
@@ -646,6 +687,19 @@ export default function Landing() {
                           ))}
                         </select>
                       </div>
+                      {gpsNotice && (
+                        <p
+                          className={`mt-1.5 text-[11px] font-bold p-1.5 border rounded ${
+                            gpsNotice.type === "success"
+                              ? "text-emerald-700 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
+                              : gpsNotice.type === "outside"
+                              ? "text-amber-800 bg-amber-50 dark:bg-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-800"
+                              : "text-red-700 bg-red-50 dark:bg-red-950 dark:text-red-300 border-red-300 dark:border-red-800"
+                          }`}
+                        >
+                          {gpsNotice.text}
+                        </p>
+                      )}
                     </div>
 
                     {/* Role-Specific Field: Company Name (Employer) OR Primary Skill (Freelancer) */}

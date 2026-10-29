@@ -52,6 +52,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   const [resendCooldown, setResendCooldown] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [gpsFeedback, setGpsFeedback] = useState(null);
 
   // Resend Countdown Timer
   useEffect(() => {
@@ -67,16 +68,52 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     if (initialMode) setMode(initialMode);
   }, [initialRole, initialMode, isOpen]);
 
-  // If GPS detects coords, update area automatically if inside Bengaluru
+  // If GPS detects coords, update area automatically
   useEffect(() => {
     if (coords) {
       const nearest = findNearestArea(coords);
-      if (nearest && !nearest.isOutsideBengaluru) {
+      if (nearest) {
         setArea(nearest.name);
         setSavedArea(nearest.name);
       }
     }
   }, [coords]);
+
+  const handleUseLiveGps = async () => {
+    setGpsFeedback(null);
+    try {
+      const result = await requestLocation();
+      const loc = result?.coords || coords;
+      if (loc) {
+        const nearest = findNearestArea(loc);
+        if (nearest) {
+          setArea(nearest.name);
+          setSavedArea(nearest.name);
+          if (nearest.isOutsideBengaluru) {
+            setGpsFeedback({
+              type: "outside",
+              text: `📍 Location detected (~${nearest.distanceToBengaluruCenter}km away). Selected nearest hub: ${nearest.name}.`,
+            });
+          } else {
+            setGpsFeedback({
+              type: "success",
+              text: `✓ Live GPS detected: ${nearest.name} (${nearest.zone} Bengaluru)`,
+            });
+          }
+        }
+      } else {
+        setGpsFeedback({
+          type: "error",
+          text: "⚠️ Location permission denied or unavailable. Please pick your area below.",
+        });
+      }
+    } catch {
+      setGpsFeedback({
+        type: "error",
+        text: "⚠️ Location request failed. Please select your area below.",
+      });
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -597,7 +634,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                     <button
                       type="button"
                       data-testid="auth-gps-btn"
-                      onClick={requestLocation}
+                      onClick={handleUseLiveGps}
                       className="flex items-center gap-1 text-[10px] font-extrabold text-brand hover:underline"
                     >
                       <LocateFixed size={12} className={locStatus === "locating" ? "animate-spin" : ""} />
@@ -609,7 +646,10 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                     <select
                       data-testid="auth-area-select"
                       value={area}
-                      onChange={(e) => setArea(e.target.value)}
+                      onChange={(e) => {
+                        setArea(e.target.value);
+                        setGpsFeedback(null);
+                      }}
                       className="w-full bg-transparent text-xs sm:text-sm font-black text-ink focus:outline-none"
                     >
                       {BENGALURU_AREAS.map((a) => (
@@ -619,10 +659,24 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                       ))}
                     </select>
                   </div>
-                  {coords && findNearestArea(coords)?.isOutsideBengaluru && (
-                    <p className="mt-1 text-[10px] font-bold text-brand">
-                      📍 Your detected location is outside Bengaluru. WorkHop services are currently live exclusively across Bengaluru.
+                  {gpsFeedback ? (
+                    <p
+                      className={`mt-1.5 text-[11px] font-bold p-1.5 border rounded ${
+                        gpsFeedback.type === "success"
+                          ? "text-emerald-700 bg-emerald-50 border-emerald-300"
+                          : gpsFeedback.type === "outside"
+                          ? "text-amber-800 bg-amber-50 border-amber-300"
+                          : "text-red-700 bg-red-50 border-red-300"
+                      }`}
+                    >
+                      {gpsFeedback.text}
                     </p>
+                  ) : (
+                    coords && findNearestArea(coords)?.isOutsideBengaluru && (
+                      <p className="mt-1 text-[10px] font-bold text-brand">
+                        📍 Your detected location is outside Bengaluru. WorkHop services are currently live exclusively across Bengaluru.
+                      </p>
+                    )
                   )}
                 </div>
 

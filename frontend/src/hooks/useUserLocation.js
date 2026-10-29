@@ -31,6 +31,22 @@ if (typeof window !== "undefined") {
   } catch {}
 }
 
+async function fetchIpLocation() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch("https://ipwho.is/", { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
+        return { lat: data.latitude, lng: data.longitude, city: data.city, isIpFallback: true };
+      }
+    }
+  } catch {}
+  return null;
+}
+
 export function useUserLocation() {
   const [coords, setCoords] = useState(globalCoords);
   const [status, setStatus] = useState(globalStatus);
@@ -45,19 +61,12 @@ export function useUserLocation() {
   }, []);
 
   const requestLocation = useCallback(() => {
-    if (!("geolocation" in navigator)) {
-      globalStatus = "denied";
-      setStatus("denied");
+    return new Promise((resolve) => {
+      globalStatus = "locating";
+      setStatus("locating");
       notifyListeners();
-      return;
-    }
-    globalStatus = "locating";
-    setStatus("locating");
-    notifyListeners();
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const nextCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      const onLocationSuccess = (nextCoords, isIp = false) => {
         globalCoords = nextCoords;
         globalStatus = "granted";
         try {
@@ -68,16 +77,47 @@ export function useUserLocation() {
         setStatus("granted");
         notifyListeners();
         window.dispatchEvent(new CustomEvent("workhop:location_updated", { detail: nextCoords }));
-      },
-      (err) => {
-        const nextStatus = err.code === 1 ? "blocked" : "denied";
+        resolve({ coords: nextCoords, status: "granted", isIpFallback: isIp });
+      };
+
+      const tryIpFallback = async (originalErr) => {
+        const ipCoords = await fetchIpLocation();
+        if (ipCoords) {
+          onLocationSuccess(ipCoords, true);
+          return;
+        }
+        const nextStatus = originalErr?.code === 1 ? "blocked" : "denied";
         globalStatus = nextStatus;
         setStatus(nextStatus);
         notifyListeners();
-        window.dispatchEvent(new CustomEvent("workhop:location_permission_denied", { detail: { code: err.code } }));
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
+        window.dispatchEvent(new CustomEvent("workhop:location_permission_denied", { detail: { code: originalErr?.code } }));
+        resolve({ coords: null, status: nextStatus, error: originalErr });
+      };
+
+      if (!("geolocation" in navigator)) {
+        tryIpFallback(new Error("Geolocation not supported"));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          onLocationSuccess({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => {
+          // If high accuracy failed or timed out, retry with fast network/wifi positioning
+          navigator.geolocation.getCurrentPosition(
+            (pos2) => {
+              onLocationSuccess({ lat: pos2.coords.latitude, lng: pos2.coords.longitude });
+            },
+            (err2) => {
+              tryIpFallback(err2);
+            },
+            { enableHighAccuracy: false, timeout: 4000, maximumAge: 300000 }
+          );
+        },
+        { enableHighAccuracy: true, timeout: 4000, maximumAge: 60000 }
+      );
+    });
   }, []);
 
   return { coords, status, requestLocation };
