@@ -107,47 +107,131 @@ export function maskPhone(phone) {
 }
 
 // 1. Leads / Verified Pros
+export const SUBMITTED_PROFILES_KEY = "workhop_submitted_profiles";
+export const REMOTE_FREELANCERS_KEY = "workhop_remote_freelancers";
+
+export function getSubmittedProfiles() {
+  try {
+    const raw = localStorage.getItem(SUBMITTED_PROFILES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveSubmittedProfile(profile) {
+  try {
+    const list = getSubmittedProfiles();
+    const targetId = profile.id || profile.freelancer_id;
+    const existingIdx = list.findIndex(
+      (p) =>
+        (p.id || p.freelancer_id) === targetId ||
+        (profile.email && p.email && p.email.toLowerCase() === profile.email.toLowerCase())
+    );
+    if (existingIdx >= 0) {
+      list[existingIdx] = { ...list[existingIdx], ...profile, updated_at: new Date().toISOString() };
+    } else {
+      list.unshift({ ...profile, created_at: new Date().toISOString() });
+    }
+    localStorage.setItem(SUBMITTED_PROFILES_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.warn("saveSubmittedProfile error", e);
+  }
+}
+
+export function getRemoteFreelancers() {
+  try {
+    const raw = localStorage.getItem(REMOTE_FREELANCERS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveRemoteFreelancers(freelancers) {
+  if (!Array.isArray(freelancers)) return;
+  try {
+    localStorage.setItem(REMOTE_FREELANCERS_KEY, JSON.stringify(freelancers));
+  } catch (e) {
+    console.warn("saveRemoteFreelancers error", e);
+  }
+}
+
 export function getStoredLeads({ includeDeclined = false } = {}) {
   const currentUser = getStoredUser();
-  const isAdmin = Boolean(currentUser?.is_admin || currentUser?.role === "admin" || (currentUser?.email && ADMIN_EMAILS.includes(currentUser.email.trim().toLowerCase())));
+  const isAdmin = Boolean(
+    currentUser?.is_admin ||
+      currentUser?.role === "admin" ||
+      (currentUser?.email && ADMIN_EMAILS.includes(currentUser.email.trim().toLowerCase()))
+  );
   const isUnlocked = isAdmin || localStorage.getItem("workhop_employer_unlocked") === "1";
   const statuses = getFreelancerStatuses();
 
-  const mapped = leadsSeed.map((lead, idx) => ({
-    id: lead.id || `lead-${idx + 1}`,
-    name: lead.name,
-    initials: lead.initials || lead.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase(),
-    skill: lead.skill,
+  const allRaw = [
+    ...leadsSeed,
+    ...getSubmittedProfiles(),
+    ...getRemoteFreelancers(),
+  ];
+
+  const seen = new Set();
+  const deduped = [];
+  for (const item of allRaw) {
+    const key = item.id || item.freelancer_id || item.email || item.phone;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+
+  const mapped = deduped.map((lead, idx) => ({
+    id: lead.id || lead.freelancer_id || `lead-${idx + 1}`,
+    name: lead.name || lead.full_name || "Verified Pro",
+    initials:
+      lead.initials ||
+      (lead.name || "VP")
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+    skill: lead.skill || "Creative Pro",
     distance_km: lead.distance_km ?? (Math.round((0.5 + (idx % 10) * 0.3) * 10) / 10),
-    rating: lead.rating ?? 4.9,
+    rating: lead.rating ?? 5.0,
     phone: isUnlocked ? lead.phone : maskPhone(lead.phone),
+    email: lead.email || `${(lead.name || "pro").toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
     is_unlocked: isUnlocked,
     portfolio: lead.portfolio || `${(lead.name || "pro").toLowerCase().replace(/[^a-z]/g, "")}.in`,
     keywords: Array.from(
       new Set([
-        ...(lead.keywords || [lead.skill]),
-        ...expandSkillKeywords(lead.skill, lead.category || lead.bucket)
+        ...(lead.keywords || [lead.skill || "Freelancer"]),
+        ...expandSkillKeywords(lead.skill || "Freelancer", lead.category || lead.bucket),
       ])
     ),
     bucket: lead.bucket || "Creative",
     category: lead.category || lead.bucket || "Graphics & Design",
     area: lead.area || "Bengaluru",
-    lat: lead.lat || (12.9716 + (idx % 5 - 2) * 0.02),
-    lng: lead.lng || (77.5946 + (idx % 7 - 3) * 0.02),
+    lat: lead.lat || (12.9716 + ((idx % 5) - 2) * 0.02),
+    lng: lead.lng || (77.5946 + ((idx % 7) - 3) * 0.02),
     rate_hr: lead.rate_hr ?? (750 + (idx % 5) * 150),
     delivery_days: lead.delivery_days ?? (1 + (idx % 3)),
     jobs_done: lead.jobs_done ?? (idx % 2 === 0 ? 2 : 3),
     reviews_count: lead.reviews_count ?? (idx % 2 === 0 ? 2 : 3),
-    intro: lead.intro || `${lead.skill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`,
+    intro:
+      lead.intro ||
+      `${lead.skill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`,
     languages: lead.languages || ["English", "Kannada", "Hindi"],
-    is_dummy: true,
-    verifications: {
+    is_dummy: Boolean(lead.is_dummy),
+    paid: Boolean(lead.paid),
+    paid_amount: lead.paid_amount || (lead.paid ? 150 : null),
+    paid_plan: lead.paid_plan || (lead.paid ? "20 Bidding Hops Pack · ₹150" : null),
+    payment_id: lead.payment_id || null,
+    verifications: lead.verifications || {
       id: true,
       email: true,
       portfolio: true,
       phone: isUnlocked,
+      payment: Boolean(lead.paid),
     },
-    samples: [
+    samples: lead.samples || [
       { title: "Brand Identity & Design", type: "Visual Assets", tag: "Figma" },
       { title: "Digital Campaign Assets", type: "Design", tag: "Deliverable" },
       { title: "Client Project Milestone", type: "Verified", tag: "Completed" },

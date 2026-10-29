@@ -1,5 +1,35 @@
 [
   {
+    "id": "pro-shamanthnmurthy",
+    "initials": "SM",
+    "name": "Shamanthnmurthy",
+    "skill": "Brand Identity, Digital Design & Creative Pro",
+    "category": "Graphics & Design",
+    "bucket": "Creative",
+    "area": "Indiranagar",
+    "lat": 12.9784,
+    "lng": 77.6408,
+    "distance_km": 1.2,
+    "rating": 5.0,
+    "jobs_done": 2,
+    "reviews_count": 2,
+    "rate_hr": 850,
+    "delivery_days": 2,
+    "languages": ["English", "Kannada", "Hindi"],
+    "phone": "+91 72046 65071",
+    "email": "shamanthnmurthy@gmail.com",
+    "portfolio": "shamanthnmurthy.design",
+    "intro": "Verified freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, UI prototypes, and graphic design with fast local turnaround.",
+    "keywords": [
+      "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro", "ui/ux"
+    ],
+    "is_dummy": false,
+    "paid": true,
+    "paid_amount": 150,
+    "paid_plan": "20 Bidding Hops Pack · ₹150",
+    "payment_id": "pay_TtdIJpjtCetICU"
+  },
+  {
     "id": "lead-1",
     "initials": "RV",
     "name": "Rohan Verma",

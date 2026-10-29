@@ -2516,21 +2516,28 @@ function ProsTalentTab({ adminFetch }) {
                       <p className="text-sm font-black text-ink">{f.name || f.full_name || "Freelancer"}</p>
                       <p className="text-xs font-bold text-brand">{f.skill || "Creative Pro"}</p>
                     </div>
-                    {isApproved && (
-                      <span className="border border-ok bg-[#E5F7E0] px-2 py-0.5 text-[9px] font-black text-[#1E4620] uppercase flex items-center gap-1">
-                        <Check size={11} /> APPROVED
-                      </span>
-                    )}
-                    {isPending && (
-                      <span className="border border-amber-600 bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-900 uppercase">
-                        PENDING REVIEW
-                      </span>
-                    )}
-                    {isDeclined && (
-                      <span className="border border-red-500 bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-800 uppercase flex items-center gap-1">
-                        <X size={11} /> DECLINED
-                      </span>
-                    )}
+                    <div className="flex flex-col items-end gap-1">
+                      {isApproved && (
+                        <span className="border border-ok bg-[#E5F7E0] px-2 py-0.5 text-[9px] font-black text-[#1E4620] uppercase flex items-center gap-1">
+                          <Check size={11} /> APPROVED
+                        </span>
+                      )}
+                      {isPending && (
+                        <span className="border border-amber-600 bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-900 uppercase">
+                          PENDING REVIEW
+                        </span>
+                      )}
+                      {isDeclined && (
+                        <span className="border border-red-500 bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-800 uppercase flex items-center gap-1">
+                          <X size={11} /> DECLINED
+                        </span>
+                      )}
+                      {f.paid && (
+                        <span className="border border-brand bg-[#FFF3C4] px-2 py-0.5 text-[9px] font-black text-brand uppercase tracking-wider">
+                          💰 PAID ₹{f.paid_amount || 150} · {f.paid_plan || "Hops Pack"}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Category & Stats */}
@@ -2547,6 +2554,9 @@ function ProsTalentTab({ adminFetch }) {
                   <div className="mt-2 text-xs text-inkmuted space-y-0.5 border-t border-ink/10 pt-2">
                     <p className="truncate">📧 {f.email || "No email"}</p>
                     <p>📞 {f.phone || "No phone"}</p>
+                    {f.payment_id && (
+                      <p className="text-[10px] text-brand font-mono font-bold">💳 Txn: {f.payment_id}</p>
+                    )}
                     {f.portfolio && (
                       <p className="text-[11px] text-brand font-bold truncate">
                         🔗 {f.portfolio}

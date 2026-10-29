@@ -78,6 +78,34 @@
       "destination": "/api/credits/send-invoice"
     },
     {
+      "source": "/api/freelancers",
+      "destination": "/api/freelancers/index"
+    },
+    {
+      "source": "/api/freelancers/:path*",
+      "destination": "/api/freelancers/index"
+    },
+    {
+      "source": "/api/admin/freelancers",
+      "destination": "/api/freelancers/index"
+    },
+    {
+      "source": "/api/admin/freelancers/:path*",
+      "destination": "/api/freelancers/index"
+    },
+    {
+      "source": "/api/freelancer/submit",
+      "destination": "/api/freelancers/submit"
+    },
+    {
+      "source": "/api/payments/list",
+      "destination": "/api/payments/list"
+    },
+    {
+      "source": "/api/admin/payments",
+      "destination": "/api/payments/list"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

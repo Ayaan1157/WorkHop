@@ -5,7 +5,8 @@ import {
   MapPin, ShieldCheck, Zap, Sparkles, PlusCircle, CheckCircle, Navigation, Users, Briefcase,
   User, Building2, LocateFixed, CheckCircle2, Eye, EyeOff, Sun, Moon, Menu, X, Star
 } from "lucide-react";
-import { apiPost } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
+import { getStoredLeads } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
@@ -44,6 +45,15 @@ export default function Landing() {
   // Sign in / Sign up flow state
   const [pendingRole, setPendingRole] = useState(null); // "employer" | "freelancer"
   const [authMode, setAuthMode] = useState("signin"); // "signin" | "signup"
+  const [featuredPros, setFeaturedPros] = useState(() => getStoredLeads().slice(0, 6));
+
+  useEffect(() => {
+    apiGet("/leads/preview")
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) setFeaturedPros(data.slice(0, 6));
+      })
+      .catch(() => {});
+  }, []);
 
   const [nameInput, setNameInput] = useState("");
   const [emailInput, setEmailInput] = useState("");
@@ -1378,6 +1388,90 @@ export default function Landing() {
               Transparent 1 Hop = ₹15 bidding. Direct client payments with zero platform commission taken from your earnings.
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Featured Verified Pros & Talent Showcase */}
+      <section className="border-b-2 border-ink bg-white dark:bg-[#121212] py-12 sm:py-16 px-4 sm:px-10 lg:px-16">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b-2 border-ink dark:border-white/10">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 border border-ok/40 bg-ok/10 dark:bg-ok/20 px-3 py-1 text-xs font-black uppercase tracking-wider text-ok mb-3">
+              <ShieldCheck size={14} className="text-ok" />
+              <span>LIVE TALENT POOL · BENGALURU</span>
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-black text-ink dark:text-white leading-tight">
+              Meet Verified Local Freelancers Near You
+            </h2>
+            <p className="mt-2 text-xs sm:text-sm text-inkmuted dark:text-stone-400 font-medium">
+              Portfolio-screened, ID-verified creators, developers &amp; marketers active across Bengaluru. Direct WhatsApp chat, zero commission.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/employer"
+              className="inline-flex items-center gap-2 border-2 border-ink bg-ink text-white dark:bg-brand px-5 py-3 text-xs sm:text-sm font-black uppercase shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
+            >
+              <span>EXPLORE ALL FREELANCERS</span>
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+
+        {/* Pros Cards Grid */}
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {featuredPros.map((pro, idx) => (
+            <div
+              key={pro.id || idx}
+              onClick={() => nav(`/employer?q=${encodeURIComponent(pro.name)}`)}
+              className="group border-2 border-ink bg-sand/30 dark:bg-[#1a1a1a] p-5 shadow-[3px_3px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 transition cursor-pointer flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-brand text-white font-black text-sm shadow-[1px_1px_0px_#121212]">
+                      {pro.initials || (pro.name || "VP").slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-sm font-black text-ink dark:text-white">{pro.name}</p>
+                        <span className="flex items-center gap-0.5 bg-ok/15 text-ok border border-ok px-1.5 py-0.2 text-[9px] font-black">
+                          <ShieldCheck size={9} /> VERIFIED
+                        </span>
+                        {pro.paid && (
+                          <span className="flex items-center gap-0.5 bg-[#FFF3C4] text-brand border border-brand px-1.5 py-0.2 text-[9px] font-black">
+                            <Sparkles size={9} /> TOP PRO
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-bold text-brand truncate max-w-[200px]">{pro.skill}</p>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-1 border border-ink bg-white dark:bg-zinc-800 px-2 py-0.5 text-xs font-black dark:text-white">
+                    <Star size={11} fill="#E65A1E" className="text-brand" /> {pro.rating}
+                  </span>
+                </div>
+
+                <p className="mt-3 text-xs text-inkmuted dark:text-stone-300 font-medium line-clamp-2 leading-relaxed">
+                  {pro.intro}
+                </p>
+
+                <div className="mt-3 flex items-center gap-2 flex-wrap text-[11px] font-bold text-inkmuted dark:text-stone-400">
+                  <span className="border border-ink/20 bg-white dark:bg-zinc-800 px-2 py-0.5 text-[10px]">
+                    📍 {pro.area || "Bengaluru"}
+                  </span>
+                  <span className="border border-ink/20 bg-white dark:bg-zinc-800 px-2 py-0.5 text-[10px]">
+                    ₹{pro.rate_hr}/hr
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-ink/10 flex items-center justify-between text-xs font-black text-brand group-hover:text-ink dark:group-hover:text-white transition">
+                <span>VIEW PROFILE &amp; CONTACT</span>
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition" />
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
