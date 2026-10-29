@@ -718,9 +718,10 @@ export default function EmployerDashboard() {
                             : "bg-[#fcfcfc] dark:bg-[#151517] border-[#e5e5e5] dark:border-[#26262a] hover:border-[#E65A1E]/40"
                         }`}
                       >
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-col gap-3.5">
+                          {/* Top: Full width job content */}
+                          <div className="w-full">
+                            <div className="flex items-center gap-2 flex-wrap mb-1.5">
                               <span className="rounded-full bg-[#E65A1E]/10 text-[#E65A1E] px-2.5 py-0.5 text-[10px] font-bold">
                                 {j.category || j.bucket || "Creative"}
                               </span>
@@ -744,7 +745,7 @@ export default function EmployerDashboard() {
                               )}
                             </div>
 
-                            <h3 className="text-base font-bold text-ink dark:text-white mt-1.5 flex items-center gap-2">
+                            <h3 className="text-base sm:text-lg font-bold text-ink dark:text-white flex items-center gap-2 leading-snug">
                               <span>{j.title}</span>
                               {(j.is_completed || j.status === "completed") && (
                                 <span className="text-emerald-600 text-xs font-black">✓ Completed</span>
@@ -752,12 +753,12 @@ export default function EmployerDashboard() {
                             </h3>
 
                             {j.description && (
-                              <p className="mt-1.5 text-xs text-inkmuted dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                              <p className="mt-1.5 text-xs sm:text-sm text-inkmuted dark:text-zinc-400 line-clamp-2 leading-relaxed">
                                 {j.description}
                               </p>
                             )}
 
-                            <div className="mt-2 flex items-center gap-3 text-xs text-inkmuted dark:text-[#888] flex-wrap">
+                            <div className="mt-2.5 flex items-center gap-3 text-xs text-inkmuted dark:text-[#888] flex-wrap">
                               <span className="text-ink dark:text-white font-bold text-sm">
                                 ₹{Number(j.pay || 0).toLocaleString("en-IN")} Budget
                               </span>
@@ -772,87 +773,95 @@ export default function EmployerDashboard() {
                             </div>
                           </div>
 
-                          {/* Quick Action Buttons for this Job */}
-                          <div className="flex items-center gap-2 w-full md:w-auto shrink-0 flex-wrap">
-                            <button
-                              type="button"
-                              data-testid={`edit-job-btn-${j.id}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingJob(j);
-                              }}
-                              className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition shadow-sm"
-                              title="Edit this gig's salary budget, description, category, and location"
-                            >
-                              <Pencil size={13} className="text-[#E65A1E]" />
-                              <span>EDIT GIG</span>
-                            </button>
+                          {/* Bottom Action Bar */}
+                          <div className="pt-3 border-t border-ink/10 dark:border-zinc-800/80 flex items-center justify-between flex-wrap gap-2.5">
+                            <div className="text-[11px] font-bold text-inkmuted dark:text-zinc-400 flex items-center gap-2">
+                              <span className={`inline-block h-2 w-2 rounded-full ${j.is_completed || j.status === "completed" ? "bg-zinc-400" : "bg-emerald-500 animate-pulse"}`} />
+                              <span>{j.is_completed || j.status === "completed" ? "Archived Listing" : "Live in Bengaluru Network"}</span>
+                            </div>
 
-                            {j.is_completed || j.status === "completed" ? (
+                            {/* Quick Action Buttons for this Job */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                data-testid={`edit-job-btn-${j.id}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingJob(j);
+                                }}
+                                className="flex items-center justify-center gap-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition shadow-sm"
+                                title="Edit this gig's salary budget, description, category, and location"
+                              >
+                                <Pencil size={13} className="text-[#E65A1E]" />
+                                <span>EDIT GIG</span>
+                              </button>
+
+                              {j.is_completed || j.status === "completed" ? (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleJobCardClick(j);
+                                  }}
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-zinc-100 hover:bg-ink hover:text-white dark:bg-zinc-800 dark:hover:bg-white dark:hover:text-black border border-ink/20 px-3.5 py-1.5 text-xs font-black transition shadow-xs"
+                                  title="Click to restore this gig back to active listings"
+                                >
+                                  <RotateCcw size={13} />
+                                  <span>REOPEN GIG</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleJobCardClick(j);
+                                  }}
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 hover:bg-emerald-600 hover:text-white px-3.5 py-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300 transition shadow-xs"
+                                  title="Click to mark this job as completed and remove listing"
+                                >
+                                  <CheckCircle2 size={13} className="text-ok" />
+                                  <span>COMPLETE &amp; REMOVE</span>
+                                </button>
+                              )}
+
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleJobCardClick(j);
+                                  setLeaderboardJob(j);
                                 }}
-                                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg bg-zinc-100 hover:bg-ink hover:text-white dark:bg-zinc-800 dark:hover:bg-white dark:hover:text-black border border-ink/20 px-3.5 py-2 text-xs font-black transition shadow-xs"
-                                title="Click to restore this gig back to active listings"
+                                className="flex items-center justify-center gap-1 rounded-lg bg-[#FFF3C4] border border-[#FFEAA0] px-3 py-1.5 text-xs font-bold text-[#92400E] hover:bg-[#FFEAA0] transition"
+                                title="View Applicant Leaderboard & Bids"
                               >
-                                <RotateCcw size={13} />
-                                <span>REOPEN GIG</span>
+                                <Trophy size={13} className="text-amber-500" /> BIDS ({j.applicants_count || 3})
                               </button>
-                            ) : (
+
+                              {!j.is_boosted && !j.is_completed && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleBoostJob(j.id);
+                                  }}
+                                  className="flex items-center justify-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-100 transition shadow-sm"
+                                  title="Boost this gig & blast real-time website notifications to all registered freelancers within a 5km radius"
+                                >
+                                  <Flame size={13} className="text-red-500 fill-red-500" />
+                                  <span>BOOST &amp; BLAST (5KM)</span>
+                                </button>
+                              )}
+
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleJobCardClick(j);
+                                  nav(`/employer/inbox`);
                                 }}
-                                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 hover:bg-emerald-600 hover:text-white px-3.5 py-2 text-xs font-black text-emerald-700 dark:text-emerald-300 transition shadow-xs"
-                                title="Click to mark this job as completed and remove listing"
+                                className="flex items-center justify-center gap-1 rounded-lg bg-ink text-white dark:bg-white dark:text-black px-3.5 py-1.5 text-xs font-bold hover:bg-[#E65A1E] dark:hover:bg-[#E65A1E] dark:hover:text-white transition shadow-sm"
                               >
-                                <CheckCircle2 size={13} className="text-ok" />
-                                <span>COMPLETE &amp; REMOVE</span>
+                                PROPOSALS <ChevronRight size={13} />
                               </button>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setLeaderboardJob(j);
-                              }}
-                              className="flex-1 md:flex-initial flex items-center justify-center gap-1 rounded-lg bg-[#FFF3C4] border border-[#FFEAA0] px-3 py-2 text-xs font-bold text-[#92400E] hover:bg-[#FFEAA0] transition"
-                              title="View Applicant Leaderboard & Bids"
-                            >
-                              <Trophy size={13} className="text-amber-500" /> BIDS ({j.applicants_count || 3})
-                            </button>
-
-                            {!j.is_boosted && !j.is_completed && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBoostJob(j.id);
-                                }}
-                                className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-100 transition shadow-sm"
-                                title="Boost this gig & blast real-time website notifications to all registered freelancers within a 5km radius"
-                              >
-                                <Flame size={13} className="text-red-500 fill-red-500" />
-                                <span>BOOST &amp; BLAST (5KM)</span>
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                nav(`/employer/inbox`);
-                              }}
-                              className="flex-1 md:flex-initial flex items-center justify-center gap-1 rounded-lg bg-ink text-white dark:bg-white dark:text-black px-3 py-2 text-xs font-bold hover:bg-[#E65A1E] dark:hover:bg-[#E65A1E] dark:hover:text-white transition shadow-sm"
-                            >
-                              PROPOSALS <ChevronRight size={13} />
-                            </button>
+                            </div>
                           </div>
                         </div>
                       </div>
