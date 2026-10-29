@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { apiGet, apiPost, getToken, setToken, clearToken } from "@/lib/api";
-import { getStoredUser, saveStoredUser, createMockSession, passwordLogin, saveRegisteredUser } from "@/lib/clientStore";
+import { getStoredUser, saveStoredUser, createMockSession, passwordLogin, saveRegisteredUser, isEmailRegistered, getRegisteredUserByEmail } from "@/lib/clientStore";
 
 const AuthContext = createContext({
   user: null,
@@ -77,16 +77,18 @@ export function AuthProvider({ children }) {
   }, [processSessionId, checkStoredSession]);
 
   const login = useCallback(async (customEmail = null, customName = null) => {
-    const email = customEmail || "user@workhop.local";
-    const role = localStorage.getItem("workhop_pending_role") || localStorage.getItem("workhop_auth_role") || "freelancer";
-    const name = customName || (email.includes("@") ? email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "WorkHop User");
+    const email = (customEmail || "user@workhop.local").trim().toLowerCase();
+    const existing = getRegisteredUserByEmail(email);
+    const role = existing?.role || localStorage.getItem("workhop_pending_role") || localStorage.getItem("workhop_auth_role") || "freelancer";
+    const name = customName || existing?.name || (email.includes("@") ? email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "WorkHop User");
     const session = createMockSession(email, {
+      ...(existing || {}),
       name: name,
       role: role,
-      area: localStorage.getItem("workhop_user_area") || "Koramangala",
-      phone: localStorage.getItem("workhop_pro_phone") || "9876543210",
-      company_name: localStorage.getItem("workhop_company_name") || "Hyperlocal Co.",
-      skill: localStorage.getItem("workhop_pro_skill") || "UI/UX & Brand Designer",
+      area: existing?.area || localStorage.getItem("workhop_user_area") || "Koramangala",
+      phone: existing?.phone || localStorage.getItem("workhop_pro_phone") || "9876543210",
+      company_name: existing?.company_name || localStorage.getItem("workhop_company_name") || "Hyperlocal Co.",
+      skill: existing?.skill || localStorage.getItem("workhop_pro_skill") || "UI/UX & Brand Designer",
     });
     setToken(session.session_token);
     saveStoredUser(session.user);
@@ -176,13 +178,16 @@ export function AuthProvider({ children }) {
         return data;
       }
     } catch (e) {
-      // Fallback
-      const session = passwordLogin(email, password, role);
-      setToken(session.session_token);
-      saveStoredUser(session.user);
-      setUser(session.user);
-      return session;
+      if (e?.status === 404 || e?.message?.includes("Email not found") || e?.message?.includes("Incorrect password")) {
+        throw e;
+      }
     }
+    // Fallback client check (throws "Email not found. Please register first." if unregistered)
+    const session = passwordLogin(email, password, role);
+    setToken(session.session_token);
+    saveStoredUser(session.user);
+    setUser(session.user);
+    return session;
   }, []);
 
   const signupWithDetails = useCallback(async (details) => {

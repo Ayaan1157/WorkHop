@@ -10,6 +10,8 @@ import {
   saveStoredUser,
   createMockSession,
   passwordLogin,
+  isEmailRegistered,
+  getRegisteredUserByEmail,
   saveRegisteredUser,
   applyToJob,
   getStoredChats,
@@ -365,11 +367,23 @@ async function mockRouter(path, method = "GET", body = null) {
     return session;
   }
   if (cleanPath === "/auth/email/request-otp") {
+    const email = (body?.email || "").trim().toLowerCase();
+    if (!isEmailRegistered(email)) {
+      const err = new Error("Email not found. Please register first.");
+      err.status = 404;
+      throw err;
+    }
     return { message: "Code sent", dev_otp: "123456" };
   }
   if (cleanPath === "/auth/email/verify-otp") {
-    const email = body?.email || "user@example.com";
-    const session = createMockSession(email, body || {});
+    const email = (body?.email || "user@example.com").trim().toLowerCase();
+    if (!isEmailRegistered(email)) {
+      const err = new Error("Email not found. Please register first.");
+      err.status = 404;
+      throw err;
+    }
+    const existing = getRegisteredUserByEmail(email);
+    const session = createMockSession(email, { ...(existing || {}), ...(body || {}) });
     setToken(session.session_token);
     return session;
   }

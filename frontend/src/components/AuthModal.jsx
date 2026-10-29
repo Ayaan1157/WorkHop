@@ -11,6 +11,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import GoogleAccountPicker from "@/components/GoogleAccountPicker";
 import { sanitizeInput, checkRateLimit, resetRateLimit } from "@/lib/security";
+import { isEmailRegistered } from "@/lib/clientStore";
 
 export default function AuthModal({ isOpen, onClose, initialRole = null, initialMode = "signin" }) {
   const nav = useNavigate();
@@ -91,7 +92,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
 
   // Called when account is chosen from Google picker
   const handleSelectGoogleAccount = async (account) => {
-    const googleEmail = account.email;
+    const googleEmail = (account.email || "").trim().toLowerCase();
     const googleName = account.name;
     setEmail(googleEmail);
     setFullName(googleName);
@@ -99,10 +100,17 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setGoogleAccount(account);
     setError(null);
 
-    // If already in sign in mode, log in directly and look up saved profile
+    // If already in sign in mode, verify account exists first!
     if (mode === "signin") {
       setLoading(true);
       try {
+        if (!isEmailRegistered(googleEmail)) {
+          setError("Email not found. Please register first.");
+          setMode("signup");
+          setOtpStage("idle");
+          setLoading(false);
+          return;
+        }
         const session = await login(googleEmail, googleName);
         const resolvedRole = session?.user?.role || role || "freelancer";
         completeAndRedirect(resolvedRole, session?.user);
@@ -125,6 +133,12 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     const cleanEmail = email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
       setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (mode === "signin" && !isEmailRegistered(cleanEmail)) {
+      setError("Email not found. Please register first.");
+      setMode("signup");
       return;
     }
 

@@ -927,6 +927,80 @@ export function isUserAdmin(email) {
   return ADMIN_EMAILS.includes(email.trim().toLowerCase());
 }
 
+/**
+ * Retrieves full registered user details by email
+ */
+export function getRegisteredUserByEmail(email) {
+  if (!email) return null;
+  const clean = email.trim().toLowerCase();
+
+  // 1. Registered users table
+  const regUsers = getRegisteredUsers();
+  if (regUsers[clean]) {
+    return regUsers[clean];
+  }
+
+  // 2. Submitted freelancer profiles
+  const submitted = getSubmittedProfiles();
+  const sub = submitted.find((p) => p.email && p.email.trim().toLowerCase() === clean);
+  if (sub) {
+    return {
+      name: sub.name || sub.full_name,
+      email: clean,
+      role: "freelancer",
+      phone: sub.phone,
+      area: sub.area,
+      skill: sub.skill,
+      category: sub.category,
+      approved: sub.approved,
+    };
+  }
+
+  // 3. Stored employers
+  try {
+    const employers = getStoredEmployers();
+    const emp = employers.find((e) => e.email && e.email.trim().toLowerCase() === clean);
+    if (emp) {
+      return {
+        name: emp.name || emp.company_name,
+        email: clean,
+        role: "employer",
+        phone: emp.phone,
+        area: emp.area,
+        company_name: emp.company_name,
+      };
+    }
+  } catch {}
+
+  // 4. Stored leads / talent
+  try {
+    const leads = getStoredLeads({ includeDeclined: true });
+    const lead = leads.find((l) => l.email && l.email.trim().toLowerCase() === clean);
+    if (lead) {
+      return {
+        name: lead.name,
+        email: clean,
+        role: "freelancer",
+        phone: lead.phone,
+        area: lead.area,
+        skill: lead.skill,
+      };
+    }
+  } catch {}
+
+  return null;
+}
+
+/**
+ * Checks whether an email address is already registered on WorkHop
+ */
+export function isEmailRegistered(email) {
+  if (!email) return false;
+  const clean = email.trim().toLowerCase();
+  if (isUserAdmin(clean)) return true;
+  return Boolean(getRegisteredUserByEmail(clean));
+}
+
 export function passwordLogin(email, password, fallbackRole = "freelancer") {
   const cleanEmail = (email || "").trim().toLowerCase();
   if (!cleanEmail) {
@@ -957,10 +1031,15 @@ export function passwordLogin(email, password, fallbackRole = "freelancer") {
     }
   }
 
-  // Registered user check
-  const regUsers = getRegisteredUsers();
-  const existing = regUsers[cleanEmail];
-  if (existing && existing.password && existing.password !== password) {
+  // Registered user check: Verify that this profile actually exists!
+  const existing = getRegisteredUserByEmail(cleanEmail);
+  if (!existing) {
+    const err = new Error("Email not found. Please register first.");
+    err.status = 404;
+    throw err;
+  }
+
+  if (existing.password && existing.password !== password) {
     const err = new Error("Incorrect password. Please check your credentials.");
     err.status = 401;
     throw err;

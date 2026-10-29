@@ -6,7 +6,7 @@ import {
   User, Building2, LocateFixed, CheckCircle2, Eye, EyeOff, Sun, Moon, Menu, X, Star
 } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
-import { getStoredLeads } from "@/lib/clientStore";
+import { getStoredLeads, isEmailRegistered } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
@@ -341,7 +341,7 @@ export default function Landing() {
   // Called when user selects a Google account from the picker
   const handleSelectGoogleAccount = async (account) => {
     const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
-    const googleEmail = account.email;
+    const googleEmail = (account.email || "").trim().toLowerCase();
     const googleName = account.name;
     
     setEmailInput(googleEmail);
@@ -350,10 +350,16 @@ export default function Landing() {
     setGoogleAccount(account);
     setOtpError(null);
 
-    // If in signin mode, log in immediately with chosen Google account
+    // If in signin mode, check if account exists first!
     if (authMode === "signin") {
       setOtpLoading(true);
       try {
+        if (!isEmailRegistered(googleEmail)) {
+          setOtpError("Email not found. Please register first.");
+          setAuthMode("signup");
+          setOtpLoading(false);
+          return;
+        }
         const session = await login(googleEmail, googleName);
         const resolvedRole = session?.user?.role || target || "freelancer";
         completeSessionAndRedirect(resolvedRole, session?.user);
