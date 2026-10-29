@@ -422,3 +422,19 @@ export async function supabaseGetProfessionSuggestions() {
     return null;
   }
 }
+
+export async function supabaseGetEmployers() {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("role", "employer")
+      .limit(100);
+
+    if (error) return [];
+    return data || [];
+  } catch {
+    return [];
+  }
+}

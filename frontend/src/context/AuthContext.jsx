@@ -191,10 +191,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signupWithDetails = useCallback(async (details) => {
-    if (details.password) {
-      saveRegisteredUser(details.email, details.password, details);
-    }
-    const session = createMockSession(details.email || "user@workhop.local", details);
+    try {
+      saveRegisteredUser(details?.email, details?.password || "", details);
+    } catch (_) {}
+    const session = createMockSession(details?.email || "user@workhop.local", details);
     setToken(session.session_token);
     saveStoredUser(session.user);
     setUser(session.user);
@@ -210,6 +210,11 @@ export function AuthProvider({ children }) {
       if (next.role) localStorage.setItem("workhop_auth_role", next.role);
       if (next.skill) localStorage.setItem("workhop_pro_skill", next.skill);
       if (next.company_name) localStorage.setItem("workhop_company_name", next.company_name);
+      if (next.email || next.phone || next.name) {
+        try {
+          saveRegisteredUser(next.email, "", next);
+        } catch (_) {}
+      }
       return next;
     });
   }, []);

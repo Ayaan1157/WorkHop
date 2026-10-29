@@ -72,6 +72,7 @@ import {
   supabaseApplyToJob,
   supabaseSendMessage,
   supabaseAddReview,
+  supabaseGetEmployers,
 } from "./supabase";
 export * from "./supabase";
 
@@ -366,6 +367,7 @@ async function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath === "/auth/mobile/verify-otp") {
     const email = body?.email || "user@example.com";
+    saveRegisteredUser(email, body?.password, body);
     const session = createMockSession(email, { ...(body || {}), phone_verified: true });
     setToken(session.session_token);
     saveStoredUser(session.user);
@@ -402,9 +404,7 @@ async function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath === "/auth/signup") {
     const email = body?.email || "user@example.com";
-    if (body?.password) {
-      saveRegisteredUser(email, body.password, body);
-    }
+    saveRegisteredUser(email, body?.password, body);
     const session = createMockSession(email, body || {});
     setToken(session.session_token);
     saveStoredUser(session.user);
@@ -582,7 +582,36 @@ async function mockRouter(path, method = "GET", body = null) {
     return deleteStoredEmployer(empId);
   }
   if (cleanPath === "/admin/employers") {
-    return getStoredEmployers();
+    let employers = getStoredEmployers();
+    if (isSupabaseConfigured()) {
+      try {
+        const remoteProfiles = await supabaseGetEmployers();
+        if (Array.isArray(remoteProfiles) && remoteProfiles.length > 0) {
+          const empMap = new Map();
+          for (const e of employers) {
+            empMap.set((e.company_name || e.name || e.email || "").toLowerCase(), e);
+          }
+          for (const rp of remoteProfiles) {
+            const key = (rp.company_name || rp.name || rp.email || "").toLowerCase();
+            if (key && !empMap.has(key)) {
+              empMap.set(key, {
+                employer_id: rp.id,
+                company_name: rp.company_name || rp.name || "Employer",
+                name: rp.name || "Employer",
+                email: rp.email || "",
+                phone: rp.phone || "",
+                area: rp.area || "Bengaluru",
+                spent_rupees: rp.spent_rupees || 0,
+                created_at: rp.created_at || new Date().toISOString(),
+                source: "supabase",
+              });
+            }
+          }
+          employers = Array.from(empMap.values());
+        }
+      } catch {}
+    }
+    return employers;
   }
   if (cleanPath === "/admin/freelancers") {
     try {

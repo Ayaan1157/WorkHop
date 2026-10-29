@@ -1066,19 +1066,48 @@ export function getRegisteredUsers() {
 }
 
 export function saveRegisteredUser(email, password, profile = {}) {
-  if (!email) return;
+  const fallbackEmail = email || profile.email || (profile.phone ? `${profile.phone.replace(/\D/g, "")}@mobile.workhop.local` : (profile.name ? `${profile.name.toLowerCase().replace(/[^a-z0-9]/g, "")}@workhop.local` : ""));
+  if (!fallbackEmail) return;
   const users = getRegisteredUsers();
-  const cleanEmail = email.trim().toLowerCase();
+  const cleanEmail = fallbackEmail.trim().toLowerCase();
   const isNew = !users[cleanEmail];
 
   users[cleanEmail] = {
     ...profile,
-    email: cleanEmail,
+    email: profile.email || cleanEmail,
     updated_at: new Date().toISOString(),
   };
   // Security: Never persist plaintext passwords in client localStorage
   delete users[cleanEmail].password;
   localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+
+  // Automatically register employer into admin employers store if role is employer
+  if (profile.role === "employer" || profile.company_name) {
+    try {
+      const company = (profile.company_name && profile.company_name !== "Hyperlocal Co." ? profile.company_name : profile.name) || "Independent Employer";
+      const existing = readAdminEmployers();
+      const match = existing.find(
+        (e) => (e.email && e.email.toLowerCase() === cleanEmail) ||
+               (e.company_name && e.company_name.toLowerCase() === company.toLowerCase()) ||
+               (profile.name && e.name && e.name.toLowerCase() === profile.name.toLowerCase())
+      );
+      if (!match) {
+        const slug = (profile.name || company).toLowerCase().replace(/[^a-z0-9]+/g, "") || "employer";
+        const newEmp = {
+          employer_id: profile.id || `emp-${slug}-${Date.now().toString(36)}`,
+          company_name: company,
+          name: profile.name || company,
+          email: profile.email || (cleanEmail.includes("@mobile.workhop.local") ? "" : cleanEmail),
+          phone: profile.phone || "",
+          area: profile.area || "Bengaluru",
+          spent_rupees: 0,
+          created_at: new Date().toISOString(),
+          source: "registered",
+        };
+        localStorage.setItem(ADMIN_EMPLOYERS_KEY, JSON.stringify([newEmp, ...existing]));
+      }
+    } catch {}
+  }
 
   if (isNew) {
     const roleName = profile.role === "employer" ? "Employer" : "Freelancer";
@@ -2317,8 +2346,9 @@ export function addAdminGig(jobData) {
   return newJob;
 }
 
-// 15. Admin-managed Employers on the website
+// 15. Admin-managed & Registered Employers on the website
 const ADMIN_EMPLOYERS_KEY = "workhop_admin_employers_v2";
+const DELETED_EMPLOYERS_KEY = "workhop_deleted_employers_v1";
 
 function readAdminEmployers() {
   try {
@@ -2329,12 +2359,138 @@ function readAdminEmployers() {
   }
 }
 
+function getDeletedEmployerIds() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DELETED_EMPLOYERS_KEY) || "[]");
+    return new Set(Array.isArray(parsed) ? parsed.map((x) => String(x).toLowerCase().trim()) : []);
+  } catch {
+    return new Set();
+  }
+}
+
 export function getStoredEmployers() {
   const jobs = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
-  return readAdminEmployers().map((e) => {
+  const deleted = getDeletedEmployerIds();
+  const employersMap = new Map();
+
+  // 1. Admin-managed / manually created employers
+  const adminEmps = readAdminEmployers();
+  for (const e of adminEmps) {
+    const key = (e.email || e.employer_id || e.company_name || e.name || "").trim().toLowerCase();
+    if (key && !deleted.has(key) && !deleted.has(String(e.employer_id).toLowerCase())) {
+      employersMap.set(key, { ...e, source: "admin" });
+    }
+  }
+
+  // 2. Registered users who signed up as employers (e.g. Alia Mansoor)
+  try {
+    const regUsers = getRegisteredUsers();
+    for (const [email, u] of Object.entries(regUsers)) {
+      if (u && (u.role === "employer" || u.company_name)) {
+        const company = (u.company_name && u.company_name !== "Hyperlocal Co." ? u.company_name : (u.name || "Independent Employer")).trim();
+        const key = (u.email || email || u.id || u.phone || company).toLowerCase();
+        const empId = u.id || `emp-${key.replace(/[^a-z0-9]/g, "")}`;
+        if (!deleted.has(key) && !deleted.has(String(empId).toLowerCase()) && !deleted.has(String(email).toLowerCase())) {
+          if (!employersMap.has(key)) {
+            employersMap.set(key, {
+              employer_id: empId,
+              company_name: company,
+              name: u.name || company,
+              email: u.email || email,
+              phone: u.phone || "",
+              area: u.area || "Bengaluru",
+              spent_rupees: u.spent_rupees || 0,
+              created_at: u.created_at || u.updated_at || new Date().toISOString(),
+              source: "registered",
+            });
+          } else {
+            const existing = employersMap.get(key);
+            if (!existing.email && (u.email || email)) existing.email = u.email || email;
+            if (!existing.phone && u.phone) existing.phone = u.phone;
+            if (u.name && (!existing.name || existing.name.includes("Hiring Team"))) existing.name = u.name;
+          }
+        }
+      }
+    }
+  } catch {}
+
+  // 3. Current logged-in user or active employer session
+  try {
+    const currentUser = getStoredUser();
+    const storedRole = localStorage.getItem("workhop_auth_role");
+    const storedCompany = localStorage.getItem("workhop_company_name");
+    const storedPhone = localStorage.getItem("workhop_pro_phone");
+    const storedArea = localStorage.getItem("workhop_user_area");
+    const isEmployerSession = (currentUser && (currentUser.role === "employer" || currentUser.company_name)) || storedRole === "employer" || storedCompany;
+
+    if (isEmployerSession) {
+      const company = (currentUser?.company_name && currentUser.company_name !== "Hyperlocal Co."
+        ? currentUser.company_name
+        : (storedCompany && storedCompany !== "Hyperlocal Co." ? storedCompany : (currentUser?.name || "Independent Employer"))).trim();
+      const key = (currentUser?.email || currentUser?.phone || storedPhone || company).toLowerCase();
+      const empId = currentUser?.id || localStorage.getItem("workhop_employer_id") || `emp-${key.replace(/[^a-z0-9]/g, "") || "session"}`;
+      if (!deleted.has(key) && !deleted.has(String(empId).toLowerCase())) {
+        if (!employersMap.has(key)) {
+          employersMap.set(key, {
+            employer_id: empId,
+            company_name: company,
+            name: currentUser?.name || company,
+            email: currentUser?.email || "",
+            phone: currentUser?.phone || storedPhone || "",
+            area: currentUser?.area || storedArea || "Bengaluru",
+            spent_rupees: 0,
+            created_at: currentUser?.created_at || new Date().toISOString(),
+            source: "session",
+          });
+        } else {
+          const existing = employersMap.get(key);
+          if (currentUser?.name && (!existing.name || existing.name.includes("Hiring Team"))) {
+            existing.name = currentUser.name;
+          }
+          if (!existing.email && currentUser?.email) existing.email = currentUser.email;
+          if (!existing.phone && (currentUser?.phone || storedPhone)) existing.phone = currentUser?.phone || storedPhone;
+        }
+      }
+    }
+  } catch {}
+
+  // 4. Employers who posted jobs
+  for (const j of jobs) {
+    const company = (j.company_name || j.company || j.employer_name || "").trim();
+    if (company) {
+      const key = company.toLowerCase();
+      const empId = j.employer_id || `emp-${key.replace(/[^a-z0-9]/g, "")}`;
+      if (!deleted.has(key) && !deleted.has(String(empId).toLowerCase())) {
+        if (!employersMap.has(key)) {
+          employersMap.set(key, {
+            employer_id: empId,
+            company_name: company,
+            name: j.employer_name || company,
+            email: "",
+            phone: "",
+            area: j.area || "Bengaluru",
+            spent_rupees: 0,
+            created_at: j.created_at || new Date().toISOString(),
+            source: "job_poster",
+          });
+        }
+      }
+    }
+  }
+
+  // Self-heal / backfill to ADMIN_EMPLOYERS_KEY so admin table and direct queries always stay synchronized
+  try {
+    const list = Array.from(employersMap.values());
+    if (adminEmps.length < list.length) {
+      localStorage.setItem(ADMIN_EMPLOYERS_KEY, JSON.stringify(list));
+    }
+  } catch {}
+
+  // Calculate jobs_posted count for each employer
+  return Array.from(employersMap.values()).map((e) => {
     const key = (e.company_name || "").trim().toLowerCase();
     const count = jobs.filter(
-      (j) => j.employer_id === e.employer_id || (j.company_name || "").trim().toLowerCase() === key
+      (j) => j.employer_id === e.employer_id || (j.company_name || j.company || "").trim().toLowerCase() === key
     ).length;
     return { ...e, jobs_posted: count };
   });
@@ -2407,16 +2563,25 @@ export function addStoredEmployer(data = {}) {
 export function deleteStoredEmployer(idOrCompany) {
   const target = decodeURIComponent(String(idOrCompany || "")).trim();
   if (!target) return { ok: false, error: "Identifier required" };
-  const employers = readAdminEmployers();
+  const employers = getStoredEmployers();
   const match = employers.find(
     (e) => e.employer_id === target || (e.company_name || "").trim().toLowerCase() === target.toLowerCase()
   );
   const companyKey = (match?.company_name || target).trim().toLowerCase();
   const empId = match?.employer_id || target;
 
+  // Add to deleted set
+  try {
+    const delList = JSON.parse(localStorage.getItem(DELETED_EMPLOYERS_KEY) || "[]");
+    delList.push(empId.toLowerCase(), companyKey);
+    localStorage.setItem(DELETED_EMPLOYERS_KEY, JSON.stringify([...new Set(delList)]));
+  } catch {}
+
+  // Remove from admin employers key
+  const adminEmps = readAdminEmployers();
   localStorage.setItem(
     ADMIN_EMPLOYERS_KEY,
-    JSON.stringify(employers.filter((e) => e.employer_id !== empId && (e.company_name || "").trim().toLowerCase() !== companyKey))
+    JSON.stringify(adminEmps.filter((e) => e.employer_id !== empId && (e.company_name || "").trim().toLowerCase() !== companyKey))
   );
 
   const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
@@ -2435,7 +2600,11 @@ export function deleteStoredEmployer(idOrCompany) {
 }
 
 export function deleteAllStoredEmployers() {
-  const employers = readAdminEmployers();
+  const employers = getStoredEmployers();
+  try {
+    const allIds = employers.flatMap((e) => [String(e.employer_id).toLowerCase(), (e.company_name || "").toLowerCase()]);
+    localStorage.setItem(DELETED_EMPLOYERS_KEY, JSON.stringify([...new Set(allIds)]));
+  } catch {}
   localStorage.setItem(ADMIN_EMPLOYERS_KEY, JSON.stringify([]));
   const custom = JSON.parse(localStorage.getItem(CUSTOM_JOBS_KEY) || "[]");
   localStorage.setItem(CUSTOM_JOBS_KEY, JSON.stringify([]));
