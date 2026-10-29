@@ -1185,6 +1185,10 @@ export const apiDelete = (path, auth = false) =>
 
 // Local id helpers (mirror the mobile AsyncStorage keys)
 export function getEmployerId() {
+  const u = getStoredUser();
+  if (u && (u.role === "employer" || u.company_name)) {
+    return u.id || u.employer_id || u.email || localStorage.getItem("workhop_employer_id") || "employer-demo";
+  }
   let id = localStorage.getItem("workhop_employer_id");
   if (!id) {
     id = `employer-${Math.random().toString(36).slice(2, 10)}`;
@@ -1194,6 +1198,10 @@ export function getEmployerId() {
 }
 
 export function getFreelancerId() {
+  const u = getStoredUser();
+  if (u && u.role === "freelancer") {
+    return u.id || u.freelancer_id || u.email || localStorage.getItem("workhop_freelancer_id") || "freelancer-demo";
+  }
   let id = localStorage.getItem("workhop_freelancer_id");
   if (!id) {
     id = `freelancer-${Math.random().toString(36).slice(2, 10)}`;

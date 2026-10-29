@@ -4,7 +4,7 @@ import {
   ChevronLeft, Loader2, Grid3x3, Palette, Code2, Megaphone,
   PenLine, Video, Sparkles, Music, Briefcase, Users,
   MapPin, PlusCircle, UserCircle2, LogOut, Search, Compass, Tag, HelpCircle, Coins,
-  Sun, Moon, Menu, X, Home, Shield, FileText, ArrowRight, BookOpen
+  Sun, Moon, Menu, X, Home, Shield, FileText, ArrowRight, BookOpen, Zap
 } from "lucide-react";
 import { apiGet, getFreelancerId } from "@/lib/api";
 import { getCreditsWallet } from "@/lib/clientStore";
@@ -157,8 +157,12 @@ export function GlobalNav() {
     (loc.pathname.startsWith("/plans") && loc.search.includes("employer"))
   );
 
-  const isEmployerUser = Boolean(user && (userRole?.includes("employ") || userRole?.includes("client")));
-  const isFreelancerUser = Boolean(user && !isAdmin && !isEmployerUser);
+  const isEmployerUser = Boolean(
+    (user && (userRole?.includes("employ") || userRole?.includes("client"))) ||
+    userRole === "employer" ||
+    (!user && isEmployerRoute)
+  );
+  const isFreelancerUser = Boolean(!isAdmin && !isEmployerUser && (userRole.includes("freelance") || isFreelancerRoute));
 
   const isEmployer = Boolean(
     isEmployerUser ||
@@ -176,7 +180,7 @@ export function GlobalNav() {
     isEmployerUser || (!user && !isFreelancerRoute) || isAdmin
   );
 
-  const currentFreelancerId = getFreelancerId?.() || user?.id || "anon";
+  const currentFreelancerId = (isFreelancerUser ? (user?.id || user?.email) : null) || getFreelancerId?.() || "anon";
   const userWallet = getCreditsWallet(currentFreelancerId);
   const currentHops = userWallet?.balance ?? 20;
   const plansPath = isFreelancerUser ? "/plans?tab=freelancer" : "/plans?tab=employer";
@@ -241,6 +245,15 @@ export function GlobalNav() {
               >
                 <Shield size={14} className="text-white shrink-0 fill-white/20" />
                 <span className="text-white font-black">ADMIN FULL ACCESS</span>
+              </Link>
+            ) : isEmployerUser ? (
+              <Link
+                to="/plans?tab=employer"
+                className="hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#222] px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-stone dark:hover:bg-[#2c2c2c] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
+                title="Employer Hiring & Promotion Plans"
+              >
+                <Zap size={14} className="text-brand shrink-0 fill-brand" />
+                <span>EMPLOYER PLANS</span>
               </Link>
             ) : (
               <Link
