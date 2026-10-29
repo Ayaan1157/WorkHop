@@ -93,6 +93,8 @@ export default function PostJob() {
     loadCredits();
   }, [loadCredits]);
 
+  const [gpsFeedback, setGpsFeedback] = useState(null);
+
   // When GPS location is granted, auto-detect the closest area
   useEffect(() => {
     if (coords && coords.lat && coords.lng) {
@@ -103,6 +105,42 @@ export default function PostJob() {
       }
     }
   }, [coords]);
+
+  const handleUseLiveGps = async () => {
+    setGpsFeedback(null);
+    try {
+      const res = await requestLocation();
+      const loc = res?.coords || coords;
+      if (loc) {
+        const nearest = findNearestArea(loc);
+        if (nearest) {
+          setArea(nearest.name);
+          setCustomCoords({ lat: loc.lat, lng: loc.lng });
+          if (nearest.isOutsideBengaluru) {
+            setGpsFeedback({
+              type: "outside",
+              text: `📍 Location detected (~${nearest.distanceToBengaluruCenter}km away). Selected nearest hub: ${nearest.name}.`,
+            });
+          } else {
+            setGpsFeedback({
+              type: "success",
+              text: `✓ Live GPS detected: ${nearest.name} (${nearest.zone} Bengaluru)`,
+            });
+          }
+        }
+      } else {
+        setGpsFeedback({
+          type: "error",
+          text: "⚠️ Location permission denied or unavailable. Please choose your area below.",
+        });
+      }
+    } catch {
+      setGpsFeedback({
+        type: "error",
+        text: "⚠️ Location request failed. Please choose your area below.",
+      });
+    }
+  };
 
   const handleSelectArea = (areaName) => {
     setArea(areaName);
@@ -430,7 +468,7 @@ export default function PostJob() {
               <label className={label}>JOB LOCALITY / AREA (NO HOUSE ADDRESS)</label>
               <button
                 type="button"
-                onClick={requestLocation}
+                onClick={handleUseLiveGps}
                 className="flex items-center gap-1 border border-ink bg-brand px-2.5 py-1 text-[10px] font-black text-white hover:bg-brand/90 transition active:translate-y-0.5"
               >
                 {locStatus === "locating" ? (
@@ -438,7 +476,7 @@ export default function PostJob() {
                 ) : (
                   <LocateFixed size={12} />
                 )}
-                <span>USE LIVE GPS LOCATION</span>
+                <span>{locStatus === "locating" ? "DETECTING GPS…" : "USE LIVE GPS LOCATION"}</span>
               </button>
             </div>
 
@@ -449,11 +487,26 @@ export default function PostJob() {
                 onChange={(e) => {
                   setArea(e.target.value);
                   setCustomCoords(null);
+                  setGpsFeedback(null);
                 }}
                 placeholder="e.g. Koramangala, Indiranagar, HSR Layout"
                 className={`${inputCls} flex-1`}
               />
             </div>
+
+            {gpsFeedback && (
+              <p
+                className={`text-[11px] font-bold p-2 border ${
+                  gpsFeedback.type === "success"
+                    ? "text-emerald-800 bg-emerald-50 border-emerald-300"
+                    : gpsFeedback.type === "outside"
+                    ? "text-amber-800 bg-amber-50 border-amber-300"
+                    : "text-red-700 bg-red-50 border-red-300"
+                }`}
+              >
+                {gpsFeedback.text}
+              </p>
+            )}
 
             {/* QUICK AREA CHIPS */}
             <div className="mt-1">
