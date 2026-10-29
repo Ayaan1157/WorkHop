@@ -1,30 +1,40 @@
-import { useState } from "react";
-import { User, Mail, Plus, Check, X, ShieldCheck, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { User, Mail, Plus, X, ArrowRight, Trash2 } from "lucide-react";
 
-// Default preset Google accounts for realistic one-click sign in
-const DEFAULT_SAVED_ACCOUNTS = [
-  {
-    id: "acc-1",
-    name: "Ayaan S.",
-    email: "ayaan1157@gmail.com",
-    avatarBg: "#E65A1E",
-    initials: "AS",
-  },
-  {
-    id: "acc-2",
-    name: "Zenith Developer",
-    email: "zenithdeveleoperss@gmail.com",
-    avatarBg: "#121212",
-    initials: "ZD",
-  },
-  {
-    id: "acc-3",
-    name: "Manara Studio",
-    email: "manarastudio22@gmail.com",
-    avatarBg: "#2563EB",
-    initials: "MS",
-  },
-];
+const STORAGE_KEY = "workhop_my_google_accounts";
+
+function getLocalGoogleAccounts() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalGoogleAccount(account) {
+  try {
+    const list = getLocalGoogleAccounts().filter(
+      (a) => a.email.toLowerCase() !== account.email.toLowerCase()
+    );
+    list.unshift(account);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 3)));
+  } catch (e) {
+    console.debug("Failed to cache google account", e);
+  }
+}
+
+function removeLocalGoogleAccount(email) {
+  try {
+    const list = getLocalGoogleAccounts().filter(
+      (a) => a.email.toLowerCase() !== email.toLowerCase()
+    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    return list;
+  } catch {
+    return [];
+  }
+}
 
 export default function GoogleAccountPicker({
   isOpen,
@@ -32,27 +42,55 @@ export default function GoogleAccountPicker({
   onSelectAccount,
   currentEmail = "",
 }) {
-  const [useAnother, setUseAnother] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState([]);
+  const [useAnother, setUseAnother] = useState(true);
   const [customEmail, setCustomEmail] = useState("");
   const [customName, setCustomName] = useState("");
   const [customError, setCustomError] = useState("");
 
+  // Sync saved accounts whenever modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const local = getLocalGoogleAccounts();
+      setSavedAccounts(local);
+      // If user has no previous account saved on this browser, show direct input form
+      setUseAnother(local.length === 0);
+      setCustomError("");
+      setCustomEmail(currentEmail || "");
+    }
+  }, [isOpen, currentEmail]);
+
   if (!isOpen) return null;
 
   const handleChoose = (account) => {
+    saveLocalGoogleAccount(account);
     onSelectAccount(account);
     onClose();
+  };
+
+  const handleRemoveAccount = (e, email) => {
+    e.stopPropagation();
+    const updated = removeLocalGoogleAccount(email);
+    setSavedAccounts(updated);
+    if (updated.length === 0) {
+      setUseAnother(true);
+    }
   };
 
   const handleCustomSubmit = (e) => {
     e?.preventDefault();
     setCustomError("");
-    const trimmedEmail = customEmail.trim();
+    const trimmedEmail = customEmail.trim().toLowerCase();
     if (!trimmedEmail || !trimmedEmail.includes("@")) {
       setCustomError("Please enter a valid Google email address.");
       return;
     }
-    const derivedName = customName.trim() || trimmedEmail.split("@")[0].replace(/[._]/g, " ");
+    const derivedName =
+      customName.trim() ||
+      trimmedEmail
+        .split("@")[0]
+        .replace(/[._]/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
     const initials = derivedName
       .split(" ")
       .map((n) => n[0])
@@ -61,13 +99,14 @@ export default function GoogleAccountPicker({
       .toUpperCase();
 
     const customAccount = {
-      id: `custom-${Date.now()}`,
+      id: `google-${Date.now()}`,
       name: derivedName,
       email: trimmedEmail,
       avatarBg: "#4285F4",
       initials: initials || "G",
     };
 
+    saveLocalGoogleAccount(customAccount);
     onSelectAccount(customAccount);
     onClose();
   };
@@ -111,35 +150,38 @@ export default function GoogleAccountPicker({
           </svg>
 
           <h3 className="mt-3 text-xl font-black tracking-tight text-ink">
-            Choose an account
+            {savedAccounts.length > 0 && !useAnother ? "Choose an account" : "Sign in with Google"}
           </h3>
           <p className="mt-1 text-xs text-inkmuted">
-            to continue to <strong className="text-ink font-extrabold">WorkHop (workhop.in)</strong>
+            to continue to <strong className="text-ink font-extrabold">WorkHop</strong>
           </p>
         </div>
 
-        {/* Account List */}
-        {!useAnother ? (
+        {/* Previously Saved Accounts on THIS Device Only */}
+        {!useAnother && savedAccounts.length > 0 ? (
           <div className="mt-6 flex flex-col gap-2">
-            {DEFAULT_SAVED_ACCOUNTS.map((acc) => {
+            {savedAccounts.map((acc) => {
               const isCurrent = currentEmail && currentEmail.toLowerCase() === acc.email.toLowerCase();
               return (
-                <button
-                  key={acc.id}
-                  data-testid={`google-acc-${acc.id}`}
-                  onClick={() => handleChoose(acc)}
-                  className={`flex w-full items-center justify-between border-2 border-ink p-3 text-left transition hover:translate-x-0.5 ${
+                <div
+                  key={acc.email}
+                  className={`flex w-full items-center justify-between border-2 border-ink p-3 text-left transition ${
                     isCurrent
                       ? "bg-[#FFF3E9] shadow-[3px_3px_0px_#E65A1E]"
                       : "bg-white shadow-[2px_2px_0px_#121212] hover:bg-sand"
                   }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    type="button"
+                    data-testid={`google-acc-${acc.email}`}
+                    onClick={() => handleChoose(acc)}
+                    className="flex items-center gap-3 min-w-0 flex-1 text-left"
+                  >
                     <div
-                      style={{ backgroundColor: acc.avatarBg }}
+                      style={{ backgroundColor: acc.avatarBg || "#4285F4" }}
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink font-mono text-xs font-black text-white shadow-[1px_1px_0px_#121212]"
                     >
-                      {acc.initials}
+                      {acc.initials || "G"}
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className="truncate text-sm font-black text-ink">
@@ -149,16 +191,24 @@ export default function GoogleAccountPicker({
                         {acc.email}
                       </span>
                     </div>
-                  </div>
+                  </button>
 
-                  {isCurrent ? (
-                    <span className="border border-ink bg-brand px-1.5 py-0.5 text-[9px] font-black text-white uppercase">
-                      Selected
-                    </span>
-                  ) : (
-                    <ChevronRight className="text-inkmuted" size={16} />
-                  )}
-                </button>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    {isCurrent && (
+                      <span className="border border-ink bg-brand px-1.5 py-0.5 text-[9px] font-black text-white uppercase">
+                        Current
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveAccount(e, acc.email)}
+                      className="p-1 text-inkmuted hover:text-red-600 transition"
+                      title="Remove from device"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
               );
             })}
 
@@ -174,30 +224,32 @@ export default function GoogleAccountPicker({
               <div className="flex flex-col">
                 <span>Use another Google account</span>
                 <span className="text-[10px] font-normal text-inkmuted">
-                  Enter any custom Google / Gmail email
+                  Enter your Google / Gmail email address
                 </span>
               </div>
             </button>
           </div>
         ) : (
-          /* Custom Google Account Entry Form */
+          /* Google Account Entry Form */
           <form onSubmit={handleCustomSubmit} className="mt-5 flex flex-col gap-3">
-            <div className="border-b-2 border-ink pb-2 mb-1 flex items-center justify-between">
-              <span className="text-xs font-black uppercase text-ink">
-                Enter Your Google Account
-              </span>
-              <button
-                type="button"
-                onClick={() => setUseAnother(false)}
-                className="text-[11px] font-bold text-brand underline"
-              >
-                ← Back to saved
-              </button>
-            </div>
+            {savedAccounts.length > 0 && (
+              <div className="border-b-2 border-ink pb-2 mb-1 flex items-center justify-between">
+                <span className="text-xs font-black uppercase text-ink">
+                  Enter Google Account
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setUseAnother(false)}
+                  className="text-[11px] font-bold text-brand underline"
+                >
+                  ← Back to my account
+                </button>
+              </div>
+            )}
 
             <div>
               <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-                Google Email Address *
+                Google / Gmail Email Address *
               </label>
               <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2 shadow-[2px_2px_0px_#121212]">
                 <Mail size={15} className="text-inkmuted mr-2 shrink-0" />
@@ -205,7 +257,7 @@ export default function GoogleAccountPicker({
                   data-testid="google-custom-email-input"
                   type="email"
                   required
-                  placeholder="your.email@gmail.com"
+                  placeholder="yourname@gmail.com"
                   value={customEmail}
                   onChange={(e) => setCustomEmail(e.target.value)}
                   className="w-full bg-transparent text-xs font-bold text-ink outline-none"
@@ -216,14 +268,14 @@ export default function GoogleAccountPicker({
 
             <div>
               <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
-                Display Name (Optional)
+                Your Full Name (Optional)
               </label>
               <div className="mt-1 flex items-center border-2 border-ink bg-white px-3 py-2 shadow-[2px_2px_0px_#121212]">
                 <User size={15} className="text-inkmuted mr-2 shrink-0" />
                 <input
                   data-testid="google-custom-name-input"
                   type="text"
-                  placeholder="e.g. Ayaan Sharma"
+                  placeholder="e.g. Rahul Sharma"
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
                   className="w-full bg-transparent text-xs font-bold text-ink outline-none"
@@ -242,7 +294,7 @@ export default function GoogleAccountPicker({
               data-testid="google-custom-submit-btn"
               className="mt-2 flex w-full items-center justify-center gap-1.5 border-2 border-ink bg-brand py-2.5 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
             >
-              <span>Continue with this account</span>
+              <span>Continue with Google</span>
               <ArrowRight size={14} />
             </button>
           </form>
@@ -266,23 +318,5 @@ export default function GoogleAccountPicker({
 
       </div>
     </div>
-  );
-}
-
-function ChevronRight({ className = "", size = 16 }) {
-  return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
   );
 }
