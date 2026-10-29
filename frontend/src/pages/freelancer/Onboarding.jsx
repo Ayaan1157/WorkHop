@@ -7,6 +7,7 @@ import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
 import { apiGet, apiPost, setFreelancerId, getFreelancerId } from "@/lib/api";
+import { ADMIN_EMAILS } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { sanitizeInput } from "@/lib/security";
 import { scanUploadFile } from "@/lib/contactScanner";
@@ -18,6 +19,13 @@ export default function Onboarding() {
   const { user } = useAuth();
   const { startPayment } = useRazorpay();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
+
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    userRole === "admin" ||
+    (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
+  );
 
   const [state, setState] = useState({ freelancerId: null, paid: false, verified: false, verifiedEmail: null });
   const [paying, setPaying] = useState(false);
@@ -244,7 +252,7 @@ export default function Onboarding() {
             <button data-testid="step1-pay-btn" disabled={paying || state.paid} onClick={handlePay} className={`flex items-center justify-center gap-2 border-2 border-ink py-3 text-sm font-black text-white ${state.paid ? "bg-ok" : "bg-brand"} disabled:opacity-70`}>
               {paying ? <><Loader2 size={18} className="animate-spin" /> Processing…</> : state.paid ? <><CheckCircle2 size={18} /> Payment Verified · ₹299</> : coupon?.final_amount === 0 ? "Activate Free Onboarding →" : `Pay Onboarding Fee · ₹${coupon?.final_amount ?? 299}`}
             </button>
-            {!state.paid && (
+            {!state.paid && isAdmin && (
               <button
                 type="button"
                 data-testid="step1-test-bypass-btn"
@@ -270,7 +278,7 @@ export default function Onboarding() {
                 </div>
                 {otpSent && (
                   <>
-                    {devOtp && <p data-testid="wizard-dev-otp" className="border-[1.5px] border-ink bg-[#FFF3C4] p-2 text-xs font-black text-ink">TEST MODE — your code: {devOtp}</p>}
+                    {devOtp && isAdmin && <p data-testid="wizard-dev-otp" className="border-[1.5px] border-ink bg-[#FFF3C4] p-2 text-xs font-black text-ink">TEST MODE — your code: {devOtp}</p>}
                     <div className="flex gap-2">
                       <input data-testid="otp-code-input" value={otpCode} onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setVError(null); }} placeholder="6-digit code" className={`${inputCls} flex-1 font-black tracking-[0.4em]`} />
                       <button data-testid="confirm-otp-btn" onClick={confirmOtp} disabled={vBusy} className="min-w-[90px] bg-ink px-4 text-xs font-black tracking-wider text-white disabled:opacity-60">{vBusy ? <Loader2 size={16} className="mx-auto animate-spin" /> : "VERIFY"}</button>
@@ -278,7 +286,7 @@ export default function Onboarding() {
                     <button data-testid="otp-change-email-btn" onClick={() => { setOtpSent(false); setDevOtp(null); setOtpCode(""); setVError(null); }} className="text-left text-xs font-bold text-brand">← Change email / resend code</button>
                   </>
                 )}
-                {state.paid && !state.verified && (
+                {state.paid && !state.verified && isAdmin && (
                   <div className="mt-2.5 flex items-center justify-between border border-dashed border-ink/40 bg-sand/60 p-2">
                     <span className="text-[11px] font-bold text-inkmuted">Testing? Quick bypass email verification:</span>
                     <button
