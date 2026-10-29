@@ -21,6 +21,10 @@ const PLANS_PRICES_INR = {
   "lead-unlock": 199,
   "quota_boost": 149,
   "assisted-999": 999,
+  "freelancer_onboarding": 299,
+  "onboarding": 299,
+  "verification-badge": 299,
+  "verification_badge": 299,
 };
 
 function createRazorpayOrder(keyId, keySecret, orderPayload) {

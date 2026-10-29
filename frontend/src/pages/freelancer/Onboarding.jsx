@@ -115,8 +115,8 @@ export default function Onboarding() {
     }
     try {
       const data = await startPayment(
-        { product: "freelancer_onboarding", full_name: user?.name || "New Pro", coupon_code: coupon?.code ?? null },
-        `Verified Pro onboarding · ₹${coupon?.final_amount ?? 99}`
+        { product: "freelancer_onboarding", plan_id: "verification-badge", amount_inr: coupon?.final_amount ?? 299, full_name: user?.name || "New Pro", coupon_code: coupon?.code ?? null },
+        `Verified Pro onboarding · ₹${coupon?.final_amount ?? 299}`
       );
       if (data?.freelancer_id) {
         setState((s) => ({ ...s, freelancerId: data.freelancer_id, paid: true }));
@@ -237,12 +237,12 @@ export default function Onboarding() {
               <span className="flex h-16 w-16 items-center justify-center border-2 border-ink bg-brand"><ShieldCheck size={30} className="text-white" /></span>
               <div className="flex-1">
                 <span className="inline-flex items-center gap-1 bg-ink px-2 py-1 text-[10px] font-black tracking-wide text-white"><ShieldCheck size={12} /> Get the Verified Badge</span>
-                <p className="mt-2 text-[13px] font-bold leading-5 text-ink">Pay a one-time fee of ₹99 to launch your profile live within a 5km radius.</p>
+                <p className="mt-2 text-[13px] font-bold leading-5 text-ink">Pay a one-time fee of ₹299 to launch your profile live within a 5km radius.</p>
               </div>
             </div>
-            {!state.paid && <div className="my-2"><CouponInput product="freelancer_onboarding" amount={99} onApplied={setCoupon} testIDPrefix="onboarding-coupon" /></div>}
+            {!state.paid && <div className="my-2"><CouponInput product="freelancer_onboarding" amount={299} onApplied={setCoupon} testIDPrefix="onboarding-coupon" /></div>}
             <button data-testid="step1-pay-btn" disabled={paying || state.paid} onClick={handlePay} className={`flex items-center justify-center gap-2 border-2 border-ink py-3 text-sm font-black text-white ${state.paid ? "bg-ok" : "bg-brand"} disabled:opacity-70`}>
-              {paying ? <><Loader2 size={18} className="animate-spin" /> Processing…</> : state.paid ? <><CheckCircle2 size={18} /> Payment Verified · ₹99</> : coupon?.final_amount === 0 ? "Activate Free Onboarding →" : "Pay Onboarding Fee · ₹99"}
+              {paying ? <><Loader2 size={18} className="animate-spin" /> Processing…</> : state.paid ? <><CheckCircle2 size={18} /> Payment Verified · ₹299</> : coupon?.final_amount === 0 ? "Activate Free Onboarding →" : `Pay Onboarding Fee · ₹${coupon?.final_amount ?? 299}`}
             </button>
             {!state.paid && (
               <button

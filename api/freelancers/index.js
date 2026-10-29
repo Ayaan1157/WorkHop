@@ -124,7 +124,7 @@ module.exports = async function handler(req, res) {
       const amountInr = (p.amount || 0) / 100;
       const planName =
         p.description ||
-        (amountInr === 150 ? "20 Bidding Hops Pack · ₹150" : amountInr === 99 ? "Verified Pro Onboarding · ₹99" : `₹${amountInr} Top-Up Pack`);
+        (amountInr === 150 ? "20 Bidding Hops Pack · ₹150" : (amountInr === 299 || amountInr === 99) ? "Verified Pro Onboarding · ₹299" : `₹${amountInr} Top-Up Pack`);
 
       const skill = notes.skill || "Brand Identity, Digital Design & Creative Pro";
       const category = notes.category || "Graphics & Design";

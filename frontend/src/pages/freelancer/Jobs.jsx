@@ -975,7 +975,7 @@ export default function Jobs() {
               onClick={gotoVerify}
               className="border-2 border-white bg-brand px-4 py-2 text-xs font-black tracking-wider text-white shadow-[2px_2px_0px_#FFFFFF] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
             >
-              {!user ? "SIGN IN" : freelancerId ? "RESUME" : "VERIFY ₹99"}
+              {!user ? "SIGN IN" : freelancerId ? "RESUME" : "VERIFY ₹299"}
             </button>
           </div>
         </div>

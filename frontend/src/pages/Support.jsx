@@ -31,7 +31,7 @@ const FAQS = [
   },
   {
     q: "How do I get verified as a Pro?",
-    a: "Complete the 4-step wizard at /freelancer: pay the one-time ₹99 verification fee (covers identity tethering, anti-fraud checks, and live profile hosting), verify your email with an OTP, import your Fiverr/Upwork reputation or add portfolio links, and publish your profile live across Bangalore.",
+    a: "Complete the 4-step wizard at /freelancer: pay the one-time ₹299 verification fee (covers identity tethering, anti-fraud checks, and live profile hosting), verify your email with an OTP, import your Fiverr/Upwork reputation or add portfolio links, and publish your profile live across Bangalore.",
   },
   {
     q: "Why can't I see employer phone numbers immediately?",

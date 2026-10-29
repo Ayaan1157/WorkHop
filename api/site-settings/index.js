@@ -6,7 +6,7 @@ let inMemorySettings = {
   broadcast_banner_cta: "EXPLORE GIGS",
   maintenance_mode: false,
   maintenance_message: "WorkHop is performing a scheduled infrastructure upgrade. We'll be back shortly.",
-  onboarding_fee: 99,
+  onboarding_fee: 299,
   lead_unlock_fee: 199,
   quota_boost_fee: 149,
   auto_approve_pros: false,
