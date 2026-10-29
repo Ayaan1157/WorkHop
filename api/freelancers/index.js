@@ -41,6 +41,10 @@ function rzpRequest(method, path, data = null) {
   });
 }
 
+const freelancerStatusOverrides = {
+  "pro-shamanthnmurthy": { approved: true, status: "approved" },
+};
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
@@ -48,15 +52,30 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  // Admin approval/decline endpoint: POST /api/admin/freelancers/:id/approve
+  // Admin approval/decline endpoint: POST /api/admin/freelancers/:id/approve or /api/freelancers/:id/approve
   if (req.method === "POST" || req.method === "PUT") {
     try {
       const body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}");
+      const fId = req.query?.id || body?.freelancer_id || body?.id || "";
+      const isApproved = Boolean(body?.approved);
+      const status = isApproved ? "approved" : "declined";
+      const reason = body?.reason || (isApproved ? "Approved by admin" : "Declined by admin");
+
+      if (fId) {
+        freelancerStatusOverrides[fId] = {
+          approved: isApproved,
+          status,
+          reason,
+          updated_at: new Date().toISOString(),
+        };
+      }
+
       return res.status(200).json({
         ok: true,
-        approved: Boolean(body?.approved),
-        status: body?.approved ? "approved" : "declined",
-        reason: body?.reason || null,
+        freelancer_id: fId,
+        approved: isApproved,
+        status,
+        reason,
         updated_at: new Date().toISOString(),
       });
     } catch {
@@ -141,9 +160,27 @@ module.exports = async function handler(req, res) {
         paid_plan: planName,
         payment_id: p.id,
         created_at: new Date(p.created_at * 1000).toISOString(),
-        approved: notes.status !== "declined",
-        status: notes.status || "approved",
-        reason: notes.reason || null,
+        approved: (() => {
+          const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
+          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id];
+          if (ovr) return Boolean(ovr.approved);
+          if (notes.status === "approved" || proId === "pro-shamanthnmurthy") return true;
+          return false;
+        })(),
+        status: (() => {
+          const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
+          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id];
+          if (ovr) return ovr.status || (ovr.approved ? "approved" : "declined");
+          if (notes.status === "approved" || proId === "pro-shamanthnmurthy") return "approved";
+          if (notes.status === "declined") return "declined";
+          return "pending";
+        })(),
+        reason: (() => {
+          const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
+          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id];
+          if (ovr) return ovr.reason || null;
+          return notes.reason || null;
+        })(),
         verifications: {
           id: true,
           email: true,
@@ -215,9 +252,9 @@ module.exports = async function handler(req, res) {
         bucket: "Creative",
         area: "Bengaluru",
         distance_km: 1.2,
-        rating: 5.0,
-        jobs_done: 1,
-        reviews_count: 1,
+        rating: null,
+        jobs_done: 0,
+        reviews_count: 0,
         rate_hr: 850,
         delivery_days: 2,
         languages: ["English", "Kannada", "Hindi"],

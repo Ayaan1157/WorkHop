@@ -23,6 +23,7 @@ import {
   getStoredProfessionSuggestions,
   updateProfessionSuggestionStatus,
 } from "@/lib/clientStore";
+import FreelancerProfileModal from "@/components/FreelancerProfileModal";
 
 const TABS = [
   { id: "CREDITS", label: "🪙 CREDITS & PRICING" },
@@ -2306,6 +2307,7 @@ function ProsTalentTab({ adminFetch }) {
   const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | PENDING | APPROVED | DECLINED
   const [busyId, setBusyId] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [previewPro, setPreviewPro] = useState(null);
 
   const loadPros = useCallback(async () => {
     setLoading(true);
@@ -2462,6 +2464,32 @@ function ProsTalentTab({ adminFetch }) {
         </div>
       </div>
 
+      {/* Alert banner if pending verifications exist */}
+      {pendingCount > 0 && (
+        <div className="border-2 border-amber-600 bg-amber-50 p-4 shadow-[3px_3px_0px_#121212] flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400 text-ink font-black text-base shadow-sm">
+              ⏳
+            </span>
+            <div>
+              <p className="text-xs font-black uppercase text-amber-950 tracking-wide">
+                {pendingCount} Freelancer {pendingCount === 1 ? "Profile" : "Profiles"} Awaiting Verification &amp; Approval
+              </p>
+              <p className="text-[11px] text-amber-900 font-semibold mt-0.5">
+                Every newly registered freelancer must be reviewed. Profiles stay hidden from employers until you verify and approve them.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStatusFilter("PENDING")}
+            className="border-2 border-ink bg-amber-400 px-3.5 py-1.5 text-xs font-black uppercase text-ink hover:bg-amber-300 shadow-[1px_1px_0px_#121212] transition"
+          >
+            Review Pending ({pendingCount})
+          </button>
+        </div>
+      )}
+
       {/* Search & Actions Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-1 items-center gap-2 border-2 border-ink bg-sand/40 px-3 py-2 min-w-[260px]">
@@ -2608,9 +2636,20 @@ function ProsTalentTab({ adminFetch }) {
                   )}
                 </div>
 
-                {/* Bottom Actions: Approve / Decline Buttons */}
+                {/* Bottom Actions: Inspect / Approve / Decline Buttons */}
                 <div className="mt-3.5 flex items-center justify-between border-t border-ink/10 pt-2.5 gap-2 flex-wrap">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* Inspect Profile & Portfolio Button */}
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPro(f)}
+                      className="flex items-center gap-1 border-2 border-ink bg-white px-2.5 py-1.5 text-xs font-black text-ink hover:bg-sand shadow-[1px_1px_0px_#121212] transition"
+                      title="Inspect full profile details, intro, portfolio & samples"
+                    >
+                      <Eye size={12} className="text-brand" />
+                      <span>INSPECT</span>
+                    </button>
+
                     {/* Approve Button */}
                     {!isApproved ? (
                       <button
@@ -2664,6 +2703,13 @@ function ProsTalentTab({ adminFetch }) {
           })}
         </div>
       )}
+
+      {/* Profile Inspection Modal for Admin */}
+      <FreelancerProfileModal
+        isOpen={Boolean(previewPro)}
+        onClose={() => setPreviewPro(null)}
+        pro={previewPro}
+      />
     </div>
   );
 }

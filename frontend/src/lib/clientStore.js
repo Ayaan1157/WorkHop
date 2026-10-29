@@ -128,10 +128,17 @@ export function saveSubmittedProfile(profile) {
         (p.id || p.freelancer_id) === targetId ||
         (profile.email && p.email && p.email.toLowerCase() === profile.email.toLowerCase())
     );
+    const normalized = {
+      ...profile,
+      status: profile.status || "pending",
+      approved: profile.approved !== undefined ? Boolean(profile.approved) : false,
+      reason: profile.reason || null,
+      is_dummy: false,
+    };
     if (existingIdx >= 0) {
-      list[existingIdx] = { ...list[existingIdx], ...profile, updated_at: new Date().toISOString() };
+      list[existingIdx] = { ...list[existingIdx], ...normalized, updated_at: new Date().toISOString() };
     } else {
-      list.unshift({ ...profile, created_at: new Date().toISOString() });
+      list.unshift({ ...normalized, created_at: new Date().toISOString() });
     }
     localStorage.setItem(SUBMITTED_PROFILES_KEY, JSON.stringify(list));
   } catch (e) {
@@ -182,71 +189,104 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
     deduped.push(item);
   }
 
-  const mapped = deduped.map((lead, idx) => ({
-    id: lead.id || lead.freelancer_id || `lead-${idx + 1}`,
-    name: lead.name || lead.full_name || "Verified Pro",
-    initials:
-      lead.initials ||
-      (lead.name || "VP")
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase(),
-    skill: lead.skill || "Creative Pro",
-    distance_km: lead.distance_km ?? (Math.round((0.5 + (idx % 10) * 0.3) * 10) / 10),
-    rating: (lead.reviews_count > 0 || (lead.is_dummy && lead.rating)) ? lead.rating : null,
-    phone: isUnlocked ? lead.phone : maskPhone(lead.phone),
-    email: lead.email || `${(lead.name || "pro").toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
-    is_unlocked: isUnlocked,
-    portfolio: lead.portfolio || `${(lead.name || "pro").toLowerCase().replace(/[^a-z]/g, "")}.in`,
-    keywords: Array.from(
-      new Set([
-        ...(lead.keywords || [lead.skill || "Freelancer"]),
-        ...expandSkillKeywords(lead.skill || "Freelancer", lead.category || lead.bucket),
-      ])
-    ),
-    bucket: lead.bucket || "Creative",
-    category: lead.category || lead.bucket || "Graphics & Design",
-    area: lead.area || "Bengaluru",
-    lat: lead.lat || (12.9716 + ((idx % 5) - 2) * 0.02),
-    lng: lead.lng || (77.5946 + ((idx % 7) - 3) * 0.02),
-    rate_hr: lead.rate_hr ?? (750 + (idx % 5) * 150),
-    delivery_days: lead.delivery_days ?? (1 + (idx % 3)),
-    jobs_done: lead.jobs_done !== undefined && lead.jobs_done !== null ? Number(lead.jobs_done) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
-    reviews_count: lead.reviews_count !== undefined && lead.reviews_count !== null ? Number(lead.reviews_count) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
-    intro:
-      lead.intro ||
-      `${lead.skill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`,
-    languages: lead.languages || ["English", "Kannada", "Hindi"],
-    is_dummy: Boolean(lead.is_dummy),
-    paid: Boolean(lead.paid),
-    paid_amount: lead.paid_amount || (lead.paid ? 150 : null),
-    paid_plan: lead.paid_plan || (lead.paid ? "20 Bidding Hops Pack · ₹150" : null),
-    payment_id: lead.payment_id || null,
-    verifications: lead.verifications || {
-      id: true,
-      email: true,
-      portfolio: true,
-      phone: isUnlocked,
-      payment: Boolean(lead.paid),
-    },
-    samples: lead.samples || [
-      { title: "Brand Identity & Design", type: "Visual Assets", tag: "Figma" },
-      { title: "Digital Campaign Assets", type: "Design", tag: "Deliverable" },
-      { title: "Client Project Milestone", type: "Verified", tag: "Completed" },
-    ],
-  }));
+  const mapped = deduped.map((lead, idx) => {
+    const leadId = lead.id || lead.freelancer_id || `lead-${idx + 1}`;
+    const st = statuses[leadId];
+
+    // Determine verification & approval status:
+    // 1. Explicit admin status in localStorage
+    // 2. Or explicit lead status from backend/API
+    // 3. Or seed dummy pros (default approved for preview)
+    // 4. Default for any new freelancer registration: PENDING VERIFICATION (approved: false)
+    let isApproved = false;
+    let statusText = "pending";
+    let reasonText = null;
+
+    if (st !== undefined) {
+      isApproved = Boolean(st.approved);
+      statusText = st.status || (isApproved ? "approved" : "declined");
+      reasonText = st.reason || null;
+    } else if (lead.is_dummy) {
+      isApproved = true;
+      statusText = "approved";
+    } else if (lead.approved === true || lead.status === "approved" || leadId === "pro-shamanthnmurthy") {
+      isApproved = true;
+      statusText = "approved";
+    } else if (lead.status === "declined") {
+      isApproved = false;
+      statusText = "declined";
+      reasonText = lead.reason || "Declined by admin";
+    } else {
+      isApproved = false;
+      statusText = "pending";
+    }
+
+    return {
+      id: leadId,
+      name: lead.name || lead.full_name || "Verified Pro",
+      initials:
+        lead.initials ||
+        (lead.name || "VP")
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase(),
+      skill: lead.skill || "Creative Pro",
+      distance_km: lead.distance_km ?? (Math.round((0.5 + (idx % 10) * 0.3) * 10) / 10),
+      rating: (lead.reviews_count > 0 || (lead.is_dummy && lead.rating)) ? lead.rating : null,
+      phone: isUnlocked ? lead.phone : maskPhone(lead.phone),
+      email: lead.email || `${(lead.name || "pro").toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
+      is_unlocked: isUnlocked,
+      portfolio: lead.portfolio || `${(lead.name || "pro").toLowerCase().replace(/[^a-z]/g, "")}.in`,
+      keywords: Array.from(
+        new Set([
+          ...(lead.keywords || [lead.skill || "Freelancer"]),
+          ...expandSkillKeywords(lead.skill || "Freelancer", lead.category || lead.bucket),
+        ])
+      ),
+      bucket: lead.bucket || "Creative",
+      category: lead.category || lead.bucket || "Graphics & Design",
+      area: lead.area || "Bengaluru",
+      lat: lead.lat || (12.9716 + ((idx % 5) - 2) * 0.02),
+      lng: lead.lng || (77.5946 + ((idx % 7) - 3) * 0.02),
+      rate_hr: lead.rate_hr ?? (750 + (idx % 5) * 150),
+      delivery_days: lead.delivery_days ?? (1 + (idx % 3)),
+      jobs_done: lead.jobs_done !== undefined && lead.jobs_done !== null ? Number(lead.jobs_done) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
+      reviews_count: lead.reviews_count !== undefined && lead.reviews_count !== null ? Number(lead.reviews_count) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
+      intro:
+        lead.intro ||
+        `${lead.skill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`,
+      languages: lead.languages || ["English", "Kannada", "Hindi"],
+      is_dummy: Boolean(lead.is_dummy),
+      paid: Boolean(lead.paid),
+      paid_amount: lead.paid_amount || (lead.paid ? 150 : null),
+      paid_plan: lead.paid_plan || (lead.paid ? "20 Bidding Hops Pack · ₹150" : null),
+      payment_id: lead.payment_id || null,
+      approved: isApproved,
+      status: statusText,
+      reason: reasonText,
+      verifications: lead.verifications || {
+        id: true,
+        email: true,
+        portfolio: true,
+        phone: isUnlocked,
+        payment: Boolean(lead.paid),
+      },
+      samples: lead.samples || [
+        { title: "Brand Identity & Design", type: "Visual Assets", tag: "Figma" },
+        { title: "Digital Campaign Assets", type: "Design", tag: "Deliverable" },
+        { title: "Client Project Milestone", type: "Verified", tag: "Completed" },
+      ],
+    };
+  });
 
   if (includeDeclined) {
     return mapped;
   }
 
-  return mapped.filter((pro) => {
-    const st = statuses[pro.id];
-    if (!st) return true; // Approved by default unless declined/pending
-    return Boolean(st.approved) && st.status !== "declined" && st.status !== "pending";
-  });
+  // Live public directory, search, and home page ONLY display verified, approved pros
+  return mapped.filter((pro) => Boolean(pro.approved) && pro.status === "approved");
 }
 
 export const REVIEWS_KEY = "workhop_freelancer_reviews";

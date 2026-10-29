@@ -578,9 +578,9 @@ async function mockRouter(path, method = "GET", body = null) {
     const statuses = getFreelancerStatuses();
     return getStoredLeads({ includeDeclined: true }).map((l) => {
       const st = statuses[l.id];
-      let isApproved = true;
-      let statusText = "approved";
-      let reasonText = null;
+      let isApproved = l.is_dummy ? true : Boolean(l.approved);
+      let statusText = l.is_dummy ? "approved" : (l.status || "pending");
+      let reasonText = l.reason || null;
 
       if (st !== undefined) {
         isApproved = Boolean(st.approved);
@@ -589,6 +589,7 @@ async function mockRouter(path, method = "GET", body = null) {
       }
 
       return {
+        ...l,
         freelancer_id: l.id,
         id: l.id,
         name: l.name,
@@ -610,9 +611,19 @@ async function mockRouter(path, method = "GET", body = null) {
       };
     });
   }
-  if (cleanPath.startsWith("/admin/freelancers/") && cleanPath.endsWith("/approve")) {
+  if (
+    (cleanPath.startsWith("/admin/freelancers/") || cleanPath.startsWith("/freelancers/")) &&
+    cleanPath.endsWith("/approve")
+  ) {
     const parts = cleanPath.split("/");
-    const fId = parts[3];
+    const fId = parts[cleanPath.startsWith("/admin/freelancers/") ? 3 : 2];
+    try {
+      fetch(`/api/freelancers/${fId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approved: Boolean(body?.approved), reason: body?.reason || null }),
+      }).catch(() => {});
+    } catch {}
     return updateFreelancerStatus(fId, body?.approved, body?.reason);
   }
   if (cleanPath === "/admin/payments") {
@@ -749,12 +760,12 @@ async function mockRouter(path, method = "GET", body = null) {
         paid: true,
         paid_amount: 99,
         paid_plan: "Verified Pro Onboarding · ₹99",
-        status: "approved",
-        approved: true,
+        status: "pending",
+        approved: false,
         verifications: { id: true, email: true, phone: true, portfolio: true, payment: true },
       });
     }
-    return { ok: true, status: "verified", verified: true };
+    return { ok: true, status: "pending", approved: false, verified: false, under_review: true };
   }
   if (cleanPath === "/freelancer/verify-email") {
     return { ok: true, status: "verified", verified: true };

@@ -481,8 +481,8 @@ export default function Onboarding() {
         <div data-testid="processing-overlay" className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white p-8 text-center">
           <span className="flex h-32 w-32 animate-bounce items-center justify-center border-2 border-ink bg-brand"><ShieldCheck size={64} className="text-white" /></span>
           <span className="inline-flex items-center gap-2 bg-ink px-3 py-1.5"><span className="h-2 w-2 bg-brand" /><span className="text-[11px] font-black tracking-[0.14em] text-white">VERIFYING</span></span>
-          <p className="whitespace-pre-line text-2xl font-black leading-tight text-ink">Our team is verifying your{"\n"}email and links.</p>
-          <p className="text-sm text-inkmuted">Your profile will leap live within 2 hours.</p>
+          <p className="whitespace-pre-line text-2xl font-black leading-tight text-ink">Profile Submitted for{"\n"}Admin Verification</p>
+          <p className="text-sm text-inkmuted max-w-md">Our team is reviewing your profile and credentials. Once approved by the admin, your profile will be published live to employers.</p>
           <button data-testid="overlay-jobs-btn" onClick={() => nav("/freelancer/jobs")} className="border-2 border-ink bg-brand px-8 py-3 text-sm font-black text-white">View jobs near you</button>
           <button data-testid="overlay-done-btn" onClick={() => nav("/")} className="border-2 border-ink px-8 py-3 text-[13px] font-black text-ink">Back to home</button>
         </div>

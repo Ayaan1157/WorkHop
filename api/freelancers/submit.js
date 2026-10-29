@@ -81,7 +81,7 @@ module.exports = async function handler(req, res) {
           delivery_days: String(delivery_days || 2),
           portfolio_url: portfolio_url || "",
           source: "workhop_onboarding",
-          status: "approved",
+          status: "pending",
         },
       });
     } catch {
@@ -90,8 +90,10 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      status: "verified",
-      verified: true,
+      status: "pending",
+      verified: false,
+      under_review: true,
+      message: "Profile submitted for verification. WorkHop admin will review and approve your profile.",
       profile: {
         freelancer_id,
         name,
@@ -102,7 +104,8 @@ module.exports = async function handler(req, res) {
         rate_hr,
         intro,
         portfolio_url,
-        approved: true,
+        approved: false,
+        status: "pending",
       },
     });
   } catch (err) {

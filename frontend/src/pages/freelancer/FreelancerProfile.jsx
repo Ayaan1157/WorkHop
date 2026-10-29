@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Pencil, Plus, Trash2, ChevronLeft, Github, ExternalLink,
@@ -17,7 +17,14 @@ import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, getFreelancerId } from "@/lib/api";
-import { getFreelancerProfile, saveFreelancerProfile, getCreditsWallet, getCreditTransactions } from "@/lib/clientStore";
+import {
+  getFreelancerProfile,
+  saveFreelancerProfile,
+  getCreditsWallet,
+  getCreditTransactions,
+  getFreelancerStatuses,
+  getStoredLeads,
+} from "@/lib/clientStore";
 import {
   validateImageFile,
   compressImage,
@@ -374,6 +381,23 @@ export default function FreelancerProfile() {
   const displayTitle = profile.title || "Your Professional Title";
   const displayRate = profile.rate_hr ? `$${profile.rate_hr}.00/hr` : "Set your rate";
 
+  const proStatusObj = useMemo(() => {
+    const statuses = getFreelancerStatuses();
+    const st = statuses[freelancerId] || statuses[user?.email] || statuses[user?.phone];
+    if (st) return st;
+    const leads = getStoredLeads({ includeDeclined: true });
+    const match = leads.find(
+      (l) =>
+        l.id === freelancerId ||
+        (user?.email && l.email && l.email.toLowerCase() === user.email.toLowerCase()) ||
+        (user?.phone && l.phone && l.phone.replace(/\D/g, "") === user.phone.replace(/\D/g, ""))
+    );
+    if (match) {
+      return { approved: match.approved, status: match.status, reason: match.reason };
+    }
+    return { approved: true, status: "approved" };
+  }, [freelancerId, user]);
+
   const inputCls =
     "w-full bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#ddd] dark:border-[#333] rounded-lg px-3 py-2.5 text-sm text-ink dark:text-white placeholder:text-[#999] dark:placeholder:text-[#555] focus:outline-none focus:border-[#E65A1E] transition";
   const labelCls = "text-xs font-semibold text-inkmuted dark:text-[#999] uppercase tracking-wider mb-1.5";
@@ -434,6 +458,60 @@ export default function FreelancerProfile() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
           <PushNotificationPrompt className="mb-6" />
+
+          {/* Freelancer Profile Verification Alert Banner */}
+          {proStatusObj?.status === "pending" || (!proStatusObj?.approved && proStatusObj?.status !== "declined") ? (
+            <div data-testid="profile-pending-verification-banner" className="mb-6 rounded-xl border-2 border-amber-400 bg-amber-50 p-4 shadow-sm dark:bg-amber-950/30 dark:border-amber-600">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400 text-ink shadow-sm">
+                  <Clock size={20} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="rounded bg-amber-200 px-2 py-0.5 text-[10px] font-black uppercase text-amber-900 dark:bg-amber-800 dark:text-amber-100">
+                      ⏳ Verification Under Review
+                    </span>
+                    <span className="text-xs text-amber-700 dark:text-amber-300 font-bold">
+                      Awaiting Admin Approval
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm font-bold text-ink dark:text-white">
+                    Your profile has been submitted and is currently being reviewed by the WorkHop Admin team.
+                  </p>
+                  <p className="text-xs text-inkmuted dark:text-gray-300 mt-0.5">
+                    We verify every freelancer's portfolio, identity, and skills before publishing to maintain marketplace quality. Once approved, your profile will go live in the Bengaluru talent directory. You can continue updating your portfolio and bio below in the meantime.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : proStatusObj?.status === "declined" ? (
+            <div data-testid="profile-declined-verification-banner" className="mb-6 rounded-xl border-2 border-red-400 bg-red-50 p-4 shadow-sm dark:bg-red-950/30 dark:border-red-600">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white shadow-sm">
+                  <AlertTriangle size={20} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded bg-red-200 px-2 py-0.5 text-[10px] font-black uppercase text-red-900 dark:bg-red-800 dark:text-red-100">
+                      ✕ Verification Declined
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm font-bold text-red-900 dark:text-red-200">
+                    Your profile requires updates before it can be verified.
+                  </p>
+                  {proStatusObj?.reason && (
+                    <p className="text-xs font-semibold text-red-800 dark:text-red-300 mt-1">
+                      Reason from Admin: {proStatusObj.reason}
+                    </p>
+                  )}
+                  <p className="text-xs text-inkmuted dark:text-gray-300 mt-1">
+                    Please update your portfolio links, work samples, or bio below to resubmit for approval.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex flex-col lg:flex-row gap-8">
             {/* ═══════════ LEFT SIDEBAR ═══════════ */}
             <aside className="lg:w-[320px] shrink-0 flex flex-col gap-5 lg:sticky lg:top-8 lg:self-start">
