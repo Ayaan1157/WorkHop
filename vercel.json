@@ -106,6 +106,14 @@
       "destination": "/api/payments/list"
     },
     {
+      "source": "/api/site-settings",
+      "destination": "/api/site-settings/index"
+    },
+    {
+      "source": "/api/admin/site-settings",
+      "destination": "/api/site-settings/index"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

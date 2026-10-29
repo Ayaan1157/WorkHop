@@ -4,7 +4,13 @@ import { Megaphone, X, ArrowRight } from "lucide-react";
 import { getSiteSettings } from "@/lib/clientStore";
 
 export default function BroadcastBanner() {
-  const [settings, setSettings] = useState(null);
+  const [settings, setSettings] = useState(() => {
+    try {
+      return getSiteSettings();
+    } catch {
+      return null;
+    }
+  });
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -14,6 +20,15 @@ export default function BroadcastBanner() {
     } catch {
       /* ignore */
     }
+
+    fetch("/api/site-settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((cloud) => {
+        if (cloud && typeof cloud.broadcast_banner_active === "boolean") {
+          setSettings((prev) => ({ ...(prev || {}), ...cloud }));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   if (!settings || !settings.broadcast_banner_active || dismissed) return null;

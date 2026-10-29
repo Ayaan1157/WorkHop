@@ -430,9 +430,23 @@ async function mockRouter(path, method = "GET", body = null) {
     };
   }
   if ((cleanPath === "/site-settings" || cleanPath === "/admin/site-settings") && method === "GET") {
+    try {
+      const res = await fetch("/api/site-settings");
+      if (res.ok) {
+        const cloud = await res.json();
+        if (cloud) return saveSiteSettings(cloud);
+      }
+    } catch {}
     return getSiteSettings();
   }
   if (cleanPath === "/admin/site-settings" && method === "POST") {
+    try {
+      await fetch("/api/site-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      });
+    } catch {}
     return saveSiteSettings(body);
   }
   if (cleanPath === "/grievances" && method === "POST") {

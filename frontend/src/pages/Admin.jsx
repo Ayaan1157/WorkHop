@@ -156,13 +156,28 @@ function SiteControlsTab({ adminFetch }) {
               Site-Wide Broadcast Announcement Banner
             </h3>
           </div>
-          <label className="flex items-center gap-2 cursor-pointer text-xs font-black">
-            <span>{settings.broadcast_banner_active ? "LIVE ON WEBSITE" : "DISABLED"}</span>
+          <label className="flex items-center gap-2 cursor-pointer text-xs font-black border-2 border-ink px-2.5 py-1.5 bg-sand/30 shadow-[1px_1px_0px_#121212]">
+            <span className={settings.broadcast_banner_active ? "text-emerald-700 font-black" : "text-red-700 font-extrabold"}>
+              {settings.broadcast_banner_active ? "LIVE ON WEBSITE" : "DISABLED"}
+            </span>
             <input
               type="checkbox"
               checked={!!settings.broadcast_banner_active}
-              onChange={(e) => setSettings({ ...settings, broadcast_banner_active: e.target.checked })}
-              className="h-4 w-4 accent-brand cursor-pointer"
+              onChange={async (e) => {
+                const checked = e.target.checked;
+                const next = { ...settings, broadcast_banner_active: checked };
+                setSettings(next);
+                try {
+                  await adminFetch("/site-settings", "POST", next);
+                  setStatusMsg({
+                    ok: true,
+                    text: checked ? "✓ Broadcast banner is now LIVE on the website!" : "✓ Broadcast banner has been DISABLED live from the website!",
+                  });
+                } catch {
+                  /* ignore */
+                }
+              }}
+              className="h-5 w-5 accent-brand cursor-pointer"
             />
           </label>
         </div>
@@ -254,6 +269,21 @@ function SiteControlsTab({ adminFetch }) {
               </span>
             )}
           </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-ink/10 pt-3 flex-wrap gap-2">
+          <p className="text-[11px] font-bold text-inkmuted">
+            Status: {settings.broadcast_banner_active ? "🟢 LIVE ON WEBSITE" : "🔴 DISABLED (Hidden from all users)"}
+          </p>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={handleSave}
+            className="flex items-center gap-1.5 border-2 border-ink bg-brand px-3 py-1.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 transition"
+          >
+            <Check size={14} />
+            <span>SAVE BANNER SETTINGS</span>
+          </button>
         </div>
       </div>
 

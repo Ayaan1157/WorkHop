@@ -1760,7 +1760,7 @@ const ADMIN_LOGS_KEY = "workhop_admin_logs";
 
 export function getDefaultSiteSettings() {
   return {
-    broadcast_banner_active: true,
+    broadcast_banner_active: false,
     broadcast_banner_text: "⚡ Bengaluru Hyperlocal Live: Verified local creators & engineers available within 5km!",
     broadcast_banner_tone: "brand", // "brand" | "green" | "black" | "alert"
     broadcast_banner_link: "/freelancer/jobs",
