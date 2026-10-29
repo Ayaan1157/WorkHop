@@ -59,7 +59,7 @@ export default function Pro() {
   usePageMeta({
     title: pro ? `${pro.name} · ${pro.skill} in Bengaluru` : "Freelancer Profile · WorkHop",
     description: pro
-      ? `${pro.name} is a verified ${pro.skill} based in Bengaluru (${pro.rating || "5.0"}★ rating, ${pro.jobs_done || 0} gigs completed). Connect directly on WorkHop.`
+      ? `${pro.name} is a verified ${pro.skill} based in Bengaluru (${pro.rating ? `${pro.rating}★ rating, ` : ""}${pro.jobs_done || 0} gigs completed). Connect directly on WorkHop.`
       : "View verified freelancer portfolio, ratings, and rates on WorkHop.",
     canonical: `https://workhop.in/pro/${id}`,
     ogTitle: pro ? `${pro.name} · ${pro.skill}` : "WorkHop Freelancer",
@@ -217,9 +217,15 @@ export default function Pro() {
                   <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[10px] font-extrabold text-ink">
                     <MapPin size={11} /> {pro.area || "Bengaluru"} · {pro.distance_km || 1.2} km away
                   </span>
-                  <span className="flex items-center gap-1 border border-ink bg-[#FFF3C4] px-2 py-1 text-[10px] font-black text-ink">
-                    <Star size={11} fill="#121212" /> {pro.rating} rating
-                  </span>
+                  {pro.rating ? (
+                    <span className="flex items-center gap-1 border border-ink bg-[#FFF3C4] px-2 py-1 text-[10px] font-black text-ink">
+                      <Star size={11} fill="#121212" /> {pro.rating} rating
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 border border-ink bg-sand px-2 py-1 text-[10px] font-bold text-inkmuted">
+                      <Star size={11} /> New Pro · No reviews yet
+                    </span>
+                  )}
                 </div>
 
                 {!!pro.external_rating_source && (
@@ -290,7 +296,11 @@ export default function Pro() {
             {/* KEY METRICS ROW */}
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2 border-t-2 border-ink pt-4">
               {[
-                { n: `★ ${pro.rating}`, l: pro.reviews_count ? `${pro.reviews_count} REVIEWS` : "RATING", icon: Star },
+                {
+                  n: pro.rating ? `★ ${pro.rating}` : "New Pro",
+                  l: Number(pro.reviews_count) > 0 ? `${pro.reviews_count} REVIEWS` : "NO REVIEWS YET",
+                  icon: Star,
+                },
                 { n: `${pro.jobs_done || 0}`, l: "JOBS COMPLETED", icon: CheckCheck },
                 { n: `${pro.delivery_days || 3} Days`, l: "DELIVERY TIME", icon: Clock },
                 { n: pro.rate_hr ? `₹${pro.rate_hr}` : "Quote", l: "HOURLY RATE", icon: IndianRupee },
@@ -516,24 +526,32 @@ export default function Pro() {
             </div>
           )}
 
-          {/* TAB 2: REVIEWS & RATINGS WITH BREAKDOWN */}
+          {/* TAB 2: REVIEWS & RATINGS */}
           {activeTab === "reviews" && (
             <div className="flex flex-col gap-4 animate-in fade-in duration-150">
-              <RatingBreakdown
-                average={pro.rating || 4.9}
-                totalCount={reviews.length || pro.reviews_count || 12}
-                distribution={{ 5: 85, 4: 12, 3: 3, 2: 0, 1: 0 }}
-              />
+              {reviews.length > 0 && pro.rating ? (
+                <RatingBreakdown
+                  average={pro.rating}
+                  totalCount={reviews.length || pro.reviews_count || 0}
+                  distribution={reviews.reduce((acc, r) => {
+                    const stars = Math.min(5, Math.max(1, Math.round(r.rating || 5)));
+                    acc[stars] = (acc[stars] || 0) + 1;
+                    return acc;
+                  }, { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })}
+                />
+              ) : null}
 
               <div className="flex flex-col gap-3">
                 <h3 className="text-[11px] font-black tracking-[0.15em] text-ink">
                   CLIENT REVIEWS ({reviews.length})
                 </h3>
                 {reviews.length === 0 ? (
-                  <div className="border-2 border-ink bg-sand p-6 text-center">
-                    <MessageSquare size={24} className="mx-auto text-inkmuted" />
-                    <p className="mt-2 text-xs font-bold text-ink">No written reviews yet</p>
-                    <p className="text-[11px] text-inkmuted">Reviews build automatically after completed local gigs.</p>
+                  <div className="border-2 border-ink bg-sand p-6 text-center shadow-[2px_2px_0px_#121212]">
+                    <MessageSquare size={28} className="mx-auto text-inkmuted" />
+                    <p className="mt-2 text-sm font-black text-ink">No Client Reviews Yet</p>
+                    <p className="mt-1 text-xs text-inkmuted max-w-md mx-auto">
+                      {pro.name} is a newly registered professional on WorkHop. Verified reviews and client ratings will appear here after local gigs are completed.
+                    </p>
                   </div>
                 ) : (
                   reviews.map((r) => (
@@ -645,47 +663,22 @@ export default function Pro() {
           {/* TAB 4: WORK HISTORY */}
           {activeTab === "history" && (
             <div className="flex flex-col gap-4 animate-in fade-in duration-150">
-              <div className="border-2 border-ink bg-white p-4">
-                <div className="flex items-center justify-between mb-3">
+              <div className="border-2 border-ink bg-white p-4 shadow-[2px_2px_0px_#121212]">
+                <div className="flex items-center justify-between mb-3 border-b-2 border-ink pb-2">
                   <h2 className="text-[11px] font-black tracking-[0.15em] text-ink">
                     COMPLETED JOBS &amp; HISTORY
                   </h2>
                   <span className="text-xs font-black text-brand">
-                    {(reviews.length || pro.jobs_done || 2)} TOTAL DELIVERIES
+                    {(reviews.length || pro.jobs_done || 0)} COMPLETED GIGS
                   </span>
                 </div>
-
-                {clickedJobNotice && (
-                  <div className="mb-3 border-2 border-ink bg-[#E5F7E0] p-3 text-ink flex items-center justify-between shadow-[2px_2px_0px_#121212] animate-in fade-in slide-in-from-top-1">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={18} className="text-[#0E6220] shrink-0" />
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-wider text-[#0E6220]">
-                          Job Completed
-                        </p>
-                        <p className="text-[11px] font-bold text-ink">
-                          "{clickedJobNotice.title}" has been successfully completed and approved!
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setClickedJobNotice(null)}
-                      className="text-xs font-black border border-ink bg-white px-2 py-0.5 hover:bg-sand"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
 
                 <div className="flex flex-col gap-3">
                   {reviews.length > 0 ? (
                     reviews.map((h, i) => (
                       <div
                         key={h.review_id || i}
-                        onClick={() => setClickedJobNotice({ title: h.job_title, pay: h.pay, client: h.company_name || h.reviewer_name })}
-                        className="border-2 border-ink bg-sand p-3.5 shadow-[1.5px_1.5px_0px_#121212] cursor-pointer hover:bg-[#E5F7E0] transition"
-                        title="Click to view status: Job Completed"
+                        className="border-2 border-ink bg-sand p-3.5 shadow-[1.5px_1.5px_0px_#121212]"
                       >
                         <div className="flex items-center justify-between flex-wrap gap-1">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -694,15 +687,19 @@ export default function Pro() {
                               <CheckCircle2 size={10} /> Job Completed
                             </span>
                           </div>
-                          <span className="text-xs font-black text-ink">
-                            {h.pay ? `₹${Number(h.pay).toLocaleString("en-IN")}` : "₹15,000"}
-                          </span>
+                          {h.pay && (
+                            <span className="text-xs font-black text-ink">
+                              ₹{Number(h.pay).toLocaleString("en-IN")}
+                            </span>
+                          )}
                         </div>
                         <div className="mt-1 flex items-center justify-between text-[10px] text-inkmuted font-bold flex-wrap gap-1">
-                          <span>{h.date_formatted || h.date || `${i + 1} week ago`} · {h.company_name || h.reviewer_name || "Bengaluru Client"}</span>
-                          <span className="text-[#0E6220] flex items-center gap-1 font-black">
-                            <span className="text-amber-500">★</span> {Number(h.rating || 5).toFixed(1)} Completed
-                          </span>
+                          <span>{h.date_formatted || h.date || `${i + 1} week ago`} · {h.company_name || h.reviewer_name || "Verified Client"}</span>
+                          {h.rating && (
+                            <span className="text-[#0E6220] flex items-center gap-1 font-black">
+                              <span className="text-amber-500">★</span> {Number(h.rating).toFixed(1)} Completed
+                            </span>
+                          )}
                         </div>
                         {h.text && (
                           <p className="mt-2 text-[11px] text-ink/80 italic border-l-2 border-ink pl-2">
@@ -712,8 +709,12 @@ export default function Pro() {
                       </div>
                     ))
                   ) : (
-                    <div className="p-4 text-center text-xs text-inkmuted font-bold">
-                      No completed jobs yet. Work history updates automatically as client projects conclude.
+                    <div className="p-8 text-center bg-sand border-2 border-dashed border-ink/30">
+                      <CheckCheck size={28} className="mx-auto text-inkmuted mb-2" />
+                      <p className="text-sm font-black text-ink">No Completed Gigs on WorkHop Yet</p>
+                      <p className="mt-1 text-xs text-inkmuted max-w-md mx-auto">
+                        Work history and delivery verifications will appear here automatically as client projects conclude on WorkHop.
+                      </p>
                     </div>
                   )}
                 </div>
