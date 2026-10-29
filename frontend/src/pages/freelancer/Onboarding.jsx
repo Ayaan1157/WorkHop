@@ -278,7 +278,6 @@ export default function Onboarding() {
                 </div>
                 {otpSent && (
                   <>
-                    {devOtp && isAdmin && <p data-testid="wizard-dev-otp" className="border-[1.5px] border-ink bg-[#FFF3C4] p-2 text-xs font-black text-ink">TEST MODE — your code: {devOtp}</p>}
                     <div className="flex gap-2">
                       <input data-testid="otp-code-input" value={otpCode} onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setVError(null); }} placeholder="6-digit code" className={`${inputCls} flex-1 font-black tracking-[0.4em]`} />
                       <button data-testid="confirm-otp-btn" onClick={confirmOtp} disabled={vBusy} className="min-w-[90px] bg-ink px-4 text-xs font-black tracking-wider text-white disabled:opacity-60">{vBusy ? <Loader2 size={16} className="mx-auto animate-spin" /> : "VERIFY"}</button>

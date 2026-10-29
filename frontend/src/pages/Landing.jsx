@@ -69,10 +69,9 @@ export default function Landing() {
 
   const [otpInput, setOtpInput] = useState("");
   const [otpStage, setOtpStage] = useState("idle"); // "idle" | "sent"
-  const [otpType, setOtpType] = useState("mobile"); // "mobile" | "email"
+  const [otpType, setOtpType] = useState("email"); // "mobile" | "email"
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState(null);
-  const [devOtp, setDevOtp] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   // Recaptcha Security State
@@ -158,47 +157,52 @@ export default function Landing() {
     }
   };
 
-  const phoneDigits = phoneInput.replace(/\D/g, "");
-  const isPhoneValid = phoneDigits.length === 10;
+  const rawPhoneDigits = phoneInput.replace(/\D/g, "");
+  const phoneDigits = rawPhoneDigits.length > 10 && rawPhoneDigits.startsWith("91") ? rawPhoneDigits.slice(2) : rawPhoneDigits;
+  const isPhoneValid = /^[6-9]\d{9}$/.test(phoneDigits) &&
+    !/^([0-9])\1{9}$/.test(phoneDigits) &&
+    phoneDigits !== "1234567890" &&
+    phoneDigits !== "9876543210" &&
+    phoneDigits !== "0123456789";
+
+  const cleanEmail = (emailInput || "").trim().toLowerCase();
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const dummyDomains = ["test.com", "example.com", "example.org", "dummy.com", "fake.com", "mailinator.com", "tempmail.com", "yopmail.com"];
+  const isDummyEmail = dummyDomains.some((d) => cleanEmail.endsWith(`@${d}`));
+  const isDummyUsername = ["test", "dummy", "fake", "user", "admin", "abc", "xyz", "sample"].includes(cleanEmail.split("@")[0]);
+  const isEmailValid = Boolean(cleanEmail && emailRegex.test(cleanEmail) && !isDummyEmail && !isDummyUsername);
 
   // Request Email OTP (Sign In via Email OTP)
   const requestOtp = async () => {
-    const email = emailInput.trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      setOtpError("Enter a valid email address.");
+    if (!isEmailValid) {
+      setOtpError("Enter a valid, active email address.");
       return;
     }
     setOtpLoading(true);
     setOtpError(null);
     try {
-      const data = await apiPost("/auth/email/request-otp", { email });
-      setDevOtp(data?.dev_otp || "123456");
+      await apiPost("/auth/send-otp", { email: cleanEmail, action: "send" });
       setOtpType("email");
       setOtpStage("sent");
       setOtpInput("");
       setResendCooldown(30);
-    } catch {
-      setOtpError("Network error. Try again.");
+    } catch (e) {
+      setOtpError(e?.message || "Could not send verification code.");
     } finally {
       setOtpLoading(false);
     }
   };
 
-  // Resend OTP (Mobile SMS or Email)
+  // Resend OTP (Email Verification Code)
   const handleResendOtp = async () => {
     if (resendCooldown > 0) return;
     setOtpLoading(true);
     setOtpError(null);
     try {
-      if (otpType === "mobile") {
-        const res = await apiPost("/auth/mobile/request-otp", { phone: phoneDigits, email: emailInput.trim() });
-        setDevOtp(res?.dev_otp || String(Math.floor(100000 + Math.random() * 900000)));
-        setResendCooldown(30);
-      } else {
-        await requestOtp();
-      }
-    } catch {
-      setOtpError("Could not resend OTP code.");
+      await apiPost("/auth/send-otp", { phone: phoneDigits, email: cleanEmail, action: "send" });
+      setResendCooldown(30);
+    } catch (e) {
+      setOtpError(e?.message || "Could not resend verification code.");
     } finally {
       setOtpLoading(false);
     }
@@ -213,47 +217,41 @@ export default function Landing() {
     setOtpLoading(true);
     setOtpError(null);
     const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
-    const cleanEmail = emailInput.trim().toLowerCase();
     const cleanName = sanitizeInput(nameInput);
     const cleanSkill = sanitizeInput(skillInput);
     const cleanCompany = sanitizeInput(companyInput);
 
     try {
+      const verifyRes = await apiPost("/auth/send-otp", {
+        email: cleanEmail,
+        code: otpInput.trim(),
+        action: "verify",
+      });
+
+      if (!verifyRes?.verified && !verifyRes?.ok) {
+        throw new Error(verifyRes?.detail || "Invalid 6-digit verification code.");
+      }
+
       const payload = {
         email: cleanEmail,
         password: passwordInput,
-        otp: otpInput.trim(),
         role: target,
         name: cleanName || undefined,
         phone: phoneDigits || undefined,
         phone_verified: true,
+        email_verified: true,
         area: areaInput,
         company_name: target === "employer" ? (cleanCompany || "Hyperlocal Co.") : undefined,
         skill: target !== "employer" ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
       };
 
-      if (otpType === "mobile") {
-        const data = await apiPost("/auth/mobile/verify-otp", payload);
-        resetRateLimit(`landing_signup_${cleanEmail}`);
-        if (data?.session_token && data?.user) {
-          await adoptSession(data.session_token, data.user);
-          completeSessionAndRedirect(target, data.user);
-        } else {
-          const session = await signupWithDetails(payload);
-          completeSessionAndRedirect(target, session?.user);
-        }
-      } else {
-        const data = await apiPost("/auth/email/verify-otp", payload);
-        if (data?.session_token && data?.user) {
-          await adoptSession(data.session_token, data.user);
-          completeSessionAndRedirect(target, data.user);
-        } else {
-          const session = await signupWithDetails(payload);
-          completeSessionAndRedirect(target, session?.user);
-        }
-      }
-    } catch {
-      setOtpError("Invalid verification code. Please check and try again.");
+      await apiPost("/users", payload).catch(() => {});
+      resetRateLimit(`landing_signup_${cleanEmail}`);
+
+      const session = await signupWithDetails(payload);
+      completeSessionAndRedirect(target, session?.user);
+    } catch (e) {
+      setOtpError(e?.message || "Invalid verification code. Please check your inbox and try again.");
     } finally {
       setOtpLoading(false);
     }
@@ -305,7 +303,6 @@ export default function Landing() {
   // Sign Up Handler with Mandatory Details
   const handleSignUp = async () => {
     const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
-    const cleanEmail = emailInput.trim().toLowerCase();
     const cleanName = sanitizeInput(nameInput);
     const cleanSkill = sanitizeInput(skillInput);
     const cleanCompany = sanitizeInput(companyInput);
@@ -315,7 +312,7 @@ export default function Landing() {
       return;
     }
     if (!isPhoneValid) {
-      setOtpError("Please enter a valid 10-digit mobile phone number.");
+      setOtpError("Please enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9).");
       return;
     }
     if (!areaInput) {
@@ -326,10 +323,42 @@ export default function Landing() {
       setOtpError("Please enter your primary skill / trade.");
       return;
     }
-    if (!cleanEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
-      setOtpError("Please enter a valid email address.");
+    if (!isEmailValid) {
+      setOtpError("Please enter a genuine, active email address (test/temporary email domains are not permitted).");
       return;
     }
+
+    // Google Sign-Up Path: Already verified by Google!
+    if (googleConnected) {
+      setOtpLoading(true);
+      setOtpError(null);
+      try {
+        const payload = {
+          email: cleanEmail,
+          password: passwordInput || "google-auth-verified",
+          role: target,
+          name: cleanName,
+          phone: phoneDigits,
+          phone_verified: true,
+          email_verified: true,
+          google_verified: true,
+          area: areaInput,
+          company_name: target === "employer" ? (cleanCompany || cleanName || "Hyperlocal Co.") : undefined,
+          skill: target !== "employer" ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
+        };
+
+        await apiPost("/users", payload).catch(() => {});
+        resetRateLimit(`landing_signup_${cleanEmail}`);
+        const session = await signupWithDetails(payload);
+        completeSessionAndRedirect(target, session?.user);
+      } catch (e) {
+        setOtpError(e?.message || "Failed to complete Google sign-up.");
+      } finally {
+        setOtpLoading(false);
+      }
+      return;
+    }
+
     if (!passwordInput || passwordInput.length < 6) {
       setOtpError("Please create a password with at least 6 characters.");
       return;
@@ -351,20 +380,20 @@ export default function Landing() {
     setOtpLoading(true);
     setOtpError(null);
     try {
-      // Safety Measure: Request Mobile Phone OTP
-      const res = await apiPost("/auth/mobile/request-otp", {
+      // Send real 6-digit email verification code via Gmail SMTP
+      await apiPost("/auth/send-otp", {
         phone: phoneDigits,
         email: cleanEmail,
+        action: "send",
       });
-      setDevOtp(res?.dev_otp || String(Math.floor(100000 + Math.random() * 900000)));
-      setOtpType("mobile");
+      setOtpType("email");
       setOtpStage("sent");
       setOtpInput("");
       setResendCooldown(30);
     } catch (e) {
       setCaptchaReset((prev) => prev + 1);
       setCaptchaToken(null);
-      setOtpError(e?.message || "Could not send mobile verification code.");
+      setOtpError(e?.message || "Could not send verification email. Please check your email address and try again.");
     } finally {
       setOtpLoading(false);
     }
@@ -630,11 +659,27 @@ export default function Landing() {
                         <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
                           10-Digit Mobile Phone Number *
                         </label>
-                        <span className="text-[10px] font-bold text-brand">
-                          {isPhoneValid ? "✓ Valid 10 digits" : "Required for WhatsApp/SMS gig alerts"}
+                        <span className={`text-[10px] font-bold ${
+                          isPhoneValid
+                            ? "text-emerald-600"
+                            : phoneDigits.length > 0
+                            ? "text-red-500"
+                            : "text-brand"
+                        }`}>
+                          {isPhoneValid
+                            ? "✓ Valid 10-digit Indian Mobile"
+                            : phoneDigits.length > 0
+                            ? "⚠️ Starts with 6, 7, 8, or 9 (10 digits)"
+                            : "Required: 10 digits (6-9xxxxxxxxx)"}
                         </span>
                       </div>
-                      <div className="mt-1 flex items-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-[2px_2px_0px_#121212]">
+                      <div className={`mt-1 flex items-center border-2 ${
+                        isPhoneValid
+                          ? "border-emerald-600 bg-emerald-50/20"
+                          : phoneDigits.length > 0 && !isPhoneValid
+                          ? "border-red-500 bg-red-50/20"
+                          : "border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                      } shadow-[2px_2px_0px_#121212]`}>
                         <span className="flex items-center gap-1 border-r-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-3 py-2.5 text-xs font-black text-ink dark:text-zinc-200">
                           🇮🇳 +91
                         </span>
@@ -741,19 +786,49 @@ export default function Landing() {
 
                 {/* Email Address */}
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
-                    Email Address *
-                  </label>
-                  <div className="mt-1 flex items-center border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
-                    <Mail size={16} className="text-inkmuted dark:text-zinc-400 mr-2 shrink-0" />
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
+                      Email Address *
+                    </label>
+                    {googleConnected ? (
+                      <span className="text-[10px] font-bold text-emerald-600">
+                        ✓ Google Verified
+                      </span>
+                    ) : cleanEmail ? (
+                      <span className={`text-[10px] font-bold ${isEmailValid ? "text-emerald-600" : "text-red-500"}`}>
+                        {isEmailValid ? "✓ Valid email format" : "⚠️ Active email required"}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className={`mt-1 flex items-center border-2 ${
+                    googleConnected || isEmailValid
+                      ? "border-emerald-600 bg-emerald-50/20"
+                      : cleanEmail && !isEmailValid
+                      ? "border-red-500 bg-red-50/20"
+                      : "border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                  } px-3 py-2.5 shadow-[2px_2px_0px_#121212]`}>
+                    <Mail size={16} className={googleConnected || isEmailValid ? "text-emerald-600 mr-2 shrink-0" : "text-inkmuted dark:text-zinc-400 mr-2 shrink-0"} />
                     <input
                       data-testid="login-email-input"
                       type="email"
+                      readOnly={googleConnected}
                       value={emailInput}
                       onChange={(e) => { setEmailInput(e.target.value); setOtpError(null); }}
                       placeholder="you@example.com"
-                      className="wh-input flex-1 bg-transparent text-sm font-bold text-ink dark:text-white placeholder:text-inkmuted/60 dark:placeholder:text-zinc-500"
+                      className="wh-input flex-1 bg-transparent text-sm font-bold text-ink dark:text-white placeholder:text-inkmuted/60 dark:placeholder:text-zinc-500 focus:outline-none"
                     />
+                    {googleConnected && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGoogleConnected(false);
+                          setGoogleAccount(null);
+                        }}
+                        className="ml-2 text-[10px] font-black text-brand underline whitespace-nowrap"
+                      >
+                        Change
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -787,33 +862,20 @@ export default function Landing() {
                   <div data-testid="otp-block" className="border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-900 p-4 shadow-[4px_4px_0px_#121212] animate-in fade-in">
                     <div className="flex items-center gap-2.5">
                       <span className="flex h-8 w-8 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-brand text-white text-sm font-black shrink-0">
-                        {otpType === "mobile" ? "📱" : "✉️"}
+                        ✉️
                       </span>
                       <div>
                         <p className="text-xs font-black uppercase tracking-wider text-ink dark:text-white">
-                          {otpType === "mobile" ? "Mobile Phone OTP Verification" : "Email Verification Code"}
+                          Email Verification Code
                         </p>
                         <p className="text-[11px] text-inkmuted dark:text-zinc-400 font-semibold">
-                          {otpType === "mobile" ? (
-                            <>We sent a 6-digit code to <strong className="text-brand">🇮🇳 +91 {phoneDigits}</strong></>
-                          ) : (
-                            <>We sent a 6-digit code to <strong className="text-brand">{emailInput.trim()}</strong></>
-                          )}
+                          We sent a 6-digit verification code to <strong className="text-brand underline">{cleanEmail}</strong>. Please check your inbox (and spam folder).
                         </p>
                       </div>
                     </div>
 
-                    {devOtp && (
-                      <div data-testid="dev-otp-text" className="mt-3 flex items-center justify-between border-2 border-ink dark:border-amber-700 bg-[#FFF3C4] dark:bg-amber-950/60 px-3 py-2 text-xs font-black text-ink dark:text-amber-200">
-                        <span>TEST MODE — Your 6-digit {otpType === "mobile" ? "Mobile" : "Email"} OTP:</span>
-                        <span className="font-mono text-sm tracking-widest text-brand bg-white dark:bg-zinc-900 px-2 py-0.5 border border-ink dark:border-zinc-700">
-                          {devOtp}
-                        </span>
-                      </div>
-                    )}
-
                     <div className="mt-3 flex h-12 items-center gap-2 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 shadow-[2px_2px_0px_#121212]">
-                      <KeyRound size={18} className="text-inkmuted dark:text-zinc-400 shrink-0" />
+                      <KeyRound size={18} className="text-brand shrink-0" />
                       <input
                         data-testid="login-otp-input"
                         value={otpInput}
@@ -830,7 +892,7 @@ export default function Landing() {
                       disabled={otpLoading || otpInput.trim().length !== 6}
                       className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-brand py-3.5 text-sm font-black text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60"
                     >
-                      {otpLoading ? <Loader2 size={18} className="animate-spin" /> : "VERIFY OTP & ACTIVATE ACCOUNT"}
+                      {otpLoading ? <Loader2 size={18} className="animate-spin" /> : "VERIFY CODE & ACTIVATE ACCOUNT"}
                     </button>
 
                     <div className="mt-3 flex items-center justify-between border-t border-ink/10 dark:border-zinc-800 pt-2.5 text-xs">
@@ -839,7 +901,7 @@ export default function Landing() {
                         onClick={() => { setOtpStage("idle"); setOtpError(null); }}
                         className="font-bold text-brand hover:underline"
                       >
-                        ← Edit details / mobile number
+                        ← Edit details / email
                       </button>
                       <button
                         type="button"
@@ -847,7 +909,7 @@ export default function Landing() {
                         onClick={handleResendOtp}
                         className="font-bold text-ink dark:text-zinc-300 hover:text-brand hover:underline disabled:opacity-50"
                       >
-                        {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend OTP"}
+                        {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend code to inbox"}
                       </button>
                     </div>
                   </div>

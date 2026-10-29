@@ -72,18 +72,17 @@ module.exports = async function handler(req, res) {
       }
 
       const stored = activeOtps.get(email);
-      const isMasterCode = code === "123456" || (stored && stored.code === code);
 
-      if (!stored && !isMasterCode) {
+      if (!stored) {
         return res.status(400).json({ detail: "Verification code expired or not found. Please request a new code." });
       }
 
-      if (stored && Date.now() > stored.expiresAt && !isMasterCode) {
+      if (Date.now() > stored.expiresAt) {
         activeOtps.delete(email);
         return res.status(400).json({ detail: "Verification code has expired. Please request a new code." });
       }
 
-      if (isMasterCode || (stored && stored.code === code)) {
+      if (stored.code === code) {
         activeOtps.delete(email);
         return res.status(200).json({
           ok: true,
@@ -148,19 +147,21 @@ module.exports = async function handler(req, res) {
       emailSent = true;
     } catch (err) {
       emailError = err?.message;
-      console.warn("SMTP sendMail error (falling back to devOtp):", err?.message);
+      console.warn("SMTP sendMail error:", err?.message);
+    }
+
+    if (!emailSent) {
+      return res.status(500).json({
+        detail: `Failed to deliver verification code to ${email}. Please check that your email address is correct and can receive messages.`
+      });
     }
 
     return res.status(200).json({
       ok: true,
       email,
       phone,
-      emailSent,
-      devOtp: code, // Fallback for immediate convenience if in test mode
-      message: emailSent
-        ? `Verification code sent to ${email}. Please check your inbox.`
-        : `Verification code ready: ${code}`,
-      error: emailError
+      emailSent: true,
+      message: `Verification code sent to ${email}. Please check your inbox.`
     });
   } catch (err) {
     return res.status(500).json({ detail: err?.message || "Internal server error" });

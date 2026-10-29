@@ -46,9 +46,8 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
 
   // OTP Stage & Type ("mobile" | "email")
   const [otpStage, setOtpStage] = useState("idle"); // "idle" | "sent"
-  const [otpType, setOtpType] = useState("mobile"); // "mobile" | "email"
+  const [otpType, setOtpType] = useState("email"); // "mobile" | "email"
   const [otpInput, setOtpInput] = useState("");
-  const [devOtp, setDevOtp] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -195,8 +194,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setLoading(true);
     setError(null);
     try {
-      const res = await apiPost("/auth/send-otp", { email: cleanEmail, action: "send" });
-      setDevOtp(res?.devOtp || res?.dev_otp || "123456");
+      await apiPost("/auth/send-otp", { email: cleanEmail, action: "send" });
       setOtpType("email");
       setOtpStage("sent");
       setOtpInput("");
@@ -214,12 +212,11 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setLoading(true);
     setError(null);
     try {
-      const res = await apiPost("/auth/send-otp", {
+      await apiPost("/auth/send-otp", {
         phone: phoneDigits,
         email: cleanEmail,
         action: "send",
       });
-      setDevOtp(res?.devOtp || res?.dev_otp || "123456");
       setResendCooldown(30);
     } catch (e) {
       setError(e?.message || "Could not resend verification code.");
@@ -410,12 +407,11 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setError(null);
     try {
       // Send real 6-digit email verification code via active Gmail SMTP
-      const res = await apiPost("/auth/send-otp", {
+      await apiPost("/auth/send-otp", {
         phone: phoneDigits,
         email: cleanEmail,
         action: "send",
       });
-      setDevOtp(res?.devOtp || res?.dev_otp || "123456");
       setOtpType("email");
       setOtpStage("sent");
       setOtpInput("");
@@ -886,36 +882,20 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
               <div data-testid="auth-otp-block" className="border-2 border-ink bg-sand p-4 shadow-[4px_4px_0px_#121212] animate-in fade-in">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-8 w-8 items-center justify-center border-2 border-ink bg-brand text-white text-sm font-black shrink-0">
-                    {otpType === "mobile" ? "📱" : "✉️"}
+                    ✉️
                   </span>
                   <div>
                     <p className="text-xs font-black uppercase tracking-wider text-ink">
-                      {otpType === "mobile" ? "Mobile Phone OTP Verification" : "Email Verification Code"}
+                      Email Verification Code
                     </p>
                     <p className="text-[11px] text-inkmuted font-semibold">
-                      {otpType === "mobile" ? (
-                        <>We sent a 6-digit code to <strong className="text-brand">🇮🇳 +91 {phoneDigits}</strong></>
-                      ) : (
-                        <>We sent a 6-digit code to <strong className="text-brand">{email.trim()}</strong></>
-                      )}
+                      We sent a 6-digit verification code to <strong className="text-brand underline">{cleanEmail}</strong>. Please check your inbox (and spam folder).
                     </p>
                   </div>
                 </div>
 
-                {devOtp && (
-                  <div
-                    data-testid="auth-dev-otp"
-                    className="mt-3 flex items-center justify-between border-2 border-ink bg-[#FFF3C4] px-3 py-2 text-xs font-black text-ink"
-                  >
-                    <span>TEST MODE — Your 6-digit {otpType === "mobile" ? "Mobile" : "Email"} OTP:</span>
-                    <span className="font-mono text-sm tracking-widest text-brand bg-white px-2 py-0.5 border border-ink">
-                      {devOtp}
-                    </span>
-                  </div>
-                )}
-
                 <div className="mt-3 flex items-center border-2 border-ink bg-white px-3 py-2.5 shadow-[2px_2px_0px_#121212]">
-                  <KeyRound size={18} className="text-inkmuted mr-2.5 shrink-0" />
+                  <KeyRound size={18} className="text-brand mr-2.5 shrink-0" />
                   <input
                     data-testid="auth-otp-input"
                     value={otpInput}
@@ -936,7 +916,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                   onClick={handleVerifyOtp}
                   className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-sm font-black text-white shadow-[2px_2px_0px_#121212] hover:bg-ink disabled:opacity-60 transition"
                 >
-                  {loading ? <Loader2 size={18} className="animate-spin" /> : "VERIFY OTP & ACTIVATE ACCOUNT"}
+                  {loading ? <Loader2 size={18} className="animate-spin" /> : "VERIFY CODE & ACTIVATE ACCOUNT"}
                 </button>
 
                 <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2.5 text-xs">
@@ -948,7 +928,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                     }}
                     className="font-bold text-brand hover:underline"
                   >
-                    ← Edit details / mobile number
+                    ← Edit details / email
                   </button>
                   <button
                     type="button"
@@ -956,7 +936,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                     onClick={handleResendOtp}
                     className="font-bold text-ink hover:text-brand hover:underline disabled:opacity-50"
                   >
-                    {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend OTP"}
+                    {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend code to inbox"}
                   </button>
                 </div>
               </div>
