@@ -165,7 +165,11 @@ async function mockRouter(path, method = "GET", body = null) {
 
     if (isSupabaseConfigured()) {
       try {
-        const live = await supabaseGetJobs();
+        const livePromise = supabaseGetJobs();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Supabase timeout")), 1200)
+        );
+        const live = await Promise.race([livePromise, timeoutPromise]);
         if (Array.isArray(live) && live.length > 0) {
           const liveIds = new Set(live.map((j) => String(j.id)));
           const liveTitles = new Set(live.map((j) => (j.title || "").toLowerCase().trim()));
@@ -1098,12 +1102,24 @@ async function request(path, { method = "GET", body, auth = false } = {}) {
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
-  // Fetch with timeout fallback
+  // Detect whether we are running in a browser on a remote/HTTPS host (e.g. Vercel)
+  const isRemoteBrowser =
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1";
+
+  // If running in production but API is localhost, use relative /api to hit Vercel serverless functions
+  // or instantly fallback to mockRouter without triggering mixed content blocking / timeout
+  const targetUrl = isRemoteBrowser && API.includes("localhost")
+    ? `/api${path}`
+    : `${API}${path}`;
+
+  // Fetch with timeout fallback (1500ms max)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2000);
+  const timeoutId = setTimeout(() => controller.abort(), 1500);
 
   try {
-    const res = await fetch(`${API}${path}`, {
+    const res = await fetch(targetUrl, {
       method,
       headers,
       body: body != null ? JSON.stringify(body) : undefined,

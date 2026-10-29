@@ -34,6 +34,7 @@ import { JOB_CATEGORY_FILTERS } from "@/lib/catalogFilters";
 import { matchJobToTaxonomy } from "@/lib/keywordTaxonomy";
 import { apiGet, apiPost, getFreelancerId } from "@/lib/api";
 import {
+  getStoredJobs,
   getSavedJobIds,
   toggleSaveJob,
   ADMIN_EMAILS,
@@ -85,11 +86,31 @@ export default function Jobs() {
     (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
   );
   const [sp] = useSearchParams();
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs] = useState(() => {
+    try {
+      const stored = getStoredJobs();
+      const completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
+      const customJobs = JSON.parse(localStorage.getItem("workhop_custom_jobs") || "[]");
+      const completedCustomIds = new Set(customJobs.filter(j => j.is_completed || j.status === "completed").map(j => j.id));
+      const open = (Array.isArray(stored) ? stored : []).filter(
+        (j) => !j.is_completed && j.status !== "completed" && !completedMap[j.id] && !completedCustomIds.has(j.id)
+      );
+      return open.length > 0 ? open : (Array.isArray(stored) ? stored : []);
+    } catch {
+      return [];
+    }
+  });
   const [status, setStatus] = useState(null);
   const [quota, setQuota] = useState(null);
   const [freelancerId, setFid] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    try {
+      const stored = getStoredJobs();
+      return !Array.isArray(stored) || stored.length === 0;
+    } catch {
+      return true;
+    }
+  });
   const [catFilter, setCatFilter] = useState("ALL");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({ budget: null, dist: null, minRating: null, verifiedOnly: false });
@@ -165,7 +186,9 @@ export default function Jobs() {
         fid ? apiGet(`/freelancer/${fid}`).catch(() => null) : Promise.resolve(null),
         fid ? apiGet(`/freelancer/${fid}/quota`).catch(() => null) : Promise.resolve(null),
       ]);
-      setJobs(jobsRes || []);
+      if (Array.isArray(jobsRes) && jobsRes.length > 0) {
+        setJobs(jobsRes);
+      }
       setStatus(statusRes);
       setQuota(quotaRes);
       if (fid) {
