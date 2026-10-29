@@ -309,40 +309,34 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Fallback if no payment was returned from API
-    if (paidFreelancers.length === 0) {
+    // Also merge all platform directory talent (from leads.json) so the admin sees ALL freelancers on the website!
+    let leadsSeed = [];
+    try {
+      leadsSeed = require("./leads.json");
+    } catch {}
+
+    for (const lead of leadsSeed) {
+      const email = (lead.email || "").trim().toLowerCase();
+      const leadId = lead.id || lead.freelancer_id;
+      if (email && seenEmails.has(email)) continue;
+      if (leadId && paidFreelancers.some((p) => p.id === leadId || p.freelancer_id === leadId)) continue;
+      if (email) seenEmails.add(email);
+
+      const ovr = freelancerStatusOverrides[leadId] || (email ? freelancerStatusOverrides[email] : null);
       paidFreelancers.push({
-        id: "pro-shamanthnmurthy",
-        freelancer_id: "pro-shamanthnmurthy",
-        name: "Shamanthnmurthy",
-        full_name: "Shamanthnmurthy",
-        initials: "SM",
-        skill: "Brand Identity, Digital Design & Creative Pro",
-        category: "Graphics & Design",
-        bucket: "Creative",
-        area: "Bengaluru",
-        distance_km: 1.2,
-        rating: null,
-        jobs_done: 0,
-        reviews_count: 0,
-        rate_hr: 850,
-        delivery_days: 2,
-        languages: ["English", "Kannada", "Hindi"],
-        email: "shamanthnmurthy@gmail.com",
-        phone: "+91 72046 65071",
-        portfolio: "shamanthnmurthy.design",
-        intro: "Verified freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround.",
-        keywords: [
-          "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro"
-        ],
+        ...lead,
+        id: leadId,
+        freelancer_id: leadId,
+        name: lead.name,
+        full_name: lead.name,
+        initials: lead.initials || lead.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
         paid: true,
-        paid_amount: 150,
-        paid_plan: "20 Bidding Hops Pack · ₹150",
-        payment_id: "pay_TtdIJpjtCetICU",
-        created_at: "2026-10-29T06:56:39.000Z",
-        approved: false,
-        status: "pending",
-        verifications: {
+        paid_amount: lead.paid_amount || 299,
+        paid_plan: lead.paid_plan || "Verified Pro Badge · ₹299",
+        approved: ovr ? Boolean(ovr.approved) : true,
+        status: ovr ? ovr.status : "approved",
+        reason: ovr ? ovr.reason : null,
+        verifications: lead.verifications || {
           id: true,
           email: true,
           phone: true,

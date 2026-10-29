@@ -2324,7 +2324,28 @@ function ProsTalentTab({ adminFetch }) {
     try {
       const data = await adminFetch("/freelancers");
       const localStatuses = getFreelancerStatuses();
-      const list = (Array.isArray(data) ? data : []).map((p) => {
+      let list = Array.isArray(data) ? [...data] : [];
+
+      // Also guarantee all platform leads are represented
+      try {
+        const storedLeads = getStoredLeads({ includeDeclined: true });
+        const existingIds = new Set(list.map((p) => p.freelancer_id || p.id));
+        for (const sl of storedLeads) {
+          const sid = sl.freelancer_id || sl.id;
+          if (!existingIds.has(sid)) {
+            list.push({
+              ...sl,
+              freelancer_id: sid,
+              id: sid,
+              approved: true,
+              status: "approved",
+            });
+            existingIds.add(sid);
+          }
+        }
+      } catch {}
+
+      const merged = list.map((p) => {
         const pid = p.freelancer_id || p.id;
         const st = localStatuses[pid] || localStatuses[p.id] || localStatuses[p.freelancer_id];
         if (st) {
@@ -2337,7 +2358,7 @@ function ProsTalentTab({ adminFetch }) {
         }
         return p;
       });
-      setPros(list);
+      setPros(merged);
     } catch {
       /* ignore */
     } finally {
