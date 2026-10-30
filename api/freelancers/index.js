@@ -200,6 +200,19 @@ module.exports = async function handler(req, res) {
     const payments = Array.isArray(paymentsRes?.items) ? paymentsRes.items : [];
     const customers = Array.isArray(customersRes?.items) ? customersRes.items : [];
 
+    // Also load platform directory talent (from leads.json)
+    let leadsSeed = [];
+    try {
+      leadsSeed = require("./leads.json");
+    } catch {}
+
+    const seedMap = {};
+    for (const s of leadsSeed) {
+      if (s.email) seedMap[s.email.trim().toLowerCase()] = s;
+      if (s.id) seedMap[s.id.toLowerCase()] = s;
+      if (s.phone) seedMap[s.phone.replace(/\D/g, "")] = s;
+    }
+
     // Map customers by email or phone
     const customerMap = {};
     for (const c of customers) {
@@ -221,7 +234,7 @@ module.exports = async function handler(req, res) {
       if (email) seenEmails.add(email);
 
       const cust = customerMap[email] || customerMap[phoneDigits] || null;
-      const notes = { ...(p.notes || {}), ...(cust?.notes || {}) };
+      const notes = { ...(cust?.notes || {}), ...(p.notes || {}) };
 
       const name = notes.full_name || notes.name || cust?.name || (email ? email.split("@")[0] : "Verified Pro");
       const initials = name
@@ -274,6 +287,8 @@ module.exports = async function handler(req, res) {
           const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmail] || freelancerStatusOverrides[email];
           if (ovr) return Boolean(ovr.approved);
           if (notes.status === "approved" || p.notes?.status === "approved" || p.notes?.approved_by_admin === "true") return true;
+          const seed = seedMap[email] || seedMap[proId.toLowerCase()] || (phoneDigits && seedMap[phoneDigits]);
+          if (seed && seed.approved !== undefined) return Boolean(seed.approved);
           if (notes.status === "declined" || p.notes?.status === "declined") return false;
           return false;
         })(),
@@ -283,6 +298,8 @@ module.exports = async function handler(req, res) {
           const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmail] || freelancerStatusOverrides[email];
           if (ovr) return ovr.status || (ovr.approved ? "approved" : "declined");
           if (notes.status === "approved" || p.notes?.status === "approved" || p.notes?.approved_by_admin === "true") return "approved";
+          const seed = seedMap[email] || seedMap[proId.toLowerCase()] || (phoneDigits && seedMap[phoneDigits]);
+          if (seed && seed.status) return seed.status;
           if (notes.status === "declined" || p.notes?.status === "declined") return "declined";
           return "pending";
         })(),
@@ -373,11 +390,6 @@ module.exports = async function handler(req, res) {
     }
 
     // Also merge all platform directory talent (from leads.json) so the admin sees ALL freelancers on the website!
-    let leadsSeed = [];
-    try {
-      leadsSeed = require("./leads.json");
-    } catch {}
-
     for (const lead of leadsSeed) {
       const email = (lead.email || "").trim().toLowerCase();
       const leadId = lead.id || lead.freelancer_id;
