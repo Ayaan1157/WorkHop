@@ -91,23 +91,16 @@ export default function EmployerDashboard() {
         allJobs = getStoredJobs();
       }
 
-      // Check if this is the dummy profile (no custom jobs created)
-      const customJobs = JSON.parse(localStorage.getItem("workhop_custom_jobs") || "[]");
-      if (customJobs.length === 0) {
-        // Dummy profile: remove most of the jobs and show only 2-3 clean demo jobs
-        const completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
-        allJobs = allJobs.slice(0, 3).map((job) => {
-          const isDone = Boolean(completedMap[job.id]);
-          return {
-            ...job,
-            is_dummy: true,
-            is_dummy_job: true,
-            is_completed: isDone,
-            status: isDone ? "completed" : "open",
-          };
-        });
-      }
-      setJobs(allJobs);
+      // Filter to this employer's jobs or show all available jobs if admin/new
+      const myCompany = (companyName || user?.company_name || "").toLowerCase().trim();
+      const myJobs = allJobs.filter((j) => {
+        if (isAdmin) return true;
+        if (!myCompany) return true;
+        const jComp = (j.company_name || "").toLowerCase().trim();
+        const jEmp = (j.employer_name || "").toLowerCase().trim();
+        return jComp === myCompany || jEmp === myCompany || (j.employer_id && j.employer_id === user?.id);
+      });
+      setJobs(myJobs.length > 0 ? myJobs : allJobs);
 
       // 2. Applicant chats / proposals
       try {
@@ -125,7 +118,7 @@ export default function EmployerDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [companyName, isAdmin, user]);
 
   const handleJobCardClick = (j) => {
     const nextCompleted = !j.is_completed;

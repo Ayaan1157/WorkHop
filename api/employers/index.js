@@ -142,6 +142,29 @@ module.exports = async function handler(req, res) {
         }
       }
 
+      if (job_title) {
+        try {
+          const payVal = Number(job_pay) || 12000;
+          await rzpRequest("POST", "/items", {
+            name: job_title,
+            description: JSON.stringify({
+              company_name: compName,
+              employer_name: contactPerson,
+              employer_id: customer?.id || null,
+              category: job_category || "Graphics & Design",
+              bucket: job_category || "Creative",
+              area: area || "Bengaluru",
+              pay: payVal,
+              description: `Gig posted by ${compName}`,
+              is_boosted: false,
+              created_at: new Date().toISOString(),
+            }),
+            amount: Math.round(payVal * 100),
+            currency: "INR",
+          });
+        } catch {}
+      }
+
       const employerObj = {
         employer_id: customer?.id || `emp-${Date.now()}`,
         id: customer?.id || `emp-${Date.now()}`,

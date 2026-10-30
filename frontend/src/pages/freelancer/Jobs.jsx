@@ -186,7 +186,7 @@ export default function Jobs() {
         fid ? apiGet(`/freelancer/${fid}`).catch(() => null) : Promise.resolve(null),
         fid ? apiGet(`/freelancer/${fid}/quota`).catch(() => null) : Promise.resolve(null),
       ]);
-      if (Array.isArray(jobsRes) && jobsRes.length > 0) {
+      if (Array.isArray(jobsRes)) {
         setJobs(jobsRes);
       }
       setStatus(statusRes);

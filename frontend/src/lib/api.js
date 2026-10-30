@@ -123,24 +123,27 @@ async function mockRouter(path, method = "GET", body = null) {
     return jobs.find((j) => String(j.id) === String(jobId)) || null;
   }
   if ((cleanPath === "/employer/jobs" || (cleanPath.startsWith("/employer/") && cleanPath.endsWith("/jobs"))) && method === "GET") {
+    let cloudJobs = [];
+    try {
+      const res = await fetch("/api/jobs");
+      if (res.ok) {
+        cloudJobs = await res.json();
+      }
+    } catch {}
+
     const customJobs = JSON.parse(localStorage.getItem("workhop_custom_jobs") || "[]");
-    if (customJobs.length > 0) {
-      return customJobs;
+    const merged = [...(Array.isArray(cloudJobs) ? cloudJobs : [])];
+    const seenIds = new Set(merged.map((j) => String(j.id)));
+    for (const c of customJobs) {
+      if (!seenIds.has(String(c.id))) {
+        merged.push(c);
+        seenIds.add(String(c.id));
+      }
     }
+    if (merged.length > 0) return merged;
+
     const stored = getStoredJobs();
-    // For dummy employer profile: remove most of the jobs and show only 2-3 clean demo jobs
-    const completedMap = JSON.parse(localStorage.getItem("workhop_dummy_completed_jobs") || "{}");
-    const dummyJobs = stored.slice(0, 3).map((job) => {
-      const isDone = Boolean(completedMap[job.id]);
-      return {
-        ...job,
-        is_dummy: true,
-        is_dummy_job: true,
-        is_completed: isDone,
-        status: isDone ? "completed" : "open",
-      };
-    });
-    return dummyJobs;
+    return stored.slice(0, 3);
   }
   if (cleanPath.startsWith("/employer/jobs/") && cleanPath.endsWith("/complete") && method === "POST") {
     const parts = cleanPath.split("/");
@@ -151,6 +154,14 @@ async function mockRouter(path, method = "GET", body = null) {
     return { ok: true, job_id: jobId, status: "completed", message: "Job completed" };
   }
   if (cleanPath.startsWith("/jobs") && method === "GET") {
+    let cloudJobs = [];
+    try {
+      const res = await fetch("/api/jobs");
+      if (res.ok) {
+        cloudJobs = await res.json();
+      }
+    } catch {}
+
     const stored = getStoredJobs();
     let completedMap = {};
     try {
@@ -162,32 +173,47 @@ async function mockRouter(path, method = "GET", body = null) {
     } catch {}
     const completedCustomIds = new Set(customJobs.filter(j => j.is_completed || j.status === "completed").map(j => j.id));
 
-    // Once a job is completed, the listing is removed from public search & feeds
-    const openStored = stored.filter(j => !j.is_completed && j.status !== "completed" && !completedMap[j.id] && !completedCustomIds.has(j.id));
-
-    if (isSupabaseConfigured()) {
-      try {
-        const livePromise = supabaseGetJobs();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Supabase timeout")), 1200)
-        );
-        const live = await Promise.race([livePromise, timeoutPromise]);
-        if (Array.isArray(live) && live.length > 0) {
-          const liveIds = new Set(live.map((j) => String(j.id)));
-          const liveTitles = new Set(live.map((j) => (j.title || "").toLowerCase().trim()));
-          const filtered = openStored.filter((j) => !liveIds.has(String(j.id)) && !liveTitles.has((j.title || "").toLowerCase().trim()));
-          const openLive = live.filter(j => !j.is_completed && j.status !== "completed" && !completedMap[j.id]);
-          return [...openLive, ...filtered];
+    // Auto-sync any unsynced local custom jobs to cloud storage
+    if (Array.isArray(cloudJobs) && Array.isArray(customJobs) && customJobs.length > 0) {
+      const cloudTitles = new Set(cloudJobs.map((j) => (j.title || "").toLowerCase().trim()));
+      for (const cj of customJobs) {
+        if (!cloudTitles.has((cj.title || "").toLowerCase().trim()) && !cj.is_completed) {
+          fetch("/api/jobs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cj),
+          }).catch(() => {});
         }
-      } catch {}
+      }
     }
-    return openStored;
+
+    const allGigs = [...(Array.isArray(cloudJobs) ? cloudJobs : []), ...stored];
+    const dedupeMap = new Map();
+    for (const g of allGigs) {
+      if (g.is_completed || g.status === "completed" || completedMap[g.id] || completedCustomIds.has(g.id)) continue;
+      const key = `${(g.title || "").trim().toLowerCase()}_${(g.company_name || "").trim().toLowerCase()}`;
+      if (!dedupeMap.has(key)) {
+        dedupeMap.set(key, g);
+      }
+    }
+    return Array.from(dedupeMap.values());
   }
   if (cleanPath === "/employer/jobs" && method === "POST") {
+    let remoteJob = null;
     try {
-      supabaseCreateJob(body).catch(() => {});
-    } catch {}
-    return postCustomJob(body);
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      });
+      if (res.ok) {
+        remoteJob = await res.json();
+      }
+    } catch (e) {
+      console.warn("Cloud job post fallback:", e);
+    }
+    const localJob = postCustomJob({ ...(body || {}), id: remoteJob?.id });
+    return remoteJob || localJob;
   }
   if (cleanPath.startsWith("/employer/jobs/") && (method === "PUT" || method === "PATCH")) {
     const parts = cleanPath.split("/");
@@ -560,9 +586,30 @@ async function mockRouter(path, method = "GET", body = null) {
     return getAdminLogs();
   }
   if (cleanPath === "/admin/gigs" && method === "GET") {
-    return getStoredJobs();
+    let cloudJobs = [];
+    try {
+      const res = await fetch("/api/jobs");
+      if (res.ok) cloudJobs = await res.json();
+    } catch {}
+    const stored = getStoredJobs();
+    const merged = [...(Array.isArray(cloudJobs) ? cloudJobs : [])];
+    const seen = new Set(merged.map((j) => String(j.id)));
+    for (const s of stored) {
+      if (!seen.has(String(s.id))) {
+        merged.push(s);
+        seen.add(String(s.id));
+      }
+    }
+    return merged;
   }
   if (cleanPath === "/admin/gigs" && method === "POST") {
+    try {
+      fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      }).catch(() => {});
+    } catch {}
     return addAdminGig(body);
   }
   if (cleanPath.startsWith("/admin/gigs/") && cleanPath.endsWith("/boost") && method === "POST") {

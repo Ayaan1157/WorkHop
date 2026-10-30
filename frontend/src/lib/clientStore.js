@@ -869,7 +869,7 @@ export function postCustomJob(jobData) {
   const boostExpiresAt = isBoosted ? new Date(Date.now() + 48 * 3600000).toISOString() : null;
 
   const newJob = {
-    id: `job-custom-${Date.now()}`,
+    id: jobData.id || `job-custom-${Date.now()}`,
     title: jobData.title,
     pay: pay,
     pay_label: `${pay.toLocaleString("en-IN")}`,

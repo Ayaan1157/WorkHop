@@ -114,6 +114,22 @@
       "destination": "/api/site-settings/index"
     },
     {
+      "source": "/api/jobs",
+      "destination": "/api/jobs/index"
+    },
+    {
+      "source": "/api/jobs/:path*",
+      "destination": "/api/jobs/index"
+    },
+    {
+      "source": "/api/employer/jobs",
+      "destination": "/api/jobs/index"
+    },
+    {
+      "source": "/api/employer/jobs/:path*",
+      "destination": "/api/jobs/index"
+    },
+    {
       "source": "/api/employers",
       "destination": "/api/employers/index"
     },
