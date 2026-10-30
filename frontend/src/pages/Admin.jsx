@@ -2319,8 +2319,8 @@ function ProsTalentTab({ adminFetch }) {
   const [feedback, setFeedback] = useState(null);
   const [previewPro, setPreviewPro] = useState(null);
 
-  const loadPros = useCallback(async () => {
-    setLoading(true);
+  const loadPros = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const data = await adminFetch("/freelancers");
       const localStatuses = getFreelancerStatuses();
@@ -2329,18 +2329,21 @@ function ProsTalentTab({ adminFetch }) {
       // Also guarantee all platform leads are represented
       try {
         const storedLeads = getStoredLeads({ includeDeclined: true });
-        const existingIds = new Set(list.map((p) => p.freelancer_id || p.id));
+        const existingIds = new Set(list.map((p) => (p.freelancer_id || p.id || "").toLowerCase()));
+        const existingEmails = new Set(list.map((p) => (p.email || "").toLowerCase().trim()).filter(Boolean));
         for (const sl of storedLeads) {
-          const sid = sl.freelancer_id || sl.id;
-          if (!existingIds.has(sid)) {
+          const sid = (sl.freelancer_id || sl.id || "").toLowerCase();
+          const semail = (sl.email || "").toLowerCase().trim();
+          if ((!sid || !existingIds.has(sid)) && (!semail || !existingEmails.has(semail))) {
             list.push({
               ...sl,
-              freelancer_id: sid,
-              id: sid,
-              approved: true,
-              status: "approved",
+              freelancer_id: sl.freelancer_id || sl.id,
+              id: sl.id || sl.freelancer_id,
+              approved: sl.approved !== undefined ? sl.approved : true,
+              status: sl.status || "approved",
             });
-            existingIds.add(sid);
+            if (sid) existingIds.add(sid);
+            if (semail) existingEmails.add(semail);
           }
         }
       } catch {}
@@ -2358,17 +2361,21 @@ function ProsTalentTab({ adminFetch }) {
         }
         return p;
       });
-      setPros(merged);
+
+      // Preserve existing pros on empty/failed background poll
+      if (merged.length > 0) {
+        setPros(merged);
+      }
     } catch {
-      /* ignore */
+      /* Keep existing pros intact on transient network error */
     } finally {
       setLoading(false);
     }
   }, [adminFetch]);
 
   useEffect(() => {
-    loadPros();
-    const interval = setInterval(loadPros, 12000);
+    loadPros(true);
+    const interval = setInterval(() => loadPros(false), 20000);
     return () => clearInterval(interval);
   }, [loadPros]);
 
@@ -2571,7 +2578,7 @@ function ProsTalentTab({ adminFetch }) {
 
         <button
           type="button"
-          onClick={loadPros}
+          onClick={() => loadPros(true)}
           className="flex items-center gap-1.5 border-2 border-ink bg-white px-3 py-2 text-xs font-black text-ink hover:bg-sand transition"
         >
           <RefreshCw size={13} /> Refresh List
@@ -4315,30 +4322,31 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const data = await adminFetch("/employers");
+      let list = [];
       if (Array.isArray(data)) {
-        setEmployers(data);
+        list = data;
       } else if (data && Array.isArray(data.employers)) {
-        setEmployers(data.employers);
+        list = data.employers;
       } else if (data && (Array.isArray(data.accounts) || Array.isArray(data.devices))) {
-        const combined = [...(data.devices || []), ...(data.accounts || [])];
-        setEmployers(combined);
-      } else {
-        setEmployers([]);
+        list = [...(data.devices || []), ...(data.accounts || [])];
+      }
+      if (list.length > 0) {
+        setEmployers(list);
       }
     } catch {
-      setEmployers([]);
+      /* Keep existing employers intact on transient network error */
     } finally {
       setLoading(false);
     }
   }, [adminFetch]);
 
   useEffect(() => {
-    refresh();
-    const interval = setInterval(refresh, 12000);
+    refresh(true);
+    const interval = setInterval(() => refresh(false), 20000);
     return () => clearInterval(interval);
   }, [refresh]);
 

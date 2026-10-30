@@ -1250,9 +1250,9 @@ async function request(path, { method = "GET", body, auth = false } = {}) {
     ? `/api${path}`
     : `${API}${path}`;
 
-  // Fetch with timeout fallback (1500ms max)
+  // Fetch with timeout fallback (8000ms max for serverless cold starts & Razorpay)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 1500);
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
     const res = await fetch(targetUrl, {

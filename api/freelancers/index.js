@@ -413,6 +413,16 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json(paidFreelancers);
   } catch (err) {
+    try {
+      const fallbackLeads = require("./leads.json");
+      return res.status(200).json(fallbackLeads.map((l) => ({
+        ...l,
+        freelancer_id: l.id || l.freelancer_id,
+        id: l.id || l.freelancer_id,
+        approved: l.approved !== undefined ? l.approved : true,
+        status: l.status || "approved",
+      })));
+    } catch {}
     return res.status(200).json([
       {
         id: "pro-shamanthnmurthy",
@@ -443,8 +453,8 @@ module.exports = async function handler(req, res) {
         paid_plan: "20 Bidding Hops Pack · ₹150",
         payment_id: "pay_TtdIJpjtCetICU",
         created_at: "2026-10-29T06:56:39.000Z",
-        approved: false,
-        status: "pending",
+        approved: true,
+        status: "approved",
         verifications: {
           id: true,
           email: true,
