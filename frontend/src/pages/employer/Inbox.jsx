@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MailOpen, ChevronRight, MapPin } from "lucide-react";
+import { MailOpen, ChevronRight, MapPin, Clock } from "lucide-react";
 import { Shell, TopBar, Spinner, EmptyBlock } from "@/components/kit";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import { apiGet } from "@/lib/api";
+import { formatMessageTime } from "@/lib/utils";
 
 export default function Inbox() {
   const nav = useNavigate();
@@ -68,16 +69,24 @@ export default function Inbox() {
                     className="min-w-0 flex-1 cursor-pointer"
                     onClick={() => nav(`/chat/${c.conversation_id || c.id}?role=employer`)}
                   >
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="truncate text-sm font-black text-ink dark:text-white">
-                        {c.freelancer_name || "Verified Pro"}
-                      </p>
-                      <span
-                        className="border border-ink px-1.5 py-0.2 text-[8px] font-black text-white"
-                        style={{ backgroundColor: suit.color }}
-                      >
-                        {suit.badge}
-                      </span>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="truncate text-sm font-black text-ink dark:text-white">
+                          {c.freelancer_name || "Verified Pro"}
+                        </p>
+                        <span
+                          className="border border-ink px-1.5 py-0.2 text-[8px] font-black text-white"
+                          style={{ backgroundColor: suit.color }}
+                        >
+                          {suit.badge}
+                        </span>
+                      </div>
+                      {(c.last_message_at || c.updated_at || c.created_at) && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-inkmuted whitespace-nowrap">
+                          <Clock size={10} className="opacity-70" />
+                          {formatMessageTime(c.last_message_at || c.updated_at || c.created_at)}
+                        </span>
+                      )}
                     </div>
 
                     <p className="truncate text-[11px] font-bold text-brand">

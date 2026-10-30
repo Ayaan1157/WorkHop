@@ -16,6 +16,7 @@ import {
   blastFeaturedJobNotification
 } from "@/lib/clientStore";
 import { getDistanceSuitability } from "@/lib/locationAreas";
+import { formatMessageTime } from "@/lib/utils";
 import CompleteJobReviewModal from "@/components/CompleteJobReviewModal";
 import EditModal from "@/components/EditModal";
 import EditJobModal from "@/components/EditJobModal";
@@ -896,11 +897,18 @@ export default function EmployerDashboard() {
                               {(c.freelancer_name || "P").slice(0, 1).toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <p className="font-bold text-ink dark:text-white truncate">{c.freelancer_name || "Verified Pro"}</p>
-                                <span className="text-[8px] font-bold text-white px-1.5 py-0.2 rounded" style={{ backgroundColor: suit.color }}>
-                                  {suit.badge}
-                                </span>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p className="font-bold text-ink dark:text-white truncate">{c.freelancer_name || "Verified Pro"}</p>
+                                  <span className="text-[8px] font-bold text-white px-1.5 py-0.2 rounded" style={{ backgroundColor: suit.color }}>
+                                    {suit.badge}
+                                  </span>
+                                </div>
+                                {(c.last_message_at || c.updated_at || c.created_at) && (
+                                  <span className="text-[10px] text-inkmuted shrink-0 font-medium">
+                                    {formatMessageTime(c.last_message_at || c.updated_at || c.created_at)}
+                                  </span>
+                                )}
                               </div>
                               <p className="text-[11px] font-semibold text-[#E65A1E] truncate mt-0.5">{c.job_title}</p>
                               <p className="text-[10px] text-inkmuted dark:text-[#888] truncate">{c.last_message || "Application submitted"}</p>

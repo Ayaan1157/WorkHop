@@ -9,6 +9,7 @@ import { apiGet, apiPost } from "@/lib/api";
 import { getStoredChats } from "@/lib/clientStore";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import { scanText, scanUploadFile } from "@/lib/contactScanner";
+import { formatMessageTime, formatMessageDate } from "@/lib/utils";
 
 export default function FloatingChatWidget({ role = "employer" }) {
   const nav = useNavigate();
@@ -420,7 +421,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
                                 <ShieldCheck size={12} className="text-ok shrink-0" />
                               </div>
                               <span className="text-[10px] font-semibold text-inkmuted dark:text-zinc-400 whitespace-nowrap">
-                                {c.updated_at ? new Date(c.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now"}
+                                {formatMessageTime(c.last_message_at || c.updated_at)}
                               </span>
                             </div>
 
@@ -521,44 +522,63 @@ export default function FloatingChatWidget({ role = "employer" }) {
                       messages.map((m, idx) => {
                         const isMe = m.sender_role === role;
                         const isSystem = m.sender_role === "system";
+                        const prevMsg = idx > 0 ? messages[idx - 1] : null;
+                        const currDate = formatMessageDate(m.created_at || m.timestamp);
+                        const prevDate = prevMsg ? formatMessageDate(prevMsg.created_at || prevMsg.timestamp) : null;
+                        const showDateSeparator = currDate && currDate !== prevDate;
+                        const msgTime = formatMessageTime(m.created_at || m.timestamp);
 
                         if (isSystem) {
                           return (
-                            <div key={m.id || idx} className="my-2 flex justify-center">
-                              <span className="border border-ink/30 dark:border-zinc-700 bg-sand/80 dark:bg-zinc-800 px-3 py-1 text-[10px] font-bold text-inkmuted dark:text-zinc-300 uppercase">
-                                {m.text}
-                              </span>
-                            </div>
+                            <React.Fragment key={m.id || idx}>
+                              {showDateSeparator && (
+                                <div className="my-2 flex justify-center">
+                                  <span className="rounded-full border border-ink/20 dark:border-zinc-700 bg-sand/80 dark:bg-zinc-800 px-3 py-0.5 text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
+                                    {currDate}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="my-2 flex justify-center">
+                                <span className="border border-ink/30 dark:border-zinc-700 bg-sand/80 dark:bg-zinc-800 px-3 py-1 text-[10px] font-bold text-inkmuted dark:text-zinc-300 uppercase">
+                                  {m.text}
+                                </span>
+                              </div>
+                            </React.Fragment>
                           );
                         }
 
                         return (
-                          <div
-                            key={m.id || idx}
-                            className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
-                          >
+                          <React.Fragment key={m.id || idx}>
+                            {showDateSeparator && (
+                              <div className="my-2 flex justify-center">
+                                <span className="rounded-full border border-ink/20 dark:border-zinc-700 bg-sand/80 dark:bg-zinc-800 px-3 py-0.5 text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
+                                  {currDate}
+                                </span>
+                              </div>
+                            )}
                             <div
-                              className={`max-w-[85%] sm:max-w-[70%] border-2 border-ink dark:border-zinc-700 p-3 text-xs font-bold shadow-[2px_2px_0px_#121212] ${
-                                isMe
-                                  ? "bg-brand text-white"
-                                  : "bg-white dark:bg-stone-800 text-ink dark:text-white"
-                              }`}
+                              className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                             >
-                              <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
                               <div
-                                className={`mt-1 flex items-center justify-end gap-1 text-[9px] ${
-                                  isMe ? "text-white/80" : "text-inkmuted dark:text-zinc-400"
+                                className={`max-w-[85%] sm:max-w-[70%] border-2 border-ink dark:border-zinc-700 p-3 text-xs font-bold shadow-[2px_2px_0px_#121212] ${
+                                  isMe
+                                    ? "bg-brand text-white"
+                                    : "bg-white dark:bg-stone-800 text-ink dark:text-white"
                                 }`}
                               >
-                                <span>
-                                  {m.created_at
-                                    ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                    : "Just now"}
-                                </span>
-                                {isMe && <CheckCheck size={11} />}
+                                <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
+                                <div
+                                  className={`mt-1 flex items-center justify-end gap-1 text-[9px] ${
+                                    isMe ? "text-white/80" : "text-inkmuted dark:text-zinc-400"
+                                  }`}
+                                >
+                                  <Clock size={9} className="opacity-75 shrink-0" />
+                                  <span>{msgTime}</span>
+                                  {isMe && <CheckCheck size={11} />}
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          </React.Fragment>
                         );
                       })
                     )}

@@ -1951,6 +1951,24 @@ export function applyToJob(
       last_message: note || `Applied from ${applicantArea || "Indiranagar"} (${distKm != null ? distKm : 1.2} km away)`,
     };
     localStorage.setItem(CHATS_KEY, JSON.stringify([conv, ...chats]));
+
+    const msgsKey = `workhop_chat_messages_${convId}`;
+    const legacyMsgsKey = `workhop_messages_${convId}`;
+    const existingMsgs = JSON.parse(localStorage.getItem(msgsKey) || localStorage.getItem(legacyMsgsKey) || "[]");
+    if (!existingMsgs.length) {
+      const initialMsg = {
+        id: `msg-${Date.now()}`,
+        message_id: `msg-${Date.now()}`,
+        conversation_id: convId,
+        sender_role: "freelancer",
+        sender_name: "You",
+        text: note || `Hi ${job.employer_name || job.company_name || "there"}! I just applied to your gig "${job.title}". I'm located in ${applicantArea || "Bengaluru"} and ready to discuss the details.`,
+        created_at: appliedAt,
+        timestamp: appliedAt,
+      };
+      localStorage.setItem(msgsKey, JSON.stringify([initialMsg]));
+      localStorage.setItem(legacyMsgsKey, JSON.stringify([initialMsg]));
+    }
   }
 
   const updatedWallet = getCreditsWallet(fId);
@@ -2047,6 +2065,7 @@ export function getOrCreateChatWithCandidate(candidate) {
       },
     ];
     localStorage.setItem(msgsKey, JSON.stringify(initialMessages));
+    localStorage.setItem(`workhop_chat_messages_${convId}`, JSON.stringify(initialMessages));
 
     return convId;
   } catch {

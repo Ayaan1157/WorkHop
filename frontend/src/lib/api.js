@@ -1071,19 +1071,95 @@ async function mockRouter(path, method = "GET", body = null) {
   // 7. Chats & Messages
   if (cleanPath.startsWith("/chats") && method === "GET") {
     if (cleanPath.includes("/messages")) {
-      return [
-        { id: "m1", sender_role: "employer", text: "Hello! We saw your profile on WorkHop.", created_at: new Date(Date.now() - 3600000).toISOString() },
-        { id: "m2", sender_role: "freelancer", text: "Hi! Thanks for reaching out. Happy to discuss the scope.", created_at: new Date().toISOString() },
-      ];
+      const convId = cleanPath.split("/")[2]?.split("?")[0];
+      const storageKey = `workhop_chat_messages_${convId}`;
+      const legacyKey = `workhop_messages_${convId}`;
+      let msgs = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem(legacyKey) || "null");
+
+      if (!msgs || !Array.isArray(msgs) || msgs.length === 0) {
+        const allChats = getStoredChats();
+        const conv = allChats.find((c) => (c.id || c.conversation_id) === convId);
+        const employerName = conv?.company_name || conv?.employer_name || "Verified Employer";
+        const freelancerName = conv?.freelancer_name || "Freelancer Pro";
+        const jobTitle = conv?.job_title || "Gig Discussion";
+        const now = Date.now();
+
+        msgs = [
+          {
+            id: `msg-${convId}-1`,
+            message_id: `msg-${convId}-1`,
+            conversation_id: convId,
+            sender_role: "employer",
+            sender_name: employerName,
+            text: `Hi! We're reviewing applicants for "${jobTitle}". Could you share your availability and estimated turnaround time?`,
+            created_at: new Date(now - 25 * 60000).toISOString(),
+            timestamp: new Date(now - 25 * 60000).toISOString(),
+          },
+          {
+            id: `msg-${convId}-2`,
+            message_id: `msg-${convId}-2`,
+            conversation_id: convId,
+            sender_role: "freelancer",
+            sender_name: freelancerName,
+            text: `Hello! Thanks for reaching out. I am located nearby in Bengaluru and ready to get started right away on "${jobTitle}".`,
+            created_at: new Date(now - 12 * 60000).toISOString(),
+            timestamp: new Date(now - 12 * 60000).toISOString(),
+          },
+        ];
+        localStorage.setItem(storageKey, JSON.stringify(msgs));
+        localStorage.setItem(legacyKey, JSON.stringify(msgs));
+      }
+      return msgs;
     }
     const convId = cleanPath.split("/")[2]?.split("?")[0];
     if (convId) {
-      return { id: convId, job_title: "Gig Discussion", company_name: "Local Employer", freelancer_name: "You", status: "active" };
+      const allChats = getStoredChats();
+      const existing = allChats.find((c) => (c.id || c.conversation_id) === convId);
+      if (existing) return existing;
+      return { id: convId, conversation_id: convId, job_title: "Gig Discussion", company_name: "Local Employer", freelancer_name: "You", status: "active" };
     }
     return getStoredChats();
   }
   if (cleanPath.includes("/messages") && method === "POST") {
     const convId = cleanPath.split("/")[2];
+    const storageKey = `workhop_chat_messages_${convId}`;
+    const legacyKey = `workhop_messages_${convId}`;
+    let existingMsgs = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem(legacyKey) || "[]");
+    if (!Array.isArray(existingMsgs)) existingMsgs = [];
+
+    const nowIso = new Date().toISOString();
+    const newMsg = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      message_id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      conversation_id: convId,
+      sender_role: body?.sender_role || "freelancer",
+      sender_name: body?.sender_name || (body?.sender_role === "employer" ? "Verified Employer" : "Freelancer Pro"),
+      text: body?.text || "",
+      created_at: nowIso,
+      timestamp: nowIso,
+    };
+
+    existingMsgs.push(newMsg);
+    localStorage.setItem(storageKey, JSON.stringify(existingMsgs));
+    localStorage.setItem(legacyKey, JSON.stringify(existingMsgs));
+
+    // Update conversation's last_message and timestamp
+    try {
+      const chats = JSON.parse(localStorage.getItem("workhop_chats") || "[]");
+      const updatedChats = chats.map((c) => {
+        if ((c.id || c.conversation_id) === convId) {
+          return {
+            ...c,
+            last_message: newMsg.text,
+            last_message_at: nowIso,
+            updated_at: nowIso,
+          };
+        }
+        return c;
+      });
+      localStorage.setItem("workhop_chats", JSON.stringify(updatedChats));
+    } catch {}
+
     try {
       supabaseSendMessage({
         conversationId: convId,
@@ -1103,7 +1179,7 @@ async function mockRouter(path, method = "GET", body = null) {
         });
       } catch {}
     }
-    return { id: `m-${Date.now()}`, sender_role: body?.sender_role || "user", text: body?.text, created_at: new Date().toISOString() };
+    return newMsg;
   }
   if (cleanPath.startsWith("/deals/by-conversation/") && method === "GET") {
     const convId = cleanPath.replace("/deals/by-conversation/", "");

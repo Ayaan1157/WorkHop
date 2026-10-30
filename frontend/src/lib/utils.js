@@ -87,3 +87,48 @@ export function isVerifiedPro(pro) {
   return false;
 }
 
+/**
+ * Formats a timestamp into clean localized 12-hour time (e.g., "10:35 PM")
+ * @param {string|number|Date} iso - Timestamp
+ * @returns {string} - Formatted time string
+ */
+export function formatMessageTime(iso) {
+  if (!iso) return "Just now";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "Just now";
+    return d.toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return "Just now";
+  }
+}
+
+/**
+ * Formats a timestamp into relative date grouping (e.g., "Today", "Yesterday", "28 Oct")
+ * @param {string|number|Date} iso - Timestamp
+ * @returns {string} - Date header label
+ */
+export function formatMessageDate(iso) {
+  if (!iso) return "Today";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "Today";
+    const today = new Date();
+    if (d.toDateString() === today.toDateString()) return "Today";
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: d.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+    });
+  } catch {
+    return "Today";
+  }
+}
+
