@@ -19,6 +19,7 @@ import {
   BENGALURU_CENTER,
   isLocationInBengaluru,
 } from "@/lib/locationAreas";
+import { isVerifiedPro } from "@/lib/utils";
 
 // Google Maps Raster Tiles & Fallbacks
 const MAP_LAYERS = {
@@ -428,8 +429,10 @@ export default function GoogleMap({
           <div style="font-family:Archivo,sans-serif;padding:6px;min-width:180px;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
               ${
-                p.approved === true || p.status === "approved"
+                isVerifiedPro(p)
                   ? '<span style="background:#0E6220;color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:2px;letter-spacing:0.05em;text-transform:uppercase;">VERIFIED PRO</span>'
+                  : p.approved === true || p.status === "approved"
+                  ? '<span style="background:#222;color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:2px;letter-spacing:0.05em;text-transform:uppercase;">PRO MEMBER</span>'
                   : '<span style="background:#D97706;color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:2px;letter-spacing:0.05em;text-transform:uppercase;">PENDING APPROVAL</span>'
               }
               ${distStr ? `<span style="font-size:10px;font-weight:800;color:#E65A1E;">⚡ ${distStr}</span>` : ""}

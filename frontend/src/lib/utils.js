@@ -42,3 +42,48 @@ export function formatWhatsAppUrl(rawPhone, defaultMessage = "") {
   return `https://wa.me/${digits}${query}`;
 }
 
+/**
+ * Checks whether a freelancer profile has paid the ₹299 verification fee.
+ * Profiles only display the "VERIFIED PRO" badge if they have paid ₹299 for onboarding/verification.
+ * Freelancers who only purchased bidding hops (e.g. ₹150 hops pack) or free signups are not verified.
+ * @param {Object} pro - The freelancer object
+ * @returns {boolean} - true only if verified badge fee was paid
+ */
+export function isVerifiedPro(pro) {
+  if (!pro) return false;
+  // If explicitly flagged as not verified
+  if (pro.is_verified === false || pro.verified_badge === false) return false;
+
+  const paidAmount = Number(pro.paid_amount || 0);
+  const plan = typeof pro.paid_plan === "string" ? pro.paid_plan.toLowerCase() : "";
+
+  // If the pro only purchased bidding hops (e.g. ₹150 for 20 Hops Pack), they did NOT buy the verified badge
+  if (plan.includes("hops") || plan.includes("top-up")) {
+    if (!plan.includes("verified") && !plan.includes("onboarding") && pro.is_verified !== true) {
+      return false;
+    }
+  }
+
+  // If paid amount is specified and below 299, they did NOT pay the 299 verification fee
+  if (paidAmount > 0 && paidAmount < 299 && pro.is_verified !== true) {
+    return false;
+  }
+
+  // If paid amount is 299 or more
+  if (paidAmount >= 299) {
+    return true;
+  }
+
+  // Explicit verification flag
+  if (pro.is_verified === true || pro.verified_badge === true) {
+    return true;
+  }
+
+  // Plan name explicitly confirms ₹299 verified badge
+  if (plan.includes("299") || plan.includes("verified pro badge") || plan.includes("verified pro onboarding")) {
+    return true;
+  }
+
+  return false;
+}
+

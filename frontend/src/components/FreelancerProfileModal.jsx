@@ -6,7 +6,7 @@ import {
   ArrowRight, User, CheckCircle2, Lock, Phone, Image as ImageIcon, Sparkles
 } from "lucide-react";
 import { getOrCreateChatWithCandidate } from "@/lib/clientStore";
-import { formatWhatsAppUrl } from "@/lib/utils";
+import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
 
 function formatImageSrc(img) {
   if (!img || typeof img !== "string") return "";
@@ -99,15 +99,35 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
                 >
                   {pro.name}
                 </h2>
-                {pro.approved || pro.status === "approved" ? (
-                  <span className="inline-flex items-center gap-0.5 bg-ok/15 text-ok border border-ok px-1.5 py-0.2 text-[9px] font-black shrink-0">
-                    <ShieldCheck size={11} /> VERIFIED PRO
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/40 px-1.5 py-0.2 text-[9px] font-black shrink-0">
-                    <Clock size={11} /> PENDING ADMIN APPROVAL
-                  </span>
-                )}
+                {(() => {
+                  const verified = isVerifiedPro(pro);
+                  if (verified) {
+                    return (
+                      <span className="inline-flex items-center gap-0.5 bg-ok/15 text-ok border border-ok px-1.5 py-0.2 text-[9px] font-black shrink-0">
+                        <ShieldCheck size={11} /> VERIFIED PRO
+                      </span>
+                    );
+                  }
+                  if (pro.approved || pro.status === "approved") {
+                    return (
+                      <span className="inline-flex items-center gap-0.5 bg-sand dark:bg-zinc-800 text-ink dark:text-zinc-200 border border-ink/30 dark:border-zinc-700 px-1.5 py-0.2 text-[9px] font-black shrink-0">
+                        PRO MEMBER
+                      </span>
+                    );
+                  }
+                  if (pro.status === "declined") {
+                    return (
+                      <span className="inline-flex items-center gap-0.5 bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/40 px-1.5 py-0.2 text-[9px] font-black shrink-0">
+                        DECLINED
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="inline-flex items-center gap-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/40 px-1.5 py-0.2 text-[9px] font-black shrink-0">
+                      <Clock size={11} /> PENDING ADMIN APPROVAL
+                    </span>
+                  );
+                })()}
               </div>
 
               <p className="text-xs sm:text-sm font-bold text-inkmuted dark:text-zinc-300 line-clamp-1 mt-0.5">
@@ -192,8 +212,14 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
               <span>About {firstName}</span>
             </h3>
             <p className="text-xs sm:text-[13px] leading-relaxed text-ink dark:text-zinc-200 font-medium">
-              {pro.intro ||
-                `${pro.name} is a verified professional specializing in ${pro.skill} in Bengaluru. Experienced in fast delivery, clear communication, and high quality deliverables.`}
+              {(() => {
+                const verified = isVerifiedPro(pro);
+                let text = pro.intro || `${pro.name} is a professional specializing in ${pro.skill} in Bengaluru. Experienced in fast delivery, clear communication, and high quality deliverables.`;
+                if (!verified && text.startsWith("Verified ")) {
+                  text = text.replace(/^Verified\s+/i, "");
+                }
+                return text;
+              })()}
             </p>
           </div>
 

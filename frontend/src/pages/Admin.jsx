@@ -33,7 +33,7 @@ import {
   updateFreelancerStatus,
 } from "@/lib/clientStore";
 import FreelancerProfileModal from "@/components/FreelancerProfileModal";
-import { formatWhatsAppUrl } from "@/lib/utils";
+import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
 
 const TABS = [
   { id: "CREDITS", label: "🪙 CREDITS & PRICING" },
@@ -2688,9 +2688,17 @@ function ProsTalentTab({ adminFetch }) {
                           <X size={11} /> DECLINED
                         </span>
                       )}
-                      {f.paid && (
-                        <span className="border border-brand bg-[#FFF3C4] px-2 py-0.5 text-[9px] font-black text-brand uppercase tracking-wider">
-                          💰 PAID ₹{f.paid_amount || 150} · {f.paid_plan || "Hops Pack"}
+                      {isVerifiedPro(f) ? (
+                        <span className="border border-ok bg-ok/15 text-ok px-2 py-0.5 text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                          <ShieldCheck size={10} /> VERIFIED (PAID ₹299)
+                        </span>
+                      ) : f.paid ? (
+                        <span className="border border-amber-500 bg-amber-50 px-2 py-0.5 text-[9px] font-black text-amber-900 uppercase tracking-wider">
+                          💰 PAID ₹{f.paid_amount || 150} · {f.paid_plan || "Hops Pack"} (NO VERIFIED BADGE)
+                        </span>
+                      ) : (
+                        <span className="border border-ink/20 bg-stone-100 px-2 py-0.5 text-[9px] font-bold text-inkmuted uppercase">
+                          UNVERIFIED (NO ₹299 BADGE)
                         </span>
                       )}
                     </div>

@@ -15,7 +15,7 @@ import { apiGet, getEmployerId } from "@/lib/api";
 import { ADMIN_EMAILS, getLeadById, getSubmittedProfiles, getStoredReviews } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { formatWhatsAppUrl } from "@/lib/utils";
+import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
 
 const Blur = () => <span className="pointer-events-none absolute inset-0 backdrop-blur-[6px]" />;
 
@@ -225,15 +225,35 @@ export default function Pro() {
               <div className="flex-1 text-center sm:text-left min-w-0">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <h1 className="text-2xl font-black text-ink">{pro.name}</h1>
-                  {pro.approved || pro.status === "approved" ? (
-                    <span className="flex items-center gap-1 bg-ok text-white border border-ink px-2 py-0.5 text-[9px] font-black shadow-[1px_1px_0px_#121212]">
-                      <ShieldCheck size={11} /> VERIFIED PRO
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 bg-amber-500 text-white border border-ink px-2 py-0.5 text-[9px] font-black shadow-[1px_1px_0px_#121212]">
-                      <Clock size={11} /> PENDING ADMIN APPROVAL
-                    </span>
-                  )}
+                  {(() => {
+                    const verified = isVerifiedPro(pro);
+                    if (verified) {
+                      return (
+                        <span className="flex items-center gap-1 bg-ok text-white border border-ink px-2 py-0.5 text-[9px] font-black shadow-[1px_1px_0px_#121212]">
+                          <ShieldCheck size={11} /> VERIFIED PRO
+                        </span>
+                      );
+                    }
+                    if (pro.approved || pro.status === "approved") {
+                      return (
+                        <span className="flex items-center gap-1 bg-sand text-ink border border-ink px-2 py-0.5 text-[9px] font-black shadow-[1px_1px_0px_#121212]">
+                          PRO MEMBER
+                        </span>
+                      );
+                    }
+                    if (pro.status === "declined") {
+                      return (
+                        <span className="flex items-center gap-1 bg-red-600 text-white border border-ink px-2 py-0.5 text-[9px] font-black shadow-[1px_1px_0px_#121212]">
+                          DECLINED
+                        </span>
+                      );
+                    }
+                    return (
+                      <span className="flex items-center gap-1 bg-amber-500 text-white border border-ink px-2 py-0.5 text-[9px] font-black shadow-[1px_1px_0px_#121212]">
+                        <Clock size={11} /> PENDING ADMIN APPROVAL
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 <p className="text-sm font-bold text-inkmuted mt-0.5">{pro.skill}</p>

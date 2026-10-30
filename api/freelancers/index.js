@@ -255,9 +255,16 @@ module.exports = async function handler(req, res) {
         .toUpperCase() || "VP";
 
       const amountInr = (p.amount || 0) / 100;
+      const isVerifiedProUser = Boolean(
+        amountInr >= 299 ||
+        (p.notes?.product === "freelancer_onboarding" && amountInr >= 299) ||
+        (p.notes?.plan_id === "verification-badge" && amountInr >= 299) ||
+        (p.description || "").includes("₹299") ||
+        (p.notes?.verified_badge === "true")
+      );
       const planName =
         p.description ||
-        (amountInr === 150 ? "20 Bidding Hops Pack · ₹150" : (amountInr === 299 || amountInr === 99) ? "Verified Pro Onboarding · ₹299" : `₹${amountInr} Top-Up Pack`);
+        (amountInr === 150 ? "20 Bidding Hops Pack · ₹150" : (amountInr >= 299) ? "Verified Pro Onboarding · ₹299" : `₹${amountInr} Top-Up Pack`);
 
       const skill = notes.skill || "Brand Identity, Digital Design & Creative Pro";
       const category = notes.category || "Graphics & Design";
@@ -282,7 +289,7 @@ module.exports = async function handler(req, res) {
         email: email,
         phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw || "+91 72046 65071",
         portfolio: notes.portfolio_url || `${name.toLowerCase().replace(/[^a-z0-9]/g, "")}.in`,
-        intro: notes.intro || "Verified freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround.",
+        intro: notes.intro || (isVerifiedProUser ? "Verified freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround." : "Freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround."),
         keywords: [
           "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro"
         ],
@@ -290,6 +297,8 @@ module.exports = async function handler(req, res) {
         paid_amount: amountInr,
         paid_plan: planName,
         payment_id: p.id,
+        is_verified: isVerifiedProUser,
+        verified: isVerifiedProUser,
         created_at: new Date(p.created_at * 1000).toISOString(),
         approved: (() => {
           const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
@@ -321,11 +330,11 @@ module.exports = async function handler(req, res) {
           return notes.reason || p.notes?.reason || null;
         })(),
         verifications: {
-          id: true,
+          id: isVerifiedProUser,
           email: true,
           phone: true,
           portfolio: true,
-          payment: true,
+          payment: isVerifiedProUser,
         },
         is_dummy: false,
       });
@@ -408,6 +417,11 @@ module.exports = async function handler(req, res) {
       if (email) seenEmails.add(email);
 
       const ovr = freelancerStatusOverrides[leadId] || (email ? freelancerStatusOverrides[email] : null);
+      const isLeadVerified = Boolean(
+        lead.is_verified === true ||
+        (Number(lead.paid_amount || 0) >= 299 && !(lead.paid_plan || "").toLowerCase().includes("hops")) ||
+        (lead.paid_plan && typeof lead.paid_plan === "string" && (lead.paid_plan.includes("299") || lead.paid_plan.toLowerCase().includes("verified pro badge") || lead.paid_plan.toLowerCase().includes("verified pro onboarding")))
+      );
       paidFreelancers.push({
         ...lead,
         id: leadId,
@@ -415,20 +429,22 @@ module.exports = async function handler(req, res) {
         name: lead.name,
         full_name: lead.name,
         initials: lead.initials || lead.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
-        paid: true,
-        paid_amount: lead.paid_amount || 299,
-        paid_plan: lead.paid_plan || "Verified Pro Badge · ₹299",
-        approved: ovr ? Boolean(ovr.approved) : true,
-        status: ovr ? ovr.status : "approved",
+        paid: lead.paid !== undefined ? lead.paid : true,
+        paid_amount: lead.paid_amount !== undefined ? lead.paid_amount : (isLeadVerified ? 299 : 0),
+        paid_plan: lead.paid_plan || (isLeadVerified ? "Verified Pro Badge · ₹299" : (lead.paid_amount === 150 ? "20 Bidding Hops Pack · ₹150" : "Standard Profile")),
+        approved: ovr ? Boolean(ovr.approved) : (lead.approved !== undefined ? lead.approved : true),
+        status: ovr ? ovr.status : (lead.status || "approved"),
         reason: ovr ? ovr.reason : null,
+        is_verified: isLeadVerified,
+        verified: isLeadVerified,
         verifications: lead.verifications || {
-          id: true,
+          id: isLeadVerified,
           email: true,
           phone: true,
           portfolio: true,
-          payment: true,
+          payment: isLeadVerified,
         },
-        is_dummy: false,
+        is_dummy: lead.is_dummy !== undefined ? lead.is_dummy : false,
         is_unlocked: true,
       });
     }
@@ -443,6 +459,8 @@ module.exports = async function handler(req, res) {
         id: l.id || l.freelancer_id,
         approved: l.approved !== undefined ? l.approved : true,
         status: l.status || "approved",
+        is_verified: Boolean(l.is_verified),
+        verified: Boolean(l.is_verified),
       })));
     } catch {}
     return res.status(200).json([
@@ -466,7 +484,7 @@ module.exports = async function handler(req, res) {
         email: "shamanthnmurthy@gmail.com",
         phone: "+91 72046 65071",
         portfolio: "shamanthnmurthy.design",
-        intro: "Verified freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround.",
+        intro: "Freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround.",
         keywords: [
           "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro"
         ],
@@ -477,12 +495,14 @@ module.exports = async function handler(req, res) {
         created_at: "2026-10-29T06:56:39.000Z",
         approved: true,
         status: "approved",
+        is_verified: false,
+        verified: false,
         verifications: {
-          id: true,
+          id: false,
           email: true,
           phone: true,
           portfolio: true,
-          payment: true,
+          payment: false,
         },
         is_dummy: false,
         is_unlocked: true,

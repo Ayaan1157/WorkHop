@@ -19,7 +19,7 @@
     "phone": "+91 72046 65071",
     "email": "shamanthnmurthy@gmail.com",
     "portfolio": "shamanthnmurthy.design",
-    "intro": "Verified freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, UI prototypes, and graphic design with fast local turnaround.",
+    "intro": "Freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, UI prototypes, and graphic design with fast local turnaround.",
     "keywords": [
       "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro", "ui/ux"
     ],
@@ -29,7 +29,8 @@
     "paid_plan": "20 Bidding Hops Pack · ₹150",
     "payment_id": "pay_TtdIJpjtCetICU",
     "approved": true,
-    "status": "approved"
+    "status": "approved",
+    "is_verified": false
   },
   {
     "id": "lead-1",
