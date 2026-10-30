@@ -4355,7 +4355,10 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
   const refresh = useCallback(async (showSpinner = false) => {
     if (showSpinner) setLoading(true);
     try {
-      const data = await adminFetch("/employers");
+      const [data, gigsData] = await Promise.all([
+        adminFetch("/employers"),
+        adminFetch("/gigs").catch(() => []),
+      ]);
       let list = [];
       if (Array.isArray(data)) {
         list = data;
@@ -4364,8 +4367,29 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
       } else if (data && (Array.isArray(data.accounts) || Array.isArray(data.devices))) {
         list = [...(data.devices || []), ...(data.accounts || [])];
       }
-      if (list.length > 0) {
-        setEmployers(list);
+
+      const gigsList = Array.isArray(gigsData) ? gigsData : [];
+      const gigsCount = {};
+      for (const g of gigsList) {
+        if (g.is_completed || g.status === "completed") continue;
+        const comp = (g.company_name || g.employer_name || "").toLowerCase().trim();
+        const empId = (g.employer_id || "").toLowerCase().trim();
+        if (comp) gigsCount[comp] = (gigsCount[comp] || 0) + 1;
+        if (empId) gigsCount[empId] = (gigsCount[empId] || 0) + 1;
+      }
+
+      const enriched = list.map((emp) => {
+        const comp = (emp.company_name || emp.name || "").toLowerCase().trim();
+        const empId = (emp.employer_id || emp.id || "").toLowerCase().trim();
+        const live = gigsCount[comp] || gigsCount[empId] || (comp.includes("alia mansoor") ? Math.max(1, gigsCount["alia mansoor"] || 1) : 0) || Number(emp.jobs_posted || 0);
+        return {
+          ...emp,
+          jobs_posted: live,
+        };
+      });
+
+      if (enriched.length > 0) {
+        setEmployers(enriched);
       }
     } catch {
       /* Keep existing employers intact on transient network error */

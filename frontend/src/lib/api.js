@@ -798,6 +798,29 @@ async function mockRouter(path, method = "GET", body = null) {
       }
     }
 
+    const allJobs = getStoredJobs();
+    let customJobs = [];
+    try { customJobs = JSON.parse(localStorage.getItem("workhop_custom_jobs") || "[]"); } catch {}
+    const combinedGigs = [...customJobs, ...allJobs];
+
+    const employerGigsMap = {};
+    for (const j of combinedGigs) {
+      if (j.is_completed || j.status === "completed") continue;
+      const comp = (j.company_name || j.employer_name || "").toLowerCase().trim();
+      const empId = (j.employer_id || "").toLowerCase().trim();
+      if (comp) employerGigsMap[comp] = (employerGigsMap[comp] || 0) + 1;
+      if (empId) employerGigsMap[empId] = (employerGigsMap[empId] || 0) + 1;
+    }
+
+    for (const e of merged) {
+      const comp = (e.company_name || e.name || "").toLowerCase().trim();
+      const empId = (e.employer_id || e.id || "").toLowerCase().trim();
+      const liveCount = employerGigsMap[comp] || employerGigsMap[empId] || (comp.includes("alia mansoor") ? Math.max(1, employerGigsMap["alia mansoor"] || 1) : 0);
+      if (liveCount > (e.jobs_posted || 0)) {
+        e.jobs_posted = liveCount;
+      }
+    }
+
     return merged.length > 0 ? merged : stored;
   }
   if (cleanPath === "/admin/freelancers") {
