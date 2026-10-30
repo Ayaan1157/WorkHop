@@ -259,8 +259,8 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         phone_verified: true,
         email_verified: true,
         area: area,
-        company_name: isEmployer ? (cleanCompany || "Hyperlocal Co.") : undefined,
-        skill: !isEmployer ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
+        company_name: isEmployer ? (cleanCompany || undefined) : undefined,
+        skill: !isEmployer ? (cleanSkill || undefined) : undefined,
         gst_number: isEmployer && gstNumber ? gstNumber.trim().toUpperCase() : undefined,
       };
 
@@ -360,8 +360,8 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
           email_verified: true,
           google_verified: true,
           area: area,
-          company_name: isEmployer ? (cleanCompany || cleanName || "Hyperlocal Co.") : undefined,
-          skill: !isEmployer ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
+          company_name: isEmployer ? (cleanCompany || cleanName || undefined) : undefined,
+          skill: !isEmployer ? (cleanSkill || undefined) : undefined,
           gst_number: isEmployer && gstNumber ? gstNumber.trim().toUpperCase() : undefined,
         };
 

@@ -61,6 +61,7 @@ import {
   addStoredEmployer,
   deleteStoredEmployer,
   deleteAllStoredEmployers,
+  getSubmittedProfiles,
   saveSubmittedProfile,
   saveRemoteFreelancers,
 } from "./clientStore";
@@ -361,9 +362,8 @@ async function mockRouter(path, method = "GET", body = null) {
 
   // 5. Auth
   if (cleanPath === "/auth/mobile/request-otp") {
-    const phone = body?.phone || "9876543210";
-    const devOtp = String(Math.floor(100000 + Math.random() * 900000));
-    return { message: "Mobile OTP sent via SMS / WhatsApp", dev_otp: devOtp, phone };
+    const phone = body?.phone || "";
+    return { message: "Mobile OTP sent via SMS / WhatsApp", phone };
   }
   if (cleanPath === "/auth/mobile/verify-otp") {
     const email = body?.email || "user@example.com";
@@ -808,10 +808,37 @@ async function mockRouter(path, method = "GET", body = null) {
     return saveFreelancerProfile(body);
   }
   if (cleanPath.startsWith("/freelancer/") && cleanPath.endsWith("/profile") && method === "GET") {
-    return { phone: "9876543210", skill: "Full Stack Pro", verified: true };
+    const parts = cleanPath.split("/").filter(Boolean);
+    const fid = parts[1];
+    let found = null;
+    try {
+      const submitted = getSubmittedProfiles() || [];
+      found = submitted.find((p) => (p.freelancer_id || p.id) === fid);
+    } catch {}
+    if (found) {
+      return {
+        phone: found.phone && found.phone !== "9876543210" ? found.phone : "",
+        skill: found.skill && !["Full Stack Pro", "Creative Pro", "UI/UX & Brand Designer"].includes(found.skill) ? found.skill : "",
+        category: found.category || "",
+        verified: !!found.verified,
+        rate_hr: found.rate_hr || "",
+        intro: found.intro || "",
+        languages: found.languages || [],
+      };
+    }
+    const full = getFreelancerProfile() || {};
+    return {
+      phone: full?.phone && full.phone !== "9876543210" ? full.phone : "",
+      skill: (full?.skill || full?.title) && !["Full Stack Pro", "Creative Pro", "UI/UX & Brand Designer"].includes(full?.skill || full?.title) ? (full?.skill || full?.title) : "",
+      category: full?.category || "",
+      verified: !!full?.verified,
+      rate_hr: full?.rate_hr || "",
+      intro: full?.description || full?.intro || "",
+      languages: full?.languages || [],
+    };
   }
   if (cleanPath.startsWith("/freelancer/") && cleanPath.endsWith("/profile") && method === "PUT") {
-    return { phone: body?.phone || "9876543210", skill: body?.skill || "Pro" };
+    return { phone: body?.phone || "", skill: body?.skill || "" };
   }
   if (cleanPath.startsWith("/freelancer/") && method === "GET") {
     return { id: getFreelancerId() || "freelancer-1", status: "verified", email_verified: true, verified: true };
@@ -830,9 +857,9 @@ async function mockRouter(path, method = "GET", body = null) {
         id: body.freelancer_id || `pro-${Date.now()}`,
         freelancer_id: body.freelancer_id || `pro-${Date.now()}`,
         name: body.name || body.full_name || "Verified Freelancer",
-        skill: body.skill || "Creative Pro",
-        category: body.category || "Graphics & Design",
-        rate_hr: Number(body.rate_hr) || 850,
+        skill: body.skill || "",
+        category: body.category || "",
+        rate_hr: Number(body.rate_hr) || 0,
         paid: true,
         paid_amount: 299,
         paid_plan: "Verified Pro Onboarding · ₹299",

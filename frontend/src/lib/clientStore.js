@@ -1272,10 +1272,14 @@ export function createMockSession(email = "user@workhop.local", details = {}) {
   const role = details.role || existing.role || localStorage.getItem("workhop_auth_role") || "freelancer";
   const fallbackName = cleanEmail.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const name = details.name || existing.name || fallbackName || (isUserAdmin(cleanEmail) ? "Zenith Developers (Admin)" : "Verified User");
-  const phone = details.phone || existing.phone || localStorage.getItem("workhop_pro_phone") || "9876543210";
-  const area = details.area || existing.area || localStorage.getItem("workhop_user_area") || "Koramangala";
-  const skill = details.skill || existing.skill || localStorage.getItem("workhop_pro_skill") || (role === "employer" ? "Business Owner" : "UI/UX & Brand Designer");
-  const company_name = details.company_name || existing.company_name || localStorage.getItem("workhop_company_name") || "Hyperlocal Co.";
+  const rawPhone = details.phone || existing.phone || localStorage.getItem("workhop_pro_phone") || "";
+  const phone = rawPhone === "9876543210" ? "" : rawPhone;
+  const rawArea = details.area || existing.area || localStorage.getItem("workhop_user_area") || "";
+  const area = rawArea === "Koramangala" && !details.area && !existing.area ? "" : rawArea;
+  const rawSkill = details.skill || existing.skill || localStorage.getItem("workhop_pro_skill") || "";
+  const skill = ["UI/UX & Brand Designer", "Full Stack Pro", "Creative Pro", "Business Owner"].includes(rawSkill) ? "" : rawSkill;
+  const rawCompany = details.company_name || existing.company_name || localStorage.getItem("workhop_company_name") || "";
+  const company_name = ["Hyperlocal Co.", "Hyperlocal Enterprises"].includes(rawCompany) ? "" : rawCompany;
   const isAdmin = isUserAdmin(cleanEmail) || !!details.is_admin || !!existing.is_admin;
 
   const user = {
@@ -1295,12 +1299,26 @@ export function createMockSession(email = "user@workhop.local", details = {}) {
     created_at: existing.created_at || new Date().toISOString(),
   };
 
-  // Sync specific helper keys
+  // Sync specific helper keys (scrubbing mock fallbacks)
   localStorage.setItem("workhop_auth_role", user.role);
-  if (user.phone) localStorage.setItem("workhop_pro_phone", user.phone);
-  if (user.area) localStorage.setItem("workhop_user_area", user.area);
-  if (user.skill) localStorage.setItem("workhop_pro_skill", user.skill);
-  if (user.company_name) localStorage.setItem("workhop_company_name", user.company_name);
+  if (user.phone && user.phone !== "9876543210") {
+    localStorage.setItem("workhop_pro_phone", user.phone);
+  } else {
+    localStorage.removeItem("workhop_pro_phone");
+  }
+  if (user.area) {
+    localStorage.setItem("workhop_user_area", user.area);
+  }
+  if (user.skill && !["UI/UX & Brand Designer", "Full Stack Pro", "Creative Pro", "Business Owner"].includes(user.skill)) {
+    localStorage.setItem("workhop_pro_skill", user.skill);
+  } else {
+    localStorage.removeItem("workhop_pro_skill");
+  }
+  if (user.company_name && !["Hyperlocal Co.", "Hyperlocal Enterprises"].includes(user.company_name)) {
+    localStorage.setItem("workhop_company_name", user.company_name);
+  } else {
+    localStorage.removeItem("workhop_company_name");
+  }
 
   saveStoredUser(user);
   return {

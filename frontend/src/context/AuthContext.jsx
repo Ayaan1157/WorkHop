@@ -85,10 +85,10 @@ export function AuthProvider({ children }) {
       ...(existing || {}),
       name: name,
       role: role,
-      area: existing?.area || localStorage.getItem("workhop_user_area") || "Koramangala",
-      phone: existing?.phone || localStorage.getItem("workhop_pro_phone") || "9876543210",
-      company_name: existing?.company_name || localStorage.getItem("workhop_company_name") || "Hyperlocal Co.",
-      skill: existing?.skill || localStorage.getItem("workhop_pro_skill") || "UI/UX & Brand Designer",
+      area: existing?.area || localStorage.getItem("workhop_user_area") || "",
+      phone: (existing?.phone && existing.phone !== "9876543210") ? existing.phone : (localStorage.getItem("workhop_pro_phone") !== "9876543210" ? localStorage.getItem("workhop_pro_phone") : "") || "",
+      company_name: existing?.company_name || (!["Hyperlocal Co.", "Hyperlocal Enterprises"].includes(localStorage.getItem("workhop_company_name")) ? localStorage.getItem("workhop_company_name") : "") || "",
+      skill: existing?.skill || (!["UI/UX & Brand Designer", "Full Stack Pro", "Creative Pro", "Business Owner"].includes(localStorage.getItem("workhop_pro_skill")) ? localStorage.getItem("workhop_pro_skill") : "") || "",
     });
     setToken(session.session_token);
     saveStoredUser(session.user);

@@ -282,7 +282,7 @@ export default function Pro() {
                 ) : (
                   <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
                     <a
-                      href={`tel:${pro.phone || "9876543210"}`}
+                      href={`tel:${pro.phone || ""}`}
                       className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 border-2 border-ink bg-ok px-4 py-2.5 text-xs font-black tracking-wider text-white hover:bg-ok/90 transition shadow-[2px_2px_0px_#121212]"
                     >
                       <Phone size={14} /> CALL {pro.phone || "PRO"} {isAdmin ? "(ADMIN)" : ""}

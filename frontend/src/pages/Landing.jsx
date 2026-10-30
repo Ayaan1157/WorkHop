@@ -241,8 +241,8 @@ export default function Landing() {
         phone_verified: true,
         email_verified: true,
         area: areaInput,
-        company_name: target === "employer" ? (cleanCompany || "Hyperlocal Co.") : undefined,
-        skill: target !== "employer" ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
+        company_name: target === "employer" ? (cleanCompany || undefined) : undefined,
+        skill: target !== "employer" ? (cleanSkill || undefined) : undefined,
       };
 
       await apiPost("/users", payload).catch(() => {});
@@ -343,8 +343,8 @@ export default function Landing() {
           email_verified: true,
           google_verified: true,
           area: areaInput,
-          company_name: target === "employer" ? (cleanCompany || cleanName || "Hyperlocal Co.") : undefined,
-          skill: target !== "employer" ? (cleanSkill || "UI/UX & Brand Designer") : undefined,
+          company_name: target === "employer" ? (cleanCompany || cleanName || undefined) : undefined,
+          skill: target !== "employer" ? (cleanSkill || undefined) : undefined,
         };
 
         await apiPost("/users", payload).catch(() => {});

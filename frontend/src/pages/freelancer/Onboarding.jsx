@@ -44,7 +44,7 @@ export default function Onboarding() {
   const [portfolio, setPortfolio] = useState("");
   const [phone, setPhone] = useState("");
   const [skill, setSkill] = useState("");
-  const [category, setCategory] = useState("Graphics & Design");
+  const [category, setCategory] = useState("");
   const [suggestModalOpen, setSuggestModalOpen] = useState(false);
   const [rateHr, setRateHr] = useState("");
   const [intro, setIntro] = useState("");
@@ -61,6 +61,15 @@ export default function Onboarding() {
   useEffect(() => { if (user?.email) setVerifyEmail((v) => v || user.email); }, [user?.email]);
 
   useEffect(() => {
+    // Proactively purge any legacy mock keys from localStorage
+    if (localStorage.getItem("workhop_pro_phone") === "9876543210") {
+      localStorage.removeItem("workhop_pro_phone");
+    }
+    const storedSkill = localStorage.getItem("workhop_pro_skill");
+    if (["Full Stack Pro", "Creative Pro", "UI/UX & Brand Designer"].includes(storedSkill)) {
+      localStorage.removeItem("workhop_pro_skill");
+    }
+
     (async () => {
       const fid = getFreelancerId();
       if (!fid) return;
@@ -69,8 +78,10 @@ export default function Onboarding() {
         setState((p) => ({ ...p, freelancerId: fid, paid: !!s.paid, verified: !!s.aadhaar_verified }));
         const pr = await apiGet(`/freelancer/${fid}/profile`).catch(() => null);
         if (pr) {
-          if (pr.phone) setPhone(String(pr.phone).replace(/\D/g, "").replace(/^91/, ""));
-          if (pr.skill) setSkill(pr.skill);
+          const cleanPhone = pr.phone && pr.phone !== "9876543210" ? String(pr.phone).replace(/\D/g, "").replace(/^91/, "") : "";
+          if (cleanPhone) setPhone(cleanPhone);
+          const cleanSkill = pr.skill && !["Full Stack Pro", "Creative Pro", "UI/UX & Brand Designer"].includes(pr.skill) ? pr.skill : "";
+          if (cleanSkill) setSkill(cleanSkill);
           if (pr.category) setCategory(pr.category);
           if (pr.linkedin_url) setLinkedin(pr.linkedin_url);
           if (pr.portfolio_url) setPortfolio(pr.portfolio_url);

@@ -37,23 +37,26 @@ export default function EmployerDashboard() {
   );
 
   // Profile States
-  const [companyName, setCompanyName] = useState(() =>
-    user?.company_name || localStorage.getItem("workhop_company_name") || "Hyperlocal Enterprises"
-  );
+  const [companyName, setCompanyName] = useState(() => {
+    const c = user?.company_name || localStorage.getItem("workhop_company_name") || "";
+    return ["Hyperlocal Enterprises", "Hyperlocal Co."].includes(c) ? "" : c;
+  });
   const [employerName, setEmployerName] = useState(() =>
-    user?.name || (user?.email ? user.email.split("@")[0] : "Employer")
+    user?.name || (user?.email ? user.email.split("@")[0] : "")
   );
-  const [area, setArea] = useState(() =>
-    user?.area || localStorage.getItem("workhop_user_area") || "Koramangala"
-  );
-  const [phone, setPhone] = useState(() =>
-    user?.phone || localStorage.getItem("workhop_pro_phone") || "9876543210"
-  );
+  const [area, setArea] = useState(() => {
+    const a = user?.area || localStorage.getItem("workhop_user_area") || "";
+    return a === "Koramangala" && !user?.area ? "" : a;
+  });
+  const [phone, setPhone] = useState(() => {
+    const p = user?.phone || localStorage.getItem("workhop_pro_phone") || "";
+    return p === "9876543210" ? "" : p;
+  });
   const [industry, setIndustry] = useState(() =>
-    localStorage.getItem("workhop_employer_industry") || "Tech & Creative Services"
+    localStorage.getItem("workhop_employer_industry") || ""
   );
   const [bio, setBio] = useState(() =>
-    localStorage.getItem("workhop_employer_bio") || "Hiring top-tier local freelance talent across Bengaluru for design, development, and marketing gigs."
+    localStorage.getItem("workhop_employer_bio") || ""
   );
   const [gstNumber, setGstNumber] = useState(() =>
     user?.gst_number || localStorage.getItem("workhop_employer_gst") || ""
