@@ -650,6 +650,9 @@ async function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath.startsWith("/admin/gigs/") && method === "DELETE") {
     const jobId = cleanPath.split("/")[3];
+    try {
+      fetch(`/api/jobs?id=${encodeURIComponent(jobId)}`, { method: "DELETE" }).catch(() => {});
+    } catch {}
     return deleteGigAdmin(jobId);
   }
   if ((cleanPath === "/admin/users" || cleanPath === "/users") && method === "POST") {

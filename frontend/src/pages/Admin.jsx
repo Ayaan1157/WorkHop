@@ -4351,6 +4351,9 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
   const [form, setForm] = useState(EMPTY_EMPLOYER_FORM);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [allGigs, setAllGigs] = useState([]);
+  const [selectedEmployerForGigs, setSelectedEmployerForGigs] = useState(null);
+  const [busyGigId, setBusyGigId] = useState(null);
 
   const refresh = useCallback(async (showSpinner = false) => {
     if (showSpinner) setLoading(true);
@@ -4369,6 +4372,7 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
       }
 
       const gigsList = Array.isArray(gigsData) ? gigsData : [];
+      setAllGigs(gigsList);
       const gigsCount = {};
       for (const g of gigsList) {
         if (g.is_completed || g.status === "completed") continue;
@@ -4397,6 +4401,25 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
       setLoading(false);
     }
   }, [adminFetch]);
+
+  const employerGigs = useMemo(() => {
+    if (!selectedEmployerForGigs) return [];
+    const comp = (selectedEmployerForGigs.company_name || "").toLowerCase().trim();
+    const name = (selectedEmployerForGigs.name || "").toLowerCase().trim();
+    const empId = (selectedEmployerForGigs.employer_id || selectedEmployerForGigs.id || "").toLowerCase().trim();
+
+    return allGigs.filter((g) => {
+      const gComp = (g.company_name || "").toLowerCase().trim();
+      const gEmp = (g.employer_name || "").toLowerCase().trim();
+      const gEmpId = (g.employer_id || "").toLowerCase().trim();
+      if (empId && gEmpId && empId === gEmpId) return true;
+      if (comp && gComp && (comp === gComp || comp.includes(gComp) || gComp.includes(comp))) return true;
+      if (comp && gEmp && (comp === gEmp || comp.includes(gEmp) || gEmp.includes(comp))) return true;
+      if (name && gEmp && (name === gEmp || name.includes(gEmp) || gEmp.includes(name))) return true;
+      if (name && gComp && (name === gComp || name.includes(gComp) || gComp.includes(name))) return true;
+      return false;
+    });
+  }, [selectedEmployerForGigs, allGigs]);
 
   useEffect(() => {
     refresh(true);
@@ -4731,13 +4754,29 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2 text-xs">
                   <span>Spend: ₹{Number(e.spent_rupees || 0).toLocaleString("en-IN")}</span>
-                  <span className="font-bold text-brand">{e.jobs_posted || 0} Gigs Live</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEmployerForGigs(e)}
+                    className="flex items-center gap-1 font-bold text-brand hover:underline cursor-pointer bg-brand/10 hover:bg-brand/20 px-2 py-0.5 rounded transition"
+                    title={`Click to view gigs posted by ${e.company_name || "this employer"}`}
+                  >
+                    <Briefcase size={11} />
+                    <span>{e.jobs_posted || 0} Gigs Live</span>
+                  </button>
                 </div>
                 <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-ink/10 pt-2 text-xs">
                   <span className="flex items-center gap-1 font-bold text-ink">
                     <Coins size={13} className="text-brand" /> {empHops} Hops
                   </span>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEmployerForGigs(e)}
+                      className="flex items-center gap-1 border-2 border-ink bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-900 shadow-[1px_1px_0px_#121212] transition hover:bg-blue-100"
+                      title="View gigs posted by this employer"
+                    >
+                      <Eye size={10} /> View Gigs ({e.jobs_posted || 0})
+                    </button>
                     <button
                       type="button"
                       onClick={async () => {
@@ -4776,6 +4815,149 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* View Gigs by Employer Modal */}
+      {selectedEmployerForGigs && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto border-2 border-ink bg-[#FFFDF7] p-5 shadow-[6px_6px_0px_#121212]">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b-2 border-ink pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Briefcase size={20} className="text-brand" />
+                  <h3 className="text-base sm:text-lg font-black uppercase text-ink">
+                    Gigs by {selectedEmployerForGigs.company_name}
+                  </h3>
+                </div>
+                <p className="mt-1 text-xs font-semibold text-inkmuted">
+                  Employer ID: <span className="font-mono text-ink">{selectedEmployerForGigs.employer_id || "N/A"}</span>
+                  {selectedEmployerForGigs.name && ` · Contact: ${selectedEmployerForGigs.name}`}
+                  {selectedEmployerForGigs.phone && ` · ${selectedEmployerForGigs.phone}`}
+                  {selectedEmployerForGigs.area && ` · 📍 ${selectedEmployerForGigs.area}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedEmployerForGigs(null)}
+                className="border-2 border-ink bg-white p-1 text-ink shadow-[2px_2px_0px_#121212] hover:bg-ink hover:text-white transition"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* List of Gigs */}
+            <div className="mt-4 space-y-3">
+              {employerGigs.length === 0 ? (
+                <div className="border-2 border-dashed border-ink/30 bg-white p-6 text-center">
+                  <p className="text-sm font-black text-ink">No live gigs found for this employer.</p>
+                  <p className="mt-1 text-xs text-inkmuted">
+                    Any active gigs matching "{selectedEmployerForGigs.company_name}" will show up here.
+                  </p>
+                </div>
+              ) : (
+                employerGigs.map((g) => {
+                  const gigId = g.id || g.job_id;
+                  const payStr = g.pay_label || (g.budget ? `₹${Number(g.budget).toLocaleString("en-IN")}` : (g.pay ? `₹${Number(g.pay).toLocaleString("en-IN")}` : "Competitive"));
+                  return (
+                    <div key={gigId} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-black text-ink text-sm sm:text-base">
+                              {g.title}
+                            </h4>
+                            {g.is_boosted && (
+                              <span className="border border-amber-900 bg-amber-200 px-1.5 py-0.5 text-[9px] font-black uppercase text-amber-900">
+                                ⚡ BOOSTED
+                              </span>
+                            )}
+                            <span className="border border-green-800 bg-green-100 px-1.5 py-0.5 text-[9px] font-black uppercase text-green-900">
+                              {g.status ? g.status.toUpperCase() : "LIVE"}
+                            </span>
+                          </div>
+
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs font-bold text-inkmuted">
+                            <span className="text-ink">💰 {payStr}</span>
+                            <span>·</span>
+                            <span>📍 {g.area || g.location || "Bengaluru"}</span>
+                            {g.category && (
+                              <>
+                                <span>·</span>
+                                <span className="bg-brand/10 px-1.5 py-0.5 text-brand font-semibold text-[11px] border border-brand/30">
+                                  {g.category}
+                                </span>
+                              </>
+                            )}
+                          </div>
+
+                          {g.description && (
+                            <p className="mt-2 text-xs text-ink/80 font-medium line-clamp-2">
+                              {g.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:self-start">
+                          <a
+                            href={`/freelancer/jobs?q=${encodeURIComponent(g.title)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 border-2 border-ink bg-white px-2.5 py-1 text-xs font-black text-ink shadow-[2px_2px_0px_#121212] hover:bg-neutral-100 transition whitespace-nowrap"
+                          >
+                            <ExternalLink size={12} /> View
+                          </a>
+                          <button
+                            type="button"
+                            disabled={busyGigId === gigId}
+                            onClick={async () => {
+                              if (!window.confirm(`Delete gig "${g.title}"?`)) return;
+                              setBusyGigId(gigId);
+                              try {
+                                await adminFetch(`/gigs/${gigId}`, "DELETE");
+                                setAllGigs((prev) => prev.filter((item) => (item.id || item.job_id) !== gigId));
+                                setEmployers((prev) =>
+                                  prev.map((emp) =>
+                                    emp.employer_id === selectedEmployerForGigs.employer_id
+                                      ? { ...emp, jobs_posted: Math.max(0, (emp.jobs_posted || 1) - 1) }
+                                      : emp
+                                  )
+                                );
+                              } catch (err) {
+                                alert(err?.message || "Failed to delete gig.");
+                              } finally {
+                                setBusyGigId(null);
+                              }
+                            }}
+                            className="flex items-center gap-1 border-2 border-ink bg-red-100 px-2.5 py-1 text-xs font-black text-red-900 shadow-[2px_2px_0px_#121212] hover:bg-red-200 transition disabled:opacity-50 whitespace-nowrap"
+                          >
+                            {busyGigId === gigId ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-5 flex items-center justify-between border-t border-ink/10 pt-3">
+              <span className="text-xs font-bold text-inkmuted">
+                Showing {employerGigs.length} gig{employerGigs.length === 1 ? "" : "s"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedEmployerForGigs(null)}
+                className="border-2 border-ink bg-ink px-4 py-1.5 text-xs font-black text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
