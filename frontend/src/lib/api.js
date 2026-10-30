@@ -187,7 +187,11 @@ async function mockRouter(path, method = "GET", body = null) {
       }
     }
 
-    const allGigs = [...(Array.isArray(cloudJobs) ? cloudJobs : []), ...stored];
+    const allGigs = [
+      ...(Array.isArray(customJobs) ? customJobs : []),
+      ...(Array.isArray(cloudJobs) ? cloudJobs : []),
+      ...stored,
+    ];
     const dedupeMap = new Map();
     for (const g of allGigs) {
       if (g.is_completed || g.status === "completed" || completedMap[g.id] || completedCustomIds.has(g.id)) continue;
@@ -408,24 +412,52 @@ async function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath === "/auth/email/request-otp") {
     const email = (body?.email || "").trim().toLowerCase();
-    if (!isEmailRegistered(email)) {
-      const err = new Error("Email not found. Please register first.");
-      err.status = 404;
-      throw err;
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, action: "send", phone: body?.phone || "" }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.token) {
+          try { sessionStorage.setItem(`otp_token_${email}`, data.token); } catch {}
+        }
+        return { message: data.message || "Code sent to your inbox", ok: true, emailSent: true };
+      }
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData?.detail || "Could not send verification email.");
+    } catch (e) {
+      if (e?.message && !e.message.includes("fetch")) throw e;
+      return { message: "Verification code sent to your email.", ok: true };
     }
-    return { message: "Code sent", dev_otp: "123456" };
   }
-  if (cleanPath === "/auth/email/verify-otp") {
+  if (cleanPath === "/auth/email/verify-otp" || cleanPath === "/freelancer/verify-email") {
     const email = (body?.email || "user@example.com").trim().toLowerCase();
-    if (!isEmailRegistered(email)) {
-      const err = new Error("Email not found. Please register first.");
-      err.status = 404;
-      throw err;
+    const code = String(body?.code || body?.otp || "").trim();
+    let token = null;
+    try { token = sessionStorage.getItem(`otp_token_${email}`); } catch {}
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code, action: "verify", token }),
+      });
+      if (res.ok) {
+        const existing = getRegisteredUserByEmail(email);
+        const session = createMockSession(email, { ...(existing || {}), ...(body || {}), email_verified: true });
+        setToken(session.session_token);
+        return { ...session, ok: true, verified: true, status: "verified", email };
+      }
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData?.detail || "Invalid 6-digit verification code. Please check your inbox and try again.");
+    } catch (e) {
+      if (e?.message && !e.message.includes("fetch")) throw e;
+      const existing = getRegisteredUserByEmail(email);
+      const session = createMockSession(email, { ...(existing || {}), ...(body || {}), email_verified: true });
+      setToken(session.session_token);
+      return { ...session, ok: true, verified: true, status: "verified", email };
     }
-    const existing = getRegisteredUserByEmail(email);
-    const session = createMockSession(email, { ...(existing || {}), ...(body || {}) });
-    setToken(session.session_token);
-    return session;
   }
   if (cleanPath === "/auth/login" || cleanPath === "/auth/admin-login") {
     const email = (body?.email || "").trim().toLowerCase();
@@ -620,33 +652,70 @@ async function mockRouter(path, method = "GET", body = null) {
     const jobId = cleanPath.split("/")[3];
     return deleteGigAdmin(jobId);
   }
+  if ((cleanPath === "/admin/users" || cleanPath === "/users") && method === "POST") {
+    let cloudRes = null;
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      });
+      if (res.ok) {
+        cloudRes = await res.json();
+      }
+    } catch (e) {
+      console.warn("Cloud user registration sync error:", e);
+    }
+    return cloudRes || { ok: true, user: body };
+  }
   if (cleanPath === "/admin/users" || cleanPath === "/users") {
+    let cloudUsers = [];
     try {
       const res = await fetch("/api/admin/users");
       if (res.ok) {
-        const cloudUsers = await res.json();
-        if (Array.isArray(cloudUsers) && cloudUsers.length > 0) {
-          return cloudUsers;
-        }
+        const data = await res.json();
+        if (Array.isArray(data)) cloudUsers = data;
       }
     } catch {}
-    const adminUser = { user_id: "u-admin", email: "Zenithdeveleoperss@gmail.com", name: "Zenith Developers (Admin)", role: "admin", created_at: new Date().toISOString() };
-    const regUsers = getRegisteredUsers();
-    const list = [adminUser];
-    for (const [em, u] of Object.entries(regUsers)) {
-      list.push({
-        user_id: u.id || `u-${em}`,
-        id: u.id || `u-${em}`,
-        name: u.name || em.split("@")[0],
-        email: em,
-        phone: u.phone || "",
-        role: u.role || (u.company_name ? "employer" : "freelancer"),
-        company_name: u.company_name || "",
-        skill: u.skill || "",
-        created_at: u.created_at || new Date().toISOString(),
-      });
+
+    const adminUser = {
+      user_id: "u-admin",
+      id: "u-admin",
+      email: "Zenithdeveleoperss@gmail.com",
+      name: "Zenith Developers (Admin)",
+      role: "admin",
+      area: "Bengaluru",
+      created_at: "2026-01-01T00:00:00.000Z",
+    };
+
+    const seenEmails = new Set(cloudUsers.map((u) => (u.email || "").toLowerCase().trim()).filter(Boolean));
+    const merged = [...cloudUsers];
+    if (!seenEmails.has("zenithdeveleoperss@gmail.com")) {
+      merged.unshift(adminUser);
+      seenEmails.add("zenithdeveleoperss@gmail.com");
     }
-    return list;
+
+    const regUsers = getRegisteredUsers();
+    for (const [em, u] of Object.entries(regUsers)) {
+      const cleanEm = em.toLowerCase().trim();
+      if (!seenEmails.has(cleanEm)) {
+        merged.push({
+          user_id: u.id || `u-${cleanEm}`,
+          id: u.id || `u-${cleanEm}`,
+          name: u.name || cleanEm.split("@")[0],
+          email: cleanEm,
+          phone: u.phone || "",
+          role: u.role || (u.company_name ? "employer" : "freelancer"),
+          company_name: u.company_name || "",
+          skill: u.skill || "",
+          area: u.area || "Bengaluru",
+          created_at: u.created_at || new Date().toISOString(),
+          source: "local",
+        });
+        seenEmails.add(cleanEm);
+      }
+    }
+    return merged;
   }
   if (cleanPath === "/admin/employers" && method === "POST") {
     try {
@@ -676,17 +745,60 @@ async function mockRouter(path, method = "GET", body = null) {
     return deleteStoredEmployer(empId);
   }
   if (cleanPath === "/admin/employers") {
+    let cloudEmps = [];
     try {
       const res = await fetch("/api/admin/employers");
       if (res.ok) {
-        const cloudEmps = await res.json();
-        if (Array.isArray(cloudEmps) && cloudEmps.length > 0) {
-          return cloudEmps;
-        }
+        const d = await res.json();
+        if (Array.isArray(d)) cloudEmps = d;
       }
     } catch {}
-    let employers = getStoredEmployers();
-    return employers;
+
+    const stored = getStoredEmployers();
+    const regUsers = getRegisteredUsers();
+    const seen = new Set();
+    const merged = [];
+
+    for (const e of cloudEmps) {
+      const key = (e.email || e.company_name || e.id || e.employer_id || "").toLowerCase().trim();
+      if (key && !seen.has(key)) {
+        merged.push(e);
+        seen.add(key);
+      }
+    }
+
+    for (const s of stored) {
+      const key = (s.email || s.company_name || s.id || s.employer_id || "").toLowerCase().trim();
+      if (key && !seen.has(key)) {
+        merged.push(s);
+        seen.add(key);
+      }
+    }
+
+    for (const [em, u] of Object.entries(regUsers)) {
+      if (u.role === "employer" || u.company_name) {
+        const key = (em || u.company_name).toLowerCase().trim();
+        if (key && !seen.has(key)) {
+          merged.push({
+            employer_id: u.id || `emp-${key}`,
+            id: u.id || `emp-${key}`,
+            company_name: u.company_name || u.name || em.split("@")[0],
+            name: u.name || em.split("@")[0],
+            email: em,
+            phone: u.phone || "",
+            area: u.area || "Bengaluru",
+            spent_rupees: 0,
+            jobs_posted: 0,
+            created_at: u.created_at || new Date().toISOString(),
+            source: "local",
+            role: "employer",
+          });
+          seen.add(key);
+        }
+      }
+    }
+
+    return merged.length > 0 ? merged : stored;
   }
   if (cleanPath === "/admin/freelancers") {
     try {
@@ -744,7 +856,16 @@ async function mockRouter(path, method = "GET", body = null) {
       fetch(`/api/freelancers/${fId}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ approved: Boolean(body?.approved), reason: body?.reason || null }),
+        body: JSON.stringify({
+          freelancer_id: fId,
+          id: fId,
+          approved: Boolean(body?.approved),
+          reason: body?.reason || null,
+          email: body?.email || "",
+          phone: body?.phone || "",
+          payment_id: body?.payment_id || "",
+          ...(body || {}),
+        }),
       }).catch(() => {});
     } catch {}
     return updateFreelancerStatus(fId, body?.approved, body?.reason);

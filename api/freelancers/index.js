@@ -175,6 +175,16 @@ module.exports = async function handler(req, res) {
                       (cName && cleanTarget.includes(cName));
         if (match) {
           freelancerStatusOverrides[c.id] = { approved: isApproved, status, reason };
+          await rzpRequest("PUT", `/customers/${c.id}`, {
+            notes: {
+              ...(c.notes || {}),
+              status: status,
+              approved: String(isApproved),
+              approved_by_admin: String(isApproved),
+              reason: reason,
+              updated_at: new Date().toISOString(),
+            }
+          }).catch(() => {});
         }
       }
 

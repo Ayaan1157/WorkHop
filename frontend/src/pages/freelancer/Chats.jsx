@@ -35,10 +35,12 @@ export default function FreelancerChats() {
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 p-4 sm:p-6 pb-16">
           {chats.map((c, i) => (
             <button key={c.conversation_id} data-testid={`chat-row-${i}`} onClick={() => nav(`/chat/${c.conversation_id}?role=freelancer`)} className="flex items-center gap-3 border-2 border-ink bg-white p-3 text-left transition active:translate-y-0.5">
-              <div className="flex h-11 w-11 items-center justify-center border-2 border-ink bg-ink text-lg font-black text-white">{c.company_name.slice(0, 1)}</div>
+              <div className="flex h-11 w-11 items-center justify-center border-2 border-ink bg-ink text-lg font-black text-white">
+                {(c.company_name || c.employer_name || "Employer").slice(0, 1).toUpperCase()}
+              </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-black text-ink">{c.company_name}</p>
-                <p className="truncate text-[11px] font-bold text-brand">{c.job_title}</p>
+                <p className="truncate text-sm font-black text-ink">{c.company_name || c.employer_name || "Verified Employer"}</p>
+                <p className="truncate text-[11px] font-bold text-brand">{c.job_title || "Gig Discussion"}</p>
                 <p className="truncate text-xs text-inkmuted">{c.last_message || "Application sent — start the conversation"}</p>
               </div>
               <ChevronRight size={16} className="text-inkmuted" />

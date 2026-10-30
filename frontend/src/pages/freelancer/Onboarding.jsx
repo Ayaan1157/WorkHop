@@ -36,7 +36,6 @@ export default function Onboarding() {
   const [verifyEmail, setVerifyEmail] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [devOtp, setDevOtp] = useState(null);
   const [vBusy, setVBusy] = useState(false);
   const [vError, setVError] = useState(null);
 
@@ -159,8 +158,8 @@ export default function Onboarding() {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return setVError("Enter a valid email address.");
     setVBusy(true);
     try {
-      const data = await apiPost("/auth/email/request-otp", { email });
-      setOtpSent(true); setDevOtp(data.dev_otp || null); setOtpCode("");
+      await apiPost("/auth/email/request-otp", { email });
+      setOtpSent(true); setOtpCode("");
     } catch (e) { setVError(e?.message || "Could not send code."); }
     finally { setVBusy(false); }
   };
@@ -293,7 +292,7 @@ export default function Onboarding() {
                       <input data-testid="otp-code-input" value={otpCode} onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setVError(null); }} placeholder="6-digit code" className={`${inputCls} flex-1 font-black tracking-[0.4em]`} />
                       <button data-testid="confirm-otp-btn" onClick={confirmOtp} disabled={vBusy} className="min-w-[90px] bg-ink px-4 text-xs font-black tracking-wider text-white disabled:opacity-60">{vBusy ? <Loader2 size={16} className="mx-auto animate-spin" /> : "VERIFY"}</button>
                     </div>
-                    <button data-testid="otp-change-email-btn" onClick={() => { setOtpSent(false); setDevOtp(null); setOtpCode(""); setVError(null); }} className="text-left text-xs font-bold text-brand">← Change email / resend code</button>
+                    <button data-testid="otp-change-email-btn" onClick={() => { setOtpSent(false); setOtpCode(""); setVError(null); }} className="text-left text-xs font-bold text-brand">← Change email / resend code</button>
                   </>
                 )}
                 {state.paid && !state.verified && isAdmin && (

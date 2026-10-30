@@ -23,6 +23,7 @@ import Onboarding from "@/pages/freelancer/Onboarding";
 import Jobs from "@/pages/freelancer/Jobs";
 import FreelancerChats from "@/pages/freelancer/Chats";
 import FreelancerProfile from "@/pages/freelancer/FreelancerProfile";
+import NotFound from "@/pages/NotFound";
 import { useAuth } from "@/context/AuthContext";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -114,9 +115,15 @@ function App() {
             <Route path="/employer/edit-job/:id" element={<EmployerRoute><PostJob /></EmployerRoute>} />
             <Route path="/employer/inbox" element={<EmployerRoute><Inbox /></EmployerRoute>} />
             <Route path="/freelancer" element={<FreelancerRoute><Onboarding /></FreelancerRoute>} />
-            <Route path="/freelancer/jobs" element={<FreelancerRoute><Jobs /></FreelancerRoute>} />
+            <Route path="/freelancer/jobs" element={<Jobs />} />
+            <Route path="/gigs" element={<Navigate to="/freelancer/jobs" replace />} />
+            <Route path="/jobs" element={<Navigate to="/freelancer/jobs" replace />} />
+            <Route path="/explore" element={<Navigate to="/employer" replace />} />
+            <Route path="/pros" element={<Navigate to="/employer" replace />} />
+            <Route path="/freelancers" element={<Navigate to="/employer" replace />} />
             <Route path="/freelancer/chats" element={<FreelancerRoute><FreelancerChats /></FreelancerRoute>} />
             <Route path="/freelancer/profile" element={<FreelancerRoute><FreelancerProfile /></FreelancerRoute>} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
         </ErrorBoundary>

@@ -1,4 +1,22 @@
 const nodemailer = require("nodemailer");
+const crypto = require("crypto");
+
+const OTP_SECRET = process.env.OTP_SECRET || "workhop_super_secure_otp_secret_bengaluru_2026";
+
+function signOtp(email, code, expiresAt) {
+  const data = `${email}:${code}:${expiresAt}`;
+  const sig = crypto.createHmac("sha256", OTP_SECRET).update(data).digest("hex");
+  return `${sig}.${expiresAt}`;
+}
+
+function verifyOtpSig(email, code, token) {
+  if (!token || !token.includes(".")) return false;
+  const [sig, expiresAtStr] = token.split(".");
+  const expiresAt = parseInt(expiresAtStr, 10);
+  if (isNaN(expiresAt) || Date.now() > expiresAt) return false;
+  const expectedSig = crypto.createHmac("sha256", OTP_SECRET).update(`${email}:${code}:${expiresAt}`).digest("hex");
+  return sig === expectedSig;
+}
 
 // Store active verification codes (in-memory with 10-min TTL)
 const activeOtps = new Map();
@@ -72,17 +90,10 @@ module.exports = async function handler(req, res) {
       }
 
       const stored = activeOtps.get(email);
+      const isSigValid = Boolean(body?.token && verifyOtpSig(email, code, body.token));
+      const isMemValid = Boolean(stored && stored.code === code && Date.now() <= stored.expiresAt);
 
-      if (!stored) {
-        return res.status(400).json({ detail: "Verification code expired or not found. Please request a new code." });
-      }
-
-      if (Date.now() > stored.expiresAt) {
-        activeOtps.delete(email);
-        return res.status(400).json({ detail: "Verification code has expired. Please request a new code." });
-      }
-
-      if (stored.code === code) {
+      if (isSigValid || isMemValid) {
         activeOtps.delete(email);
         return res.status(200).json({
           ok: true,
@@ -93,16 +104,23 @@ module.exports = async function handler(req, res) {
         });
       }
 
+      if (stored && Date.now() > stored.expiresAt) {
+        activeOtps.delete(email);
+        return res.status(400).json({ detail: "Verification code has expired. Please request a new code." });
+      }
+
       return res.status(400).json({ detail: "Invalid 6-digit verification code. Please check your inbox and try again." });
     }
 
     // 2. ACTION: SEND OTP
     const code = generateOtp();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const token = signOtp(email, code, expiresAt);
     activeOtps.set(email, {
       code,
       phone,
       createdAt: Date.now(),
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+      expiresAt,
     });
 
     let emailSent = false;
@@ -161,6 +179,7 @@ module.exports = async function handler(req, res) {
       email,
       phone,
       emailSent: true,
+      token,
       message: `Verification code sent to ${email}. Please check your inbox.`
     });
   } catch (err) {

@@ -46,94 +46,135 @@ export const supabase = createClient(
 
 export async function supabaseSignUp({ email, password, name, role = "freelancer", phone = "" }) {
   if (!isSupabaseConfigured()) return null;
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        name,
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+          role,
+          phone,
+        },
+      },
+    });
+    if (error) throw error;
+    if (data?.user) {
+      await supabase.from("profiles").upsert({
+        id: data.user.id,
+        email: data.user.email,
+        name: name || email.split("@")[0],
         role,
         phone,
-      },
-    },
-  });
-  if (error) throw error;
-  if (data?.user) {
-    // Create or update profile row in public.profiles table
-    await supabase.from("profiles").upsert({
-      id: data.user.id,
-      email: data.user.email,
-      name: name || email.split("@")[0],
-      role,
-      phone,
-      updated_at: new Date().toISOString(),
-    });
+        updated_at: new Date().toISOString(),
+      }).catch(() => {});
+    }
+    return data;
+  } catch (err) {
+    if (err?.message?.includes("fetch") || err?.message?.includes("network") || err?.code === "ENOTFOUND") {
+      markSupabaseUnavailable();
+    }
+    console.warn("Supabase signup gracefully deferred to local store:", err?.message);
+    return null;
   }
-  return data;
 }
 
 export async function supabaseSignIn({ email, password }) {
   if (!isSupabaseConfigured()) return null;
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    if (err?.message?.includes("fetch") || err?.message?.includes("network") || err?.code === "ENOTFOUND") {
+      markSupabaseUnavailable();
+    }
+    console.warn("Supabase signin gracefully deferred to local store:", err?.message);
+    return null;
+  }
 }
 
 export async function supabaseSignInWithOtp({ email, phone }) {
   if (!isSupabaseConfigured()) return null;
-  if (phone) {
+  try {
+    if (phone) {
+      const { data, error } = await supabase.auth.signInWithOtp({
+        phone: phone.startsWith("+") ? phone : `+91${phone.replace(/\D/g, "")}`,
+      });
+      if (error) throw error;
+      return data;
+    }
     const { data, error } = await supabase.auth.signInWithOtp({
-      phone: phone.startsWith("+") ? phone : `+91${phone.replace(/\D/g, "")}`,
+      email,
     });
     if (error) throw error;
     return data;
+  } catch (err) {
+    if (err?.message?.includes("fetch") || err?.message?.includes("network") || err?.code === "ENOTFOUND") {
+      markSupabaseUnavailable();
+    }
+    console.warn("Supabase OTP signin gracefully deferred:", err?.message);
+    return null;
   }
-  const { data, error } = await supabase.auth.signInWithOtp({
-    email,
-  });
-  if (error) throw error;
-  return data;
 }
 
 export async function supabaseVerifyOtp({ email, phone, token, type = "email" }) {
   if (!isSupabaseConfigured()) return null;
-  const params = {
-    token,
-    type: type === "sms" || phone ? "sms" : "email",
-  };
-  if (phone) params.phone = phone.startsWith("+") ? phone : `+91${phone.replace(/\D/g, "")}`;
-  if (email) params.email = email;
+  try {
+    const params = {
+      token,
+      type: type === "sms" || phone ? "sms" : "email",
+    };
+    if (phone) params.phone = phone.startsWith("+") ? phone : `+91${phone.replace(/\D/g, "")}`;
+    if (email) params.email = email;
 
-  const { data, error } = await supabase.auth.verifyOtp(params);
-  if (error) throw error;
-  return data;
+    const { data, error } = await supabase.auth.verifyOtp(params);
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    if (err?.message?.includes("fetch") || err?.message?.includes("network") || err?.code === "ENOTFOUND") {
+      markSupabaseUnavailable();
+    }
+    console.warn("Supabase verify OTP gracefully deferred:", err?.message);
+    return null;
+  }
 }
 
 export async function supabaseSignOut() {
   if (!isSupabaseConfigured()) return null;
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.warn("Supabase signout gracefully deferred:", err?.message);
+  }
 }
 
 export async function supabaseGetCurrentUser() {
   if (!isSupabaseConfigured()) return null;
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) return null;
 
-  // Fetch full profile from profiles table
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single()
+      .catch(() => ({ data: null }));
 
-  return {
-    ...user,
-    ...(profile || {}),
-  };
+    return {
+      ...user,
+      ...(profile || {}),
+    };
+  } catch (err) {
+    if (err?.message?.includes("fetch") || err?.message?.includes("network") || err?.code === "ENOTFOUND") {
+      markSupabaseUnavailable();
+    }
+    return null;
+  }
 }
 
 // ══════════════════════════════════════════════════

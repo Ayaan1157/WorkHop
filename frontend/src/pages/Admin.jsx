@@ -2346,6 +2346,36 @@ function ProsTalentTab({ adminFetch }) {
             if (semail) existingEmails.add(semail);
           }
         }
+
+        // Also merge any users registered locally as freelancers
+        const regUsers = getRegisteredUsers();
+        for (const [em, u] of Object.entries(regUsers)) {
+          if (u.role === "freelancer" || u.skill || (!u.role?.includes("employ") && !u.company_name)) {
+            const sid = (u.id || `pro-${em.split("@")[0]}`).toLowerCase();
+            const semail = em.toLowerCase().trim();
+            if (!existingIds.has(sid) && !existingEmails.has(semail)) {
+              list.push({
+                id: sid,
+                freelancer_id: sid,
+                name: u.name || em.split("@")[0],
+                full_name: u.name || em.split("@")[0],
+                email: semail,
+                phone: u.phone || "",
+                skill: u.skill || "Freelancer Pro",
+                category: "Graphics & Design",
+                bucket: "Creative",
+                area: u.area || "Bengaluru",
+                paid: Boolean(u.paid),
+                approved: u.approved !== undefined ? Boolean(u.approved) : false,
+                status: u.status || (u.approved ? "approved" : "pending"),
+                created_at: u.created_at || new Date().toISOString(),
+                source: "local",
+              });
+              existingIds.add(sid);
+              existingEmails.add(semail);
+            }
+          }
+        }
       } catch {}
 
       const merged = list.map((p) => {
