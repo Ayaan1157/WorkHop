@@ -190,18 +190,22 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
   const statuses = getFreelancerStatuses();
 
   const allRaw = [
-    ...leadsSeed,
-    ...getSubmittedProfiles(),
     ...getRemoteFreelancers(),
+    ...getSubmittedProfiles(),
+    ...leadsSeed,
   ];
 
-  const seen = new Set();
+  const seenIds = new Set();
+  const seenEmails = new Set();
   const deduped = [];
   for (const item of allRaw) {
     if (!item || typeof item !== "object") continue;
-    const key = item.id || item.freelancer_id || item.email || item.phone;
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
+    const idKey = (item.id || item.freelancer_id || "").toLowerCase().trim();
+    const emailKey = (item.email || "").toLowerCase().trim();
+    if (idKey && seenIds.has(idKey)) continue;
+    if (emailKey && seenEmails.has(emailKey)) continue;
+    if (idKey) seenIds.add(idKey);
+    if (emailKey) seenEmails.add(emailKey);
     deduped.push(item);
   }
 
@@ -210,22 +214,23 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
     const st = statuses[leadId];
 
     // Determine verification & approval status:
-    // 1. Explicit admin status in localStorage
-    // 2. Or explicit lead status from backend/API
-    // 3. Or seed dummy pros (default approved for preview)
-    // 4. Default for any new freelancer registration: PENDING VERIFICATION (approved: false)
+    // 1. Authoritative cloud approval from backend/API or verified seed
+    // 2. Admin status overrides from localStorage
+    // 3. Seed dummy pros (default approved for preview)
+    // 4. Default for unverified registrations: PENDING VERIFICATION
     let isApproved = false;
     let statusText = "pending";
     let reasonText = null;
 
-    if (st !== undefined) {
+    if (lead.approved === true || lead.status === "approved") {
+      isApproved = true;
+      statusText = "approved";
+      reasonText = null;
+    } else if (st !== undefined) {
       isApproved = Boolean(st.approved);
       statusText = st.status || (isApproved ? "approved" : "declined");
       reasonText = st.reason || null;
     } else if (lead.is_dummy) {
-      isApproved = true;
-      statusText = "approved";
-    } else if (lead.approved === true || lead.status === "approved") {
       isApproved = true;
       statusText = "approved";
     } else if (lead.status === "declined") {

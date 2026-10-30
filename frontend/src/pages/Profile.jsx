@@ -65,7 +65,7 @@ export default function Profile() {
   };
 
   const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase();
-  const isEmployerUser = Boolean(userRole.includes("employ") || userRole.includes("client"));
+  const isEmployerUser = Boolean(userRole?.includes("employ") || userRole?.includes("client"));
   const userArea = user?.area || localStorage.getItem("workhop_user_area") || "Koramangala";
   const userPhone = phone || user?.phone || localStorage.getItem("workhop_pro_phone");
 

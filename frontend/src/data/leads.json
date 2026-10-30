@@ -27,7 +27,9 @@
     "paid": true,
     "paid_amount": 150,
     "paid_plan": "20 Bidding Hops Pack · ₹150",
-    "payment_id": "pay_TtdIJpjtCetICU"
+    "payment_id": "pay_TtdIJpjtCetICU",
+    "approved": true,
+    "status": "approved"
   },
   {
     "id": "lead-1",

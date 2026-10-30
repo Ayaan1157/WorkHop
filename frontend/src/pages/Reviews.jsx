@@ -446,7 +446,7 @@ export default function Reviews() {
     userRole === "admin" ||
     ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
   );
-  const isEmployerUser = Boolean(user && (userRole.includes("employ") || userRole.includes("client")));
+  const isEmployerUser = Boolean(user && (userRole?.includes("employ") || userRole?.includes("client")));
   const isFreelancerUser = Boolean(user && !isAdmin && !isEmployerUser);
 
   const [activeCategory, setActiveCategory] = useState("All Categories");

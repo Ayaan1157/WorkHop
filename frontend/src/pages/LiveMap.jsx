@@ -46,7 +46,7 @@ export default function LiveMap() {
     userRole === "admin" ||
     ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
   );
-  const isEmployerUser = Boolean(user && (userRole.includes("employ") || userRole.includes("client")));
+  const isEmployerUser = Boolean(user && (userRole?.includes("employ") || userRole?.includes("client")));
   const isFreelancerUser = Boolean(user && !isAdmin && !isEmployerUser);
 
   // Role Exploration Mode: "employer" (Show Freelancers) vs "freelancer" (Show Open Gigs)

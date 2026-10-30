@@ -51,7 +51,7 @@ function EmployerRoute({ children }) {
   if (isAdmin) return children;
 
   // If user is signed in as a freelancer, redirect to the freelancer site
-  if (user && (userRole === "freelancer" || (!userRole.includes("employ") && !userRole.includes("client")))) {
+  if (user && (userRole === "freelancer" || (!userRole?.includes("employ") && !userRole?.includes("client")))) {
     return <Navigate to="/freelancer/jobs" replace />;
   }
 
@@ -70,7 +70,7 @@ function FreelancerRoute({ children }) {
   if (isAdmin) return children;
 
   // If user is signed in as an employer, redirect to the employer site
-  if (user && (userRole.includes("employ") || userRole.includes("client"))) {
+  if (user && (userRole?.includes("employ") || userRole?.includes("client"))) {
     return <Navigate to="/employer" replace />;
   }
 

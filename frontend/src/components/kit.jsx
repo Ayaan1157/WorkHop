@@ -162,7 +162,7 @@ export function GlobalNav() {
     userRole === "employer" ||
     (!user && isEmployerRoute)
   );
-  const isFreelancerUser = Boolean(!isAdmin && !isEmployerUser && (userRole.includes("freelance") || isFreelancerRoute));
+  const isFreelancerUser = Boolean(!isAdmin && !isEmployerUser && (userRole?.includes("freelance") || isFreelancerRoute));
 
   const isEmployer = Boolean(
     isEmployerUser ||

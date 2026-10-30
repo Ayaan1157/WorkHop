@@ -22,7 +22,7 @@ export default function Categories() {
   const nav = useNavigate();
   const { user } = useAuth();
   const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
-  const isEmployerUser = Boolean(user && (userRole.includes("employ") || userRole.includes("client")));
+  const isEmployerUser = Boolean(user && (userRole?.includes("employ") || userRole?.includes("client")));
 
   const [catalog, setCatalog] = useState(() => getStoredCatalog());
   const [open, setOpen] = useState(null);

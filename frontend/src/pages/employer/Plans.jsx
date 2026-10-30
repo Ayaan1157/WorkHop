@@ -32,7 +32,7 @@ export default function Plans() {
 
   // Determine initial tab: locked to user's signed-in role
   const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
-  const isEmployerUser = Boolean(user && (userRole.includes("employ") || userRole.includes("client")));
+  const isEmployerUser = Boolean(user && (userRole?.includes("employ") || userRole?.includes("client")));
   const isFreelancerUser = Boolean(user && !isAdmin && !isEmployerUser);
 
   const initialTab = () => {

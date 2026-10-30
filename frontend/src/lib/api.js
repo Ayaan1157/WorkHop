@@ -94,7 +94,7 @@ async function mockRouter(path, method = "GET", body = null) {
   const cleanPath = path.replace(/^\/api/, "");
 
   // 1. Leads / Verified Pros
-  if (cleanPath === "/leads/preview") {
+  if (cleanPath === "/leads/preview" || cleanPath === "/leads") {
     try {
       const res = await fetch("/api/freelancers");
       if (res.ok) {
@@ -1227,6 +1227,11 @@ async function mockRouter(path, method = "GET", body = null) {
 }
 
 async function request(path, { method = "GET", body, auth = false } = {}) {
+  const cleanPath = path.replace(/^\/api/, "");
+  if (cleanPath === "/leads/preview" || cleanPath === "/leads") {
+    return await mockRouter(path, method, body);
+  }
+
   const headers = { "Content-Type": "application/json" };
   if (auth) {
     const token = getToken();
