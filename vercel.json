@@ -95,7 +95,7 @@
     },
     {
       "source": "/api/freelancer/submit",
-      "destination": "/api/freelancers/submit"
+      "destination": "/api/freelancers/index"
     },
     {
       "source": "/api/payments/list",
@@ -115,19 +115,19 @@
     },
     {
       "source": "/api/jobs",
-      "destination": "/api/jobs/index"
+      "destination": "/api/employers/index"
     },
     {
       "source": "/api/jobs/:path*",
-      "destination": "/api/jobs/index"
+      "destination": "/api/employers/index"
     },
     {
       "source": "/api/employer/jobs",
-      "destination": "/api/jobs/index"
+      "destination": "/api/employers/index"
     },
     {
       "source": "/api/employer/jobs/:path*",
-      "destination": "/api/jobs/index"
+      "destination": "/api/employers/index"
     },
     {
       "source": "/api/employers",

@@ -50,6 +50,69 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
+  // Handle Freelancer Profile Submission: POST /api/freelancer/submit
+  if (req.method === "POST" && (req.url || "").includes("submit")) {
+    try {
+      const body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}");
+      const {
+        freelancer_id,
+        name,
+        phone,
+        email,
+        skill,
+        category,
+        rate_hr,
+        intro,
+        portfolio_url,
+        languages,
+        delivery_days,
+      } = body;
+
+      const contactPhone = (phone || "").replace(/\D/g, "");
+
+      try {
+        await rzpRequest("POST", "/customers", {
+          name: name || "WorkHop Verified Pro",
+          email: email || `${contactPhone || "pro"}@workhop.in`,
+          contact: contactPhone.slice(-10),
+          notes: {
+            freelancer_id: freelancer_id || `freelancer-${Date.now()}`,
+            skill: skill || "Creative Pro",
+            category: category || "Graphics & Design",
+            rate_hr: String(rate_hr || 850),
+            delivery_days: String(delivery_days || 2),
+            portfolio_url: portfolio_url || "",
+            source: "workhop_onboarding",
+            status: "pending",
+          },
+        });
+      } catch {}
+
+      return res.status(200).json({
+        ok: true,
+        status: "pending",
+        verified: false,
+        under_review: true,
+        message: "Profile submitted for verification. WorkHop admin will review and approve your profile.",
+        profile: {
+          freelancer_id,
+          name,
+          phone,
+          email,
+          skill,
+          category,
+          rate_hr,
+          intro,
+          portfolio_url,
+          approved: false,
+          status: "pending",
+        },
+      });
+    } catch (err) {
+      return res.status(400).json({ detail: err?.message || "Failed to submit profile." });
+    }
+  }
+
   // Admin approval/decline endpoint: POST /api/admin/freelancers/:id/approve or /api/freelancers/:id/approve
   if (req.method === "POST" || req.method === "PUT") {
     try {
