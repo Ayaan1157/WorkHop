@@ -78,7 +78,11 @@ export default function NotificationBell({ embedded = false, className = "" }) {
     }
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside, { passive: true });
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("touchstart", handleClickOutside);
+      };
     }
   }, [open]);
 
@@ -151,7 +155,7 @@ export default function NotificationBell({ embedded = false, className = "" }) {
       {open && (
         <div
           data-testid="notification-dropdown"
-          className="absolute right-0 top-12 z-50 w-[340px] max-w-[90vw] border-2 border-ink bg-white dark:bg-[#141414] text-ink dark:text-white shadow-2xl sm:w-[380px]"
+          className="fixed left-3 right-3 top-[82px] z-50 flex max-h-[80vh] flex-col border-2 border-ink bg-white dark:bg-[#141414] text-ink dark:text-white shadow-[4px_4px_0px_#121212] sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:max-h-none sm:w-[380px] sm:shadow-2xl"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b-2 border-ink bg-sand dark:bg-[#1c1c1c] px-4 py-2.5">
@@ -201,7 +205,7 @@ export default function NotificationBell({ embedded = false, className = "" }) {
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex border-b-2 border-ink bg-white dark:bg-[#181818] text-[10px] font-black">
+          <div className="flex border-b-2 border-ink bg-white dark:bg-[#181818] text-[10px] font-black overflow-x-auto">
             {[
               { key: "all", label: "ALL" },
               { key: "gig", label: "GIGS & BLASTS" },
@@ -211,7 +215,7 @@ export default function NotificationBell({ embedded = false, className = "" }) {
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`flex-1 py-2 text-center transition ${
+                className={`flex-1 py-2 text-center transition whitespace-nowrap px-2 ${
                   tab === t.key
                     ? "border-b-2 border-brand bg-sand dark:bg-[#252525] text-ink dark:text-white"
                     : "text-inkmuted dark:text-stone-400 hover:text-ink dark:hover:text-white"
@@ -223,7 +227,7 @@ export default function NotificationBell({ embedded = false, className = "" }) {
           </div>
 
           {/* List */}
-          <div className="wh-scroll max-h-[360px] divide-y divide-ink/10 dark:divide-white/10 overflow-y-auto">
+          <div className="wh-scroll flex-1 max-h-[50vh] sm:max-h-[360px] divide-y divide-ink/10 dark:divide-white/10 overflow-y-auto">
             {filtered.length === 0 ? (
               <div className="p-8 text-center">
                 <Bell size={24} className="mx-auto text-inkmuted dark:text-stone-600 opacity-40" />
