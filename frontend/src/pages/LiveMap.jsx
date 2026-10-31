@@ -10,7 +10,7 @@ import GoogleMap from "@/components/GoogleMap";
 import ProfileLockedModal from "@/components/ProfileLockedModal";
 import FreelancerProfileModal from "@/components/FreelancerProfileModal";
 import JobDetailsModal from "@/components/JobDetailsModal";
-import { useUserLocation, distanceKm } from "@/hooks/useUserLocation";
+import { useUserLocation, distanceKm, setManualLocation } from "@/hooks/useUserLocation";
 import {
   BENGALURU_AREAS,
   findNearestArea,
@@ -108,7 +108,7 @@ export default function LiveMap() {
   // Handle Manual Area Dropdown Change
   const handleAreaChange = (areaName) => {
     setSelectedArea(areaName);
-    const coords = getAreaCoordinates(areaName);
+    const coords = setManualLocation(areaName) || getAreaCoordinates(areaName);
     setUserLocation(coords);
   };
 

@@ -6,12 +6,18 @@ import {
   setCityOverride,
   reverseGeocodeCity,
 } from "@/lib/locationAreas";
-import { useUserLocation } from "@/hooks/useUserLocation";
+import { useUserLocation, detectAccurateGps, setManualLocation } from "@/hooks/useUserLocation";
 
 // City Gate Hook for Geofencing WorkHop to Bengaluru
 export function useCityGate() {
   const { coords, status: locStatus, requestLocation } = useUserLocation();
-  const [detectedCity, setDetectedCity] = useState("your area");
+  const [detectedCity, setDetectedCity] = useState(() => {
+    if (typeof window !== "undefined") {
+      const area = localStorage.getItem("workhop_user_area");
+      if (area) return area;
+    }
+    return "Bengaluru";
+  });
   const [isOutsideCity, setIsOutsideCity] = useState(false);
   const [distanceKm, setDistanceKm] = useState(null);
   const [isPreviewMode, setIsPreviewMode] = useState(() => isCityOverrideEnabled());
@@ -39,6 +45,20 @@ export function useCityGate() {
       setChecked(true);
       return;
     }
+
+    // If user already has valid Bengaluru coordinates saved from manual selection or GPS
+    try {
+      const stored = sessionStorage.getItem("workhop_user_coords") || localStorage.getItem("workhop_user_coords");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.lat && isLocationInBengaluru(parsed)) {
+          setIsOutsideCity(false);
+          setIsGateOpen(false);
+          setChecked(true);
+          return;
+        }
+      }
+    } catch {}
 
     let isMounted = true;
     const checkIpLocation = async () => {
@@ -107,6 +127,14 @@ export function useCityGate() {
   const handleCoordsCheck = useCallback((c) => {
     if (!c || typeof c.lat !== "number" || typeof c.lng !== "number") return;
 
+    if (c.isManual || isCityOverrideEnabled()) {
+      setIsOutsideCity(false);
+      setIsGateOpen(false);
+      setDetectedCity(c.area || "Bengaluru");
+      setDistanceKm(0);
+      return;
+    }
+
     const inBlr = isLocationInBengaluru(c);
     const dist = getDistanceFromBengaluru(c);
     setDistanceKm(dist);
@@ -124,7 +152,8 @@ export function useCityGate() {
       // User is genuinely in Bengaluru! Close gate
       setIsOutsideCity(false);
       setIsGateOpen(false);
-      setDetectedCity("Bengaluru");
+      setDetectedCity(c.area || "Bengaluru");
+      setCityOverride(true);
     }
   }, []);
 
@@ -224,5 +253,7 @@ export function useCityGate() {
     enablePreviewMode,
     exitPreviewMode,
     submitWaitlist,
+    detectAccurateGps,
+    setManualLocation,
   };
 }
