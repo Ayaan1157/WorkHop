@@ -64,6 +64,8 @@ import {
   getSubmittedProfiles,
   saveSubmittedProfile,
   saveRemoteFreelancers,
+  getStoredPaymentTransactions,
+  recordPaymentTransaction,
 } from "./clientStore";
 import { sendBrowserPushNotification, sendTestPushNotification } from "./pushNotifications";
 import {
@@ -500,15 +502,62 @@ async function mockRouter(path, method = "GET", body = null) {
     const leads = getStoredLeads({ includeDeclined: true });
     const grievances = getStoredGrievances();
     const employers = getStoredEmployers();
-    const paidLeads = leads.filter((l) => l.paid);
-    const totalRev = paidLeads.reduce((acc, l) => acc + (Number(l.paid_amount) || 150), 0);
+
+    // 1. Fetch live Razorpay captured payments
+    let livePayments = [];
+    try {
+      const res = await fetch("/api/admin/payments");
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list) && list.length > 0) livePayments = list;
+      }
+    } catch {}
+
+    // 2. Retrieve local payment transactions ledger
+    const localPayments = getStoredPaymentTransactions();
+
+    // 3. Deduplicate payments by payment_id
+    const combinedPayments = [];
+    const seenPids = new Set();
+    for (const p of [...livePayments, ...localPayments]) {
+      const pid = (p.payment_id || p.id || "").toLowerCase().trim();
+      if (pid && seenPids.has(pid)) continue;
+      if (pid) seenPids.add(pid);
+      combinedPayments.push(p);
+    }
+
+    // 4. Also check any real registered user who paid (excluding dummy preview pros)
+    for (const lead of leads) {
+      if (lead.paid && !lead.is_dummy) {
+        const pid = (lead.payment_id || "").toLowerCase().trim();
+        if (pid && seenPids.has(pid)) continue;
+        if (pid) seenPids.add(pid);
+        combinedPayments.push({
+          payment_id: lead.payment_id || `lead_pay_${lead.id}`,
+          id: lead.payment_id || `lead_pay_${lead.id}`,
+          amount: Number(lead.paid_amount) || 150,
+          amount_inr: Number(lead.paid_amount) || 150,
+          customer_name: lead.name,
+          email: lead.email,
+          status: "captured",
+          description: lead.paid_plan || `Payment · ₹${lead.paid_amount || 150}`,
+        });
+      }
+    }
+
+    // 5. Total revenue strictly from valid captured/paid transactions
+    const validPayments = combinedPayments.filter(
+      (p) => !p.status || p.status === "captured" || p.status === "paid" || p.status === "authorized"
+    );
+    const totalRev = validPayments.reduce((acc, p) => acc + (Number(p.amount || p.amount_inr) || 0), 0);
+
     return {
       users: leads.length + employers.length,
       employers: employers.length,
       freelancers: leads.length,
       gigs: jobs.length,
-      payments_paid: Math.max(1, paidLeads.length),
-      revenue_rupees: Math.max(150, totalRev),
+      payments_paid: validPayments.length,
+      revenue_rupees: totalRev,
       escrow_held: 0,
       complaints: grievances.length,
     };
@@ -897,32 +946,25 @@ async function mockRouter(path, method = "GET", body = null) {
     return updateFreelancerStatus(fId, body?.approved, body?.reason);
   }
   if (cleanPath === "/admin/payments") {
+    let livePayments = [];
     try {
       const res = await fetch("/api/admin/payments");
       if (res.ok) {
         const list = await res.json();
-        if (Array.isArray(list) && list.length > 0) return list;
+        if (Array.isArray(list) && list.length > 0) livePayments = list;
       }
     } catch {}
-    return [
-      {
-        payment_id: "pay_TtdIJpjtCetICU",
-        id: "pay_TtdIJpjtCetICU",
-        amount: 150,
-        amount_inr: 150,
-        currency: "INR",
-        status: "captured",
-        method: "upi",
-        email: "shamanthnmurthy@gmail.com",
-        phone: "+917204665071",
-        customer_name: "Shamanthnmurthy",
-        plan_id: "pack-20",
-        product: "hops_pack",
-        description: "20 Bidding Hops Pack · ₹150",
-        created_at: "2026-10-29T06:56:39.000Z",
-        order_id: "order_TtdHbzKjA6VzdK",
-      },
-    ];
+
+    const localPayments = getStoredPaymentTransactions();
+    const seenPids = new Set();
+    const combined = [];
+    for (const p of [...livePayments, ...localPayments]) {
+      const pid = (p.payment_id || p.id || "").toLowerCase().trim();
+      if (pid && seenPids.has(pid)) continue;
+      if (pid) seenPids.add(pid);
+      combined.push(p);
+    }
+    return combined;
   }
   if (cleanPath.startsWith("/admin/deals")) {
     return {
@@ -1054,9 +1096,9 @@ async function mockRouter(path, method = "GET", body = null) {
         skill: body.skill || "",
         category: body.category || "",
         rate_hr: Number(body.rate_hr) || 0,
-        paid: true,
-        paid_amount: 299,
-        paid_plan: "Verified Pro Onboarding · ₹299",
+        paid: Boolean(body.paid),
+        paid_amount: body.paid ? (Number(body.paid_amount) || 299) : 0,
+        paid_plan: body.paid ? (body.paid_plan || "Verified Pro Onboarding · ₹299") : null,
         status: "pending",
         approved: false,
         verifications: { id: true, email: true, phone: true, portfolio: true, payment: true },

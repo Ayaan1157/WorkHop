@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { API, apiPost } from "@/lib/api";
 import { trackPixelPurchase } from "@/lib/metaPixel";
+import { recordPaymentTransaction } from "@/lib/clientStore";
 
 const LIVE_RAZORPAY_KEY_ID =
   process.env.REACT_APP_RAZORPAY_KEY_ID || "rzp_live_Tran4lUkI8SdOr";
@@ -148,6 +149,19 @@ export function useRazorpay() {
     const verified = await verifyPayment(result);
     try {
       const amount = payload?.amount_inr || (order?.amount ? order.amount / 100 : 150);
+      recordPaymentTransaction({
+        payment_id: verified?.razorpay_payment_id || result?.razorpay_payment_id,
+        order_id: verified?.razorpay_order_id || result?.razorpay_order_id,
+        amount,
+        amount_inr: amount,
+        customer_name: payload?.full_name || "",
+        email: payload?.email || "",
+        phone: payload?.phone || "",
+        product: payload?.product || "payment",
+        plan_id: payload?.plan_id || null,
+        description: description || "WorkHop Payment",
+        status: "captured",
+      });
       trackPixelPurchase(amount, { product: payload?.product || description || "payment" });
     } catch (e) {
       console.debug("Pixel purchase track ignored", e);

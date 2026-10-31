@@ -856,9 +856,10 @@ function GigsModerationTab({ adminFetch }) {
 
 // 4. Payments, Escrow & Dispute Resolution Tab
 function PaymentsTab({ adminFetch }) {
-  const [activeSubTab, setActiveSubTab] = useState("deals"); // "deals" | "ledger" | "settings"
+  const [activeSubTab, setActiveSubTab] = useState("transactions"); // "transactions" | "deals" | "ledger" | "settings"
   const [dealsData, setDealsData] = useState({ deals: [], summary: {} });
   const [ledgerData, setLedgerData] = useState({ entries: [], summary: {} });
+  const [transactions, setTransactions] = useState([]);
   const [settings, setSettings] = useState({ deal_commission_rate: 0.05, deal_auto_release_hours: 72, deal_funding_timeout_hours: 24 });
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -877,14 +878,16 @@ function PaymentsTab({ adminFetch }) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [dealsRes, ledgerRes, settingsRes] = await Promise.all([
+      const [dealsRes, ledgerRes, settingsRes, paymentsRes] = await Promise.all([
         adminFetch(`/deals?mode=${filterMode}&status=${filterStatus}`),
         adminFetch("/escrow-ledger"),
         adminFetch("/deal-settings"),
+        adminFetch("/payments"),
       ]);
       setDealsData(dealsRes || { deals: [], summary: {} });
       setLedgerData(ledgerRes || { entries: [], summary: {} });
       if (settingsRes) setSettings(settingsRes);
+      setTransactions(Array.isArray(paymentsRes) ? paymentsRes : []);
     } catch (err) {
       console.error("Could not load payments data:", err);
     } finally {
@@ -975,15 +978,22 @@ function PaymentsTab({ adminFetch }) {
   return (
     <div className="flex flex-col gap-4 font-sans" data-testid="admin-payments-hub">
       {/* 1. TOP METRICS CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="border-2 border-ink bg-[#FFF4EE] p-3 shadow-[2px_2px_0px_#E65A1E]">
+          <span className="text-[10px] font-black uppercase text-[#E65A1E] block">GROSS REVENUE</span>
+          <p className="text-xl font-black text-[#E65A1E]">
+            ₹{transactions.reduce((sum, t) => sum + (Number(t.amount || t.amount_inr) || 0), 0).toLocaleString("en-IN")}
+          </p>
+        </div>
+
         <div className="border-2 border-ink bg-white p-3 shadow-[2px_2px_0px_#121212]">
           <span className="text-[10px] font-black uppercase text-inkmuted block">TOTAL DEALS</span>
           <p className="text-xl font-black text-ink">{summary.total_deals || 0}</p>
         </div>
 
-        <div className="border-2 border-ink bg-[#FFF4EE] p-3 shadow-[2px_2px_0px_#E65A1E]">
-          <span className="text-[10px] font-black uppercase text-[#E65A1E] block">ESCROW HELD</span>
-          <p className="text-xl font-black text-[#E65A1E]">
+        <div className="border-2 border-ink bg-white p-3 shadow-[2px_2px_0px_#121212]">
+          <span className="text-[10px] font-black uppercase text-inkmuted block">ESCROW HELD</span>
+          <p className="text-xl font-black text-ink">
             ₹{((summary.escrow_holding_paise || 0) / 100).toLocaleString("en-IN")}
           </p>
         </div>
@@ -1013,6 +1023,14 @@ function PaymentsTab({ adminFetch }) {
       {/* 2. SUB-TABS & ACTIONS HEADER */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-white p-3 shadow-[3px_3px_0px_#121212]">
         <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            onClick={() => setActiveSubTab("transactions")}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition border ${
+              activeSubTab === "transactions" ? "bg-ink text-white border-ink" : "bg-sand text-ink border-ink/20 hover:bg-white"
+            }`}
+          >
+            RAZORPAY &amp; REVENUE ({transactions.length})
+          </button>
           <button
             onClick={() => setActiveSubTab("deals")}
             className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition border ${
@@ -1060,6 +1078,69 @@ function PaymentsTab({ adminFetch }) {
 
       {loading ? (
         <div className="py-12 text-center"><Spinner /></div>
+      ) : activeSubTab === "transactions" ? (
+        /* ═══════ SUB-TAB 0: RAZORPAY TRANSACTIONS & REVENUE ═══════ */
+        <div className="flex flex-col gap-3">
+          <div className="border-2 border-ink bg-white overflow-x-auto shadow-[3px_3px_0px_#121212]">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b-2 border-ink bg-sand text-[10px] font-black uppercase text-ink">
+                  <th className="p-3">Payment ID / Txn</th>
+                  <th className="p-3">Customer &amp; Contact</th>
+                  <th className="p-3">Product / Plan</th>
+                  <th className="p-3">Method</th>
+                  <th className="p-3">Amount (INR)</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-inkmuted font-bold text-xs">
+                      No payment transactions recorded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  transactions.map((t, idx) => (
+                    <tr key={t.payment_id || t.id || idx} className="border-b border-ink/10 hover:bg-sand/30 font-medium text-xs">
+                      <td className="p-3">
+                        <span className="font-mono font-bold text-ink">{t.payment_id || t.id}</span>
+                        {t.order_id && <span className="block text-[10px] font-mono text-inkmuted">{t.order_id}</span>}
+                      </td>
+                      <td className="p-3">
+                        <p className="font-black text-ink">{t.customer_name || "WorkHop Member"}</p>
+                        <p className="text-[11px] text-inkmuted">{t.email || t.phone || "—"}</p>
+                      </td>
+                      <td className="p-3">
+                        <span className="font-bold text-brand">{t.description || t.product || "Payment"}</span>
+                        {t.plan_id && <span className="block text-[10px] text-inkmuted uppercase font-bold">{t.plan_id}</span>}
+                      </td>
+                      <td className="p-3">
+                        <span className="border border-ink/30 bg-sand/60 px-1.5 py-0.5 text-[10px] font-black uppercase">
+                          {t.method || "UPI / Razorpay"}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className="text-sm font-black text-ink">
+                          ₹{Number(t.amount || t.amount_inr || 0).toLocaleString("en-IN")}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center gap-1 border border-ok bg-[#E5F7E0] px-2 py-0.5 text-[9px] font-black text-[#1E4620] uppercase">
+                          ✓ {t.status || "CAPTURED"}
+                        </span>
+                      </td>
+                      <td className="p-3 whitespace-nowrap text-[11px] text-inkmuted font-semibold">
+                        {fmtDate(t.created_at)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : activeSubTab === "deals" ? (
         /* ═══════ SUB-TAB 1: DEALS LIST ═══════ */
         <div className="flex flex-col gap-3">
@@ -2692,7 +2773,7 @@ function ProsTalentTab({ adminFetch }) {
                         <span className="border border-ok bg-ok/15 text-ok px-2 py-0.5 text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
                           <ShieldCheck size={10} /> VERIFIED (PAID ₹299)
                         </span>
-                      ) : f.paid ? (
+                      ) : f.paid && !f.is_dummy ? (
                         <span className="border border-amber-500 bg-amber-50 px-2 py-0.5 text-[9px] font-black text-amber-900 uppercase tracking-wider">
                           💰 PAID ₹{f.paid_amount || 150} · {f.paid_plan || "Hops Pack"} (NO VERIFIED BADGE)
                         </span>

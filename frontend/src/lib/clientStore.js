@@ -288,8 +288,8 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       languages: lead.languages || ["English", "Kannada", "Hindi"],
       is_dummy: Boolean(lead.is_dummy),
       paid: Boolean(lead.paid),
-      paid_amount: lead.paid_amount || (lead.paid ? 150 : null),
-      paid_plan: lead.paid_plan || (lead.paid ? "20 Bidding Hops Pack · ₹150" : null),
+      paid_amount: lead.paid ? (Number(lead.paid_amount) || 150) : 0,
+      paid_plan: lead.paid ? (lead.paid_plan || "20 Bidding Hops Pack · ₹150") : null,
       payment_id: lead.payment_id || null,
       approved: isApproved,
       status: statusText,
@@ -3316,6 +3316,80 @@ export function clearAdminNotifications() {
     return [];
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 19. Payment Transactions Ledger (Razorpay + Local Fulfillments)
+// ═══════════════════════════════════════════════════════════════════════════
+const PAYMENT_TRANSACTIONS_KEY = "workhop_payment_history";
+
+export function getStoredPaymentTransactions() {
+  try {
+    const raw = localStorage.getItem(PAYMENT_TRANSACTIONS_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    // Seed initial verified captured payment (Shamanthnmurthy ₹150)
+    const seedTx = {
+      payment_id: "pay_TtdIJpjtCetICU",
+      id: "pay_TtdIJpjtCetICU",
+      amount: 150,
+      amount_inr: 150,
+      currency: "INR",
+      status: "captured",
+      method: "upi",
+      email: "shamanthnmurthy@gmail.com",
+      phone: "+917204665071",
+      customer_name: "Shamanthnmurthy",
+      plan_id: "pack-20",
+      product: "hops_pack",
+      description: "20 Bidding Hops Pack · ₹150",
+      created_at: "2026-10-29T06:56:39.000Z",
+      order_id: "order_TtdHbzKjA6VzdK",
+    };
+    if (!list.some((tx) => (tx.payment_id || tx.id) === seedTx.payment_id)) {
+      list.push(seedTx);
+    }
+    return list;
+  } catch {
+    return [];
+  }
+}
+
+export function recordPaymentTransaction(tx) {
+  if (!tx) return null;
+  try {
+    const list = getStoredPaymentTransactions();
+    const pid = tx.payment_id || tx.id || `pay_${Date.now()}`;
+    const amount = Number(tx.amount || tx.amount_inr || 150);
+    const existingIndex = list.findIndex((item) => (item.payment_id || item.id) === pid);
+    const entry = {
+      payment_id: pid,
+      id: pid,
+      amount,
+      amount_inr: amount,
+      currency: tx.currency || "INR",
+      status: tx.status || "captured",
+      method: tx.method || "upi",
+      email: tx.email || "",
+      phone: tx.phone || "",
+      customer_name: tx.customer_name || tx.full_name || "WorkHop Member",
+      plan_id: tx.plan_id || (amount === 150 ? "pack-20" : amount >= 299 ? "onboarding" : "hops_pack"),
+      product: tx.product || (amount >= 299 ? "freelancer_onboarding" : "hops_pack"),
+      description: tx.description || `WorkHop Payment · ₹${amount}`,
+      created_at: tx.created_at || new Date().toISOString(),
+      order_id: tx.order_id || null,
+    };
+    if (existingIndex >= 0) {
+      list[existingIndex] = { ...list[existingIndex], ...entry };
+    } else {
+      list.unshift(entry);
+    }
+    localStorage.setItem(PAYMENT_TRANSACTIONS_KEY, JSON.stringify(list));
+    return entry;
+  } catch (e) {
+    console.warn("recordPaymentTransaction error:", e);
+    return null;
+  }
+}
+
 
 
 
