@@ -1235,7 +1235,7 @@ export function passwordLogin(email, password, fallbackRole = "freelancer") {
   // Admin check
   if (isUserAdmin(cleanEmail)) {
     const adminSecret = process.env.REACT_APP_ADMIN_PASSWORD || "ZenithAdmin@2026Secure";
-    if (password === adminSecret || password === "ZenithAdmin@2026Secure" || password === "123456789") {
+    if (password === adminSecret || password === "ZenithAdmin@2026Secure") {
       const session = createMockSession(cleanEmail, {
         name: "Zenith Developers (Admin)",
         role: "employer",
@@ -1295,7 +1295,7 @@ export function createMockSession(email = "user@workhop.local", details = {}) {
   const skill = ["UI/UX & Brand Designer", "Full Stack Pro", "Creative Pro", "Business Owner"].includes(rawSkill) ? "" : rawSkill;
   const rawCompany = details.company_name || existing.company_name || localStorage.getItem("workhop_company_name") || "";
   const company_name = ["Hyperlocal Co.", "Hyperlocal Enterprises"].includes(rawCompany) ? "" : rawCompany;
-  const isAdmin = isUserAdmin(cleanEmail) || !!details.is_admin || !!existing.is_admin;
+  const isAdmin = isUserAdmin(cleanEmail);
 
   const user = {
     id: details.id || existing.id || `usr_${Math.random().toString(36).slice(2, 10)}`,

@@ -68,6 +68,10 @@ module.exports = async function handler(req, res) {
   if (isJobsRoute) {
     // 1. DELETE GIG
     if (req.method === "DELETE") {
+      const authHeader = req.headers["authorization"] || req.headers["Authorization"];
+      if (!authHeader) {
+        return res.status(401).json({ detail: "Unauthorized: Admin authorization required." });
+      }
       try {
         const urlParts = (req.url || "").split("?")[0].split("/");
         const lastPart = urlParts[urlParts.length - 1];
@@ -254,6 +258,10 @@ module.exports = async function handler(req, res) {
 
   // 1. DELETE Employer(s)
   if (req.method === "DELETE") {
+    const authHeader = req.headers["authorization"] || req.headers["Authorization"];
+    if (!authHeader) {
+      return res.status(401).json({ detail: "Unauthorized: Admin authorization required." });
+    }
     try {
       const urlParts = (req.url || "").split("?")[0].split("/");
       const lastPart = urlParts[urlParts.length - 1];

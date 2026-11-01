@@ -21,6 +21,37 @@ function verifyOtpSig(email, code, token) {
 // Store active verification codes (in-memory with 10-min TTL)
 const activeOtps = new Map();
 
+// Rate limiting map: tracks OTP request attempts per email (max 3 per 2 minutes)
+const otpSendRateLimits = new Map();
+
+function checkRateLimit(email) {
+  const now = Date.now();
+  const windowMs = 120 * 1000;
+  const maxAttempts = 3;
+
+  const userAttempts = otpSendRateLimits.get(email) || [];
+  const validAttempts = userAttempts.filter((timestamp) => now - timestamp < windowMs);
+
+  if (validAttempts.length >= maxAttempts) {
+    const oldest = validAttempts[0];
+    const waitSeconds = Math.max(1, Math.ceil((windowMs - (now - oldest)) / 1000));
+    return { allowed: false, waitSeconds };
+  }
+
+  validAttempts.push(now);
+  otpSendRateLimits.set(email, validAttempts);
+
+  if (otpSendRateLimits.size > 1000) {
+    for (const [key, timestamps] of otpSendRateLimits.entries()) {
+      const active = timestamps.filter((t) => now - t < windowMs);
+      if (active.length === 0) otpSendRateLimits.delete(key);
+      else otpSendRateLimits.set(key, active);
+    }
+  }
+
+  return { allowed: true };
+}
+
 function getTransporter() {
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
@@ -113,6 +144,13 @@ module.exports = async function handler(req, res) {
     }
 
     // 2. ACTION: SEND OTP
+    const rateCheck = checkRateLimit(email);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({
+        detail: `Too many OTP requests for this email. Please wait ${rateCheck.waitSeconds}s before requesting a new code.`
+      });
+    }
+
     const code = generateOtp();
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
     const token = signOtp(email, code, expiresAt);

@@ -561,9 +561,13 @@ async function mockRouter(path, method = "GET", body = null) {
   }
   if (cleanPath === "/admin/site-settings" && method === "POST") {
     try {
+      const token = getToken();
       await fetch("/api/site-settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(body || {}),
       });
     } catch {}

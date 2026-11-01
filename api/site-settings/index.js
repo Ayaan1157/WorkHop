@@ -34,6 +34,10 @@ module.exports = async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   if (req.method === "POST") {
+    const authHeader = req.headers["authorization"] || req.headers["Authorization"];
+    if (!authHeader) {
+      return res.status(401).json({ detail: "Unauthorized: Admin authorization required." });
+    }
     try {
       const body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}");
       inMemorySettings = {

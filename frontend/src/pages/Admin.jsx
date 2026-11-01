@@ -5233,13 +5233,6 @@ export default function Admin() {
             <div>
               <div className="flex items-center justify-between">
                 <label className="text-[10px] font-black tracking-wider text-inkmuted dark:text-gray-400 uppercase">Password</label>
-                <button
-                  type="button"
-                  onClick={() => setLoginPassword("123456789")}
-                  className="text-[10px] font-extrabold text-brand hover:underline"
-                >
-                  Fill Default Password
-                </button>
               </div>
               <div className="mt-1 flex items-center border-2 border-ink dark:border-[#444] bg-[#FAFAF8] dark:bg-[#222] px-3 py-2">
                 <KeyRound size={16} className="text-inkmuted dark:text-gray-400 mr-2 shrink-0" />
