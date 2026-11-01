@@ -29,6 +29,16 @@ try {
   }
 } catch { /* ignore */ }
 
+// One-time clean slate v3: purge stale dummy freelancers and inflated revenue cache
+const CLEAN_SLATE_FLAG_V3 = "workhop_clean_slate_v3_rev150";
+try {
+  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V3)) {
+    localStorage.removeItem("workhop_remote_freelancers");
+    localStorage.removeItem("workhop_payment_history");
+    localStorage.setItem(CLEAN_SLATE_FLAG_V3, "1");
+  }
+} catch { /* ignore */ }
+
 // ═══════════ CONNECTS & CREDITS SYSTEM KEYS ═══════════
 const CREDITS_WALLET_KEY = "workhop_credits_wallet";
 const CREDITS_TRANSACTIONS_KEY = "workhop_credits_transactions";
@@ -3325,7 +3335,18 @@ const PAYMENT_TRANSACTIONS_KEY = "workhop_payment_history";
 export function getStoredPaymentTransactions() {
   try {
     const raw = localStorage.getItem(PAYMENT_TRANSACTIONS_KEY);
-    const list = raw ? JSON.parse(raw) : [];
+    let list = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list)) list = [];
+
+    // Filter out any legacy dummy lead transactions or fake place-holders
+    list = list.filter((tx) => {
+      const pid = String(tx?.payment_id || tx?.id || "").toLowerCase();
+      if (!pid || pid.startsWith("lead_pay_") || pid.startsWith("dummy_")) return false;
+      const name = String(tx?.customer_name || "").toLowerCase();
+      if (["rohan verma", "arjun mehta", "nikhil kamath", "ananya deshmukh", "deepa joshi", "pooja sharma"].includes(name)) return false;
+      return true;
+    });
+
     // Seed initial verified captured payment (Shamanthnmurthy ₹150)
     const seedTx = {
       payment_id: "pay_TtdIJpjtCetICU",

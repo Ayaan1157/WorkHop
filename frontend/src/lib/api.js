@@ -506,48 +506,35 @@ async function mockRouter(path, method = "GET", body = null) {
     // 1. Fetch live Razorpay captured payments
     let livePayments = [];
     try {
-      const res = await fetch("/api/admin/payments");
+      const res = await fetch("/api/payments/list");
       if (res.ok) {
         const list = await res.json();
         if (Array.isArray(list) && list.length > 0) livePayments = list;
       }
     } catch {}
 
-    // 2. Retrieve local payment transactions ledger
+    // 2. Retrieve local verified payment transactions ledger
     const localPayments = getStoredPaymentTransactions();
 
-    // 3. Deduplicate payments by payment_id
+    // 3. Deduplicate payments by payment_id and exclude any mock/dummy entries
     const combinedPayments = [];
     const seenPids = new Set();
+    const dummyNames = new Set(["rohan verma", "arjun mehta", "nikhil kamath", "ananya deshmukh", "deepa joshi", "pooja sharma"]);
+
     for (const p of [...livePayments, ...localPayments]) {
       const pid = (p.payment_id || p.id || "").toLowerCase().trim();
-      if (pid && seenPids.has(pid)) continue;
-      if (pid) seenPids.add(pid);
+      if (!pid || pid.startsWith("lead_pay_") || pid.startsWith("dummy_")) continue;
+      const custName = (p.customer_name || "").toLowerCase().trim();
+      if (dummyNames.has(custName)) continue;
+      if (seenPids.has(pid)) continue;
+      seenPids.add(pid);
       combinedPayments.push(p);
     }
 
-    // 4. Also check any real registered user who paid (excluding dummy preview pros)
-    for (const lead of leads) {
-      if (lead.paid && !lead.is_dummy) {
-        const pid = (lead.payment_id || "").toLowerCase().trim();
-        if (pid && seenPids.has(pid)) continue;
-        if (pid) seenPids.add(pid);
-        combinedPayments.push({
-          payment_id: lead.payment_id || `lead_pay_${lead.id}`,
-          id: lead.payment_id || `lead_pay_${lead.id}`,
-          amount: Number(lead.paid_amount) || 150,
-          amount_inr: Number(lead.paid_amount) || 150,
-          customer_name: lead.name,
-          email: lead.email,
-          status: "captured",
-          description: lead.paid_plan || `Payment · ₹${lead.paid_amount || 150}`,
-        });
-      }
-    }
-
-    // 5. Total revenue strictly from valid captured/paid transactions
+    // 4. Total revenue strictly from valid captured/paid transactions
     const validPayments = combinedPayments.filter(
-      (p) => !p.status || p.status === "captured" || p.status === "paid" || p.status === "authorized"
+      (p) => (!p.status || p.status === "captured" || p.status === "paid" || p.status === "authorized") &&
+             Number(p.amount || p.amount_inr) > 0
     );
     const totalRev = validPayments.reduce((acc, p) => acc + (Number(p.amount || p.amount_inr) || 0), 0);
 
