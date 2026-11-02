@@ -71,9 +71,14 @@ export default function AuthCallback() {
         if (sessionData?.session) {
           session = sessionData.session;
         } else if (location.search.includes("code=")) {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
-          if (error) throw error;
-          session = data?.session;
+          try {
+            const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+            if (!error && data?.session) {
+              session = data.session;
+            }
+          } catch (codeErr) {
+            console.warn("Manual exchange code notice:", codeErr?.message);
+          }
         }
 
         // Wait brief delay if hash token is being parsed by client
@@ -85,7 +90,7 @@ export default function AuthCallback() {
 
         if (!session?.user) {
           throw new Error(
-            "Could not retrieve an authenticated Google session. Please click 'Try Again' below."
+            "Could not retrieve an authenticated Google session. Please click 'Try Again with Google' below."
           );
         }
 
@@ -216,6 +221,9 @@ export default function AuthCallback() {
     setStatus("verifying");
     setErrorMessage("");
     try {
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       await supabaseSignInWithGoogle();
     } catch (err) {
       setErrorMessage(err.message || "Failed to initiate Google OAuth.");
@@ -255,7 +263,9 @@ export default function AuthCallback() {
               Try Again with Google
             </button>
             <button
-              onClick={() => navigate("/", { replace: true })}
+              onClick={() => {
+                window.location.href = "/";
+              }}
               className="flex w-full items-center justify-center gap-2 border-2 border-zinc-700 bg-transparent text-zinc-300 py-3 px-4 text-xs font-bold tracking-wider uppercase hover:bg-zinc-800 transition"
             >
               <Home size={15} />

@@ -62,6 +62,9 @@ export async function supabaseSignInWithGoogle({ redirectTo = null } = {}) {
   });
 
   if (error) throw error;
+  if (data?.url && typeof window !== "undefined") {
+    window.location.assign(data.url);
+  }
   return data;
 }
 
