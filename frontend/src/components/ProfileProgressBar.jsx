@@ -5,6 +5,12 @@ import { getProfileCompletion } from "@/lib/clientStore";
 
 export default function ProfileProgressBar({ user, role = "freelancer", className = "" }) {
   const [expanded, setExpanded] = useState(false);
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || role || "freelancer").toLowerCase();
+  const isEmployer = userRole.includes("employ") || userRole.includes("client");
+
+  // Employers hire talent and do not have a freelancer profile readiness checklist
+  if (isEmployer) return null;
+
   const { percentage, checks } = getProfileCompletion(user);
 
   return (

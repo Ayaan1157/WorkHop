@@ -80,6 +80,8 @@ export default function Jobs() {
 
   const nav = useNavigate();
   const { user } = useAuth();
+  const userRole = (user?.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
+  const isEmployer = userRole.includes("employ") || userRole.includes("client");
   const isAdmin = Boolean(
     user?.is_admin ||
     user?.role === "admin" ||
@@ -620,13 +622,15 @@ export default function Jobs() {
         }
       />
 
-      {/* Upwork-style Profile Progress Bar & Guidance */}
+      {/* Upwork-style Profile Progress Bar & Guidance: Only shown for Freelancers */}
       <div className="bg-white dark:bg-[#161618]">
         <div className="mx-auto w-full max-w-[1600px] px-4 py-3 sm:px-8">
           <Breadcrumbs items={[{ label: "Find Gigs", to: "/freelancer/jobs" }, { label: catFilter === "ALL" ? "All Categories" : catFilter }]} />
-          <div className="mt-3">
-            <ProfileProgressBar user={user} role="freelancer" />
-          </div>
+          {!isEmployer && (
+            <div className="mt-3">
+              <ProfileProgressBar user={user} role="freelancer" />
+            </div>
+          )}
         </div>
       </div>
 
