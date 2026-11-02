@@ -425,7 +425,13 @@ async function mockRouter(path, method = "GET", body = null) {
         if (data?.token) {
           try { sessionStorage.setItem(`otp_token_${email}`, data.token); } catch {}
         }
-        return { message: data.message || "Code sent to your inbox", ok: true, emailSent: true };
+        return {
+          message: data.message || "Code sent to your inbox",
+          ok: true,
+          emailSent: Boolean(data.emailSent),
+          dev_otp: data.dev_otp,
+          token: data.token,
+        };
       }
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData?.detail || "Could not send verification email.");

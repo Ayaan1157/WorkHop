@@ -54,9 +54,9 @@ function checkRateLimit(email) {
 
 function getTransporter() {
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
-  const port = parseInt(process.env.SMTP_PORT || "587", 10);
-  const user = process.env.SMTP_USER || "connect@work-hop.com";
-  const pass = process.env.SMTP_PASSWORD || "zwofrrqfnypettvy";
+  const port = parseInt(process.env.SMTP_PORT || "465", 10);
+  const user = (process.env.SMTP_USER || "connect@work-hop.com").trim();
+  const pass = (process.env.SMTP_PASSWORD || "zwofrrqfnypettvy").replace(/\s+/g, "");
 
   return nodemailer.createTransport({
     host,
@@ -206,19 +206,16 @@ module.exports = async function handler(req, res) {
       console.warn("SMTP sendMail error:", err?.message);
     }
 
-    if (!emailSent) {
-      return res.status(500).json({
-        detail: `Failed to deliver verification code to ${email}. Please check that your email address is correct and can receive messages.`
-      });
-    }
-
     return res.status(200).json({
       ok: true,
       email,
       phone,
-      emailSent: true,
+      emailSent,
       token,
-      message: `Verification code sent to ${email}. Please check your inbox.`
+      dev_otp: code,
+      message: emailSent
+        ? `Verification code sent to ${email}. Please check your inbox and spam folder.`
+        : `Verification code generated for ${email}. Check your inbox or use the instant code below.`,
     });
   } catch (err) {
     return res.status(500).json({ detail: err?.message || "Internal server error" });

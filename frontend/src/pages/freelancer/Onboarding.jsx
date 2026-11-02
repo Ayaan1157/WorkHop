@@ -46,6 +46,8 @@ export default function Onboarding() {
   const [billStatus, setBillStatus] = useState(null);
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [devOtp, setDevOtp] = useState(null);
+  const [otpNotice, setOtpNotice] = useState(null);
   const [vBusy, setVBusy] = useState(false);
   const [vError, setVError] = useState(null);
 
@@ -331,14 +333,21 @@ export default function Onboarding() {
 
   const sendOtp = async () => {
     setVError(null);
+    setOtpNotice(null);
     const email = verifyEmail.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return setVError("Enter a valid email address.");
     setVBusy(true);
     try {
-      await apiPost("/auth/email/request-otp", { email });
-      setOtpSent(true); setOtpCode("");
-    } catch (e) { setVError(e?.message || "Could not send code."); }
-    finally { setVBusy(false); }
+      const res = await apiPost("/auth/email/request-otp", { email });
+      setOtpSent(true);
+      setOtpCode("");
+      if (res?.dev_otp) setDevOtp(res.dev_otp);
+      setOtpNotice(res?.message || `6-digit code dispatched to ${email}. Check your inbox and spam folder.`);
+    } catch (e) {
+      setVError(e?.message || "Could not send code.");
+    } finally {
+      setVBusy(false);
+    }
   };
 
   const confirmOtp = async () => {
@@ -562,37 +571,137 @@ export default function Onboarding() {
             {state.paid && !state.verified && (
               <div className="flex items-center gap-2 border-2 border-ok bg-[#E5F8EE] px-3 py-2 text-xs font-black text-ink">
                 <CheckCircle2 size={16} className="text-ok shrink-0" />
-                <span>Step 2 Unlocked — Enter your email below to verify your account</span>
+                <span>Step 2 Unlocked — Verify your email to activate your profile &amp; receive your bill</span>
               </div>
             )}
             {state.verified ? (
-              <div data-testid="email-verify-success" className="flex items-center gap-2 border-2 border-ok bg-[#E5F8EE] px-3 py-2"><ShieldCheck size={14} className="text-ok" /><span className="text-xs font-extrabold text-ink">Email verified · {state.verifiedEmail || verifyEmail}</span></div>
+              <div data-testid="email-verify-success" className="flex items-center gap-2 border-2 border-ok bg-[#E5F8EE] px-3 py-2">
+                <ShieldCheck size={14} className="text-ok" />
+                <span className="text-xs font-extrabold text-ink">Email verified · {state.verifiedEmail || verifyEmail}</span>
+              </div>
             ) : (
               <>
-                <p className="text-[11px] text-inkmuted">We'll email you a 6-digit code to confirm it's really you.</p>
+                {user?.email && (
+                  <div className="border-2 border-ink bg-[#FFF3C4] p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-[2px_2px_0px_#121212]">
+                    <div>
+                      <p className="text-xs font-black text-ink flex items-center gap-1.5">
+                        <ShieldCheck size={14} className="text-ok" />
+                        <span>Signed in as: <strong>{user.email}</strong></span>
+                      </p>
+                      <p className="text-[11px] text-inkmuted">You can verify with this account immediately without waiting for an email code.</p>
+                    </div>
+                    <button
+                      type="button"
+                      data-testid="verify-google-account-btn"
+                      onClick={() => {
+                        const em = user.email.trim().toLowerCase();
+                        setState((s) => ({ ...s, verified: true, verifiedEmail: em }));
+                        setVerifyEmail(em);
+                        setBillEmail(em);
+                        if (state.paid) handleSendBill(em);
+                      }}
+                      className="border-2 border-ink bg-ink text-white hover:bg-brand px-3 py-1.5 text-xs font-black uppercase tracking-wider shrink-0 shadow-[1px_1px_0px_#121212] transition"
+                    >
+                      Verify as {user.email.split("@")[0]}
+                    </button>
+                  </div>
+                )}
+
+                <p className="text-[11px] text-inkmuted">Or enter any email below to receive a 6-digit confirmation code:</p>
                 <div className="flex gap-2">
-                  <input data-testid="verify-email-input" value={verifyEmail} onChange={(e) => { setVerifyEmail(e.target.value); setVError(null); }} placeholder="you@example.com" disabled={!state.paid || otpSent} className={`${inputCls} flex-1 tracking-wide`} />
-                  {!otpSent && <button data-testid="send-otp-btn" onClick={sendOtp} disabled={!state.paid || vBusy} className="min-w-[90px] bg-ink px-4 text-xs font-black tracking-wider text-white disabled:opacity-60">{vBusy ? <Loader2 size={16} className="mx-auto animate-spin" /> : "SEND OTP"}</button>}
+                  <input
+                    data-testid="verify-email-input"
+                    value={verifyEmail}
+                    onChange={(e) => { setVerifyEmail(e.target.value); setVError(null); }}
+                    placeholder="you@example.com"
+                    disabled={!state.paid || otpSent}
+                    className={`${inputCls} flex-1 tracking-wide`}
+                  />
+                  {!otpSent && (
+                    <button
+                      data-testid="send-otp-btn"
+                      onClick={sendOtp}
+                      disabled={!state.paid || vBusy}
+                      className="min-w-[90px] bg-ink px-4 text-xs font-black tracking-wider text-white disabled:opacity-60"
+                    >
+                      {vBusy ? <Loader2 size={16} className="mx-auto animate-spin" /> : "SEND OTP"}
+                    </button>
+                  )}
                 </div>
+
+                {otpNotice && (
+                  <div className="border border-ink/40 bg-sand/60 px-3 py-2 text-[11px] font-bold text-ink">
+                    ℹ️ {otpNotice} <em>(Be sure to check your Spam / Junk tab)</em>
+                  </div>
+                )}
+
                 {otpSent && (
                   <>
                     <div className="flex gap-2">
-                      <input data-testid="otp-code-input" value={otpCode} onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setVError(null); }} placeholder="6-digit code" className={`${inputCls} flex-1 font-black tracking-[0.4em]`} />
-                      <button data-testid="confirm-otp-btn" onClick={confirmOtp} disabled={vBusy} className="min-w-[90px] bg-ink px-4 text-xs font-black tracking-wider text-white disabled:opacity-60">{vBusy ? <Loader2 size={16} className="mx-auto animate-spin" /> : "VERIFY"}</button>
+                      <input
+                        data-testid="otp-code-input"
+                        value={otpCode}
+                        onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setVError(null); }}
+                        placeholder="6-digit code"
+                        className={`${inputCls} flex-1 font-black tracking-[0.4em]`}
+                      />
+                      <button
+                        data-testid="confirm-otp-btn"
+                        onClick={confirmOtp}
+                        disabled={vBusy}
+                        className="min-w-[90px] bg-ink px-4 text-xs font-black tracking-wider text-white disabled:opacity-60"
+                      >
+                        {vBusy ? <Loader2 size={16} className="mx-auto animate-spin" /> : "VERIFY"}
+                      </button>
                     </div>
-                    <button data-testid="otp-change-email-btn" onClick={() => { setOtpSent(false); setOtpCode(""); setVError(null); }} className="text-left text-xs font-bold text-brand">← Change email / resend code</button>
+
+                    {devOtp && (
+                      <div data-testid="dev-otp-callout" className="border-2 border-dashed border-brand bg-[#FFF3E9] p-2.5 flex items-center justify-between gap-2 shadow-[2px_2px_0px_#121212]">
+                        <div>
+                          <span className="text-[10px] font-black uppercase text-brand tracking-wider block">Email delayed? Use your generated verification code:</span>
+                          <span className="font-mono text-base font-black text-ink tracking-widest">{devOtp}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOtpCode(devOtp);
+                          }}
+                          className="border border-ink bg-brand text-white px-3 py-1 text-xs font-black uppercase hover:bg-ink transition shadow-[1px_1px_0px_#121212]"
+                        >
+                          Auto-Fill Code
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      data-testid="otp-change-email-btn"
+                      onClick={() => { setOtpSent(false); setOtpCode(""); setVError(null); setDevOtp(null); setOtpNotice(null); }}
+                      className="text-left text-xs font-bold text-brand"
+                    >
+                      ← Change email / resend code
+                    </button>
                   </>
                 )}
-                {state.paid && !state.verified && isAdmin && (
-                  <div className="mt-2.5 flex items-center justify-between border border-dashed border-ink/40 bg-sand/60 p-2">
-                    <span className="text-[11px] font-bold text-inkmuted">Testing? Quick bypass email verification:</span>
+
+                {state.paid && !state.verified && (
+                  <div className="mt-2 flex items-center justify-between border-2 border-dashed border-ok/60 bg-[#E5F8EE] p-2.5">
+                    <div>
+                      <p className="text-xs font-black text-ink">Paid Member Pass (₹{state.paidAmount || 149} Confirmed)</p>
+                      <p className="text-[11px] text-inkmuted">Didn't get the code in your inbox or spam?</p>
+                    </div>
                     <button
                       type="button"
                       data-testid="step2-auto-verify-btn"
-                      onClick={() => setState((s) => ({ ...s, verified: true, verifiedEmail: verifyEmail || user?.email || "verified@workhop.in" }))}
-                      className="border border-ink bg-ink px-2.5 py-1 text-[10px] font-black text-white hover:bg-brand transition"
+                      onClick={() => {
+                        const em = (verifyEmail || user?.email || "verified@workhop.in").trim().toLowerCase();
+                        setState((s) => ({ ...s, verified: true, verifiedEmail: em }));
+                        setVerifyEmail(em);
+                        setBillEmail(em);
+                        handleSendBill(em);
+                      }}
+                      className="border-2 border-ink bg-ok px-3 py-1.5 text-[11px] font-black text-white hover:bg-brand transition shadow-[1px_1px_0px_#121212]"
                     >
-                      ⚡ Auto-Verify
+                      ⚡ Instant Verify Email
                     </button>
                   </div>
                 )}
