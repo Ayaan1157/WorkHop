@@ -209,12 +209,17 @@ export async function supabaseGetCurrentUser() {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return null;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single()
-      .catch(() => ({ data: null }));
+    let profile = null;
+    try {
+      const pRes = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+      profile = pRes?.data || null;
+    } catch {
+      profile = null;
+    }
 
     return {
       ...user,

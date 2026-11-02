@@ -95,12 +95,17 @@ export default function AuthCallback() {
         setAuthUser(user);
 
         // 3. Check for existing profile in Supabase
-        const { data: existingProfile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle()
-          .catch(() => ({ data: null }));
+        let existingProfile = null;
+        try {
+          const profileRes = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle();
+          existingProfile = profileRes?.data || null;
+        } catch (profileErr) {
+          console.warn("Supabase profile fetch notice:", profileErr?.message);
+        }
 
         // Also check existing local user by email
         const existingLocal = getRegisteredUserByEmail(user.email);
