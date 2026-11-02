@@ -478,9 +478,9 @@ async function mockRouter(path, method = "GET", body = null) {
     return session;
   }
   if (cleanPath === "/auth/session") {
-    const session = createMockSession("google.user@example.com", body || {});
-    setToken(session.session_token);
-    return session;
+    const err = new Error("Invalid session");
+    err.status = 401;
+    throw err;
   }
   if (cleanPath === "/auth/me") {
     const u = getStoredUser();

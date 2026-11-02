@@ -39,6 +39,36 @@ try {
   }
 } catch { /* ignore */ }
 
+// One-time clean slate v4: purge fake google account picker cache & flag unverified legacy accounts
+const CLEAN_SLATE_FLAG_V4 = "workhop_clean_slate_v4_google_oauth";
+try {
+  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V4)) {
+    localStorage.removeItem("workhop_my_google_accounts");
+    const raw = localStorage.getItem("workhop_registered_users");
+    if (raw) {
+      try {
+        const users = JSON.parse(raw);
+        let modified = false;
+        for (const [em, u] of Object.entries(users)) {
+          if (u && u.google_verified && !u.auth_provider) {
+            users[em] = {
+              ...u,
+              email_verified: false,
+              unverified_legacy: true,
+              notice: "Legacy account. Please sign in with real Google to verify.",
+            };
+            modified = true;
+          }
+        }
+        if (modified) {
+          localStorage.setItem("workhop_registered_users", JSON.stringify(users));
+        }
+      } catch {}
+    }
+    localStorage.setItem(CLEAN_SLATE_FLAG_V4, "1");
+  }
+} catch { /* ignore */ }
+
 // ═══════════ CONNECTS & CREDITS SYSTEM KEYS ═══════════
 const CREDITS_WALLET_KEY = "workhop_credits_wallet";
 const CREDITS_TRANSACTIONS_KEY = "workhop_credits_transactions";
@@ -1143,6 +1173,66 @@ export function saveRegisteredUser(email, password, profile = {}) {
 export function isUserAdmin(email) {
   if (!email) return false;
   return ADMIN_EMAILS.includes(email.trim().toLowerCase());
+}
+
+/**
+ * Links a real authenticated Google account with existing profiles or registers a new verified user.
+ */
+export function linkOrUpdateGoogleUser(googleUser, chosenRole = null, chosenArea = null) {
+  if (!googleUser || !googleUser.email) return null;
+  const cleanEmail = googleUser.email.trim().toLowerCase();
+  const users = getRegisteredUsers();
+  const existing = users[cleanEmail] || {};
+
+  const name =
+    googleUser.user_metadata?.full_name ||
+    googleUser.user_metadata?.name ||
+    existing.name ||
+    cleanEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const picture =
+    googleUser.user_metadata?.avatar_url ||
+    googleUser.user_metadata?.picture ||
+    existing.picture ||
+    null;
+
+  const role = chosenRole || existing.role || localStorage.getItem("workhop_pending_role") || "freelancer";
+  const area = chosenArea || existing.area || localStorage.getItem("workhop_user_area") || "Bengaluru";
+
+  // Real verified status derived directly from Supabase / Google session
+  const isEmailVerified = Boolean(
+    googleUser.email_confirmed_at || googleUser.confirmed_at || googleUser.app_metadata?.provider === "google"
+  );
+
+  const updatedProfile = {
+    ...existing,
+    id: googleUser.id || existing.id || `usr_${Math.random().toString(36).slice(2, 10)}`,
+    email: cleanEmail,
+    name: name,
+    picture: picture,
+    role: role,
+    area: area,
+    phone: existing.phone || "",
+    email_verified: isEmailVerified,
+    unverified_legacy: false,
+    auth_provider: "google",
+    updated_at: new Date().toISOString(),
+  };
+
+  saveRegisteredUser(cleanEmail, null, updatedProfile);
+
+  const sessionUser = {
+    ...updatedProfile,
+    is_admin: isUserAdmin(cleanEmail),
+  };
+
+  saveStoredUser(sessionUser);
+  localStorage.setItem("workhop_auth_role", sessionUser.role);
+  if (sessionUser.area) {
+    localStorage.setItem("workhop_user_area", sessionUser.area);
+  }
+
+  return sessionUser;
 }
 
 /**

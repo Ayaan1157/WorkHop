@@ -23,6 +23,7 @@ import Onboarding from "@/pages/freelancer/Onboarding";
 import Jobs from "@/pages/freelancer/Jobs";
 import FreelancerChats from "@/pages/freelancer/Chats";
 import FreelancerProfile from "@/pages/freelancer/FreelancerProfile";
+import AuthCallback from "@/pages/AuthCallback";
 import NotFound from "@/pages/NotFound";
 import { useAuth } from "@/context/AuthContext";
 
@@ -89,6 +90,7 @@ function App() {
             <CityRestrictionModal />
             <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/profile" element={<ProfileRoute />} />
             <Route path="/employer/dashboard" element={<EmployerRoute><EmployerDashboard /></EmployerRoute>} />
             <Route path="/employer/profile" element={<EmployerRoute><EmployerDashboard /></EmployerRoute>} />

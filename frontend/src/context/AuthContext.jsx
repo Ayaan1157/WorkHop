@@ -1,6 +1,16 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { apiGet, apiPost, getToken, setToken, clearToken } from "@/lib/api";
-import { getStoredUser, saveStoredUser, createMockSession, passwordLogin, saveRegisteredUser, isEmailRegistered, getRegisteredUserByEmail } from "@/lib/clientStore";
+import {
+  getStoredUser,
+  saveStoredUser,
+  createMockSession,
+  passwordLogin,
+  saveRegisteredUser,
+  isEmailRegistered,
+  getRegisteredUserByEmail,
+  linkOrUpdateGoogleUser,
+} from "@/lib/clientStore";
+import { supabase, supabaseSignOut } from "@/lib/supabase";
 
 const AuthContext = createContext({
   user: null,
@@ -32,12 +42,7 @@ export function AuthProvider({ children }) {
       }
       return false;
     } catch {
-      // Fallback Google mock session
-      const session = createMockSession("google.user@example.com");
-      setToken(session.session_token);
-      saveStoredUser(session.user);
-      setUser(session.user);
-      return true;
+      return false;
     }
   }, []);
 
@@ -61,8 +66,22 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    (async () => {
+    let isMounted = true;
+
+    async function initAuth() {
       try {
+        // 1. Check for real active Supabase / Google OAuth session
+        const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+        if (session?.user && isMounted) {
+          const role = localStorage.getItem("workhop_auth_role") || "freelancer";
+          const linkedUser = linkOrUpdateGoogleUser(session.user, role);
+          setToken(session.access_token);
+          saveStoredUser(linkedUser);
+          setUser(linkedUser);
+          return;
+        }
+
+        // 2. Check for backend session_id
         const sid = parseSessionId(window.location.href);
         if (sid) {
           await processSessionId(sid);
@@ -71,9 +90,31 @@ export function AuthProvider({ children }) {
           await checkStoredSession();
         }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
-    })();
+    }
+
+    initAuth();
+
+    // 3. Reactive Supabase onAuthStateChange listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      if (event === "SIGNED_IN" && session?.user) {
+        const role = localStorage.getItem("workhop_auth_role") || "freelancer";
+        const linkedUser = linkOrUpdateGoogleUser(session.user, role);
+        setToken(session.access_token);
+        saveStoredUser(linkedUser);
+        setUser(linkedUser);
+      } else if (event === "SIGNED_OUT") {
+        clearToken();
+        setUser(null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
   }, [processSessionId, checkStoredSession]);
 
   const login = useCallback(async (customEmail = null, customName = null) => {
@@ -97,6 +138,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
+    try {
+      await supabaseSignOut();
+    } catch {
+      /* ignore */
+    }
     try {
       await apiPost("/auth/logout", {}, true);
     } catch {

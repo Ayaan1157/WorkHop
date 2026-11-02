@@ -9,7 +9,7 @@ import { apiPost } from "@/lib/api";
 import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
-import GoogleAccountPicker from "@/components/GoogleAccountPicker";
+import { supabaseSignInWithGoogle } from "@/lib/supabase";
 import { sanitizeInput, checkRateLimit, resetRateLimit } from "@/lib/security";
 import { isEmailRegistered } from "@/lib/clientStore";
 
@@ -39,10 +39,8 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
   const [captchaToken, setCaptchaToken] = useState(null);
   const [captchaReset, setCaptchaReset] = useState(0);
 
-  // Google Account Picker State
-  const [googleConnected, setGoogleConnected] = useState(false);
-  const [googlePickerOpen, setGooglePickerOpen] = useState(false);
-  const [googleAccount, setGoogleAccount] = useState(null);
+  // Real Google OAuth Loading State
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // OTP Stage & Type ("mobile" | "email")
   const [otpStage, setOtpStage] = useState("idle"); // "idle" | "sent"
@@ -133,48 +131,19 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
 
   const isEmployer = role === "employer";
 
-  // Handle Google button - Open Account Chooser
-  const handleGoogleAuth = () => {
+  // Real Google OAuth Handler via Supabase
+  const handleGoogleAuth = async () => {
     setError(null);
-    setGooglePickerOpen(true);
-  };
-
-  // Called when account is chosen from Google picker
-  const handleSelectGoogleAccount = async (account) => {
-    const googleEmail = (account.email || "").trim().toLowerCase();
-    const googleName = account.name;
-    setEmail(googleEmail);
-    setFullName(googleName);
-    setGoogleConnected(true);
-    setGoogleAccount(account);
-    setError(null);
-
-    // If already in sign in mode, verify account exists first!
-    if (mode === "signin") {
-      setLoading(true);
-      try {
-        if (!isEmailRegistered(googleEmail)) {
-          // Switch to signup mode so user can complete registration seamlessly
-          setMode("signup");
-          setOtpStage("idle");
-          setError(`✓ Google account verified (${googleEmail})! Please enter your 10-digit mobile number and neighborhood below to finish registration.`);
-          setLoading(false);
-          return;
-        }
-        const session = await login(googleEmail, googleName);
-        const resolvedRole = session?.user?.role || role || "freelancer";
-        completeAndRedirect(resolvedRole, session?.user);
-      } catch (e) {
-        setError(e?.message || "Google sign-in failed.");
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    // If in signup mode, prompt to enter phone & area if missing
-    if (!isPhoneValid || !area) {
-      setError(`✓ Google account verified (${googleEmail})! Please enter your 10-digit mobile number and neighborhood below to finish registration.`);
+    setGoogleLoading(true);
+    try {
+      localStorage.setItem("workhop_pending_role", role || "freelancer");
+      localStorage.setItem("workhop_auth_intent", mode || "signin");
+      if (area) localStorage.setItem("workhop_user_area", area);
+      await supabaseSignInWithGoogle();
+    } catch (err) {
+      console.warn("Failed to launch Google OAuth:", err);
+      setError(err?.message || "Could not launch Google Sign-In. Please check your network and try again.");
+      setGoogleLoading(false);
     }
   };
 
@@ -342,40 +311,6 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     }
     if (!isEmailValid) {
       setError("Please enter a genuine, active email address (test/temporary email domains are not permitted).");
-      return;
-    }
-
-    // Google Sign-Up Path: Already verified by Google!
-    if (googleConnected) {
-      setLoading(true);
-      setError(null);
-      try {
-        const payload = {
-          email: cleanEmail,
-          password: password || "google-auth-verified",
-          role: role,
-          name: cleanName,
-          phone: phoneDigits,
-          phone_verified: true,
-          email_verified: true,
-          google_verified: true,
-          area: area,
-          company_name: isEmployer ? (cleanCompany || cleanName || undefined) : undefined,
-          skill: !isEmployer ? (cleanSkill || undefined) : undefined,
-          gst_number: isEmployer && gstNumber ? gstNumber.trim().toUpperCase() : undefined,
-        };
-
-        // Real-time backend sync for Admin dashboard
-        await apiPost("/users", payload).catch(() => {});
-        resetRateLimit(`signup_${cleanEmail}`);
-
-        const session = await signupWithDetails(payload);
-        completeAndRedirect(session?.user?.role || role, session?.user);
-      } catch (e) {
-        setError(e?.message || "Failed to complete Google sign-up.");
-      } finally {
-        setLoading(false);
-      }
       return;
     }
 
@@ -601,21 +536,6 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
             <label className="text-[11px] font-black uppercase tracking-wider text-inkmuted">
               {mode === "signup" ? "2. ENTER YOUR DETAILS & MOBILE NUMBER" : "ENTER EMAIL & PASSWORD"}
             </label>
-            {googleConnected && (
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-ok flex items-center gap-1">
-                  ✓ Google: <strong>{email}</strong>
-                </span>
-                <button
-                  type="button"
-                  data-testid="auth-switch-google-acc"
-                  onClick={() => setGooglePickerOpen(true)}
-                  className="text-[10px] font-black underline text-brand hover:opacity-80"
-                >
-                  (Switch)
-                </button>
-              </div>
-            )}
           </div>
 
           <div className="flex flex-col gap-3">
@@ -804,29 +724,24 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                 <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted">
                   Email Address *
                 </label>
-                {googleConnected ? (
-                  <span className="text-[10px] font-bold text-emerald-700">
-                    ✓ Google Verified
-                  </span>
-                ) : cleanEmail ? (
+                {cleanEmail ? (
                   <span className={`text-[10px] font-bold ${isEmailValid ? "text-emerald-700" : "text-red-600"}`}>
                     {isEmailValid ? "✓ Valid email format" : "⚠️ Active email required"}
                   </span>
                 ) : null}
               </div>
               <div className={`mt-1 flex items-center border-2 ${
-                googleConnected || isEmailValid
+                isEmailValid
                   ? "border-emerald-600 bg-emerald-50/20"
                   : cleanEmail && !isEmailValid
                   ? "border-red-500 bg-red-50/20"
                   : "border-ink bg-white"
               } px-3 py-2.5`}>
-                <Mail size={16} className={googleConnected || isEmailValid ? "text-emerald-700 mr-2 shrink-0" : "text-inkmuted mr-2 shrink-0"} />
+                <Mail size={16} className={isEmailValid ? "text-emerald-700 mr-2 shrink-0" : "text-inkmuted mr-2 shrink-0"} />
                 <input
                   data-testid="auth-email-input"
                   type="email"
                   value={email}
-                  readOnly={googleConnected}
                   onChange={(e) => {
                     setEmail(e.target.value);
                     setError(null);
@@ -834,18 +749,6 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                   placeholder="you@example.com"
                   className="w-full bg-transparent text-sm font-bold text-ink placeholder:text-inkmuted/60 focus:outline-none"
                 />
-                {googleConnected && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGoogleConnected(false);
-                      setGoogleAccount(null);
-                    }}
-                    className="ml-2 text-[10px] font-black text-brand underline whitespace-nowrap"
-                  >
-                    Change
-                  </button>
-                )}
               </div>
             </div>
 
@@ -1044,19 +947,29 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
                   type="button"
                   data-testid="auth-google-btn"
                   onClick={handleGoogleAuth}
-                  className="flex w-full items-center justify-center gap-2.5 border-2 border-ink bg-white py-3 text-xs font-black text-ink shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
+                  disabled={googleLoading}
+                  className="flex w-full items-center justify-center gap-2.5 border-2 border-ink bg-white py-3 text-xs font-black text-ink shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5 disabled:opacity-60"
                 >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                  </svg>
-                  <span>
-                    {mode === "signup"
-                      ? "Sign Up with Google (Fast & Verified)"
-                      : "Sign In with Google"}
-                  </span>
+                  {googleLoading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin text-brand" />
+                      <span>Connecting to Google...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                      </svg>
+                      <span>
+                        {mode === "signup"
+                          ? "Sign Up with Google (Fast & Verified)"
+                          : "Sign In with Google"}
+                      </span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
@@ -1108,14 +1021,6 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
           </div>
           <span>Bengaluru Hyperlocal</span>
         </div>
-
-        {/* Interactive Google Account Selector Modal */}
-        <GoogleAccountPicker
-          isOpen={googlePickerOpen}
-          onClose={() => setGooglePickerOpen(false)}
-          onSelectAccount={handleSelectGoogleAccount}
-          currentEmail={email}
-        />
       </div>
     </div>
   );

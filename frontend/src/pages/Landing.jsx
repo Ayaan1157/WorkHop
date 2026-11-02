@@ -14,7 +14,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import AuthModal from "@/components/AuthModal";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
-import GoogleAccountPicker from "@/components/GoogleAccountPicker";
+import { supabaseSignInWithGoogle } from "@/lib/supabase";
 import SiteFooter from "@/components/SiteFooter";
 import { Logo, MobileBottomNav } from "@/components/kit";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -63,9 +63,7 @@ export default function Landing() {
   const [areaInput, setAreaInput] = useState("Koramangala");
   const [companyInput, setCompanyInput] = useState("");
   const [skillInput, setSkillInput] = useState("");
-  const [googleConnected, setGoogleConnected] = useState(false);
-  const [googlePickerOpen, setGooglePickerOpen] = useState(false);
-  const [googleAccount, setGoogleAccount] = useState(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const [otpInput, setOtpInput] = useState("");
   const [otpStage, setOtpStage] = useState("idle"); // "idle" | "sent"
@@ -328,37 +326,6 @@ export default function Landing() {
       return;
     }
 
-    // Google Sign-Up Path: Already verified by Google!
-    if (googleConnected) {
-      setOtpLoading(true);
-      setOtpError(null);
-      try {
-        const payload = {
-          email: cleanEmail,
-          password: passwordInput || "google-auth-verified",
-          role: target,
-          name: cleanName,
-          phone: phoneDigits,
-          phone_verified: true,
-          email_verified: true,
-          google_verified: true,
-          area: areaInput,
-          company_name: target === "employer" ? (cleanCompany || cleanName || undefined) : undefined,
-          skill: target !== "employer" ? (cleanSkill || undefined) : undefined,
-        };
-
-        await apiPost("/users", payload).catch(() => {});
-        resetRateLimit(`landing_signup_${cleanEmail}`);
-        const session = await signupWithDetails(payload);
-        completeSessionAndRedirect(target, session?.user);
-      } catch (e) {
-        setOtpError(e?.message || "Failed to complete Google sign-up.");
-      } finally {
-        setOtpLoading(false);
-      }
-      return;
-    }
-
     if (!passwordInput || passwordInput.length < 6) {
       setOtpError("Please create a password with at least 6 characters.");
       return;
@@ -399,48 +366,20 @@ export default function Landing() {
     }
   };
 
-  // Google Continue Handler - Opens Account Picker
-  const handleGoogleAuth = () => {
+  // Real Google OAuth Handler via Supabase
+  const handleGoogleAuth = async () => {
     setOtpError(null);
-    setGooglePickerOpen(true);
-  };
-
-  // Called when user selects a Google account from the picker
-  const handleSelectGoogleAccount = async (account) => {
-    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
-    const googleEmail = (account.email || "").trim().toLowerCase();
-    const googleName = account.name;
-    
-    setEmailInput(googleEmail);
-    setNameInput(googleName);
-    setGoogleConnected(true);
-    setGoogleAccount(account);
-    setOtpError(null);
-
-    // If in signin mode, check if account exists first!
-    if (authMode === "signin") {
-      setOtpLoading(true);
-      try {
-        if (!isEmailRegistered(googleEmail)) {
-          setOtpError("Email not found. Please register first.");
-          setAuthMode("signup");
-          setOtpLoading(false);
-          return;
-        }
-        const session = await login(googleEmail, googleName);
-        const resolvedRole = session?.user?.role || target || "freelancer";
-        completeSessionAndRedirect(resolvedRole, session?.user);
-      } catch (e) {
-        setOtpError(e?.message || "Google sign-in failed.");
-      } finally {
-        setOtpLoading(false);
-      }
-      return;
-    }
-
-    // If in signup mode, prompt for required mobile number and neighborhood
-    if (!isPhoneValid || !areaInput) {
-      setOtpError(`✓ Google account linked (${googleEmail})! Please enter your 10-digit mobile number and neighborhood below to finish registration.`);
+    setGoogleLoading(true);
+    try {
+      const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
+      localStorage.setItem("workhop_pending_role", target);
+      localStorage.setItem("workhop_auth_intent", authMode || "signin");
+      if (areaInput) localStorage.setItem("workhop_user_area", areaInput);
+      await supabaseSignInWithGoogle();
+    } catch (err) {
+      console.warn("Failed to launch Google OAuth:", err);
+      setOtpError(err?.message || "Could not launch Google Sign-In. Please check your network and try again.");
+      setGoogleLoading(false);
     }
   };
 
@@ -607,33 +546,6 @@ export default function Landing() {
 
               <div className="flex flex-col gap-3.5">
                 
-                {/* Google Connected Badge with Switch Account Option */}
-                {googleConnected && (
-                  <div className="flex items-center justify-between border-2 border-ink dark:border-zinc-700 bg-[#FFF3E9] dark:bg-amber-950/30 p-2.5 shadow-[2px_2px_0px_#E65A1E]">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-xs font-black text-white">
-                        {googleAccount?.initials || "G"}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-black text-ink dark:text-white">
-                          ✓ Google Linked: <strong className="text-brand">{emailInput}</strong>
-                        </span>
-                        <span className="text-[10px] font-semibold text-inkmuted dark:text-zinc-400">
-                          Signed in as {nameInput || "Google User"}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      data-testid="landing-switch-google-acc"
-                      onClick={() => setGooglePickerOpen(true)}
-                      className="border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-1 text-[10px] font-black text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition"
-                    >
-                      Switch Account
-                    </button>
-                  </div>
-                )}
-                
                 {authMode === "signup" && (
                   <>
                     {/* Full Name */}
@@ -790,45 +702,28 @@ export default function Landing() {
                     <label className="text-[10px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400">
                       Email Address *
                     </label>
-                    {googleConnected ? (
-                      <span className="text-[10px] font-bold text-emerald-600">
-                        ✓ Google Verified
-                      </span>
-                    ) : cleanEmail ? (
+                    {cleanEmail ? (
                       <span className={`text-[10px] font-bold ${isEmailValid ? "text-emerald-600" : "text-red-500"}`}>
                         {isEmailValid ? "✓ Valid email format" : "⚠️ Active email required"}
                       </span>
                     ) : null}
                   </div>
                   <div className={`mt-1 flex items-center border-2 ${
-                    googleConnected || isEmailValid
+                    isEmailValid
                       ? "border-emerald-600 bg-emerald-50/20"
                       : cleanEmail && !isEmailValid
                       ? "border-red-500 bg-red-50/20"
                       : "border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   } px-3 py-2.5 shadow-[2px_2px_0px_#121212]`}>
-                    <Mail size={16} className={googleConnected || isEmailValid ? "text-emerald-600 mr-2 shrink-0" : "text-inkmuted dark:text-zinc-400 mr-2 shrink-0"} />
+                    <Mail size={16} className={isEmailValid ? "text-emerald-600 mr-2 shrink-0" : "text-inkmuted dark:text-zinc-400 mr-2 shrink-0"} />
                     <input
                       data-testid="login-email-input"
                       type="email"
-                      readOnly={googleConnected}
                       value={emailInput}
                       onChange={(e) => { setEmailInput(e.target.value); setOtpError(null); }}
                       placeholder="you@example.com"
                       className="wh-input flex-1 bg-transparent text-sm font-bold text-ink dark:text-white placeholder:text-inkmuted/60 dark:placeholder:text-zinc-500 focus:outline-none"
                     />
-                    {googleConnected && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setGoogleConnected(false);
-                          setGoogleAccount(null);
-                        }}
-                        className="ml-2 text-[10px] font-black text-brand underline whitespace-nowrap"
-                      >
-                        Change
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -974,15 +869,29 @@ export default function Landing() {
                       type="button"
                       data-testid="login-google-btn"
                       onClick={handleGoogleAuth}
-                      className="flex w-full items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 py-3 text-xs font-black tracking-wider text-ink dark:text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                      disabled={googleLoading}
+                      className="flex w-full items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 py-3 text-xs font-black tracking-wider text-ink dark:text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-60"
                     >
-                      <svg className="h-4 w-4" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                      </svg>
-                      <span>{authMode === "signup" ? "Continue with Google (Details Required)" : "Continue with Google"}</span>
+                      {googleLoading ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin text-brand" />
+                          <span>Connecting to Google...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                          </svg>
+                          <span>
+                            {authMode === "signup"
+                              ? "Sign Up with Google (Fast & Verified)"
+                              : "Sign In with Google"}
+                          </span>
+                        </>
+                      )}
                     </button>
                   </div>
                 )}
@@ -1034,14 +943,6 @@ export default function Landing() {
             </div>
           </div>
         </div>
-
-        {/* Google Account Selector Dialog */}
-        <GoogleAccountPicker
-          isOpen={googlePickerOpen}
-          onClose={() => setGooglePickerOpen(false)}
-          onSelectAccount={handleSelectGoogleAccount}
-          currentEmail={emailInput}
-        />
       </div>
     );
   }

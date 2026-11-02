@@ -44,6 +44,57 @@ export const supabase = createClient(
 // 1. AUTHENTICATION HELPERS
 // ══════════════════════════════════════════════════
 
+export async function supabaseSignInWithGoogle({ redirectTo = null } = {}) {
+  if (!isSupabaseConfigured()) {
+    throw new Error("Supabase is not configured. Please ensure REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY are set.");
+  }
+  const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+  const callbackUrl = redirectTo || `${origin}/auth/callback`;
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: callbackUrl,
+      queryParams: {
+        prompt: "select_account",
+      },
+    },
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function supabaseGetSession() {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) return null;
+    return data?.session || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function supabaseUpsertProfile(profile) {
+  if (!isSupabaseConfigured() || !profile?.id) return null;
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .upsert(profile, { onConflict: "id" })
+      .select()
+      .maybeSingle();
+    if (error) {
+      console.warn("Supabase profile upsert error:", error.message);
+      return null;
+    }
+    return data;
+  } catch (e) {
+    console.warn("Supabase upsertProfile failed:", e.message);
+    return null;
+  }
+}
+
 export async function supabaseSignUp({ email, password, name, role = "freelancer", phone = "" }) {
   if (!isSupabaseConfigured()) return null;
   try {
