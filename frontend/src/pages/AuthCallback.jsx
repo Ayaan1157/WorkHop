@@ -258,7 +258,7 @@ export default function AuthCallback() {
         skill: selectedRole === "freelancer" ? cleanSkill : null,
         company_name: selectedRole === "employer" ? cleanCompany : null,
         gst_number: selectedRole === "employer" && cleanGst ? cleanGst : null,
-        hops_balance: selectedRole === "freelancer" ? 50 : 0,
+        hops_balance: 0,
         updated_at: new Date().toISOString(),
       });
 
@@ -518,7 +518,7 @@ export default function AuthCallback() {
                       }
                     />
                     <span className="text-[9px] font-black uppercase px-2 py-0.5 border border-zinc-600 bg-black/40 text-zinc-300">
-                      50 Free Hops
+                      0% Commission
                     </span>
                   </div>
                   <h3 className="text-sm font-black text-white uppercase">I Want to Work</h3>

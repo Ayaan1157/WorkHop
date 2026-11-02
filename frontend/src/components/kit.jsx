@@ -182,7 +182,7 @@ export function GlobalNav() {
 
   const currentFreelancerId = (isFreelancerUser ? (user?.id || user?.email) : null) || getFreelancerId?.() || "anon";
   const userWallet = getCreditsWallet(currentFreelancerId);
-  const currentHops = userWallet?.balance ?? 20;
+  const currentHops = userWallet?.balance ?? 0;
   const plansPath = isFreelancerUser ? "/plans?tab=freelancer" : "/plans?tab=employer";
 
   const desktopLinks = [

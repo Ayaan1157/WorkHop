@@ -69,6 +69,37 @@ try {
   }
 } catch { /* ignore */ }
 
+// One-time clean slate v5: ensure 0 initial hops (no free hops, hops only on purchase)
+const CLEAN_SLATE_FLAG_V5 = "workhop_clean_slate_v5_zero_free_hops";
+try {
+  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V5)) {
+    const rawWallets = localStorage.getItem("workhop_credits_wallet");
+    const rawTx = localStorage.getItem("workhop_credits_transactions");
+    if (rawWallets) {
+      try {
+        const wallets = JSON.parse(rawWallets);
+        const allTx = rawTx ? JSON.parse(rawTx) : {};
+        let modified = false;
+        for (const [id, w] of Object.entries(wallets)) {
+          const txs = allTx[id] || [];
+          const hasRealPurchase = txs.some(
+            (t) => t.type === "purchase" || t.type === "pack" || (t.amount > 0 && t.type !== "bonus")
+          );
+          if (!hasRealPurchase && w && w.balance > 0) {
+            wallets[id].balance = 0;
+            modified = true;
+          }
+        }
+        if (modified) {
+          localStorage.setItem("workhop_credits_wallet", JSON.stringify(wallets));
+        }
+      } catch {}
+    }
+    localStorage.removeItem("workhop_employer_hops");
+    localStorage.setItem(CLEAN_SLATE_FLAG_V5, "1");
+  }
+} catch { /* ignore */ }
+
 // ═══════════ CONNECTS & CREDITS SYSTEM KEYS ═══════════
 const CREDITS_WALLET_KEY = "workhop_credits_wallet";
 const CREDITS_TRANSACTIONS_KEY = "workhop_credits_transactions";
@@ -123,7 +154,7 @@ export const DEFAULT_CREDITS_CONFIG = {
   rollover_unused_credits: true,
   job_boost_price_inr: 399,
   job_boost_duration_hours: 48,
-  welcome_credits: 20,
+  welcome_credits: 0,
 };
 
 // Upwork-style Connects/Hops required per job based on budget and scope (2, 4, 6, 8, 10, 12, 16 Hops)
@@ -1639,14 +1670,22 @@ export function getCreditsWallet(userId) {
   const id = userId || "freelancer-demo";
   const allWallets = JSON.parse(localStorage.getItem(CREDITS_WALLET_KEY) || "{}");
   if (allWallets[id]) {
+    // If the wallet balance was from legacy welcome gifts without actual purchases, reset to 0
+    const allTx = JSON.parse(localStorage.getItem(CREDITS_TRANSACTIONS_KEY) || "{}");
+    const txs = allTx[id] || [];
+    const hasRealPurchase = txs.some(
+      (t) => t.type === "purchase" || t.type === "pack" || (t.amount > 0 && t.type !== "bonus")
+    );
+    if (!hasRealPurchase && allWallets[id].balance > 0) {
+      allWallets[id].balance = 0;
+      localStorage.setItem(CREDITS_WALLET_KEY, JSON.stringify(allWallets));
+    }
     return allWallets[id];
   }
-  // Initialize with welcome credits (default 20)
-  const config = getCreditsConfig();
-  const initBalance = config.welcome_credits ?? 20;
+  // Initialize with exactly 0 hops (no free hops: must purchase to get hops)
   const newWallet = {
     user_id: id,
-    balance: initBalance,
+    balance: 0,
     subscription_status: "none", // 'none' | 'active' | 'cancelled' | 'expired'
     subscription_plan_id: null,
     subscription_renews_at: null,
@@ -1654,16 +1693,6 @@ export function getCreditsWallet(userId) {
   };
   allWallets[id] = newWallet;
   localStorage.setItem(CREDITS_WALLET_KEY, JSON.stringify(allWallets));
-
-  // Record initial welcome bonus transaction
-  if (initBalance > 0) {
-    addCreditTransaction(id, {
-      type: "bonus",
-      amount: initBalance,
-      balance_after: initBalance,
-      description: "Welcome Gift: 20 Free Bidding Hops",
-    });
-  }
   return newWallet;
 }
 
@@ -1676,11 +1705,11 @@ export function getEmployerHops(employerId = "employer-demo") {
     if (map[employerId] !== undefined) {
       return Number(map[employerId]);
     }
-    map[employerId] = 5; // Default 5 Hops active
+    map[employerId] = 0; // Default 0 Hops active (must purchase hops)
     localStorage.setItem(EMPLOYER_HOPS_KEY, JSON.stringify(map));
-    return 5;
+    return 0;
   } catch {
-    return 5;
+    return 0;
   }
 }
 
@@ -1688,13 +1717,13 @@ export function addEmployerHops(employerId = "employer-demo", count = 5) {
   try {
     const raw = localStorage.getItem(EMPLOYER_HOPS_KEY);
     const map = raw ? JSON.parse(raw) : {};
-    const current = map[employerId] !== undefined ? Number(map[employerId]) : 5;
+    const current = map[employerId] !== undefined ? Number(map[employerId]) : 0;
     const next = current + Number(count);
     map[employerId] = next;
     localStorage.setItem(EMPLOYER_HOPS_KEY, JSON.stringify(map));
     return next;
   } catch {
-    return 5 + Number(count);
+    return Number(count);
   }
 }
 
