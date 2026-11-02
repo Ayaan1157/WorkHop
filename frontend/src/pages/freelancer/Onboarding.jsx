@@ -7,7 +7,7 @@ import { useRazorpay } from "@/hooks/usePayments";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
 import { apiGet, apiPost, setFreelancerId, getFreelancerId } from "@/lib/api";
-import { ADMIN_EMAILS } from "@/lib/clientStore";
+import { ADMIN_EMAILS, getStoredPaymentTransactions, recordPaymentTransaction } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { sanitizeInput } from "@/lib/security";
 import { scanUploadFile } from "@/lib/contactScanner";
@@ -27,7 +27,14 @@ export default function Onboarding() {
     (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
   );
 
-  const [state, setState] = useState({ freelancerId: null, paid: false, verified: false, verifiedEmail: null });
+  const [state, setState] = useState({
+    freelancerId: null,
+    paid: false,
+    verified: false,
+    verifiedEmail: null,
+    paymentId: null,
+    paidAmount: null,
+  });
   const [paying, setPaying] = useState(false);
   const [coupon, setCoupon] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -69,12 +76,64 @@ export default function Onboarding() {
       localStorage.removeItem("workhop_pro_skill");
     }
 
+    // Check if onboarding fee was already paid (via localStorage or recorded transaction)
+    const localPaid = localStorage.getItem("workhop_onboarding_paid") === "true";
+    const savedPaymentId = localStorage.getItem("workhop_onboarding_payment_id");
+    const savedAmount = Number(localStorage.getItem("workhop_onboarding_paid_amount")) || 149;
+
+    let transactionPaid = false;
+    let foundTxId = savedPaymentId;
+    let foundTxAmount = savedAmount;
+
+    try {
+      const txs = getStoredPaymentTransactions() || [];
+      const onboardingTx = txs.find((t) => {
+        const prod = (t.product || "").toLowerCase();
+        const plan = (t.plan_id || "").toLowerCase();
+        const desc = (t.description || "").toLowerCase();
+        const amt = Number(t.amount || t.amount_inr || 0);
+        return (
+          prod === "freelancer_onboarding" ||
+          plan === "verification-badge" ||
+          desc.includes("onboarding") ||
+          desc.includes("verified pro") ||
+          (amt >= 140 && amt <= 310 && (prod.includes("onboard") || desc.includes("pro") || desc.includes("badge")))
+        );
+      });
+      if (onboardingTx) {
+        transactionPaid = true;
+        foundTxId = onboardingTx.payment_id || onboardingTx.id || foundTxId;
+        foundTxAmount = Number(onboardingTx.amount || onboardingTx.amount_inr) || foundTxAmount;
+      }
+    } catch { /* ignore */ }
+
+    const isAlreadyPaid = localPaid || transactionPaid;
+    const initialFid = getFreelancerId() || (user?.id ? `fl_${user.id.slice(0, 8)}` : `fl_${Math.random().toString(36).slice(2, 10)}`);
+
+    if (isAlreadyPaid) {
+      setFreelancerId(initialFid);
+      setState((p) => ({
+        ...p,
+        paid: true,
+        freelancerId: p.freelancerId || initialFid,
+        paymentId: foundTxId || "pay_captured",
+        paidAmount: foundTxAmount || 149,
+      }));
+    }
+
     (async () => {
-      const fid = getFreelancerId();
+      const fid = getFreelancerId() || initialFid;
       if (!fid) return;
       try {
         const s = await apiGet(`/freelancer/${fid}`);
-        setState((p) => ({ ...p, freelancerId: fid, paid: !!s.paid, verified: !!s.aadhaar_verified }));
+        setState((p) => ({
+          ...p,
+          freelancerId: fid,
+          paid: Boolean(p.paid || isAlreadyPaid || s.paid),
+          verified: Boolean(p.verified || s.aadhaar_verified),
+          paymentId: p.paymentId || foundTxId || (s.paid ? "pay_captured" : null),
+          paidAmount: p.paidAmount || foundTxAmount || (s.paid ? 149 : null),
+        }));
         const pr = await apiGet(`/freelancer/${fid}/profile`).catch(() => null);
         if (pr) {
           const cleanPhone = pr.phone && pr.phone !== "9876543210" ? String(pr.phone).replace(/\D/g, "").replace(/^91/, "") : "";
@@ -91,7 +150,7 @@ export default function Onboarding() {
         }
       } catch { /* ignore */ }
     })();
-  }, []);
+  }, [user?.id]);
 
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneValid = phoneDigits.length === 10;
@@ -102,30 +161,50 @@ export default function Onboarding() {
   const progressPct = Math.min((completed / (TOTAL + 1)) * 100, 100);
   const allReady = state.paid && state.verified && step3Done && slotsDone && termsAccepted;
 
+  const scrollToStep2 = () => {
+    setTimeout(() => {
+      const step2 = document.querySelector('[data-testid="step2-block"]') || document.getElementById("step2-block");
+      if (step2) {
+        step2.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 350);
+  };
+
   const handleBypassPay = async () => {
     setPaying(true);
+    const mockPayId = "pay_bypass_" + Math.random().toString(36).slice(2, 8);
+    const amountPaid = coupon?.final_amount ?? 299;
     try {
       const data = await apiPost("/freelancer/pay", {
         full_name: user?.name || "Verified Pro",
         payment_method: "test_mode_bypass",
       });
       if (data?.freelancer_id) {
-        setState((s) => ({ ...s, freelancerId: data.freelancer_id, paid: true }));
+        setState((s) => ({ ...s, freelancerId: data.freelancer_id, paid: true, paymentId: mockPayId, paidAmount: amountPaid }));
         setFreelancerId(data.freelancer_id);
+        localStorage.setItem("workhop_onboarding_paid", "true");
+        localStorage.setItem("workhop_onboarding_payment_id", mockPayId);
+        localStorage.setItem("workhop_onboarding_paid_amount", String(amountPaid));
         setPaying(false);
+        scrollToStep2();
         return;
       }
     } catch (err) {
       console.log("bypass err", err);
     }
-    const mockFid = "fl_" + Math.random().toString(36).slice(2, 10);
-    setState((s) => ({ ...s, freelancerId: mockFid, paid: true }));
+    const mockFid = state.freelancerId || getFreelancerId() || (user?.id ? `fl_${user.id.slice(0, 8)}` : `fl_${Math.random().toString(36).slice(2, 10)}`);
+    setState((s) => ({ ...s, freelancerId: mockFid, paid: true, paymentId: mockPayId, paidAmount: amountPaid }));
     setFreelancerId(mockFid);
+    localStorage.setItem("workhop_onboarding_paid", "true");
+    localStorage.setItem("workhop_onboarding_payment_id", mockPayId);
+    localStorage.setItem("workhop_onboarding_paid_amount", String(amountPaid));
     setPaying(false);
+    scrollToStep2();
   };
 
   const handlePay = async () => {
     setPaying(true);
+    const amountToPay = coupon?.final_amount ?? 299;
     if (coupon?.final_amount === 0 || ["FREE", "TEST", "ADMIN", "FREE100", "TESTFREE"].includes(coupon?.code?.toUpperCase())) {
       await handleBypassPay();
       setPaying(false);
@@ -133,12 +212,51 @@ export default function Onboarding() {
     }
     try {
       const data = await startPayment(
-        { product: "freelancer_onboarding", plan_id: "verification-badge", amount_inr: coupon?.final_amount ?? 299, full_name: user?.name || "New Pro", coupon_code: coupon?.code ?? null },
-        `Verified Pro onboarding · ₹${coupon?.final_amount ?? 299}`
+        {
+          product: "freelancer_onboarding",
+          plan_id: "verification-badge",
+          amount_inr: amountToPay,
+          full_name: user?.name || "New Pro",
+          email: user?.email || verifyEmail || "",
+          coupon_code: coupon?.code ?? null,
+        },
+        `Verified Pro onboarding · ₹${amountToPay}`
       );
-      if (data?.freelancer_id) {
-        setState((s) => ({ ...s, freelancerId: data.freelancer_id, paid: true }));
-        setFreelancerId(data.freelancer_id);
+
+      // Razorpay returns verification object ({ ok: true, verified: true, razorpay_payment_id: "..." })
+      if (data?.verified || data?.ok || data?.razorpay_payment_id) {
+        const payId = data.razorpay_payment_id || `pay_${Date.now()}`;
+        const fid = data.freelancer_id || state.freelancerId || getFreelancerId() || (user?.id ? `fl_${user.id.slice(0, 8)}` : `fl_${Math.random().toString(36).slice(2, 10)}`);
+
+        setState((s) => ({
+          ...s,
+          freelancerId: fid,
+          paid: true,
+          paymentId: payId,
+          paidAmount: amountToPay,
+        }));
+        setFreelancerId(fid);
+
+        localStorage.setItem("workhop_onboarding_paid", "true");
+        localStorage.setItem("workhop_onboarding_payment_id", payId);
+        localStorage.setItem("workhop_onboarding_paid_amount", String(amountToPay));
+
+        try {
+          recordPaymentTransaction({
+            payment_id: payId,
+            amount: amountToPay,
+            amount_inr: amountToPay,
+            customer_name: user?.name || "Verified Pro",
+            email: user?.email || verifyEmail || "",
+            product: "freelancer_onboarding",
+            plan_id: "verification-badge",
+            description: `Verified Pro onboarding · ₹${amountToPay}`,
+            status: "captured",
+          });
+        } catch { /* ignore */ }
+
+        // Automatically open and smooth scroll down to Step 2
+        scrollToStep2();
       }
     } catch (e) {
       if (e?.message !== "PAYMENT_CANCELLED") {
@@ -253,7 +371,7 @@ export default function Onboarding() {
 
         <div className="flex flex-col gap-4 p-4 sm:p-6 pb-16">
           {/* STEP 1 */}
-          <Step n={1} title="Payment Gateway Tether" active testID="step1-card">
+          <Step n={1} title="Payment Gateway Tether" active testID="step1-card" id="step1-card">
             <div className="flex items-center gap-3 border-2 border-ink bg-sand p-3">
               <span className="flex h-16 w-16 items-center justify-center border-2 border-ink bg-brand"><ShieldCheck size={30} className="text-white" /></span>
               <div className="flex-1">
@@ -261,9 +379,53 @@ export default function Onboarding() {
                 <p className="mt-2 text-[13px] font-bold leading-5 text-ink">Pay a one-time fee of ₹299 to launch your profile live within a 5km radius.</p>
               </div>
             </div>
-            {!state.paid && <div className="my-2"><CouponInput product="freelancer_onboarding" amount={299} onApplied={setCoupon} testIDPrefix="onboarding-coupon" /></div>}
-            <button data-testid="step1-pay-btn" disabled={paying || state.paid} onClick={handlePay} className={`flex items-center justify-center gap-2 border-2 border-ink py-3 text-sm font-black text-white ${state.paid ? "bg-ok" : "bg-brand"} disabled:opacity-70`}>
-              {paying ? <><Loader2 size={18} className="animate-spin" /> Processing…</> : state.paid ? <><CheckCircle2 size={18} /> Payment Verified · ₹299</> : coupon?.final_amount === 0 ? "Activate Free Onboarding →" : `Pay Onboarding Fee · ₹${coupon?.final_amount ?? 299}`}
+
+            {/* If paid, display celebratory confirmation card */}
+            {state.paid ? (
+              <div data-testid="payment-success-card" className="border-2 border-ink bg-[#E5F8EE] p-3.5 shadow-[2px_2px_0px_#121212] flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-ink bg-ok text-white">
+                  <CheckCircle2 size={20} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-ok text-white text-[10px] font-black px-2 py-0.5 uppercase tracking-wider">
+                      ✓ Payment Successful
+                    </span>
+                    <span className="text-xs font-black text-ink">
+                      ₹{state.paidAmount || coupon?.final_amount || 149} Paid
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs font-black text-ink">
+                    Onboarding fee received! Step 2 (Verify Your Email) is now unlocked below.
+                  </p>
+                  {state.paymentId && (
+                    <p className="mt-0.5 text-[11px] font-mono font-bold text-inkmuted break-all">
+                      Transaction Ref: {state.paymentId}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="my-2">
+                <CouponInput product="freelancer_onboarding" amount={299} onApplied={setCoupon} testIDPrefix="onboarding-coupon" />
+              </div>
+            )}
+
+            <button
+              data-testid="step1-pay-btn"
+              disabled={paying || state.paid}
+              onClick={handlePay}
+              className={`flex items-center justify-center gap-2 border-2 border-ink py-3 text-sm font-black text-white ${state.paid ? "bg-ok" : "bg-brand"} disabled:opacity-85`}
+            >
+              {paying ? (
+                <><Loader2 size={18} className="animate-spin" /> Processing Payment…</>
+              ) : state.paid ? (
+                <><CheckCircle2 size={18} /> Step 1 Complete · ₹{state.paidAmount || coupon?.final_amount || 149} Paid (Step 2 Unlocked ↓)</>
+              ) : coupon?.final_amount === 0 ? (
+                "Activate Free Onboarding →"
+              ) : (
+                `Pay Onboarding Fee · ₹${coupon?.final_amount ?? 299}`
+              )}
             </button>
             {!state.paid && isAdmin && (
               <button
@@ -279,7 +441,13 @@ export default function Onboarding() {
           </Step>
 
           {/* STEP 2 */}
-          <Step n={2} title="Verify Your Email" active={state.paid} testID="step2-block">
+          <Step n={2} title="Verify Your Email" active={state.paid} testID="step2-block" id="step2-block">
+            {state.paid && !state.verified && (
+              <div className="flex items-center gap-2 border-2 border-ok bg-[#E5F8EE] px-3 py-2 text-xs font-black text-ink">
+                <CheckCircle2 size={16} className="text-ok shrink-0" />
+                <span>Step 2 Unlocked — Enter your email below to verify your account</span>
+              </div>
+            )}
             {state.verified ? (
               <div data-testid="email-verify-success" className="flex items-center gap-2 border-2 border-ok bg-[#E5F8EE] px-3 py-2"><ShieldCheck size={14} className="text-ok" /><span className="text-xs font-extrabold text-ink">Email verified · {state.verifiedEmail || verifyEmail}</span></div>
             ) : (
@@ -521,9 +689,9 @@ export default function Onboarding() {
   );
 }
 
-function Step({ n, title, active, children, testID }) {
+function Step({ n, title, active, children, testID, id }) {
   return (
-    <div data-testid={testID} className={`flex flex-col gap-3 border-2 border-ink bg-white p-4 ${!active ? "pointer-events-none opacity-40" : ""}`}>
+    <div id={id || testID} data-testid={testID} className={`flex flex-col gap-3 border-2 border-ink bg-white p-4 transition-all duration-300 ${!active ? "pointer-events-none opacity-40" : ""}`}>
       <div className="flex items-center gap-3">
         <span className={`flex h-11 w-11 items-center justify-center border-2 border-ink text-sm font-black ${active ? "bg-brand text-white" : "bg-sand text-ink"}`}>0{n}</span>
         <p className="flex-1 text-base font-black leading-tight text-ink">{title}</p>

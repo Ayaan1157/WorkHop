@@ -136,9 +136,11 @@ export default function FreelancerWizard() {
         { product: "freelancer_onboarding", full_name: fullName, coupon_code: coupon?.code ?? null },
         `Verified Pro onboarding · ₹${coupon?.final_amount ?? 99}`,
       );
-      if (data?.freelancer_id) {
-        setState((s) => ({ ...s, freelancerId: data.freelancer_id, paid: true }));
-        AsyncStorage.setItem("workhop_freelancer_id", data.freelancer_id).catch(() => {});
+      if (data?.verified || data?.ok || data?.razorpay_payment_id || data?.freelancer_id) {
+        const fid = data?.freelancer_id || state.freelancerId || `fl_${Date.now()}`;
+        setState((s) => ({ ...s, freelancerId: fid, paid: true }));
+        AsyncStorage.setItem("workhop_freelancer_id", fid).catch(() => {});
+        AsyncStorage.setItem("workhop_onboarding_paid", "true").catch(() => {});
       }
     } catch (e: any) {
       if (e?.message !== "PAYMENT_CANCELLED") console.log("pay err", e);
