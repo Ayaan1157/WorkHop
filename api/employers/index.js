@@ -207,21 +207,20 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      // Always ensure Alia Mansoor's gig is present if not already in items
-      const hasAliaGig = jobs.some((j) => (j.company_name || "").toLowerCase().includes("alia mansoor"));
-      if (!hasAliaGig && !deletedJobIds.has("job-alia-1")) {
+      // Default sample featured gig if list is empty
+      if (jobs.length === 0 && !deletedJobIds.has("job-sample-1")) {
         jobs.unshift({
-          id: "job-alia-1",
-          title: "UI/UX Designer for Food App",
+          id: "job-sample-1",
+          title: "UI/UX Designer for Mobile App",
           pay: 25000,
           pay_label: "₹25,000",
           credits_to_apply: 8,
           is_boosted: true,
           boost_expires_at: new Date(Date.now() + 48 * 3600000).toISOString(),
-          company_name: "Alia Mansoor",
-          employer_name: "Alia Mansoor",
-          employer_id: "cust_TtsfKxVnw686EV",
-          description: "Looking for an experienced UI/UX designer to design clean mobile app screens and interactive Figma prototypes for our restaurant ordering platform.",
+          company_name: "Cobblestone Studios",
+          employer_name: "Design Lead",
+          employer_id: "emp-sample-1",
+          description: "Looking for an experienced UI/UX designer to design clean mobile app screens and interactive Figma prototypes.",
           category: "Graphics & Design",
           bucket: "Creative",
           area: "Frazer Town",
@@ -234,7 +233,7 @@ module.exports = async function handler(req, res) {
           created_at: new Date().toISOString(),
           lat: 12.9982,
           lng: 77.6158,
-          keywords: ["UI/UX", "Mobile App", "Figma", "Food App", "Frazer Town"],
+          keywords: ["UI/UX", "Mobile App", "Figma", "Design", "Frazer Town"],
           status: "open",
           is_completed: false,
         });
@@ -450,8 +449,6 @@ module.exports = async function handler(req, res) {
       const notes = c.notes || {};
       const isEmployer =
         notes.role === "employer" ||
-        Boolean(notes.company_name) ||
-        (c.name && c.name.toLowerCase().includes("alia mansoor")) ||
         notes.source === "workhop_employer_registration";
 
       if (!isEmployer) continue;
@@ -472,7 +469,6 @@ module.exports = async function handler(req, res) {
       const spend = spendMap[email] || spendMap[phoneDigits.slice(-10)] || 0;
       const liveGigs = gigsCountMap[c.id.toLowerCase()] ||
                        gigsCountMap[compLower] ||
-                       (compLower.includes("alia mansoor") ? Math.max(1, gigsCountMap["alia mansoor"] || 1) : 0) ||
                        Number(notes.jobs_posted || (notes.job_title ? 1 : 0));
 
       employers.push({
@@ -486,27 +482,6 @@ module.exports = async function handler(req, res) {
         spent_rupees: spend,
         jobs_posted: liveGigs,
         created_at: new Date(c.created_at * 1000).toISOString(),
-        source: "cloud",
-        role: "employer",
-      });
-    }
-
-    // Always ensure Alia Mansoor is listed as a registered employer unless explicitly deleted
-    const hasAlia = employers.some(
-      (e) => (e.name && e.name.toLowerCase().includes("alia mansoor")) || (e.company_name && e.company_name.toLowerCase().includes("alia mansoor"))
-    );
-    if (!hasAlia && !deletedEmployerIds.has("alia mansoor") && !deletedEmployerIds.has("emp-aliamansoor")) {
-      employers.unshift({
-        employer_id: "cust_TtsfKxVnw686EV",
-        id: "cust_TtsfKxVnw686EV",
-        company_name: "Alia Mansoor",
-        name: "Alia Mansoor",
-        email: "aliamansoor@workhop.in",
-        phone: "+91 98765 43210",
-        area: "Frazer Town",
-        spent_rupees: 0,
-        jobs_posted: 1,
-        created_at: new Date().toISOString(),
         source: "cloud",
         role: "employer",
       });

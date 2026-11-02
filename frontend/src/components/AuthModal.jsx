@@ -162,7 +162,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         const { data: supaUser } = await supabase
           .from("profiles")
           .select("id, role")
-          .eq("email", cleanEmail)
+          .ilike("email", cleanEmail)
           .maybeSingle();
         if (supaUser?.id) isRegisteredInSupa = true;
       } catch (_) {}
@@ -274,7 +274,7 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         const { data: supaUser } = await supabase
           .from("profiles")
           .select("id, role")
-          .eq("email", cleanEmail)
+          .ilike("email", cleanEmail)
           .maybeSingle();
         if (supaUser?.id) isRegisteredInSupa = true;
       } catch (_) {}
@@ -398,11 +398,16 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     localStorage.setItem("workhop_auth_role", targetRole);
     if (userData?.area || area) setSavedArea(userData?.area || area);
     if (userData?.phone || phoneDigits) localStorage.setItem("workhop_pro_phone", userData?.phone || phoneDigits);
-    if (userData?.company_name || (targetRole === "employer" && companyName)) {
-      localStorage.setItem("workhop_company_name", userData?.company_name || companyName);
-    }
-    if (targetRole === "employer" && gstNumber) {
-      localStorage.setItem("workhop_employer_gst", gstNumber.trim().toUpperCase());
+    if (targetRole === "employer") {
+      if (userData?.company_name || companyName) {
+        localStorage.setItem("workhop_company_name", userData?.company_name || companyName);
+      }
+      if (gstNumber) {
+        localStorage.setItem("workhop_employer_gst", gstNumber.trim().toUpperCase());
+      }
+    } else {
+      localStorage.removeItem("workhop_company_name");
+      localStorage.removeItem("workhop_employer_gst");
     }
     if (userData?.skill || (targetRole !== "employer" && skill)) {
       localStorage.setItem("workhop_pro_skill", userData?.skill || skill);

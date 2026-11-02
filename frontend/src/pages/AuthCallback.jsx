@@ -165,8 +165,10 @@ export default function AuthCallback() {
         const existingLocal = getRegisteredUserByEmail(user.email);
         const pendingRole = roleParam || localStorage.getItem("workhop_pending_role");
 
-        // Determine if account actually exists
-        const hasRegisteredAccount = Boolean(
+        // Determine if account record exists in Supabase or locally
+        const hasExistingAccount = Boolean(
+          existingProfile?.id ||
+          existingLocal?.id ||
           (existingProfile && (existingProfile.phone || existingProfile.skill || existingProfile.company_name)) ||
           (existingLocal && (existingLocal.phone || existingLocal.skill || existingLocal.company_name))
         );
@@ -174,7 +176,7 @@ export default function AuthCallback() {
         // Check if profile is complete (has valid 10-digit phone AND profession/company)
         const cleanExistingPhone = (existingProfile?.phone || existingLocal?.phone || "").replace(/\D/g, "");
         const hasValidPhone = cleanExistingPhone.length === 10;
-        const targetRole = roleParam || existingProfile?.role || existingLocal?.role || pendingRole || "freelancer";
+        const targetRole = existingProfile?.role || existingLocal?.role || roleParam || pendingRole || "freelancer";
         const hasSkillOrCompany = Boolean(
           targetRole === "employer"
             ? (existingProfile?.company_name || existingLocal?.company_name)
@@ -202,14 +204,14 @@ export default function AuthCallback() {
           setRateInput(String(existingProfile.rate_hr));
         }
 
-        // Case 1: If user said SIGN IN and is NOT registered:
-        if (storedIntent === "signin" && !hasRegisteredAccount) {
+        // Case 1: If user clicked SIGN IN and genuinely has NO WorkHop account at all:
+        if (storedIntent === "signin" && !hasExistingAccount) {
           setStatus("not_registered");
           return;
         }
 
-        // Case 2: If user said SIGN IN and has a COMPLETE profile (phone + profession):
-        if (storedIntent === "signin" && hasRegisteredAccount && isProfileComplete) {
+        // Case 2: User has an account and profile is complete (phone + profession):
+        if (hasExistingAccount && isProfileComplete) {
           const finalRole = existingProfile?.role || existingLocal?.role || targetRole;
           const finalArea = existingProfile?.area || existingLocal?.area || "Bengaluru";
 
@@ -224,8 +226,8 @@ export default function AuthCallback() {
           return;
         }
 
-        // Case 3: User clicked SIGN UP (or profile details are missing):
-        // ALWAYS prompt them to complete their full profile (Name, Role, Area, Phone, Profession, Rate, Terms)!
+        // Case 3: Profile details are missing or user clicked SIGN UP:
+        // Prompt them to complete their full profile (Name, Role, Area, Phone, Profession, Rate, Terms)!
         setStatus("onboarding");
       } catch (err) {
         if (!isMounted) return;
@@ -344,6 +346,8 @@ export default function AuthCallback() {
       localStorage.setItem("workhop_pro_phone", `+91 ${cleanPhone}`);
       localStorage.setItem("workhop_pro_name", cleanName);
       if (selectedRole === "freelancer") {
+        localStorage.removeItem("workhop_company_name");
+        localStorage.removeItem("workhop_employer_gst");
         localStorage.setItem("workhop_pro_skill", cleanSkill);
         if (numRate) {
           localStorage.setItem("workhop_pro_rate_hr", String(numRate));
@@ -356,9 +360,13 @@ export default function AuthCallback() {
       }
 
       const sessionUser = linkOrUpdateGoogleUser(authUser, selectedRole, selectedArea);
+      sessionUser.role = selectedRole;
       sessionUser.name = cleanName;
       sessionUser.phone = `+91 ${cleanPhone}`;
-      if (selectedRole === "freelancer") sessionUser.skill = cleanSkill;
+      if (selectedRole === "freelancer") {
+        sessionUser.skill = cleanSkill;
+        delete sessionUser.company_name;
+      }
       if (selectedRole === "employer") sessionUser.company_name = cleanCompany;
 
       // 4. Adopt session in AuthContext

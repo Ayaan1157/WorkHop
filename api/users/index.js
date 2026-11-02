@@ -65,7 +65,7 @@ module.exports = async function handler(req, res) {
 
       const cleanEmail = (email || "").trim().toLowerCase();
       const phoneDigits = (phone || "").replace(/\D/g, "");
-      const userRole = (role || (company_name ? "employer" : "freelancer")).toLowerCase();
+      const userRole = (role || "freelancer").toLowerCase();
       const userName = (name || (userRole === "employer" ? company_name : cleanEmail.split("@")[0]) || "WorkHop Member").trim();
 
       let customer = null;
@@ -156,7 +156,7 @@ module.exports = async function handler(req, res) {
 
       const phoneRaw = c.contact || "";
       const phoneDigits = phoneRaw.replace(/\D/g, "");
-      const isEmp = notes.role === "employer" || Boolean(notes.company_name) || (c.name && c.name.toLowerCase().includes("alia mansoor"));
+      const isEmp = notes.role === "employer";
 
       users.push({
         user_id: c.id,
@@ -183,17 +183,6 @@ module.exports = async function handler(req, res) {
         email: "Zenithdeveleoperss@gmail.com",
         role: "admin",
         created_at: "2026-01-01T00:00:00.000Z",
-      },
-      {
-        user_id: "cust_TtsfKxVnw686EV",
-        id: "cust_TtsfKxVnw686EV",
-        name: "Alia Mansoor",
-        email: "aliamansoor@workhop.in",
-        phone: "+91 98765 43210",
-        role: "employer",
-        company_name: "Alia Mansoor",
-        area: "Frazer Town",
-        created_at: new Date().toISOString(),
       }
     ]);
   }

@@ -1182,7 +1182,7 @@ export function saveRegisteredUser(email, password, profile = {}) {
   localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
 
   // Automatically register employer into admin employers store if role is employer
-  if (profile.role === "employer" || profile.company_name) {
+  if (profile.role === "employer") {
     try {
       const company = (profile.company_name && profile.company_name !== "Hyperlocal Co." ? profile.company_name : profile.name) || "Independent Employer";
       const existing = readAdminEmployers();
@@ -2577,11 +2577,11 @@ export function getStoredEmployers() {
     }
   }
 
-  // 2. Registered users who signed up as employers (e.g. Alia Mansoor)
+  // 2. Registered users who signed up as employers
   try {
     const regUsers = getRegisteredUsers();
     for (const [email, u] of Object.entries(regUsers)) {
-      if (u && (u.role === "employer" || u.company_name)) {
+      if (u && u.role === "employer") {
         const company = (u.company_name && u.company_name !== "Hyperlocal Co." ? u.company_name : (u.name || "Independent Employer")).trim();
         const key = (u.email || email || u.id || u.phone || company).toLowerCase();
         const empId = u.id || `emp-${key.replace(/[^a-z0-9]/g, "")}`;
@@ -2616,7 +2616,7 @@ export function getStoredEmployers() {
     const storedCompany = localStorage.getItem("workhop_company_name");
     const storedPhone = localStorage.getItem("workhop_pro_phone");
     const storedArea = localStorage.getItem("workhop_user_area");
-    const isEmployerSession = (currentUser && (currentUser.role === "employer" || currentUser.company_name)) || storedRole === "employer" || storedCompany;
+    const isEmployerSession = (currentUser && currentUser.role === "employer") || storedRole === "employer";
 
     if (isEmployerSession) {
       const company = (currentUser?.company_name && currentUser.company_name !== "Hyperlocal Co."

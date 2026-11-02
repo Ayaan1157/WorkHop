@@ -182,7 +182,7 @@ export default function Landing() {
         const { data: supaUser } = await supabase
           .from("profiles")
           .select("id, role")
-          .eq("email", cleanEmail)
+          .ilike("email", cleanEmail)
           .maybeSingle();
         if (supaUser?.id) isRegisteredInSupa = true;
       } catch (_) {}
@@ -231,7 +231,7 @@ export default function Landing() {
     }
     setOtpLoading(true);
     setOtpError(null);
-    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "employer";
+    const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
     const cleanName = sanitizeInput(nameInput);
     const cleanSkill = sanitizeInput(skillInput);
     const cleanCompany = sanitizeInput(companyInput);
@@ -288,7 +288,7 @@ export default function Landing() {
         const { data: supaUser } = await supabase
           .from("profiles")
           .select("id, role")
-          .eq("email", cleanEmail)
+          .ilike("email", cleanEmail)
           .maybeSingle();
         if (supaUser?.id) isRegisteredInSupa = true;
       } catch (_) {}
@@ -426,8 +426,13 @@ export default function Landing() {
     localStorage.setItem("workhop_auth_role", roleToUse);
     if (userData?.phone || phoneDigits) localStorage.setItem("workhop_pro_phone", userData?.phone || phoneDigits);
     if (userData?.area || areaInput) setSavedArea(userData?.area || areaInput);
-    if (userData?.company_name || (roleToUse === "employer" && companyInput)) {
-      localStorage.setItem("workhop_company_name", userData?.company_name || companyInput);
+    if (roleToUse === "employer") {
+      if (userData?.company_name || companyInput) {
+        localStorage.setItem("workhop_company_name", userData?.company_name || companyInput);
+      }
+    } else {
+      localStorage.removeItem("workhop_company_name");
+      localStorage.removeItem("workhop_employer_gst");
     }
     if (userData?.skill || (roleToUse !== "employer" && skillInput)) {
       localStorage.setItem("workhop_pro_skill", userData?.skill || skillInput);

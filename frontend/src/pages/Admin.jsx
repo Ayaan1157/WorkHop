@@ -4474,7 +4474,7 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
       const enriched = list.map((emp) => {
         const comp = (emp.company_name || emp.name || "").toLowerCase().trim();
         const empId = (emp.employer_id || emp.id || "").toLowerCase().trim();
-        const live = gigsCount[comp] || gigsCount[empId] || (comp.includes("alia mansoor") ? Math.max(1, gigsCount["alia mansoor"] || 1) : 0) || Number(emp.jobs_posted || 0);
+        const live = gigsCount[comp] || gigsCount[empId] || Number(emp.jobs_posted || 0);
         return {
           ...emp,
           jobs_posted: live,

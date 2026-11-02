@@ -89,6 +89,13 @@ export const setToken = (t) => localStorage.setItem(TOKEN_KEY, t);
 export const clearToken = () => {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem("workhop_user_data");
+  localStorage.removeItem("workhop_auth_role");
+  localStorage.removeItem("workhop_pending_role");
+  localStorage.removeItem("workhop_company_name");
+  localStorage.removeItem("workhop_employer_gst");
+  localStorage.removeItem("workhop_pro_phone");
+  localStorage.removeItem("workhop_pro_skill");
+  localStorage.removeItem("workhop_auth_intent");
 };
 
 // Fallback Mock Router when backend is unreachable (standalone / Vercel preview)
@@ -754,7 +761,7 @@ async function mockRouter(path, method = "GET", body = null) {
           name: u.name || cleanEm.split("@")[0],
           email: cleanEm,
           phone: u.phone || "",
-          role: u.role || (u.company_name ? "employer" : "freelancer"),
+          role: u.role || "freelancer",
           company_name: u.company_name || "",
           skill: u.skill || "",
           area: u.area || "Bengaluru",
@@ -825,7 +832,7 @@ async function mockRouter(path, method = "GET", body = null) {
     }
 
     for (const [em, u] of Object.entries(regUsers)) {
-      if (u.role === "employer" || u.company_name) {
+      if (u.role === "employer") {
         const key = (em || u.company_name).toLowerCase().trim();
         if (key && !seen.has(key)) {
           merged.push({
@@ -864,7 +871,7 @@ async function mockRouter(path, method = "GET", body = null) {
     for (const e of merged) {
       const comp = (e.company_name || e.name || "").toLowerCase().trim();
       const empId = (e.employer_id || e.id || "").toLowerCase().trim();
-      const liveCount = employerGigsMap[comp] || employerGigsMap[empId] || (comp.includes("alia mansoor") ? Math.max(1, employerGigsMap["alia mansoor"] || 1) : 0);
+      const liveCount = employerGigsMap[comp] || employerGigsMap[empId] || 0;
       if (liveCount > (e.jobs_posted || 0)) {
         e.jobs_posted = liveCount;
       }
@@ -1555,7 +1562,7 @@ export const apiDelete = (path, auth = false) =>
 // Local id helpers (mirror the mobile AsyncStorage keys)
 export function getEmployerId() {
   const u = getStoredUser();
-  if (u && (u.role === "employer" || u.company_name)) {
+  if (u && u.role === "employer") {
     return u.id || u.employer_id || u.email || localStorage.getItem("workhop_employer_id") || "employer-demo";
   }
   let id = localStorage.getItem("workhop_employer_id");

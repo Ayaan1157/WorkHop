@@ -358,7 +358,7 @@ module.exports = async function handler(req, res) {
       const phoneDigits = phoneRaw.replace(/\D/g, "");
       const notes = c.notes || {};
 
-      const isEmployer = notes.role === "employer" || Boolean(notes.company_name) || (c.name && c.name.toLowerCase().includes("alia mansoor"));
+      const isEmployer = notes.role === "employer";
       if (isEmployer) continue;
 
       const isFreelancer = notes.role === "freelancer" || Boolean(notes.skill) || notes.source?.includes("onboarding") || notes.source?.includes("signup");
