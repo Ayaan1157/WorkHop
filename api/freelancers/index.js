@@ -42,6 +42,7 @@ function rzpRequest(method, path, data = null) {
 }
 
 const freelancerStatusOverrides = {};
+const freelancerRateOverrides = {};
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -79,7 +80,7 @@ module.exports = async function handler(req, res) {
             freelancer_id: freelancer_id || `freelancer-${Date.now()}`,
             skill: skill || "Creative Pro",
             category: category || "Graphics & Design",
-            rate_hr: String(rate_hr || 850),
+            rate_hr: String(rate_hr || 500),
             delivery_days: String(delivery_days || 2),
             portfolio_url: portfolio_url || "",
             source: "workhop_onboarding",
@@ -136,6 +137,12 @@ module.exports = async function handler(req, res) {
       }
       if (email) {
         freelancerStatusOverrides[email] = { approved: isApproved, status, reason, updated_at: new Date().toISOString() };
+      }
+      if (body?.rate_hr) {
+        const numR = Math.max(50, Number(body.rate_hr));
+        if (fId) freelancerRateOverrides[fId] = numR;
+        if (cleanTarget) freelancerRateOverrides[cleanTarget] = numR;
+        if (email) freelancerRateOverrides[email] = numR;
       }
 
       // 2. Persist directly to Razorpay payment notes in the cloud!
@@ -282,9 +289,13 @@ module.exports = async function handler(req, res) {
         distance_km: 1.2,
         rating: null,
         jobs_done: 0,
-        reviews_count: 0,
-        rate_hr: Number(notes.rate_hr) || 850,
-        delivery_days: Number(notes.delivery_days) || 2,
+        rate_hr: (() => {
+          const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
+          const cleanEmail = (email || "").toLowerCase().split("@")[0];
+          const ovr = freelancerRateOverrides[proId] || freelancerRateOverrides[p.id] || freelancerRateOverrides[cleanEmail] || freelancerRateOverrides[email];
+          if (ovr) return Number(ovr);
+          return Number(notes.rate_hr) || 500;
+        })(),
         languages: ["English", "Kannada", "Hindi"],
         email: email,
         phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw || "+91 72046 65071",
@@ -478,7 +489,7 @@ module.exports = async function handler(req, res) {
         rating: null,
         jobs_done: 0,
         reviews_count: 0,
-        rate_hr: 850,
+        rate_hr: freelancerRateOverrides["pro-shamanthnmurthy"] || freelancerRateOverrides["shamanthnmurthy"] || freelancerRateOverrides["shamanthnmurthy@gmail.com"] || 500,
         delivery_days: 2,
         languages: ["English", "Kannada", "Hindi"],
         email: "shamanthnmurthy@gmail.com",

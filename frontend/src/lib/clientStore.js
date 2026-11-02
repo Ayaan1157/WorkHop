@@ -349,7 +349,19 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       area: lead.area || "Bengaluru",
       lat: lead.lat || (12.9716 + ((idx % 5) - 2) * 0.02),
       lng: lead.lng || (77.5946 + ((idx % 7) - 3) * 0.02),
-      rate_hr: lead.rate_hr ?? (750 + (idx % 5) * 150),
+      rate_hr: (() => {
+        try {
+          const rawRates = localStorage.getItem("workhop_pro_rates");
+          if (rawRates) {
+            const map = JSON.parse(rawRates);
+            const lId = String(lead.id || "").toLowerCase();
+            const stripped = lId.replace(/^pro-/, "");
+            if (map[lId] !== undefined) return Number(map[lId]);
+            if (map[stripped] !== undefined) return Number(map[stripped]);
+          }
+        } catch {}
+        return lead.rate_hr !== undefined && lead.rate_hr !== null ? Number(lead.rate_hr) : (750 + (idx % 5) * 150);
+      })(),
       delivery_days: lead.delivery_days ?? (1 + (idx % 3)),
       jobs_done: lead.jobs_done !== undefined && lead.jobs_done !== null ? Number(lead.jobs_done) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
       reviews_count: lead.reviews_count !== undefined && lead.reviews_count !== null ? Number(lead.reviews_count) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
@@ -655,6 +667,18 @@ export function getLeadById(id) {
     });
   }
   if (!pro) return null;
+
+  try {
+    const rawRates = localStorage.getItem("workhop_pro_rates");
+    if (rawRates) {
+      const map = JSON.parse(rawRates);
+      const lId = String(pro.id || id || "").toLowerCase();
+      const stripped = lId.replace(/^pro-/, "");
+      if (map[lId] !== undefined) pro.rate_hr = Number(map[lId]);
+      else if (map[stripped] !== undefined) pro.rate_hr = Number(map[stripped]);
+      else if (map[`pro-${stripped}`] !== undefined) pro.rate_hr = Number(map[`pro-${stripped}`]);
+    }
+  } catch {}
 
   const dynamicReviews = getStoredReviews(pro.id || id);
   const defaultReviews = pro.is_dummy ? [
@@ -3125,6 +3149,66 @@ export function updateFreelancerStatus(freelancerId, approved, reason = "") {
     freelancerId
   );
   return { ok: true, freelancer_id: freelancerId, approved: Boolean(approved), status, reason: finalReason };
+}
+
+export function updateProHourlyRate(freelancerId, rate) {
+  if (!freelancerId || !rate) return;
+  const num = Math.max(50, Number(rate));
+  const targetId = String(freelancerId).trim().toLowerCase();
+  const strippedTarget = targetId.replace(/^pro-/, "");
+
+  // 1. Update in custom submitted profiles
+  try {
+    const raw = localStorage.getItem("workhop_submitted_profiles");
+    if (raw) {
+      const list = JSON.parse(raw);
+      let changed = false;
+      for (const item of list) {
+        const iId = String(item.id || item.freelancer_id || "").toLowerCase();
+        const stripped = iId.replace(/^pro-/, "");
+        if (iId === targetId || stripped === strippedTarget || String(item.user_id || "").toLowerCase() === targetId) {
+          item.rate_hr = num;
+          if (item.pro) item.pro.rate_hr = num;
+          changed = true;
+        }
+      }
+      if (changed) {
+        localStorage.setItem("workhop_submitted_profiles", JSON.stringify(list));
+      }
+    }
+  } catch {}
+
+  // 2. Update in registered users
+  try {
+    const raw = localStorage.getItem(REGISTERED_USERS_KEY);
+    if (raw) {
+      const users = JSON.parse(raw);
+      let changed = false;
+      for (const [em, u] of Object.entries(users)) {
+        const uId = String(u.id || "").toLowerCase();
+        if (uId === targetId || em.toLowerCase() === targetId || `pro-${em.split("@")[0]}`.toLowerCase() === targetId) {
+          u.rate_hr = num;
+          changed = true;
+        }
+      }
+      if (changed) {
+        localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+      }
+    }
+  } catch {}
+
+  // 3. Store persistent rate override
+  try {
+    const raw = localStorage.getItem("workhop_pro_rates") || "{}";
+    const map = JSON.parse(raw);
+    map[targetId] = num;
+    map[strippedTarget] = num;
+    map[`pro-${strippedTarget}`] = num;
+    localStorage.setItem("workhop_pro_rates", JSON.stringify(map));
+  } catch {}
+
+  localStorage.setItem("workhop_pro_rate_hr", String(num));
+  return num;
 }
 
 // ═══════════ 18. ADMIN CHAT OVERSIGHT & SURVEILLANCE ═══════════

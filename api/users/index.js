@@ -59,7 +59,8 @@ module.exports = async function handler(req, res) {
         role,
         area,
         company_name,
-        skill
+        skill,
+        rate_hr,
       } = body;
 
       const cleanEmail = (email || "").trim().toLowerCase();
@@ -78,6 +79,7 @@ module.exports = async function handler(req, res) {
             company_name: company_name || (userRole === "employer" ? userName : ""),
             skill: skill || (userRole !== "employer" ? "Pro" : ""),
             area: area || "Bengaluru",
+            rate_hr: rate_hr ? String(rate_hr) : "500",
             source: "workhop_registration",
             registered_at: new Date().toISOString(),
           }
@@ -97,6 +99,7 @@ module.exports = async function handler(req, res) {
               company_name: company_name || match.notes?.company_name || "",
               skill: skill || match.notes?.skill || "",
               area: area || match.notes?.area || "Bengaluru",
+              rate_hr: rate_hr ? String(rate_hr) : (match.notes?.rate_hr || "500"),
               registered_at: new Date().toISOString(),
             }
           }).catch(() => match);

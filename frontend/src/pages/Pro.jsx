@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Phone, Globe, Lock, LockOpen, ShieldCheck, MapPin, ArrowLeftRight,
   MessageSquare, CheckCircle2, Loader2, Star, Clock, IndianRupee,
-  CheckCheck, Briefcase, Award, Sparkles, ExternalLink, Image as ImageIcon, X
+  CheckCheck, Briefcase, Award, Sparkles, ExternalLink, Image as ImageIcon, X, Pencil
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -12,7 +12,8 @@ import { ProfileSkeleton } from "@/components/Skeletons";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { apiGet, getEmployerId } from "@/lib/api";
-import { ADMIN_EMAILS, getLeadById, getSubmittedProfiles, getStoredReviews } from "@/lib/clientStore";
+import { ADMIN_EMAILS, getLeadById, getSubmittedProfiles, getStoredReviews, updateProHourlyRate } from "@/lib/clientStore";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
@@ -186,6 +187,88 @@ export default function Pro() {
     }
   };
 
+  // Rate Editing Modal States
+  const [rateModalOpen, setRateModalOpen] = useState(false);
+  const [editRateVal, setEditRateVal] = useState("");
+  const [savingRate, setSavingRate] = useState(false);
+  const [rateSuccess, setRateSuccess] = useState(false);
+
+  const isOwner = Boolean(
+    isAdmin ||
+    (user && (
+      user.id === pro?.id ||
+      user.id === pro?.user_id ||
+      (user.email && pro?.email && user.email.toLowerCase() === pro.email.toLowerCase()) ||
+      (user.phone && pro?.phone && user.phone.replace(/\D/g, "") === pro.phone.replace(/\D/g, "")) ||
+      (user.name && pro?.name && user.name.trim().toLowerCase() === pro.name.trim().toLowerCase()) ||
+      (user.email && id && id.toLowerCase().includes(user.email.split("@")[0].toLowerCase())) ||
+      (user.role === "freelancer" && (!pro?.email || user.email === pro?.email))
+    )) ||
+    localStorage.getItem("workhop_auth_role") === "freelancer" ||
+    (localStorage.getItem("workhop_pro_name") && pro?.name && localStorage.getItem("workhop_pro_name").trim().toLowerCase() === pro.name.trim().toLowerCase())
+  );
+
+  const handleSaveRate = async (val) => {
+    const num = Math.max(50, Math.min(50000, Number(val) || 500));
+    setSavingRate(true);
+    try {
+      setPro((prev) => (prev ? { ...prev, rate_hr: num } : prev));
+      updateProHourlyRate(pro?.id || id, num);
+      if (pro?.email) updateProHourlyRate(pro.email, num);
+      if (user?.email) updateProHourlyRate(user.email, num);
+      if (user?.id) updateProHourlyRate(user.id, num);
+
+      // Cloud persistence to Supabase
+      try {
+        if (supabase) {
+          const targetEmail = pro?.email || user?.email;
+          if (targetEmail) {
+            await supabase.from("profiles").update({ rate_hr: num }).eq("email", targetEmail.toLowerCase());
+          }
+          if (user?.id) {
+            await supabase.from("profiles").update({ rate_hr: num }).eq("id", user.id);
+          }
+        }
+      } catch {}
+
+      // Realtime sync to API
+      try {
+        await fetch("/api/freelancers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            freelancer_id: pro?.id || id,
+            email: pro?.email || user?.email,
+            rate_hr: num,
+          }),
+        });
+      } catch {}
+
+      try {
+        if (user?.email || pro?.email) {
+          await fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: pro?.email || user?.email,
+              rate_hr: num,
+            }),
+          });
+        }
+      } catch {}
+
+      setRateSuccess(true);
+      setTimeout(() => {
+        setRateSuccess(false);
+        setRateModalOpen(false);
+      }, 700);
+    } catch (e) {
+      console.error("Save rate error", e);
+    } finally {
+      setSavingRate(false);
+    }
+  };
+
   return (
     <Shell>
       <TopBar title="PRO PROFILE" backTestID="pro-back-btn" />
@@ -287,9 +370,22 @@ export default function Pro() {
               <div className="shrink-0 flex flex-col items-center sm:items-end w-full sm:w-auto">
                 <div className="text-center sm:text-right mb-2">
                   <span className="text-[10px] font-bold text-inkmuted uppercase">Starting Rate</span>
-                  <p className="text-lg font-black text-ink">
-                    {pro.rate_hr ? `₹${pro.rate_hr}/hr` : "Custom Quote"}
-                  </p>
+                  <div className="flex items-center gap-1.5 justify-center sm:justify-end mt-0.5">
+                    <p className="text-lg font-black text-ink">
+                      {pro.rate_hr ? `₹${pro.rate_hr}/hr` : "Custom Quote"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditRateVal(String(pro.rate_hr || 500));
+                        setRateModalOpen(true);
+                      }}
+                      className="px-2 py-0.5 border border-ink bg-brand text-white text-[10px] font-black uppercase hover:bg-brand/90 transition shadow-[1px_1px_0px_#121212] flex items-center gap-1 cursor-pointer"
+                      title="Set your hourly rate"
+                    >
+                      <Pencil size={10} /> {isOwner ? "EDIT RATE" : "SET RATE"}
+                    </button>
+                  </div>
                 </div>
                 {!(isAdmin || unlocked) ? (
                   <button
@@ -348,9 +444,24 @@ export default function Pro() {
                 },
                 { n: `${pro.jobs_done || 0}`, l: "JOBS COMPLETED", icon: CheckCheck },
                 { n: `${pro.delivery_days || 3} Days`, l: "DELIVERY TIME", icon: Clock },
-                { n: pro.rate_hr ? `₹${pro.rate_hr}` : "Quote", l: "HOURLY RATE", icon: IndianRupee },
+                {
+                  n: pro.rate_hr ? `₹${pro.rate_hr}/hr` : "Quote",
+                  l: "HOURLY RATE (CLICK TO EDIT)",
+                  icon: IndianRupee,
+                  onClick: () => {
+                    setEditRateVal(String(pro.rate_hr || 500));
+                    setRateModalOpen(true);
+                  },
+                },
               ].map((s, i) => (
-                <div key={i} className="flex flex-col items-center border-2 border-ink bg-sand p-2.5 text-center">
+                <div
+                  key={i}
+                  onClick={s.onClick}
+                  className={`flex flex-col items-center border-2 border-ink bg-sand p-2.5 text-center ${
+                    s.onClick ? "cursor-pointer hover:bg-[#FFF3C4] transition shadow-[1.5px_1.5px_0px_#121212]" : ""
+                  }`}
+                  title={s.onClick ? "Click to set hourly rate" : undefined}
+                >
                   <span className="text-sm font-black text-ink">{s.n}</span>
                   <span className="mt-0.5 text-[8px] font-extrabold tracking-wide text-inkmuted">
                     {s.l}
@@ -838,6 +949,126 @@ export default function Pro() {
                 alt="Enlarged work sample"
                 className="max-h-[75vh] w-auto max-w-full object-contain"
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT HOURLY RATE MODAL */}
+      {rateModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in"
+          onClick={() => {
+            if (!savingRate) setRateModalOpen(false);
+          }}
+        >
+          <div
+            className="relative max-w-md w-full bg-white dark:bg-stone-900 border-4 border-ink p-6 shadow-[8px_8px_0px_#FF5500] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-ink">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-[#FF5500] text-white">
+                  <IndianRupee size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black uppercase text-ink dark:text-white">
+                    Set Your Hourly Rate
+                  </h3>
+                  <span className="text-[10px] font-bold text-inkmuted uppercase">
+                    Starting rate for {pro.name}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRateModalOpen(false)}
+                disabled={savingRate}
+                className="flex h-7 w-7 items-center justify-center border-2 border-ink bg-sand hover:bg-brand hover:text-white font-black text-xs transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <p className="text-xs text-ink dark:text-zinc-300 font-semibold leading-relaxed">
+                Choose your starting rate per hour in INR. This is visible to Bangalore clients on your profile, search listings, and used for quote estimates.
+              </p>
+
+              <div>
+                <label className="text-[11px] font-black uppercase tracking-wider text-ink dark:text-zinc-200 block mb-1">
+                  Starting Rate (₹ / hr):
+                </label>
+                <div className="flex items-center border-2 border-ink bg-sand/30 dark:bg-stone-800 px-3 py-2.5 focus-within:border-brand transition">
+                  <span className="text-base font-black text-ink dark:text-white mr-2">₹</span>
+                  <input
+                    type="number"
+                    min={50}
+                    max={50000}
+                    step={50}
+                    value={editRateVal}
+                    onChange={(e) => setEditRateVal(e.target.value)}
+                    placeholder="500"
+                    className="w-full bg-transparent text-base font-black text-ink dark:text-white outline-none"
+                    autoFocus
+                  />
+                  <span className="text-xs font-bold text-inkmuted ml-1">/ hour</span>
+                </div>
+              </div>
+
+              {/* QUICK PRESETS */}
+              <div>
+                <span className="text-[10px] font-black uppercase text-inkmuted block mb-1.5">
+                  Quick Select Common Bangalore Rates:
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[350, 500, 750, 1000, 1500, 2500, 5000].map((preset) => (
+                    <button
+                      type="button"
+                      key={preset}
+                      onClick={() => setEditRateVal(String(preset))}
+                      className={`px-2.5 py-1 text-xs font-black border-2 border-ink transition cursor-pointer ${
+                        Number(editRateVal) === preset
+                          ? "bg-brand text-white shadow-[2px_2px_0px_#121212]"
+                          : "bg-white text-ink hover:bg-sand"
+                      }`}
+                    >
+                      ₹{preset}/hr
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {rateSuccess ? (
+                <div className="flex items-center gap-2 border-2 border-ok bg-ok/10 text-ok p-3 text-xs font-black">
+                  <CheckCircle2 size={16} /> Rate updated successfully!
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSaveRate(editRateVal)}
+                    disabled={savingRate || !editRateVal}
+                    className="flex-1 flex items-center justify-center gap-2 border-2 border-ink bg-brand px-4 py-3 text-xs font-black tracking-wider text-white uppercase shadow-[3px_3px_0px_#121212] hover:bg-brand/90 transition active:translate-y-0.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    {savingRate ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" /> Saving...
+                      </>
+                    ) : (
+                      <>SAVE HOURLY RATE →</>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRateModalOpen(false)}
+                    disabled={savingRate}
+                    className="border-2 border-ink bg-white px-4 py-3 text-xs font-black text-ink uppercase hover:bg-sand transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

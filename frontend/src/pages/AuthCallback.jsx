@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase, supabaseSignInWithGoogle, supabaseUpsertProfile } from "@/lib/supabase";
-import { linkOrUpdateGoogleUser, getRegisteredUserByEmail, saveRegisteredUser } from "@/lib/clientStore";
+import { linkOrUpdateGoogleUser, getRegisteredUserByEmail, saveRegisteredUser, updateProHourlyRate } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { apiPost } from "@/lib/api";
 import { BENGALURU_AREAS } from "@/lib/locationAreas";
@@ -20,7 +20,8 @@ import {
   User,
   Sparkles,
   Building,
-  ShieldCheck
+  ShieldCheck,
+  IndianRupee
 } from "lucide-react";
 
 export default function AuthCallback() {
@@ -43,6 +44,7 @@ export default function AuthCallback() {
   const [phoneInput, setPhoneInput] = useState("");
   const [skillInput, setSkillInput] = useState("");
   const [companyInput, setCompanyInput] = useState("");
+  const [rateInput, setRateInput] = useState("500");
   const [gstInput, setGstInput] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [formError, setFormError] = useState("");
@@ -243,6 +245,7 @@ export default function AuthCallback() {
         authUser.user_metadata?.picture ||
         null;
       const cleanGst = gstInput.trim().toUpperCase();
+      const numRate = selectedRole === "freelancer" ? (Math.max(50, Number(rateInput)) || 500) : null;
 
       // 1. Reliably save profile to Supabase database
       await supabaseUpsertProfile({
@@ -258,6 +261,7 @@ export default function AuthCallback() {
         skill: selectedRole === "freelancer" ? cleanSkill : null,
         company_name: selectedRole === "employer" ? cleanCompany : null,
         gst_number: selectedRole === "employer" && cleanGst ? cleanGst : null,
+        rate_hr: numRate,
         hops_balance: 0,
         updated_at: new Date().toISOString(),
       });
@@ -272,6 +276,7 @@ export default function AuthCallback() {
         company_name: selectedRole === "employer" ? cleanCompany : undefined,
         skill: selectedRole !== "employer" ? cleanSkill : undefined,
         gst_number: selectedRole === "employer" && cleanGst ? cleanGst : undefined,
+        rate_hr: numRate || undefined,
       }).catch(() => {});
 
       // 3. Link & register locally in clientStore
@@ -284,6 +289,7 @@ export default function AuthCallback() {
         phone: `+91 ${cleanPhone}`,
         skill: selectedRole === "freelancer" ? cleanSkill : "",
         company_name: selectedRole === "employer" ? cleanCompany : "",
+        rate_hr: numRate || undefined,
       });
 
       localStorage.setItem("workhop_auth_role", selectedRole);
@@ -292,6 +298,11 @@ export default function AuthCallback() {
       localStorage.setItem("workhop_pro_name", cleanName);
       if (selectedRole === "freelancer") {
         localStorage.setItem("workhop_pro_skill", cleanSkill);
+        if (numRate) {
+          localStorage.setItem("workhop_pro_rate_hr", String(numRate));
+          updateProHourlyRate(authUser.id, numRate);
+          updateProHourlyRate(authUser.email, numRate);
+        }
       } else {
         localStorage.setItem("workhop_company_name", cleanCompany);
         if (cleanGst) localStorage.setItem("workhop_employer_gst", cleanGst);
@@ -618,19 +629,60 @@ export default function AuthCallback() {
 
             {/* 5. Role-Specific Details */}
             {selectedRole === "freelancer" ? (
-              <div>
-                <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
-                  5. Primary Skill / Profession: *
-                </label>
-                <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
-                  <Sparkles size={16} className="text-[#FF5500] mr-2 shrink-0" />
-                  <input
-                    type="text"
-                    value={skillInput}
-                    onChange={(e) => setSkillInput(e.target.value)}
-                    placeholder="e.g. Logo Designer, React Developer, Videographer"
-                    className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
-                  />
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                    5. Primary Skill / Profession: *
+                  </label>
+                  <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
+                    <Sparkles size={16} className="text-[#FF5500] mr-2 shrink-0" />
+                    <input
+                      type="text"
+                      value={skillInput}
+                      onChange={(e) => setSkillInput(e.target.value)}
+                      placeholder="e.g. Logo Designer, React Developer, Videographer"
+                      className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300">
+                      6. Starting Rate per Hour (₹ INR): *
+                    </label>
+                    <span className="text-[10px] text-[#FF5500] font-bold">You can change this anytime</span>
+                  </div>
+                  <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
+                    <span className="text-sm font-black text-[#FF5500] mr-2">₹</span>
+                    <input
+                      type="number"
+                      min={50}
+                      max={50000}
+                      step={50}
+                      value={rateInput}
+                      onChange={(e) => setRateInput(e.target.value)}
+                      placeholder="500"
+                      className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
+                    />
+                    <span className="text-[10px] font-bold text-zinc-400 ml-1">/ hr</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                    {[350, 500, 750, 1000, 1500, 2500].map((preset) => (
+                      <button
+                        type="button"
+                        key={preset}
+                        onClick={() => setRateInput(String(preset))}
+                        className={`px-2 py-0.5 text-[10px] font-black border transition cursor-pointer ${
+                          Number(rateInput) === preset
+                            ? "border-white bg-[#FF5500] text-white"
+                            : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-500"
+                        }`}
+                      >
+                        ₹{preset}/hr
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (

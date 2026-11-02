@@ -24,6 +24,7 @@ import {
   getCreditTransactions,
   getFreelancerStatuses,
   getStoredLeads,
+  updateProHourlyRate,
 } from "@/lib/clientStore";
 import {
   validateImageFile,
@@ -252,13 +253,18 @@ export default function FreelancerProfile() {
     async (updated) => {
       setProfile(updated);
       saveFreelancerProfile(updated);
+      if (updated.rate_hr) {
+        updateProHourlyRate(freelancerId, updated.rate_hr);
+        if (user?.email) updateProHourlyRate(user.email, updated.rate_hr);
+        if (user?.id) updateProHourlyRate(user.id, updated.rate_hr);
+      }
       try {
         await apiPut(`/freelancer/${freelancerId}/full-profile`, updated);
       } catch {
         /* saved locally */
       }
     },
-    [freelancerId]
+    [freelancerId, user?.email, user?.id]
   );
 
   const openEdit = (section, data = null) => {
@@ -445,7 +451,7 @@ export default function FreelancerProfile() {
   /* ═══════════ derived ═══════════ */
   const displayName = user?.name || "Your Name";
   const displayTitle = profile.title || "Your Professional Title";
-  const displayRate = profile.rate_hr ? `$${profile.rate_hr}.00/hr` : "Set your rate";
+  const displayRate = profile.rate_hr ? `₹${profile.rate_hr}/hr` : "Set your rate";
 
   const proStatusObj = useMemo(() => {
     const statuses = getFreelancerStatuses();
@@ -1335,19 +1341,47 @@ export default function FreelancerProfile() {
             />
           </div>
           <div>
-            <p className={labelCls}>Hourly Rate ($)</p>
-            <input
-              type="number"
-              value={editData?.rate_hr || ""}
-              onChange={(e) =>
-                setEditData((d) => ({
-                  ...d,
-                  rate_hr: e.target.value,
-                }))
-              }
-              placeholder="20"
-              className={inputCls}
-            />
+            <p className={labelCls}>Hourly Rate (₹ INR / hr)</p>
+            <div className="flex items-center border border-ink/20 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 rounded-lg">
+              <span className="font-bold text-ink dark:text-white mr-1.5">₹</span>
+              <input
+                type="number"
+                min={100}
+                max={50000}
+                step={50}
+                value={editData?.rate_hr || ""}
+                onChange={(e) =>
+                  setEditData((d) => ({
+                    ...d,
+                    rate_hr: e.target.value,
+                  }))
+                }
+                placeholder="500"
+                className="w-full bg-transparent text-sm font-bold text-ink dark:text-white outline-none"
+              />
+              <span className="text-xs text-inkmuted font-semibold ml-1">/ hr</span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+              {[350, 500, 750, 1000, 1500, 2500, 5000].map((preset) => (
+                <button
+                  type="button"
+                  key={preset}
+                  onClick={() =>
+                    setEditData((d) => ({
+                      ...d,
+                      rate_hr: preset,
+                    }))
+                  }
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded border transition ${
+                    Number(editData?.rate_hr) === preset
+                      ? "bg-brand text-white border-brand"
+                      : "bg-stone-100 dark:bg-stone-800 border-ink/20 text-ink dark:text-zinc-300 hover:border-ink/40"
+                  }`}
+                >
+                  ₹{preset}/hr
+                </button>
+              ))}
+            </div>
           </div>
           <div>
             <p className={labelCls}>Description</p>
