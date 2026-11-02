@@ -104,6 +104,38 @@ module.exports = async function handler(req, res) {
       })
     );
 
+    // Automatically dispatch GST Tax Invoice on payment.captured or order.paid
+    if (eventType === "payment.captured" || eventType === "order.paid") {
+      const email = (paymentEntity.email || notes.email || "").trim();
+      const amountInr = (paymentEntity.amount || orderEntity.amount || 0) / 100;
+      if (email && email.includes("@")) {
+        try {
+          const sendInvoiceHandler = require("../credits/send-invoice.js");
+          const invReq = {
+            method: "POST",
+            body: {
+              payment_id: paymentEntity.id || undefined,
+              order_id: paymentEntity.order_id || orderEntity.id || undefined,
+              email,
+              full_name: notes.full_name || notes.customer_name || paymentEntity.contact || "WorkHop Member",
+              product: notes.product || notes.type || (amountInr === 150 ? "hops_pack" : (amountInr === 299 || amountInr === 149 ? "freelancer_onboarding" : "general")),
+              plan_id: notes.plan_id || (amountInr === 150 ? "pack-20" : undefined),
+              amount: amountInr,
+              amount_inr: amountInr,
+              description: paymentEntity.description || notes.description || `WorkHop Payment · ₹${amountInr}`,
+            },
+          };
+          const invRes = {
+            setHeader: () => {},
+            status: () => ({ json: () => {}, send: () => {} }),
+          };
+          await sendInvoiceHandler(invReq, invRes);
+        } catch (mailErr) {
+          console.warn("[WorkHop Webhook] Auto invoice dispatch notice:", mailErr.message);
+        }
+      }
+    }
+
     // Optional forwarding to external backend if BACKEND_WEBHOOK_FORWARD_URL is set
     if (process.env.BACKEND_WEBHOOK_FORWARD_URL) {
       try {
