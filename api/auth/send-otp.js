@@ -172,10 +172,25 @@ module.exports = async function handler(req, res) {
         subject: `🔐 ${code} is your WorkHop verification code`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; background: #ffffff; border: 3px solid #121212; box-shadow: 6px 6px 0px #121212; padding: 28px;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-              <span style="display: inline-block; background: #FF5500; color: #ffffff; font-weight: 900; font-size: 16px; padding: 6px 14px; border: 2px solid #121212;">⚡ WORKHOP</span>
-              <span style="font-size: 11px; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 1px;">Bengaluru Hyperlocal</span>
-            </div>
+            <!-- Header Logo & Subtitle Table (Rock-solid email client compatibility) -->
+            <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-bottom: 22px;">
+              <tr>
+                <td valign="middle" style="padding-right: 14px;">
+                  <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                    <tr>
+                      <td style="background-color: #FF5500; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 900; font-size: 15px; letter-spacing: 0.5px; padding: 7px 14px; border: 2px solid #121212; white-space: nowrap;">
+                        ⚡ WORKHOP
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                <td valign="middle" style="text-align: left;">
+                  <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; font-weight: 800; color: #555555; text-transform: uppercase; letter-spacing: 1.2px; line-height: 1.3; display: inline-block;">
+                    Bengaluru Hyperlocal
+                  </span>
+                </td>
+              </tr>
+            </table>
             
             <h2 style="font-size: 20px; font-weight: 900; color: #121212; margin: 0 0 8px 0; text-transform: uppercase;">Verify Your Account</h2>
             <p style="font-size: 13px; font-weight: 600; color: #555; line-height: 1.5; margin: 0 0 20px 0;">
