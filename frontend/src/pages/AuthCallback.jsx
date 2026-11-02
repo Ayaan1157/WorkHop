@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase, supabaseSignInWithGoogle, supabaseUpsertProfile } from "@/lib/supabase";
-import { linkOrUpdateGoogleUser, getRegisteredUserByEmail } from "@/lib/clientStore";
+import { linkOrUpdateGoogleUser, getRegisteredUserByEmail, saveRegisteredUser } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
+import { apiPost } from "@/lib/api";
 import { BENGALURU_AREAS } from "@/lib/locationAreas";
 import {
   CheckCircle2,
@@ -10,11 +11,16 @@ import {
   Loader2,
   Briefcase,
   UserCheck,
+  UserX,
   MapPin,
   Phone,
   ArrowRight,
   RefreshCw,
-  Home
+  Home,
+  User,
+  Sparkles,
+  Building,
+  ShieldCheck
 } from "lucide-react";
 
 export default function AuthCallback() {
@@ -22,7 +28,7 @@ export default function AuthCallback() {
   const location = useLocation();
   const { adoptSession } = useAuth();
 
-  const [status, setStatus] = useState("verifying"); // 'verifying' | 'error' | 'onboarding'
+  const [status, setStatus] = useState("verifying"); // 'verifying' | 'not_registered' | 'onboarding' | 'error'
   const [errorMessage, setErrorMessage] = useState("");
   const [authUser, setAuthUser] = useState(null);
 
@@ -33,7 +39,13 @@ export default function AuthCallback() {
   const [selectedArea, setSelectedArea] = useState(
     () => localStorage.getItem("workhop_user_area") || "Indiranagar"
   );
+  const [fullNameInput, setFullNameInput] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
+  const [skillInput, setSkillInput] = useState("");
+  const [companyInput, setCompanyInput] = useState("");
+  const [gstInput, setGstInput] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -99,6 +111,12 @@ export default function AuthCallback() {
         const user = session.user;
         setAuthUser(user);
 
+        const googleName =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        setFullNameInput((prev) => prev || googleName);
+
         // 3. Check for existing profile in Supabase
         let existingProfile = null;
         try {
@@ -112,12 +130,35 @@ export default function AuthCallback() {
           console.warn("Supabase profile fetch notice:", profileErr?.message);
         }
 
+        // Also check by email in Supabase if id didn't match
+        if (!existingProfile && user.email) {
+          try {
+            const emailRes = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("email", user.email)
+              .maybeSingle();
+            if (emailRes?.data) {
+              existingProfile = emailRes.data;
+            }
+          } catch (e) {
+            console.warn("Supabase email lookup notice:", e?.message);
+          }
+        }
+
         // Also check existing local user by email
         const existingLocal = getRegisteredUserByEmail(user.email);
         const hasExistingRole = Boolean(existingProfile?.role || existingLocal?.role);
         const pendingRole = localStorage.getItem("workhop_pending_role");
+        const authIntent = localStorage.getItem("workhop_auth_intent") || "signin";
 
-        // If user already has an established role, treat as returning user
+        // Requirement 1: If user was trying to Sign In and is NOT registered on the website:
+        if (authIntent === "signin" && !hasExistingRole) {
+          setStatus("not_registered");
+          return;
+        }
+
+        // If user already has an established role and is registered:
         if (hasExistingRole) {
           const finalRole = existingProfile?.role || existingLocal?.role || pendingRole || "freelancer";
           const finalArea = existingProfile?.area || existingLocal?.area || "Bengaluru";
@@ -135,7 +176,7 @@ export default function AuthCallback() {
           return;
         }
 
-        // If brand new user with no established role, prompt role & location selection
+        // Requirement 2: Even when signing up with Gmail, ask to fill in details to complete profile!
         setStatus("onboarding");
       } catch (err) {
         if (!isMounted) return;
@@ -158,58 +199,129 @@ export default function AuthCallback() {
   const handleCompleteOnboarding = async (e) => {
     e.preventDefault();
     if (!authUser) return;
+    setFormError("");
+
+    const cleanName = fullNameInput.trim();
+    if (!cleanName || cleanName.length < 2) {
+      setFormError("Please enter your full name.");
+      return;
+    }
+
+    const cleanPhone = phoneInput.replace(/\D/g, "");
+    if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+      setFormError("Please enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9).");
+      return;
+    }
+
+    if (!selectedArea) {
+      setFormError("Please select your Bengaluru neighborhood.");
+      return;
+    }
+
+    const cleanSkill = skillInput.trim();
+    if (selectedRole === "freelancer" && (!cleanSkill || cleanSkill.length < 2)) {
+      setFormError("Please enter your primary profession / skill (e.g. Logo Designer, Developer, Electrician).");
+      return;
+    }
+
+    const cleanCompany = companyInput.trim();
+    if (selectedRole === "employer" && (!cleanCompany || cleanCompany.length < 2)) {
+      setFormError("Please enter your company or business name.");
+      return;
+    }
+
+    if (!termsAccepted) {
+      setFormError("Please agree to the Terms of Service and confirm you are 18+ years of age.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      const cleanPhone = phoneInput.replace(/\D/g, "");
-      const fullName =
-        authUser.user_metadata?.full_name ||
-        authUser.user_metadata?.name ||
-        authUser.email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
       const avatarUrl =
         authUser.user_metadata?.avatar_url ||
         authUser.user_metadata?.picture ||
         null;
+      const cleanGst = gstInput.trim().toUpperCase();
 
       // 1. Reliably save profile to Supabase database
       await supabaseUpsertProfile({
         id: authUser.id,
         email: authUser.email,
-        name: fullName,
+        name: cleanName,
         avatar_url: avatarUrl,
         role: selectedRole,
         area: selectedArea,
-        phone: cleanPhone ? `+91 ${cleanPhone.slice(-10)}` : null,
+        phone: `+91 ${cleanPhone}`,
+        phone_verified: true,
+        email_verified: true,
+        skill: selectedRole === "freelancer" ? cleanSkill : null,
+        company_name: selectedRole === "employer" ? cleanCompany : null,
+        gst_number: selectedRole === "employer" && cleanGst ? cleanGst : null,
         hops_balance: selectedRole === "freelancer" ? 50 : 0,
-        phone_verified: false,
         updated_at: new Date().toISOString(),
       });
 
-      // 2. Link & register locally in clientStore
-      const sessionUser = linkOrUpdateGoogleUser(authUser, selectedRole, selectedArea);
-      if (cleanPhone) {
-        sessionUser.phone = `+91 ${cleanPhone.slice(-10)}`;
-        localStorage.setItem("workhop_pro_phone", sessionUser.phone);
+      // 2. Real-time sync to /api/users for Admin dashboard
+      await apiPost("/users", {
+        email: authUser.email,
+        role: selectedRole,
+        name: cleanName,
+        phone: cleanPhone,
+        area: selectedArea,
+        company_name: selectedRole === "employer" ? cleanCompany : undefined,
+        skill: selectedRole !== "employer" ? cleanSkill : undefined,
+        gst_number: selectedRole === "employer" && cleanGst ? cleanGst : undefined,
+      }).catch(() => {});
+
+      // 3. Link & register locally in clientStore
+      saveRegisteredUser(authUser.email, "", {
+        id: authUser.id,
+        email: authUser.email,
+        name: cleanName,
+        role: selectedRole,
+        area: selectedArea,
+        phone: `+91 ${cleanPhone}`,
+        skill: selectedRole === "freelancer" ? cleanSkill : "",
+        company_name: selectedRole === "employer" ? cleanCompany : "",
+      });
+
+      localStorage.setItem("workhop_auth_role", selectedRole);
+      localStorage.setItem("workhop_user_area", selectedArea);
+      localStorage.setItem("workhop_pro_phone", `+91 ${cleanPhone}`);
+      localStorage.setItem("workhop_pro_name", cleanName);
+      if (selectedRole === "freelancer") {
+        localStorage.setItem("workhop_pro_skill", cleanSkill);
+      } else {
+        localStorage.setItem("workhop_company_name", cleanCompany);
+        if (cleanGst) localStorage.setItem("workhop_employer_gst", cleanGst);
       }
 
-      // 3. Adopt session in AuthContext
+      const sessionUser = linkOrUpdateGoogleUser(authUser, selectedRole, selectedArea);
+      sessionUser.name = cleanName;
+      sessionUser.phone = `+91 ${cleanPhone}`;
+      if (selectedRole === "freelancer") sessionUser.skill = cleanSkill;
+      if (selectedRole === "employer") sessionUser.company_name = cleanCompany;
+
+      // 4. Adopt session in AuthContext
       const session = await supabase.auth.getSession();
       const token = session?.data?.session?.access_token || `token_${Date.now()}`;
       await adoptSession(token, sessionUser);
 
-      // Clean up temporary role flag
+      // Clean up temporary role flag & intent
       localStorage.removeItem("workhop_pending_role");
+      localStorage.removeItem("workhop_auth_intent");
 
-      // 4. Redirect to appropriate destination
+      // 5. Redirect: freelancers go to Onboarding flow (/freelancer), employers go to /employer/dashboard
       if (selectedRole === "employer") {
         navigate("/employer/dashboard", { replace: true });
       } else {
-        navigate("/freelancer/jobs", { replace: true });
+        navigate("/freelancer", { replace: true });
       }
     } catch (err) {
       console.warn("Failed to complete onboarding:", err);
       // Fallback navigation
-      navigate(selectedRole === "employer" ? "/employer/dashboard" : "/freelancer/jobs", {
+      navigate(selectedRole === "employer" ? "/employer/dashboard" : "/freelancer", {
         replace: true,
       });
     } finally {
@@ -230,6 +342,68 @@ export default function AuthCallback() {
       setStatus("error");
     }
   };
+
+  // ══════════════════════════════════════════════════
+  // UI: NOT REGISTERED SCREEN (User said "Sign In" but account not found)
+  // ══════════════════════════════════════════════════
+  if (status === "not_registered") {
+    const userEmail = authUser?.email || "this email";
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4 text-white font-sans">
+        <div className="w-full max-w-md border-4 border-white bg-[#1A1A1A] p-6 sm:p-8 shadow-[8px_8px_0px_#FF5500]">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-12 w-12 items-center justify-center border-2 border-white bg-amber-950 text-amber-400 shrink-0">
+              <UserX size={26} />
+            </div>
+            <div>
+              <span className="text-[10px] font-black tracking-widest text-[#FF5500] uppercase">
+                Account Status
+              </span>
+              <h1 className="text-xl font-black uppercase text-white">Not Registered</h1>
+            </div>
+          </div>
+
+          <div className="bg-[#242424] p-4 border border-zinc-700 mb-6">
+            <p className="text-xs text-zinc-300 font-semibold leading-relaxed">
+              No WorkHop account was found associated with <span className="text-white font-mono font-bold">{userEmail}</span>.
+            </p>
+            <p className="text-xs text-amber-300 font-bold mt-2.5">
+              Not registered. Please register first to create your profile and start using WorkHop.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => {
+                localStorage.setItem("workhop_auth_intent", "signup");
+                setStatus("onboarding");
+              }}
+              className="flex w-full items-center justify-center gap-2 border-2 border-white bg-[#FF5500] text-white py-3.5 px-4 text-xs font-black tracking-wider uppercase shadow-[3px_3px_0px_#FFFFFF] hover:bg-[#E04B00] active:translate-y-0.5 transition"
+            >
+              <ArrowRight size={16} />
+              Register Profile with This Account
+            </button>
+            <button
+              onClick={handleRetryGoogle}
+              className="flex w-full items-center justify-center gap-2 border-2 border-zinc-600 bg-[#242424] text-zinc-200 py-3 px-4 text-xs font-bold tracking-wider uppercase hover:bg-zinc-700 transition"
+            >
+              <RefreshCw size={15} />
+              Sign In with a Different Account
+            </button>
+            <button
+              onClick={() => {
+                window.location.href = "/";
+              }}
+              className="flex w-full items-center justify-center gap-2 border-2 border-zinc-800 bg-transparent text-zinc-400 py-2.5 px-4 text-xs font-bold tracking-wider uppercase hover:text-white transition"
+            >
+              <Home size={15} />
+              Return to Homepage
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ══════════════════════════════════════════════════
   // UI: ERROR VIEW (Cancelled consent, invalid code, denied access)
@@ -278,30 +452,26 @@ export default function AuthCallback() {
   }
 
   // ══════════════════════════════════════════════════
-  // UI: ONBOARDING VIEW (First-time user choosing role & location)
+  // UI: ONBOARDING VIEW (Fill in details to complete profile)
   // ══════════════════════════════════════════════════
   if (status === "onboarding" && authUser) {
     const userEmail = authUser.email;
-    const userName =
-      authUser.user_metadata?.full_name ||
-      authUser.user_metadata?.name ||
-      userEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     const userAvatar = authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture;
 
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4 text-white font-sans">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4 text-white font-sans py-10">
         <div className="w-full max-w-lg border-4 border-white bg-[#1A1A1A] p-6 sm:p-8 shadow-[10px_10px_0px_#FF5500]">
           {/* Header */}
           <div className="flex items-center gap-3.5 pb-5 border-b-2 border-zinc-700">
             {userAvatar ? (
               <img
                 src={userAvatar}
-                alt={userName}
+                alt={fullNameInput || "User"}
                 className="h-12 w-12 rounded-full border-2 border-white object-cover"
               />
             ) : (
               <div className="flex h-12 w-12 items-center justify-center border-2 border-white bg-[#FF5500] font-black text-white text-lg">
-                {userName[0]}
+                {(fullNameInput || "U")[0]}
               </div>
             )}
             <div>
@@ -310,29 +480,37 @@ export default function AuthCallback() {
                 <span>Google Verified Account</span>
               </div>
               <h2 className="text-xl font-black text-white uppercase tracking-tight">
-                Welcome, {userName}!
+                Complete Your Profile
               </h2>
               <p className="text-xs text-zinc-400 font-semibold">{userEmail}</p>
             </div>
           </div>
 
-          <form onSubmit={handleCompleteOnboarding} className="mt-6 space-y-5">
+          {formError && (
+            <div className="mt-4 p-3 border-2 border-red-500 bg-red-950/40 text-red-300 text-xs font-bold flex items-center gap-2">
+              <AlertTriangle size={16} className="shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleCompleteOnboarding} className="mt-6 space-y-4">
+            {/* 1. Role Selection */}
             <div>
               <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-2">
-                1. Select Your Role on WorkHop:
+                1. Select Your Role on WorkHop: *
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Freelancer Card */}
                 <button
                   type="button"
                   onClick={() => setSelectedRole("freelancer")}
-                  className={`p-4 text-left border-2 transition ${
+                  className={`p-3.5 text-left border-2 transition ${
                     selectedRole === "freelancer"
                       ? "border-[#FF5500] bg-[#FF5500]/15 shadow-[4px_4px_0px_#FF5500]"
                       : "border-zinc-700 bg-[#242424] hover:border-zinc-500"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1.5">
                     <UserCheck
                       size={20}
                       className={
@@ -344,7 +522,7 @@ export default function AuthCallback() {
                     </span>
                   </div>
                   <h3 className="text-sm font-black text-white uppercase">I Want to Work</h3>
-                  <p className="text-[11px] text-zinc-300 font-medium mt-1 leading-snug">
+                  <p className="text-[10px] text-zinc-400 font-medium mt-0.5 leading-snug">
                     Discover local gigs in Bengaluru and apply directly within 5km.
                   </p>
                 </button>
@@ -353,13 +531,13 @@ export default function AuthCallback() {
                 <button
                   type="button"
                   onClick={() => setSelectedRole("employer")}
-                  className={`p-4 text-left border-2 transition ${
+                  className={`p-3.5 text-left border-2 transition ${
                     selectedRole === "employer"
                       ? "border-[#FF5500] bg-[#FF5500]/15 shadow-[4px_4px_0px_#FF5500]"
                       : "border-zinc-700 bg-[#242424] hover:border-zinc-500"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1.5">
                     <Briefcase
                       size={20}
                       className={
@@ -367,21 +545,38 @@ export default function AuthCallback() {
                       }
                     />
                     <span className="text-[9px] font-black uppercase px-2 py-0.5 border border-zinc-600 bg-black/40 text-zinc-300">
-                      Instant Post
+                      Direct Hire
                     </span>
                   </div>
                   <h3 className="text-sm font-black text-white uppercase">I Want to Hire</h3>
-                  <p className="text-[11px] text-zinc-300 font-medium mt-1 leading-snug">
+                  <p className="text-[10px] text-zinc-400 font-medium mt-0.5 leading-snug">
                     Post gigs and connect with verified creators &amp; engineers.
                   </p>
                 </button>
               </div>
             </div>
 
-            {/* Neighborhood / Area Picker */}
+            {/* 2. Full Name */}
             <div>
-              <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1.5">
-                2. Your Bengaluru Neighborhood:
+              <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                2. Full Name: *
+              </label>
+              <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
+                <User size={16} className="text-zinc-400 mr-2 shrink-0" />
+                <input
+                  type="text"
+                  value={fullNameInput}
+                  onChange={(e) => setFullNameInput(e.target.value)}
+                  placeholder="e.g. Rahul Sharma"
+                  className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
+                />
+              </div>
+            </div>
+
+            {/* 3. Bengaluru Neighborhood Picker */}
+            <div>
+              <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                3. Your Bengaluru Neighborhood: *
               </label>
               <div className="flex items-center border-2 border-white bg-[#242424] px-3 py-2.5">
                 <MapPin size={16} className="text-[#FF5500] mr-2 shrink-0" />
@@ -399,14 +594,17 @@ export default function AuthCallback() {
               </div>
             </div>
 
-            {/* Optional Phone */}
+            {/* 4. WhatsApp / Mobile Phone */}
             <div>
-              <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1.5">
-                3. WhatsApp / Contact Phone (Optional):
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300">
+                  4. WhatsApp / Contact Phone: *
+                </label>
+                <span className="text-[10px] text-zinc-400 font-bold">10-Digit Mobile Number</span>
+              </div>
               <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
-                <Phone size={16} className="text-zinc-400 mr-2 shrink-0" />
-                <span className="text-xs font-bold text-zinc-400 mr-1.5">+91</span>
+                <Phone size={16} className="text-[#FF5500] mr-2 shrink-0" />
+                <span className="text-xs font-bold text-zinc-300 mr-1.5">+91</span>
                 <input
                   type="tel"
                   maxLength={10}
@@ -418,19 +616,90 @@ export default function AuthCallback() {
               </div>
             </div>
 
+            {/* 5. Role-Specific Details */}
+            {selectedRole === "freelancer" ? (
+              <div>
+                <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                  5. Primary Skill / Profession: *
+                </label>
+                <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
+                  <Sparkles size={16} className="text-[#FF5500] mr-2 shrink-0" />
+                  <input
+                    type="text"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    placeholder="e.g. Logo Designer, React Developer, Videographer"
+                    className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                    5. Company / Business Name: *
+                  </label>
+                  <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
+                    <Building size={16} className="text-[#FF5500] mr-2 shrink-0" />
+                    <input
+                      type="text"
+                      value={companyInput}
+                      onChange={(e) => setCompanyInput(e.target.value)}
+                      placeholder="e.g. Acme Tech Studio, Freelance Recruiter"
+                      className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300">
+                      GSTIN / GST Number (Optional):
+                    </label>
+                    <span className="text-[10px] text-zinc-400 font-bold">Optional</span>
+                  </div>
+                  <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
+                    <input
+                      type="text"
+                      maxLength={15}
+                      value={gstInput}
+                      onChange={(e) => setGstInput(e.target.value.toUpperCase())}
+                      placeholder="e.g. 29AAAAA0000A1Z5"
+                      className="w-full bg-transparent text-xs font-mono font-bold text-white placeholder-zinc-500 outline-none uppercase"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 6. Terms & 18+ Age Checkbox */}
+            <div className="pt-2">
+              <label className="flex items-start gap-2.5 cursor-pointer text-xs text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-[#FF5500] border-zinc-600 bg-[#242424]"
+                />
+                <span className="leading-snug text-[11px]">
+                  I agree to the <a href="/legal" target="_blank" rel="noreferrer" className="text-[#FF5500] underline font-bold">Terms of Service</a> &amp; confirm that I am 18+ years of age.
+                </span>
+              </label>
+            </div>
+
             <button
               type="submit"
               disabled={submitting}
-              className="mt-6 flex w-full items-center justify-center gap-2 border-2 border-white bg-[#FF5500] py-3.5 px-4 text-xs font-black tracking-wider text-white uppercase shadow-[4px_4px_0px_#FFFFFF] hover:bg-[#E04B00] active:translate-y-0.5 transition disabled:opacity-60"
+              className="mt-5 flex w-full items-center justify-center gap-2 border-2 border-white bg-[#FF5500] py-3.5 px-4 text-xs font-black tracking-wider text-white uppercase shadow-[4px_4px_0px_#FFFFFF] hover:bg-[#E04B00] active:translate-y-0.5 transition disabled:opacity-60"
             >
               {submitting ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Setting Up Your Account...</span>
+                  <span>Saving Your Profile...</span>
                 </>
               ) : (
                 <>
-                  <span>Complete Setup &amp; Enter WorkHop</span>
+                  <span>Complete Profile &amp; Enter WorkHop</span>
                   <ArrowRight size={16} />
                 </>
               )}

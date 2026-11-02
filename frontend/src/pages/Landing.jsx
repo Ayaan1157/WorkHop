@@ -14,7 +14,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import AuthModal from "@/components/AuthModal";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
-import { supabaseSignInWithGoogle } from "@/lib/supabase";
+import { supabase, supabaseSignInWithGoogle } from "@/lib/supabase";
 import SiteFooter from "@/components/SiteFooter";
 import { Logo, MobileBottomNav } from "@/components/kit";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -176,6 +176,23 @@ export default function Landing() {
       setOtpError("Enter a valid, active email address.");
       return;
     }
+    if (authMode === "signin" && !isEmailRegistered(cleanEmail)) {
+      let isRegisteredInSupa = false;
+      try {
+        const { data: supaUser } = await supabase
+          .from("profiles")
+          .select("id, role")
+          .eq("email", cleanEmail)
+          .maybeSingle();
+        if (supaUser?.id) isRegisteredInSupa = true;
+      } catch (_) {}
+
+      if (!isRegisteredInSupa) {
+        setOtpError("Account not registered. Please register first.");
+        setAuthMode("signup");
+        return;
+      }
+    }
     setOtpLoading(true);
     setOtpError(null);
     try {
@@ -264,6 +281,25 @@ export default function Landing() {
       setOtpError("Please enter your email address.");
       return;
     }
+
+    if (!isEmailRegistered(cleanEmail)) {
+      let isRegisteredInSupa = false;
+      try {
+        const { data: supaUser } = await supabase
+          .from("profiles")
+          .select("id, role")
+          .eq("email", cleanEmail)
+          .maybeSingle();
+        if (supaUser?.id) isRegisteredInSupa = true;
+      } catch (_) {}
+
+      if (!isRegisteredInSupa) {
+        setOtpError("Account not registered. Please register first.");
+        setAuthMode("signup");
+        return;
+      }
+    }
+
     if (!passwordInput) {
       setOtpError("Please enter your password to sign in.");
       return;

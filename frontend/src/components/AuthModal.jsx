@@ -9,7 +9,7 @@ import { apiPost } from "@/lib/api";
 import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
-import { supabaseSignInWithGoogle } from "@/lib/supabase";
+import { supabase, supabaseSignInWithGoogle } from "@/lib/supabase";
 import { sanitizeInput, checkRateLimit, resetRateLimit } from "@/lib/security";
 import { isEmailRegistered } from "@/lib/clientStore";
 
@@ -155,9 +155,21 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     }
 
     if (mode === "signin" && !isEmailRegistered(cleanEmail)) {
-      setError("Email not found. Please register first.");
-      setMode("signup");
-      return;
+      let isRegisteredInSupa = false;
+      try {
+        const { data: supaUser } = await supabase
+          .from("profiles")
+          .select("id, role")
+          .eq("email", cleanEmail)
+          .maybeSingle();
+        if (supaUser?.id) isRegisteredInSupa = true;
+      } catch (_) {}
+
+      if (!isRegisteredInSupa) {
+        setError("Account not registered. Please register first.");
+        setMode("signup");
+        return;
+      }
     }
 
     setLoading(true);
@@ -253,6 +265,25 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
       setError("Please enter your email address.");
       return;
     }
+
+    if (!isEmailRegistered(cleanEmail)) {
+      let isRegisteredInSupa = false;
+      try {
+        const { data: supaUser } = await supabase
+          .from("profiles")
+          .select("id, role")
+          .eq("email", cleanEmail)
+          .maybeSingle();
+        if (supaUser?.id) isRegisteredInSupa = true;
+      } catch (_) {}
+
+      if (!isRegisteredInSupa) {
+        setError("Account not registered. Please register first.");
+        setMode("signup");
+        return;
+      }
+    }
+
     if (!password) {
       setError("Please enter your password to sign in.");
       return;
