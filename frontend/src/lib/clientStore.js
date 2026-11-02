@@ -330,7 +330,7 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       phone: isUnlocked ? lead.phone : maskPhone(lead.phone),
       email: lead.email || `${(lead.name || "pro").toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
       is_unlocked: isUnlocked,
-      portfolio: lead.portfolio || `${(lead.name || "pro").toLowerCase().replace(/[^a-z]/g, "")}.in`,
+      portfolio: lead.portfolio || lead.portfolio_url || "",
       portfolio_url: lead.portfolio_url || lead.portfolio || "",
       portfolio_images: Array.isArray(lead.portfolio_images) ? lead.portfolio_images : [],
       linkedin_url: lead.linkedin_url || lead.linkedin || "",

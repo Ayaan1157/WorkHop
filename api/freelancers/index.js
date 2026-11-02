@@ -288,7 +288,7 @@ module.exports = async function handler(req, res) {
         languages: ["English", "Kannada", "Hindi"],
         email: email,
         phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw || "+91 72046 65071",
-        portfolio: notes.portfolio_url || `${name.toLowerCase().replace(/[^a-z0-9]/g, "")}.in`,
+        portfolio: notes.portfolio_url || "",
         intro: notes.intro || (isVerifiedProUser ? "Verified freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround." : "Freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround."),
         keywords: [
           "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro"
@@ -483,7 +483,7 @@ module.exports = async function handler(req, res) {
         languages: ["English", "Kannada", "Hindi"],
         email: "shamanthnmurthy@gmail.com",
         phone: "+91 72046 65071",
-        portfolio: "shamanthnmurthy.design",
+        portfolio: "",
         intro: "Freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround.",
         keywords: [
           "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro"

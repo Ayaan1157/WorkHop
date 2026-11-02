@@ -404,11 +404,43 @@ export default function Pro() {
                 ).filter(Boolean);
 
                 const portfolioUrl = (pro.portfolio_url || pro.portfolio || "").trim();
-                const validPortfolioLink = portfolioUrl
+                const isDummyDomain = (url) => {
+                  if (!url) return true;
+                  const lower = url.toLowerCase();
+                  return (
+                    lower.includes("shamanthnmurthy.design") ||
+                    lower.includes("rohanverma.design") ||
+                    lower.includes("arjunmehta.dev") ||
+                    lower.includes("nikhilai.studio") ||
+                    lower.includes("ananyagrowth.in") ||
+                    lower.includes("deepareels.co") ||
+                    lower.includes("workhop.in/pro/") ||
+                    lower.includes("example.com") ||
+                    lower.includes("test.com")
+                  );
+                };
+
+                const hasValidExternalLink = Boolean(
+                  portfolioUrl &&
+                  !isDummyDomain(portfolioUrl) &&
+                  (portfolioUrl.startsWith("http://") ||
+                   portfolioUrl.startsWith("https://") ||
+                   portfolioUrl.includes("."))
+                );
+
+                const validPortfolioLink = hasValidExternalLink
                   ? portfolioUrl.startsWith("http://") || portfolioUrl.startsWith("https://")
                     ? portfolioUrl
                     : `https://${portfolioUrl}`
                   : null;
+
+                const isOwnProfile = Boolean(
+                  user && (
+                    user.id === pro.id ||
+                    user.email === pro.email ||
+                    (user.phone && pro.phone && user.phone.replace(/\D/g, "") === pro.phone.replace(/\D/g, ""))
+                  )
+                );
 
                 return (
                   <div className="flex flex-col gap-3 border-2 border-ink bg-white p-4">
@@ -423,7 +455,7 @@ export default function Pro() {
                             : "Freelancer Work & Case Studies"}
                         </p>
                       </div>
-                      {validPortfolioLink && (
+                      {validPortfolioLink ? (
                         <a
                           href={validPortfolioLink}
                           target="_blank"
@@ -434,7 +466,16 @@ export default function Pro() {
                           <span>OPEN EXTERNAL PORTFOLIO</span>
                           <ExternalLink size={12} />
                         </a>
-                      )}
+                      ) : isOwnProfile ? (
+                        <button
+                          type="button"
+                          onClick={() => nav("/freelancer/profile?edit=portfolio")}
+                          className="inline-flex items-center gap-1.5 border-2 border-dashed border-brand bg-brand/10 hover:bg-brand hover:text-white px-3 py-1.5 text-xs font-black text-brand transition shadow-[1px_1px_0px_#121212]"
+                        >
+                          <Globe size={13} />
+                          <span>+ ADD YOUR REAL PORTFOLIO LINK</span>
+                        </button>
+                      ) : null}
                     </div>
 
                     {/* IMAGE GALLERY */}

@@ -274,7 +274,31 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
             ).filter(Boolean);
 
             const portfolioUrl = (pro.portfolio_url || pro.portfolio || "").trim();
-            const validPortfolioLink = portfolioUrl
+            const isDummyDomain = (url) => {
+              if (!url) return true;
+              const lower = url.toLowerCase();
+              return (
+                lower.includes("shamanthnmurthy.design") ||
+                lower.includes("rohanverma.design") ||
+                lower.includes("arjunmehta.dev") ||
+                lower.includes("nikhilai.studio") ||
+                lower.includes("ananyagrowth.in") ||
+                lower.includes("deepareels.co") ||
+                lower.includes("workhop.in/pro/") ||
+                lower.includes("example.com") ||
+                lower.includes("test.com")
+              );
+            };
+
+            const hasValidExternalLink = Boolean(
+              portfolioUrl &&
+              !isDummyDomain(portfolioUrl) &&
+              (portfolioUrl.startsWith("http://") ||
+               portfolioUrl.startsWith("https://") ||
+               portfolioUrl.includes("."))
+            );
+
+            const validPortfolioLink = hasValidExternalLink
               ? portfolioUrl.startsWith("http://") || portfolioUrl.startsWith("https://")
                 ? portfolioUrl
                 : `https://${portfolioUrl}`
