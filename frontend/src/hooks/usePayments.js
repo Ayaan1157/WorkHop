@@ -163,8 +163,27 @@ export function useRazorpay() {
         status: "captured",
       });
       trackPixelPurchase(amount, { product: payload?.product || description || "payment" });
+
+      // Automatically dispatch official GST Tax Invoice bill to buyer's email
+      const recipientEmail = payload?.email || (typeof window !== "undefined" && (window.localStorage?.getItem("workhop_auth_email") || window.localStorage?.getItem("workhop_user_email"))) || "";
+      if (recipientEmail && recipientEmail.includes("@")) {
+        fetch("/api/credits/send-invoice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_id: verified?.razorpay_payment_id || result?.razorpay_payment_id,
+            email: recipientEmail,
+            full_name: payload?.full_name || "WorkHop Member",
+            product: payload?.product || "payment",
+            plan_id: payload?.plan_id || null,
+            amount,
+            amount_inr: amount,
+            description: description || "WorkHop Payment",
+          }),
+        }).catch((err) => console.warn("Auto-invoice dispatch skipped:", err));
+      }
     } catch (e) {
-      console.debug("Pixel purchase track ignored", e);
+      console.debug("Pixel purchase / invoice track ignored", e);
     }
     return verified;
   }, []);

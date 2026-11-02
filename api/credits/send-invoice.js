@@ -1,17 +1,23 @@
+const nodemailer = require("nodemailer");
 const tls = require("tls");
 
-const HOPS_ITEMS = {
-  "pack-10": { title: "10 Hops Top-Up Pack", credits: 10, price_inr: 150, type: "hops_pack" },
-  "pack-20": { title: "20 Hops Top-Up Pack", credits: 20, price_inr: 300, type: "hops_pack" },
-  "pack-40": { title: "40 Hops Value Pack", credits: 40, price_inr: 600, type: "hops_pack" },
-  "pack-60": { title: "60 Hops Growth Pack", credits: 60, price_inr: 900, type: "hops_pack" },
-  "pack-80": { title: "80 Hops Pro Bundle", credits: 80, price_inr: 1200, type: "hops_pack" },
-  "pack-100": { title: "100 Hops Best Value Pack", credits: 100, price_inr: 1500, type: "hops_pack" },
-  "pack-200": { title: "200 Hops Agency Pack", credits: 200, price_inr: 3000, type: "hops_pack" },
-  "starter_pass": { title: "Starter Hops Pass (30 Hops/mo)", credits: 30, price_inr: 399, type: "hops_pass" },
-  "pro_pass": { title: "Freelancer Plus Pass (80 Hops/mo)", credits: 80, price_inr: 999, type: "hops_pass" },
-  "power_pass": { title: "Power Freelancer Pass (160 Hops/mo)", credits: 160, price_inr: 1899, type: "hops_pass" },
-  "elite_pass": { title: "WorkHop Elite Monthly Pass (200 Hops/mo)", credits: 200, price_inr: 999, type: "hops_pass" },
+const KNOWN_ITEMS = {
+  "verification-badge": { title: "Verified Pro Onboarding Badge", subtitle: "Freelancer Profile Verification & 5km Radius Listing", type: "onboarding", default_price: 299 },
+  "freelancer_onboarding": { title: "Verified Pro Onboarding Badge", subtitle: "Freelancer Profile Verification & 5km Radius Listing", type: "onboarding", default_price: 299 },
+  "onboarding": { title: "Verified Pro Onboarding Badge", subtitle: "Freelancer Profile Verification & 5km Radius Listing", type: "onboarding", default_price: 299 },
+  "lead_unlock": { title: "Direct Client Contact Unlock", subtitle: "Verified Employer Lead Unlock & Direct WhatsApp Tether", type: "lead_unlock", default_price: 199 },
+  "pro_unlock": { title: "Direct Client Contact Unlock", subtitle: "Verified Employer Lead Unlock & Direct WhatsApp Tether", type: "lead_unlock", default_price: 199 },
+  "pack-10": { title: "10 Hops Top-Up Pack", subtitle: "WorkHop Bidding Hops Credit Pack", credits: 10, default_price: 150, type: "hops_pack" },
+  "pack-20": { title: "20 Hops Top-Up Pack", subtitle: "WorkHop Bidding Hops Credit Pack", credits: 20, default_price: 300, type: "hops_pack" },
+  "pack-40": { title: "40 Hops Value Pack", subtitle: "WorkHop Bidding Hops Credit Pack", credits: 40, default_price: 600, type: "hops_pack" },
+  "pack-60": { title: "60 Hops Growth Pack", subtitle: "WorkHop Bidding Hops Credit Pack", credits: 60, default_price: 900, type: "hops_pack" },
+  "pack-80": { title: "80 Hops Pro Bundle", subtitle: "WorkHop Bidding Hops Credit Pack", credits: 80, default_price: 1200, type: "hops_pack" },
+  "pack-100": { title: "100 Hops Best Value Pack", subtitle: "WorkHop Bidding Hops Credit Pack", credits: 100, default_price: 1500, type: "hops_pack" },
+  "pack-200": { title: "200 Hops Agency Pack", subtitle: "WorkHop Bidding Hops Credit Pack", credits: 200, default_price: 3000, type: "hops_pack" },
+  "starter_pass": { title: "Starter Hops Pass (30 Hops/mo)", subtitle: "Monthly Connects Pass", credits: 30, default_price: 399, type: "hops_pass" },
+  "pro_pass": { title: "Freelancer Plus Pass (80 Hops/mo)", subtitle: "Monthly Connects Pass", credits: 80, default_price: 999, type: "hops_pass" },
+  "power_pass": { title: "Power Freelancer Pass (160 Hops/mo)", subtitle: "Monthly Connects Pass", credits: 160, default_price: 1899, type: "hops_pass" },
+  "elite_pass": { title: "WorkHop Elite Monthly Pass (200 Hops/mo)", subtitle: "Monthly Connects Pass", credits: 200, default_price: 999, type: "hops_pass" },
 };
 
 function sendGmailSmtp({ smtpHost = "smtp.gmail.com", smtpPort = 465, smtpUser, smtpPass, to, subject, htmlBody }) {
@@ -40,7 +46,7 @@ function sendGmailSmtp({ smtpHost = "smtp.gmail.com", smtpPort = 465, smtpUser, 
       `--${boundary}`,
       `Content-Type: text/plain; charset="UTF-8"`,
       ``,
-      `Thank you for your WorkHop Hops purchase! Please view this email in an HTML-capable client for your full GST Tax Invoice.`,
+      `Thank you for your WorkHop payment! Please view this email in an HTML-capable client for your full GST Tax Invoice.`,
       ``,
       `--${boundary}`,
       `Content-Type: text/html; charset="UTF-8"`,
@@ -58,7 +64,6 @@ function sendGmailSmtp({ smtpHost = "smtp.gmail.com", smtpPort = 465, smtpUser, 
 
       for (const line of lines) {
         if (!line) continue;
-        // Wait until multi-line response finishes (4th char is space)
         if (line.length >= 4 && line[3] === "-") continue;
         const code = parseInt(line.slice(0, 3), 10);
 
@@ -109,6 +114,43 @@ function sendGmailSmtp({ smtpHost = "smtp.gmail.com", smtpPort = 465, smtpUser, 
   });
 }
 
+async function dispatchInvoiceEmail({ to, subject, htmlBody }) {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = parseInt(process.env.SMTP_PORT || "587", 10);
+  const user = (process.env.SMTP_USER || "connect@work-hop.com").trim();
+  const pass = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || "zwofrrqfnypettvy").replace(/\s+/g, "");
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+      tls: { rejectUnauthorized: false },
+    });
+    const info = await transporter.sendMail({
+      from: `"WorkHop Billing" <${user}>`,
+      to,
+      subject,
+      text: `Thank you for your WorkHop payment! Your payment was successfully received. Please open this email in an HTML-capable email client to view your full GST Tax Invoice & Payment Receipt.`,
+      html: htmlBody,
+    });
+    return { ok: true, messageId: info?.messageId };
+  } catch (err) {
+    console.warn("[WorkHop Invoice] Nodemailer failed, falling back to direct TLS socket:", err.message);
+    await sendGmailSmtp({
+      smtpHost: host,
+      smtpPort: 465,
+      smtpUser: user,
+      smtpPass: pass,
+      to,
+      subject,
+      htmlBody,
+    });
+    return { ok: true, fallback: true };
+  }
+}
+
 function escapeHtml(str) {
   return String(str || "")
     .replace(/&/g, "&amp;")
@@ -144,17 +186,19 @@ function inrAmountToWords(n) {
   return `${parts.join(" ").trim()} Rupees Only`;
 }
 
-function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitle, hopsAdded, totalInr, paymentId }) {
+function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitle, itemSubtitle, hopsAdded, totalInr, paymentId, type }) {
   const safeInv = escapeHtml(invoiceNumber);
-  const safeName = escapeHtml(customerName);
-  const safeEmail = escapeHtml(customerEmail);
+  const safeName = escapeHtml(customerName || "WorkHop Member");
+  const safeEmail = escapeHtml(customerEmail || "member@workhop.in");
   const safeTitle = escapeHtml(itemTitle);
+  const safeSubtitle = escapeHtml(itemSubtitle);
   const safePayId = escapeHtml(paymentId);
   const taxable = (totalInr / 1.18).toFixed(2);
   const cgst = ((totalInr - totalInr / 1.18) / 2).toFixed(2);
   const sgst = cgst;
   const amountWords = inrAmountToWords(totalInr);
   const dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const isOnboarding = type === "onboarding" || safeTitle.toLowerCase().includes("onboarding") || safeTitle.toLowerCase().includes("badge");
 
   return `<!DOCTYPE html>
 <html>
@@ -196,7 +240,7 @@ function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitl
                 Tax Invoice &amp; Payment Receipt
               </h1>
               <p style="margin:0;font-size:13px;color:#555;line-height:1.4;">
-                Hi <strong>${safeName}</strong>, thank you for your purchase! Your payment was successfully processed and your Bidding Hops balance is now updated.
+                Hi <strong>${safeName}</strong>, thank you for your payment! Your transaction was successfully processed. Please keep this official tax invoice for your records.
               </p>
             </td>
           </tr>
@@ -244,7 +288,7 @@ function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitl
               <div style="font-size:11px;color:#444;line-height:1.4;margin-top:2px;">
                 <strong>Email:</strong> ${safeEmail}<br/>
                 <strong>Place of Supply:</strong> 29 - Karnataka<br/>
-                <strong>Category:</strong> Registered Freelancer
+                <strong>Category:</strong> Registered Member
               </div>
             </td>
           </tr>
@@ -255,16 +299,16 @@ function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitl
           <tr style="background-color:#121212;color:#FFFFFF;">
             <th align="left" style="padding:10px 12px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;">ITEM DESCRIPTION</th>
             <th align="center" style="padding:10px 8px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;width:65px;">SAC</th>
-            <th align="center" style="padding:10px 8px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;width:75px;">HOPS</th>
+            <th align="center" style="padding:10px 8px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;width:75px;">QTY</th>
             <th align="right" style="padding:10px 12px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;width:100px;">TAXABLE (INR)</th>
           </tr>
           <tr style="background-color:#FFFFFF;border-bottom:2px solid #121212;">
             <td style="padding:12px;vertical-align:top;">
               <div style="font-size:13px;font-weight:800;color:#121212;">${safeTitle}</div>
-              <div style="font-size:11px;color:#666;margin-top:2px;">WorkHop Bidding Hops Credit Pack</div>
+              <div style="font-size:11px;color:#666;margin-top:2px;">${safeSubtitle}</div>
             </td>
             <td align="center" style="padding:12px 8px;font-size:12px;font-weight:700;color:#333;vertical-align:top;font-family:monospace;">998311</td>
-            <td align="center" style="padding:12px 8px;font-size:12px;font-weight:900;color:#E65A1E;vertical-align:top;">+${Number(hopsAdded) || 0}</td>
+            <td align="center" style="padding:12px 8px;font-size:12px;font-weight:900;color:#E65A1E;vertical-align:top;">${hopsAdded > 0 ? `+${hopsAdded}` : "1"}</td>
             <td align="right" style="padding:12px;font-size:13px;font-weight:800;color:#121212;vertical-align:top;">&#8377;${taxable}</td>
           </tr>
         </table>
@@ -301,6 +345,23 @@ function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitl
           </tr>
         </table>
 
+        ${isOnboarding ? `
+        <!-- Verified Pro Badge Confirmation Box -->
+        <div style="background-color:#E5F8EE;border:2.5px solid #121212;padding:16px 18px;margin-bottom:22px;box-shadow:4px 4px 0px #121212;">
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="36" valign="top" style="font-size:26px;line-height:1;">🛡️</td>
+              <td valign="top" style="padding-left:10px;">
+                <div style="font-size:13px;font-weight:900;text-transform:uppercase;color:#121212;letter-spacing:0.5px;">
+                  Verified Pro Badge Activated
+                </div>
+                <div style="font-size:11px;color:#444;line-height:1.4;margin-top:6px;">
+                  ✓ <strong>Verification Pass Confirmed:</strong> Your profile is unlocked with the Verified Pro badge and priority 5km radius visibility to local Bengaluru clients and employers.
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>` : hopsAdded > 0 ? `
         <!-- Wallet Top-Up Highlight Box -->
         <div style="background-color:#FFF9E6;border:2.5px solid #121212;padding:16px 18px;margin-bottom:22px;box-shadow:4px 4px 0px #121212;">
           <table width="100%" border="0" cellpadding="0" cellspacing="0">
@@ -308,17 +369,22 @@ function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitl
               <td width="36" valign="top" style="font-size:26px;line-height:1;">🪙</td>
               <td valign="top" style="padding-left:10px;">
                 <div style="font-size:13px;font-weight:900;text-transform:uppercase;color:#121212;letter-spacing:0.5px;">
-                  Wallet Balance Updated: +${Number(hopsAdded) || 0} Hops Credited
+                  Wallet Balance Updated: +${hopsAdded} Hops Credited
                 </div>
                 <div style="font-size:11px;color:#555;line-height:1.4;margin-top:6px;">
-                  ⚡ <strong>Hops Never Expire:</strong> Apply to hyperlocal Bengaluru gigs (2&ndash;16 Hops per job), boost your proposals to the top of employer feeds, and unlock direct chats.
+                  ⚡ <strong>Hops Never Expire:</strong> Apply to hyperlocal Bengaluru gigs, boost your proposals to the top of employer feeds, and unlock direct chats.
                 </div>
               </td>
             </tr>
           </table>
-        </div>
+        </div>` : `
+        <div style="background-color:#FAF7F2;border:2px solid #121212;padding:14px;margin-bottom:22px;">
+          <p style="margin:0;font-size:12px;color:#444;line-height:1.4;">
+            ✓ Payment received and credited to your WorkHop account. Thank you for building with WorkHop!
+          </p>
+        </div>`}
 
-        <!-- CTA Button -->
+        <!-- Action Link -->
         <div style="text-align:center;margin:24px 0 16px 0;">
           <a href="https://www.work-hop.com/freelancer/jobs" target="_blank" style="display:inline-block;background-color:#121212;color:#FFFFFF;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;text-decoration:none;padding:14px 28px;border:2px solid #121212;box-shadow:4px 4px 0px #E65A1E;">
             BROWSE LOCAL BENGALURU GIGS &rarr;
@@ -355,44 +421,60 @@ function buildInvoiceHtml({ invoiceNumber, customerName, customerEmail, itemTitl
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ detail: "Method not allowed" });
 
   try {
-    const body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}");
-    const itemKey = body.pack_id || body.plan_id || "pack-40";
-    const item = HOPS_ITEMS[itemKey] || HOPS_ITEMS["pack-40"];
-    const customerEmail = (body.email || "").trim();
-    const customerName = body.full_name || "WorkHop Freelancer";
-    const invoiceNumber = body.invoice_number || `WH-INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-    const paymentId = body.payment_id || `pay_${Date.now()}`;
+    const isGet = req.method === "GET";
+    const dataSrc = isGet ? req.query : (typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}"));
 
-    const smtpUser = (process.env.SMTP_USER || "connect@work-hop.com").trim();
-    const smtpPass = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || "").replace(/\s+/g, "");
+    const itemKey = (dataSrc.plan_id || dataSrc.pack_id || dataSrc.product || "").toLowerCase();
+    const baseItem = KNOWN_ITEMS[itemKey] || {};
+    const itemTitle = dataSrc.title || dataSrc.description || baseItem.title || (itemKey.includes("onboard") ? "Verified Pro Onboarding Badge" : "WorkHop Platform Service");
+    const itemSubtitle = dataSrc.subtitle || baseItem.subtitle || (itemKey.includes("onboard") ? "Freelancer Profile Verification & 5km Radius Listing" : "WorkHop Professional Service");
+    const totalInr = Number(dataSrc.amount || dataSrc.amount_inr || dataSrc.price_inr || baseItem.default_price || 149);
+    const hopsAdded = Number(dataSrc.hops || dataSrc.credits || baseItem.credits || 0);
+    const customerEmail = (dataSrc.email || "").trim();
+    const customerName = dataSrc.full_name || dataSrc.customer_name || "WorkHop Member";
+    const invoiceNumber = dataSrc.invoice_number || `WH-INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    const paymentId = dataSrc.payment_id || `pay_${Date.now()}`;
+
+    const htmlBody = buildInvoiceHtml({
+      invoiceNumber,
+      customerName,
+      customerEmail,
+      itemTitle,
+      itemSubtitle,
+      hopsAdded,
+      totalInr,
+      paymentId,
+      type: baseItem.type || itemKey,
+    });
+
+    // If client requested preview / html directly via GET
+    if (isGet && dataSrc.format === "html") {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.status(200).send(htmlBody);
+    }
 
     let emailSent = false;
-    if (customerEmail && customerEmail.includes("@") && smtpPass) {
-      const htmlBody = buildInvoiceHtml({
-        invoiceNumber,
-        customerName,
-        customerEmail,
-        itemTitle: item.title,
-        hopsAdded: item.credits,
-        totalInr: item.price_inr,
-        paymentId,
-      });
-      const subject = `Tax Invoice #${invoiceNumber} · ${item.title} [WorkHop]`;
-      await sendGmailSmtp({
-        smtpUser,
-        smtpPass,
-        to: customerEmail,
-        subject,
-        htmlBody,
-      });
-      emailSent = true;
+    let emailDetail = null;
+
+    if (customerEmail && customerEmail.includes("@")) {
+      const subject = `Tax Invoice #${invoiceNumber} · ${itemTitle} [WorkHop]`;
+      try {
+        await dispatchInvoiceEmail({
+          to: customerEmail,
+          subject,
+          htmlBody,
+        });
+        emailSent = true;
+      } catch (err) {
+        console.error("[WorkHop Invoice Email Dispatch Error]:", err.message);
+        emailDetail = err.message;
+      }
     }
 
     return res.status(200).json({
@@ -400,9 +482,11 @@ module.exports = async function handler(req, res) {
       invoice_number: invoiceNumber,
       invoice_email_sent: emailSent,
       recipient: customerEmail || null,
+      html: htmlBody,
+      detail: emailDetail,
     });
   } catch (err) {
-    console.error("[WorkHop Invoice Email] Error:", err.message);
+    console.error("[WorkHop Invoice Server Error]:", err.message);
     return res.status(200).json({
       ok: true,
       invoice_email_sent: false,

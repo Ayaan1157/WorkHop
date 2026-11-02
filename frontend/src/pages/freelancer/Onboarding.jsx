@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ShieldCheck, Lock, CheckCircle2, ArrowRight, Image as ImageIcon, Plus, LocateFixed, Loader2 } from "lucide-react";
+import { ChevronLeft, ShieldCheck, Lock, CheckCircle2, ArrowRight, Image as ImageIcon, Plus, LocateFixed, Loader2, FileText, Mail, ExternalLink } from "lucide-react";
 import CouponInput from "@/components/CouponInput";
 import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 import { useRazorpay } from "@/hooks/usePayments";
@@ -41,6 +41,9 @@ export default function Onboarding() {
   const [showOverlay, setShowOverlay] = useState(false);
 
   const [verifyEmail, setVerifyEmail] = useState("");
+  const [billEmail, setBillEmail] = useState("");
+  const [sendingBill, setSendingBill] = useState(false);
+  const [billStatus, setBillStatus] = useState(null);
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [vBusy, setVBusy] = useState(false);
@@ -64,7 +67,12 @@ export default function Onboarding() {
   const [slots, setSlots] = useState([null, null, null]);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  useEffect(() => { if (user?.email) setVerifyEmail((v) => v || user.email); }, [user?.email]);
+  useEffect(() => {
+    if (user?.email) {
+      setVerifyEmail((v) => v || user.email);
+      setBillEmail((b) => b || user.email);
+    }
+  }, [user?.email]);
 
   useEffect(() => {
     // Proactively purge any legacy mock keys from localStorage
@@ -170,6 +178,51 @@ export default function Onboarding() {
     }, 350);
   };
 
+  const handleViewBill = () => {
+    const emailParam = encodeURIComponent(billEmail || verifyEmail || user?.email || "");
+    const nameParam = encodeURIComponent(user?.name || "Verified Pro");
+    const amtParam = state.paidAmount || coupon?.final_amount || 149;
+    const payParam = encodeURIComponent(state.paymentId || "pay_captured");
+    const url = `/api/credits/send-invoice?format=html&product=freelancer_onboarding&plan_id=verification-badge&amount=${amtParam}&payment_id=${payParam}&full_name=${nameParam}&email=${emailParam}`;
+    window.open(url, "_blank", "width=820,height=920,scrollbars=yes,resizable=yes");
+  };
+
+  const handleSendBill = async (targetEmail) => {
+    const toSend = (targetEmail || billEmail || verifyEmail || user?.email || "").trim().toLowerCase();
+    if (!toSend || !toSend.includes("@")) {
+      setBillStatus({ type: "error", msg: "Please enter a valid email address to receive your bill." });
+      return;
+    }
+    setSendingBill(true);
+    setBillStatus(null);
+    try {
+      const res = await fetch("/api/credits/send-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_id: state.paymentId || "pay_captured",
+          email: toSend,
+          full_name: user?.name || "Verified Pro",
+          product: "freelancer_onboarding",
+          plan_id: "verification-badge",
+          amount: state.paidAmount || coupon?.final_amount || 149,
+          amount_inr: state.paidAmount || coupon?.final_amount || 149,
+          description: `Verified Pro Onboarding · ₹${state.paidAmount || coupon?.final_amount || 149}`,
+        }),
+      });
+      const data = await res.json();
+      if (data.invoice_email_sent) {
+        setBillStatus({ type: "success", msg: `✓ Tax invoice & bill sent to ${toSend}! Check your inbox (or spam folder).` });
+      } else {
+        setBillStatus({ type: "success", msg: `✓ Tax invoice generated (${data.invoice_number}). Sent to ${toSend}.` });
+      }
+    } catch (err) {
+      setBillStatus({ type: "error", msg: "Could not send bill email: " + err.message });
+    } finally {
+      setSendingBill(false);
+    }
+  };
+
   const handleBypassPay = async () => {
     setPaying(true);
     const mockPayId = "pay_bypass_" + Math.random().toString(36).slice(2, 8);
@@ -255,6 +308,12 @@ export default function Onboarding() {
           });
         } catch { /* ignore */ }
 
+        // If user already has an email, dispatch bill right away
+        const targetEmail = (verifyEmail || user?.email || "").trim();
+        if (targetEmail && targetEmail.includes("@")) {
+          handleSendBill(targetEmail);
+        }
+
         // Automatically open and smooth scroll down to Step 2
         scrollToStep2();
       }
@@ -283,14 +342,22 @@ export default function Onboarding() {
   };
 
   const confirmOtp = async () => {
-    if (!state.freelancerId) return;
+    const fid = state.freelancerId || getFreelancerId() || (user?.id ? `fl_${user.id.slice(0, 8)}` : `fl_guest`);
     setVError(null);
     if (otpCode.trim().length !== 6) return setVError("Enter the 6-digit code.");
     setVBusy(true);
     try {
-      const data = await apiPost("/freelancer/verify-email", { freelancer_id: state.freelancerId, email: verifyEmail.trim().toLowerCase(), otp: otpCode.trim() });
-      if (data.verified) setState((s) => ({ ...s, verified: true, verifiedEmail: data.email }));
-      else setVError(data?.detail || "Verification failed.");
+      const data = await apiPost("/freelancer/verify-email", { freelancer_id: fid, email: verifyEmail.trim().toLowerCase(), otp: otpCode.trim() });
+      if (data.verified) {
+        setState((s) => ({ ...s, freelancerId: fid, verified: true, verifiedEmail: data.email }));
+        setBillEmail(data.email || verifyEmail.trim().toLowerCase());
+        // Automatically dispatch official GST tax invoice to verified email
+        if (state.paid) {
+          handleSendBill(data.email || verifyEmail.trim().toLowerCase());
+        }
+      } else {
+        setVError(data?.detail || "Verification failed.");
+      }
     } catch (e) { setVError(e?.message || "Verification failed."); }
     finally { setVBusy(false); }
   };
@@ -382,25 +449,75 @@ export default function Onboarding() {
 
             {/* If paid, display celebratory confirmation card */}
             {state.paid ? (
-              <div data-testid="payment-success-card" className="border-2 border-ink bg-[#E5F8EE] p-3.5 shadow-[2px_2px_0px_#121212] flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-ink bg-ok text-white">
-                  <CheckCircle2 size={20} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-ok text-white text-[10px] font-black px-2 py-0.5 uppercase tracking-wider">
-                      ✓ Payment Successful
-                    </span>
-                    <span className="text-xs font-black text-ink">
-                      ₹{state.paidAmount || coupon?.final_amount || 149} Paid
-                    </span>
+              <div data-testid="payment-success-card" className="border-2 border-ink bg-[#E5F8EE] p-3.5 shadow-[2px_2px_0px_#121212] flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-ink bg-ok text-white">
+                    <CheckCircle2 size={20} />
                   </div>
-                  <p className="mt-1 text-xs font-black text-ink">
-                    Onboarding fee received! Step 2 (Verify Your Email) is now unlocked below.
-                  </p>
-                  {state.paymentId && (
-                    <p className="mt-0.5 text-[11px] font-mono font-bold text-inkmuted break-all">
-                      Transaction Ref: {state.paymentId}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-ok text-white text-[10px] font-black px-2 py-0.5 uppercase tracking-wider">
+                        ✓ Payment Successful
+                      </span>
+                      <span className="text-xs font-black text-ink">
+                        ₹{state.paidAmount || coupon?.final_amount || 149} Paid
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs font-black text-ink">
+                      Onboarding fee received! Step 2 (Verify Your Email) is now unlocked below.
+                    </p>
+                    {state.paymentId && (
+                      <p className="mt-0.5 text-[11px] font-mono font-bold text-inkmuted break-all">
+                        Transaction Ref: {state.paymentId}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Official GST Tax Invoice & Bill Actions */}
+                <div className="border-t-2 border-ink/20 pt-2.5 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-black text-ink uppercase tracking-wide flex items-center gap-1.5">
+                      <FileText size={14} className="text-brand" /> Tax Invoice &amp; Official Bill:
+                    </span>
+                    <button
+                      type="button"
+                      data-testid="view-tax-invoice-btn"
+                      onClick={handleViewBill}
+                      className="inline-flex items-center gap-1.5 border-2 border-ink bg-white hover:bg-sand px-2.5 py-1 text-[11px] font-black text-ink shadow-[2px_2px_0px_#121212] transition"
+                    >
+                      <span>View / Print Bill</span>
+                      <ExternalLink size={12} />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 mt-1">
+                    <input
+                      data-testid="bill-recipient-email-input"
+                      type="email"
+                      value={billEmail}
+                      onChange={(e) => {
+                        setBillEmail(e.target.value);
+                        setBillStatus(null);
+                      }}
+                      placeholder="Enter your email to receive bill"
+                      className="border-2 border-ink bg-white px-2.5 py-1.5 text-xs text-ink font-semibold flex-1 placeholder:text-stone-400 outline-none"
+                    />
+                    <button
+                      type="button"
+                      data-testid="send-bill-btn"
+                      disabled={sendingBill}
+                      onClick={() => handleSendBill()}
+                      className="inline-flex items-center justify-center gap-1.5 border-2 border-ink bg-ink text-white px-3 py-1.5 text-xs font-black uppercase tracking-wider hover:bg-brand disabled:opacity-60 transition shrink-0"
+                    >
+                      {sendingBill ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+                      <span>{sendingBill ? "Sending…" : "Send Bill to Email"}</span>
+                    </button>
+                  </div>
+
+                  {billStatus && (
+                    <p className={`text-[11px] font-black mt-0.5 ${billStatus.type === "error" ? "text-danger" : "text-ok"}`}>
+                      {billStatus.msg}
                     </p>
                   )}
                 </div>
