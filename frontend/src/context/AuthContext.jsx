@@ -100,6 +100,11 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
       if (event === "SIGNED_IN" && session?.user) {
+        // If we are currently handling the auth callback, let AuthCallback.jsx process the unregistered guard and mandatory profile completion!
+        if (typeof window !== "undefined" && window.location.pathname.startsWith("/auth/callback")) {
+          return;
+        }
+
         const role = localStorage.getItem("workhop_auth_role") || "freelancer";
         const linkedUser = linkOrUpdateGoogleUser(session.user, role);
         setToken(session.access_token);

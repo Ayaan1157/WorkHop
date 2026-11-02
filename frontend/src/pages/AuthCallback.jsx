@@ -148,28 +148,74 @@ export default function AuthCallback() {
           }
         }
 
+        const intentParam = searchParams.get("intent") || hashParams.get("intent");
+        const roleParam = searchParams.get("role") || hashParams.get("role");
+
+        // Read stored intent from storage / cookie
+        const cookieMatch = typeof document !== "undefined" && document.cookie.match(/workhop_auth_intent=([^;]+)/);
+        const cookieIntent = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+        const storedIntent =
+          intentParam ||
+          localStorage.getItem("workhop_auth_intent") ||
+          sessionStorage.getItem("workhop_auth_intent") ||
+          cookieIntent ||
+          "signup"; // Default to signup so new signups are ALWAYS prompted for details!
+
         // Also check existing local user by email
         const existingLocal = getRegisteredUserByEmail(user.email);
-        const hasExistingRole = Boolean(existingProfile?.role || existingLocal?.role);
-        const pendingRole = localStorage.getItem("workhop_pending_role");
-        const authIntent = localStorage.getItem("workhop_auth_intent") || "signin";
+        const pendingRole = roleParam || localStorage.getItem("workhop_pending_role");
 
-        // Requirement 1: If user was trying to Sign In and is NOT registered on the website:
-        if (authIntent === "signin" && !hasExistingRole) {
+        // Determine if account actually exists
+        const hasRegisteredAccount = Boolean(
+          (existingProfile && (existingProfile.phone || existingProfile.skill || existingProfile.company_name)) ||
+          (existingLocal && (existingLocal.phone || existingLocal.skill || existingLocal.company_name))
+        );
+
+        // Check if profile is complete (has valid 10-digit phone AND profession/company)
+        const cleanExistingPhone = (existingProfile?.phone || existingLocal?.phone || "").replace(/\D/g, "");
+        const hasValidPhone = cleanExistingPhone.length === 10;
+        const targetRole = roleParam || existingProfile?.role || existingLocal?.role || pendingRole || "freelancer";
+        const hasSkillOrCompany = Boolean(
+          targetRole === "employer"
+            ? (existingProfile?.company_name || existingLocal?.company_name)
+            : (existingProfile?.skill || existingLocal?.skill)
+        );
+        const isProfileComplete = hasValidPhone && hasSkillOrCompany;
+
+        // Populate known fields for onboarding form
+        if (cleanExistingPhone.length >= 10) {
+          setPhoneInput(cleanExistingPhone.slice(-10));
+        }
+        if (existingProfile?.skill || existingLocal?.skill) {
+          setSkillInput(existingProfile?.skill || existingLocal?.skill || "");
+        }
+        if (existingProfile?.company_name || existingLocal?.company_name) {
+          setCompanyInput(existingProfile?.company_name || existingLocal?.company_name || "");
+        }
+        if (existingProfile?.area || existingLocal?.area) {
+          setSelectedArea(existingProfile?.area || existingLocal?.area || "Indiranagar");
+        }
+        if (targetRole) {
+          setSelectedRole(targetRole);
+        }
+        if (existingProfile?.rate_hr) {
+          setRateInput(String(existingProfile.rate_hr));
+        }
+
+        // Case 1: If user said SIGN IN and is NOT registered:
+        if (storedIntent === "signin" && !hasRegisteredAccount) {
           setStatus("not_registered");
           return;
         }
 
-        // If user already has an established role and is registered:
-        if (hasExistingRole) {
-          const finalRole = existingProfile?.role || existingLocal?.role || pendingRole || "freelancer";
+        // Case 2: If user said SIGN IN and has a COMPLETE profile (phone + profession):
+        if (storedIntent === "signin" && hasRegisteredAccount && isProfileComplete) {
+          const finalRole = existingProfile?.role || existingLocal?.role || targetRole;
           const finalArea = existingProfile?.area || existingLocal?.area || "Bengaluru";
 
-          // Link Google user to existing account
           const sessionUser = linkOrUpdateGoogleUser(user, finalRole, finalArea);
           await adoptSession(session.access_token || `token_${Date.now()}`, sessionUser);
 
-          // Redirect to appropriate dashboard
           if (finalRole === "employer") {
             navigate("/employer/dashboard", { replace: true });
           } else {
@@ -178,7 +224,8 @@ export default function AuthCallback() {
           return;
         }
 
-        // Requirement 2: Even when signing up with Gmail, ask to fill in details to complete profile!
+        // Case 3: User clicked SIGN UP (or profile details are missing):
+        // ALWAYS prompt them to complete their full profile (Name, Role, Area, Phone, Profession, Rate, Terms)!
         setStatus("onboarding");
       } catch (err) {
         if (!isMounted) return;

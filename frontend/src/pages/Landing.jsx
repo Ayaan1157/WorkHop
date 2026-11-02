@@ -408,10 +408,11 @@ export default function Landing() {
     setGoogleLoading(true);
     try {
       const target = pendingRole || localStorage.getItem("workhop_pending_role") || "freelancer";
+      const intent = authMode === "signup" ? "signup" : "signin";
       localStorage.setItem("workhop_pending_role", target);
-      localStorage.setItem("workhop_auth_intent", authMode || "signin");
+      localStorage.setItem("workhop_auth_intent", intent);
       if (areaInput) localStorage.setItem("workhop_user_area", areaInput);
-      await supabaseSignInWithGoogle();
+      await supabaseSignInWithGoogle({ intent, role: target });
     } catch (err) {
       console.warn("Failed to launch Google OAuth:", err);
       setOtpError(err?.message || "Could not launch Google Sign-In. Please check your network and try again.");

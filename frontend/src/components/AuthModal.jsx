@@ -136,10 +136,12 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
     setError(null);
     setGoogleLoading(true);
     try {
-      localStorage.setItem("workhop_pending_role", role || "freelancer");
-      localStorage.setItem("workhop_auth_intent", mode || "signin");
+      const intent = mode === "signup" ? "signup" : "signin";
+      const targetRole = role || "freelancer";
+      localStorage.setItem("workhop_pending_role", targetRole);
+      localStorage.setItem("workhop_auth_intent", intent);
       if (area) localStorage.setItem("workhop_user_area", area);
-      await supabaseSignInWithGoogle();
+      await supabaseSignInWithGoogle({ intent, role: targetRole });
     } catch (err) {
       console.warn("Failed to launch Google OAuth:", err);
       setError(err?.message || "Could not launch Google Sign-In. Please check your network and try again.");

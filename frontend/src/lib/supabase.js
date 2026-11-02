@@ -44,12 +44,22 @@ export const supabase = createClient(
 // 1. AUTHENTICATION HELPERS
 // ══════════════════════════════════════════════════
 
-export async function supabaseSignInWithGoogle({ redirectTo = null } = {}) {
+export async function supabaseSignInWithGoogle({ redirectTo = null, intent = "signin", role = null } = {}) {
   if (!isSupabaseConfigured()) {
     throw new Error("Supabase is not configured. Please ensure REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY are set.");
   }
   const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
-  const callbackUrl = redirectTo || `${origin}/auth/callback`;
+  const callbackUrl = redirectTo || `${origin}/auth/callback?intent=${encodeURIComponent(intent)}${role ? `&role=${encodeURIComponent(role)}` : ""}`;
+
+  try {
+    localStorage.setItem("workhop_auth_intent", intent);
+    sessionStorage.setItem("workhop_auth_intent", intent);
+    if (role) {
+      localStorage.setItem("workhop_pending_role", role);
+      sessionStorage.setItem("workhop_pending_role", role);
+    }
+    document.cookie = `workhop_auth_intent=${encodeURIComponent(intent)}; path=/; max-age=3600`;
+  } catch {}
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
