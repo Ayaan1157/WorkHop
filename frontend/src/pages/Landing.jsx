@@ -1387,7 +1387,10 @@ export default function Landing() {
                 {/* Floating UI Card 1: Job Card (Top-Left, Cream Accent) */}
                 <div className="wh-float-1 absolute top-2.5 left-2.5 sm:top-4 sm:left-4 max-w-[205px] sm:max-w-[230px] border-2 border-ink bg-[#FFF3C4] p-2.5 sm:p-3 shadow-[3px_3px_0px_#121212]">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="bg-ink px-1.5 py-0.5 text-[9px] font-black uppercase text-white">
+                    <span
+                      className="bg-ink px-1.5 py-0.5 text-[9px] font-black uppercase !text-white"
+                      style={{ color: "#FFFFFF" }}
+                    >
                       0.8 KM AWAY
                     </span>
                     <span className="text-xs font-black text-brand">₹18,000</span>
