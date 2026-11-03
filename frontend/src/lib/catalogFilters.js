@@ -6,6 +6,9 @@ export const DISCIPLINES_CATALOG = [
     icon: "palette",
     bg: "#FFE3D3",
     subcategories: [
+      "Architecture & Interior Design",
+      "Architectural Space Planning & Floor Plans",
+      "3D Architectural Rendering & Interior Visualization",
       "Logo & Visual Identity Design",
       "Brand Style Guides & Visual Systems",
       "Packaging, Label & Box Design",
@@ -14,7 +17,6 @@ export const DISCIPLINES_CATALOG = [
       "Vector Illustration & Icon Design",
       "Pitch Deck & Investor Presentation Design",
       "UI/UX Interface Design (Figma)",
-      "3D Architectural Rendering & Interior Visualization",
       "Merch & Apparel Graphics",
       "Fashion, Apparel & Textile Design",
       "Signage, Banners & Environmental Graphics",
@@ -254,6 +256,7 @@ export const JOB_CATEGORY_FILTERS = [
     label: "GRAPHICS & DESIGN",
     cats: [
       "Graphics & Design", "Graphic Design", "Brand Identity", "Illustration", "UI/UX Design", "Packaging", "Interior Design", "Fashion Design", "Landscape Design", "3D Visualization", "AutoCAD", "Product Photography", "Creative",
+      "Architecture", "Architect", "Architecture & Interior Design", "Architectural Design", "Architectural Space Planning & Floor Plans", "Architectural Space Planning", "Architectural Planning", "Architectural Floor Plans",
       "Logo & Visual Identity Design", "Brand Style Guides & Visual Systems", "Packaging, Label & Box Design", "Menu, Flyer & Print Collateral Design", "Social Media Posts, Stories & Banners", "Vector Illustration & Icon Design", "Pitch Deck & Investor Presentation Design", "UI/UX Interface Design (Figma)", "3D Architectural Rendering & Interior Visualization", "Merch & Apparel Graphics", "Signage, Banners & Environmental Graphics", "Architectural and interior design floor plan",
       "Wall Mural & Graffiti Concept Design", "Custom Acrylic & Neon Signboard Design",
       "Artist", "Mural Artist", "Model Making", "Fine Artist", "Wall Mural Artist", "Architectural Model Making"
@@ -382,6 +385,7 @@ export const LEAD_CATEGORY_FILTERS = [
     label: "GRAPHICS & DESIGN",
     cats: [
       "Brand & Logo Designer", "Graphic Designer", "Illustrator / Digital Artist", "UI/UX Designer", "Packaging & Label Designer", "Interior Designer", "Fashion Designer", "Landscape Designer", "Architectural 3D Visualizer / SketchUp Modeler", "AutoCAD Draftsman", "Product Photographer",
+      "Architecture", "Architect", "Architecture & Interior Design", "Architectural Design", "Architectural Space Planning & Floor Plans", "Architectural Space Planning", "Architectural Planning", "Architectural Floor Plans", "Architect / Interior Designer",
       "Logo & Visual Identity Design", "Brand Style Guides & Visual Systems", "Packaging, Label & Box Design", "Menu, Flyer & Print Collateral Design", "Social Media Posts, Stories & Banners", "Vector Illustration & Icon Design", "Pitch Deck & Investor Presentation Design", "UI/UX Interface Design (Figma)", "3D Architectural Rendering & Interior Visualization", "Merch & Apparel Graphics", "Fashion, Apparel & Textile Design", "Embroidery Design", "Textile Design", "Signage, Banners & Environmental Graphics", "Architectural and interior design floor plan",
       "Wall Mural & Graffiti Concept Design", "Custom Acrylic & Neon Signboard Design",
       "Artist", "Mural Artist", "Model Making", "Fine Artist", "Wall Mural Artist", "Architectural Model Making"

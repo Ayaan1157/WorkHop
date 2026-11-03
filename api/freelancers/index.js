@@ -273,15 +273,30 @@ module.exports = async function handler(req, res) {
         p.description ||
         (amountInr === 150 ? "20 Bidding Hops Pack · ₹150" : (amountInr >= 299) ? "Verified Pro Onboarding · ₹299" : `₹${amountInr} Top-Up Pack`);
 
-      const skill = notes.skill || "Brand Identity, Digital Design & Creative Pro";
-      const category = notes.category || "Graphics & Design";
+      const isCobblestone =
+        (email && email.toLowerCase().includes("cobblestone")) ||
+        (name && name.toLowerCase().includes("cobblestone")) ||
+        p.id === "pay_TvGwKVJe2U6Qf2" ||
+        (phoneDigits && phoneDigits.endsWith("9739463546"));
+
+      const proId = isCobblestone
+        ? "pro-cobblestonedesigns"
+        : `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
+      const seed = seedMap[email] || seedMap[proId.toLowerCase()] || (phoneDigits && seedMap[phoneDigits]);
+
+      const skill = isCobblestone
+        ? "Architecture & Interior Design"
+        : (notes.skill || seed?.skill || "Brand Identity, Digital Design & Creative Pro");
+      const category = isCobblestone
+        ? "Graphics & Design"
+        : (notes.category || seed?.category || "Graphics & Design");
 
       paidFreelancers.push({
-        id: `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`,
-        freelancer_id: `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`,
-        name: name,
-        full_name: name,
-        initials: initials,
+        id: proId,
+        freelancer_id: proId,
+        name: isCobblestone ? "Cobblestone Designs" : name,
+        full_name: isCobblestone ? "Cobblestone Designs" : name,
+        initials: isCobblestone ? "CD" : initials,
         skill: skill,
         category: category,
         bucket: "Creative",
@@ -290,20 +305,27 @@ module.exports = async function handler(req, res) {
         rating: null,
         jobs_done: 0,
         rate_hr: (() => {
-          const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
           const cleanEmail = (email || "").toLowerCase().split("@")[0];
           const ovr = freelancerRateOverrides[proId] || freelancerRateOverrides[p.id] || freelancerRateOverrides[cleanEmail] || freelancerRateOverrides[email];
           if (ovr) return Number(ovr);
+          if (isCobblestone) return 1200;
           return Number(notes.rate_hr) || 500;
         })(),
         languages: ["English", "Kannada", "Hindi"],
         email: email,
         phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw || "+91 72046 65071",
         portfolio: notes.portfolio_url || "",
-        intro: notes.intro || (isVerifiedProUser ? "Verified freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround." : "Freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround."),
-        keywords: [
-          "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro"
-        ],
+        intro: isCobblestone
+          ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
+          : (notes.intro || seed?.intro || (isVerifiedProUser ? "Verified freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround." : "Freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround.")),
+        keywords: isCobblestone
+          ? [
+            "architecture", "architect", "interior design", "floor plan", "spatial design",
+            "autocad", "3d rendering", "Graphics & Design", "design", "cobblestone", "elevation", "space planning"
+          ]
+          : [
+            "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro"
+          ],
         paid: true,
         paid_amount: amountInr,
         paid_plan: planName,
@@ -312,7 +334,6 @@ module.exports = async function handler(req, res) {
         verified: isVerifiedProUser,
         created_at: new Date(p.created_at * 1000).toISOString(),
         approved: (() => {
-          const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
           const cleanEmail = (email || "").toLowerCase().split("@")[0];
           const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmail] || freelancerStatusOverrides[email];
           if (ovr) return Boolean(ovr.approved);
@@ -375,31 +396,46 @@ module.exports = async function handler(req, res) {
         .slice(0, 2)
         .toUpperCase() || "RF";
 
-      const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || c.id}`;
+      const isCobblestone =
+        (email && email.toLowerCase().includes("cobblestone")) ||
+        (name && name.toLowerCase().includes("cobblestone")) ||
+        c.id === "pay_TvGwKVJe2U6Qf2" ||
+        (phoneDigits && phoneDigits.endsWith("9739463546"));
+
+      const proId = isCobblestone
+        ? "pro-cobblestonedesigns"
+        : `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || c.id}`;
       const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[c.id];
 
       paidFreelancers.push({
         id: proId,
         freelancer_id: proId,
-        name: name,
-        full_name: name,
-        initials: initials,
-        skill: notes.skill || "Creative & Tech Pro",
-        category: notes.category || "Graphics & Design",
+        name: isCobblestone ? "Cobblestone Designs" : name,
+        full_name: isCobblestone ? "Cobblestone Designs" : name,
+        initials: isCobblestone ? "CD" : initials,
+        skill: isCobblestone ? "Architecture & Interior Design" : (notes.skill || "Creative & Tech Pro"),
+        category: isCobblestone ? "Graphics & Design" : (notes.category || "Graphics & Design"),
         bucket: "Creative",
         area: notes.area || "Bengaluru",
-        distance_km: 2.1,
+        distance_km: 1.2,
         rating: null,
         jobs_done: 0,
         reviews_count: 0,
-        rate_hr: Number(notes.rate_hr) || 800,
+        rate_hr: isCobblestone ? 1200 : (Number(notes.rate_hr) || 800),
         delivery_days: Number(notes.delivery_days) || 3,
-        languages: ["English", "Hindi"],
+        languages: ["English", "Hindi", "Kannada"],
         email: email,
         phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw,
         portfolio: notes.portfolio_url || "",
-        intro: notes.intro || "Registered freelancer awaiting admin review.",
-        keywords: ["freelancer", "bengaluru pro"],
+        intro: isCobblestone
+          ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
+          : (notes.intro || "Registered freelancer awaiting admin review."),
+        keywords: isCobblestone
+          ? [
+            "architecture", "architect", "interior design", "floor plan", "spatial design",
+            "autocad", "3d rendering", "Graphics & Design", "design", "cobblestone", "elevation", "space planning"
+          ]
+          : ["freelancer", "bengaluru pro"],
         paid: false,
         paid_amount: 0,
         paid_plan: "Free Signup",
@@ -504,6 +540,49 @@ module.exports = async function handler(req, res) {
         paid_plan: "20 Bidding Hops Pack · ₹150",
         payment_id: "pay_TtdIJpjtCetICU",
         created_at: "2026-10-29T06:56:39.000Z",
+        approved: true,
+        status: "approved",
+        is_verified: false,
+        verified: false,
+        verifications: {
+          id: false,
+          email: true,
+          phone: true,
+          portfolio: true,
+          payment: false,
+        },
+        is_dummy: false,
+        is_unlocked: true,
+      },
+      {
+        id: "pro-cobblestonedesigns",
+        freelancer_id: "pro-cobblestonedesigns",
+        name: "Cobblestone Designs",
+        full_name: "Cobblestone Designs",
+        initials: "CD",
+        skill: "Architecture & Interior Design",
+        category: "Graphics & Design",
+        bucket: "Creative",
+        area: "Bengaluru",
+        distance_km: 1.2,
+        rating: null,
+        jobs_done: 0,
+        reviews_count: 0,
+        rate_hr: freelancerRateOverrides["pro-cobblestonedesigns"] || freelancerRateOverrides["cobblestone"] || 1200,
+        delivery_days: 3,
+        languages: ["English", "Kannada", "Hindi"],
+        email: "alia.m@cobblestonedesigns.in",
+        phone: "+91 97394 63546",
+        portfolio: "",
+        intro: "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design.",
+        keywords: [
+          "architecture", "architect", "interior design", "floor plan", "spatial design", "autocad", "3d rendering", "Graphics & Design", "design", "cobblestone", "elevation", "space planning"
+        ],
+        paid: true,
+        paid_amount: 150,
+        paid_plan: "20 Bidding Hops Pack · ₹150",
+        payment_id: "pay_TvGwKVJe2U6Qf2",
+        created_at: "2026-11-03T00:00:00.000Z",
         approved: true,
         status: "approved",
         is_verified: false,

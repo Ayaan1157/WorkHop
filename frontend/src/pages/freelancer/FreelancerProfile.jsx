@@ -45,11 +45,13 @@ const PROFICIENCY_LEVELS = [
 ];
 
 const SKILL_SUGGESTIONS = [
-  "Web Development", "Artificial Intelligence", "Web Application", "Web Design",
+  "Architecture", "Architecture & Interior Design", "Interior Design", "AutoCAD",
+  "3D Architectural Rendering", "Spatial Planning", "Floor Plans", "Elevation Design",
+  "UI/UX Design", "Figma", "Web Development", "Artificial Intelligence", "Web Application", "Web Design",
   "Automation", "API", "Stripe", "OpenAPI", "SaaS Development", "Responsive Design",
   "Web Application Development", "Website Redesign", "Next.js", "React", "Runway",
   "Node.js", "Python", "TypeScript", "MongoDB", "PostgreSQL", "AWS", "Docker",
-  "GraphQL", "REST API", "UI/UX Design", "Figma", "Adobe XD", "Tailwind CSS",
+  "GraphQL", "REST API", "Adobe XD", "Tailwind CSS",
   "Firebase", "Git", "CI/CD", "Linux", "Redis", "Elasticsearch",
 ];
 

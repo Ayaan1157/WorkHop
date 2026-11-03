@@ -313,22 +313,46 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       statusText = "pending";
     }
 
+    const isCobblestone =
+      (lead.email && lead.email.toLowerCase().includes("cobblestone")) ||
+      (lead.name && lead.name.toLowerCase().includes("cobblestone")) ||
+      lead.payment_id === "pay_TvGwKVJe2U6Qf2" ||
+      leadId === "pro-cobblestonedesigns";
+
+    const resolvedSkill = isCobblestone
+      ? "Architecture & Interior Design"
+      : (lead.skill || "Creative Pro");
+    const resolvedCategory = isCobblestone
+      ? "Graphics & Design"
+      : (lead.category || lead.bucket || "Graphics & Design");
+    const resolvedBucket = isCobblestone
+      ? "Creative"
+      : (lead.bucket || "Creative");
+    const resolvedName = isCobblestone
+      ? "Cobblestone Designs"
+      : (lead.name || lead.full_name || "Verified Pro");
+    const resolvedIntro = isCobblestone
+      ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
+      : (lead.intro || "");
+
     return {
       id: leadId,
-      name: lead.name || lead.full_name || "Verified Pro",
+      name: resolvedName,
       initials:
-        lead.initials ||
-        (lead.name || "VP")
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .slice(0, 2)
-          .toUpperCase(),
-      skill: lead.skill || "Creative Pro",
+        isCobblestone
+          ? "CD"
+          : (lead.initials ||
+            (resolvedName || "VP")
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase()),
+      skill: resolvedSkill,
       distance_km: lead.distance_km ?? (Math.round((0.5 + (idx % 10) * 0.3) * 10) / 10),
       rating: (lead.reviews_count > 0 || (lead.is_dummy && lead.rating)) ? lead.rating : null,
       phone: isUnlocked ? lead.phone : maskPhone(lead.phone),
-      email: lead.email || `${(lead.name || "pro").toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
+      email: lead.email || `${(resolvedName || "pro").toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
       is_unlocked: isUnlocked,
       portfolio: lead.portfolio || lead.portfolio_url || "",
       portfolio_url: lead.portfolio_url || lead.portfolio || "",
@@ -338,14 +362,20 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       external_rating: lead.external_rating || null,
       external_reviews: lead.external_reviews || null,
       external_url: lead.external_url || "",
+      intro: resolvedIntro,
       keywords: Array.from(
         new Set([
-          ...(lead.keywords || [lead.skill || "Freelancer"]),
-          ...expandSkillKeywords(lead.skill || "Freelancer", lead.category || lead.bucket),
+          ...(isCobblestone
+            ? [
+                "architecture", "architect", "interior design", "floor plan", "spatial design",
+                "autocad", "3d rendering", "Graphics & Design", "design", "cobblestone", "elevation", "space planning"
+              ]
+            : (lead.keywords || [resolvedSkill])),
+          ...expandSkillKeywords(resolvedSkill, resolvedCategory),
         ])
       ),
-      bucket: lead.bucket || "Creative",
-      category: lead.category || lead.bucket || "Graphics & Design",
+      bucket: resolvedBucket,
+      category: resolvedCategory,
       area: lead.area || "Bengaluru",
       lat: lead.lat || (12.9716 + ((idx % 5) - 2) * 0.02),
       lng: lead.lng || (77.5946 + ((idx % 7) - 3) * 0.02),
@@ -3571,6 +3601,28 @@ export function getStoredPaymentTransactions() {
     if (!list.some((tx) => (tx.payment_id || tx.id) === seedTx.payment_id)) {
       list.push(seedTx);
     }
+
+    const cobblestoneTx = {
+      payment_id: "pay_TvGwKVJe2U6Qf2",
+      id: "pay_TvGwKVJe2U6Qf2",
+      amount: 150,
+      amount_inr: 150,
+      currency: "INR",
+      status: "captured",
+      method: "upi",
+      email: "alia.m@cobblestonedesigns.in",
+      phone: "+919739463546",
+      customer_name: "Cobblestone Designs",
+      plan_id: "pack-20",
+      product: "hops_pack",
+      description: "20 Bidding Hops Pack · ₹150",
+      created_at: "2026-11-03T00:00:00.000Z",
+      order_id: "order_TvGvXqWKe2U6Qf",
+    };
+    if (!list.some((tx) => (tx.payment_id || tx.id) === cobblestoneTx.payment_id)) {
+      list.push(cobblestoneTx);
+    }
+
     return list;
   } catch {
     return [];

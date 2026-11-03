@@ -8,6 +8,15 @@ export const KEYWORD_TAXONOMY = [
     bg: "#FFE3D3",
     subdisciplines: [
       {
+        name: "Architecture & Interior Design",
+        keywords: [
+          "Architecture", "Architect", "Architectural Design", "Interior Design", "Interior Designer",
+          "Space Planning", "Spatial Design", "AutoCAD", "Revit", "SketchUp", "BIM",
+          "Residential Architecture", "Commercial Architecture", "Landscape Architecture",
+          "Elevation Design", "Building Plan", "3D Architectural Rendering", "Cobblestone Designs", "Floor Plan"
+        ]
+      },
+      {
         name: "Logo & Visual Identity Design",
         keywords: [
           "Logo designer", "Brand identity", "Minimalist logo", "Monogram",
@@ -1272,16 +1281,20 @@ export const SKILL_SYNONYM_CLUSTERS = [
   },
   {
     category: "Graphics & Design",
-    name: "CAD Drafting, 3D Architecture & Spatial Visualization",
+    name: "Architecture, Spatial Planning, CAD Drafting & 3D Visualization",
     triggers: [
-      "autocad", "cad", "revit", "sketchup", "lumion", "3ds max", "floor plan",
-      "drafting", "3d printing", "industrial design", "interior design", "v-ray",
-      "architectural drawing", "blueprint", "spatial layout", "elevation", "working drawing"
+      "architecture", "architect", "architectural", "spatial design", "space planning",
+      "cobblestone", "cobblestone designs", "autocad", "cad", "revit", "sketchup",
+      "lumion", "3ds max", "floor plan", "drafting", "3d printing", "industrial design",
+      "interior design", "interior designer", "v-ray", "architectural drawing", "blueprint",
+      "spatial layout", "elevation", "working drawing", "building plan", "landscape architect"
     ],
     expandedTags: [
+      "architecture", "architect", "architecture & interior design", "architectural design",
+      "interior design", "interior designer", "space planning", "spatial design",
       "autocad 2d", "floor plan", "architectural drafting", "architectural visualization",
-      "3d rendering", "interior design", "cad drafter", "blueprint", "sketchup",
-      "lumion", "spatial layout", "elevation"
+      "3d rendering", "cad drafter", "blueprint", "sketchup", "lumion", "spatial layout",
+      "elevation", "graphics & design", "design"
     ]
   },
   {
