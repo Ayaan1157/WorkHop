@@ -1605,7 +1605,7 @@ export default function Landing() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3 sm:gap-4">
             {[
-              { label: "Graphics & Design", slug: "graphics-design", Icon: Palette, bg: "#FFF3C4" },
+              { label: "Design & Architecture", slug: "graphics-design", Icon: Palette, bg: "#FFF3C4" },
               { label: "Tech & Code", slug: "programming-tech", Icon: Code2, bg: "#E5F8EE" },
               { label: "Digital Marketing", slug: "digital-marketing", Icon: Megaphone, bg: "#FCE4EC" },
               { label: "Video & Motion", slug: "video-animation", Icon: Video, bg: "#E0F7FA" },
@@ -1657,9 +1657,9 @@ export default function Landing() {
                 {(featuredPros.slice(0, 3).length > 0
                   ? featuredPros.slice(0, 3)
                   : [
+                      { name: "Cobblestone Designs", skill: "Architecture & Interior Design", area: "Indiranagar · 0.7 km", rate_hr: 1200 },
                       { name: "Karthik Raja", skill: "UI/UX & Product Design", area: "Indiranagar · 0.8 km", rate_hr: 850 },
                       { name: "Sneha Rao", skill: "Brand Identity & Packaging", area: "Koramangala · 1.2 km", rate_hr: 750 },
-                      { name: "Rahul Verma", skill: "Architecture & CAD Drafting", area: "HSR Layout · 1.9 km", rate_hr: 900 },
                     ]
                 ).map((pro, idx) => (
                   <div

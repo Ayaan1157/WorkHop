@@ -229,6 +229,16 @@ export default function Jobs() {
     const cat = (j.category || "").toLowerCase();
     const bkt = (j.bucket || "").toLowerCase();
     const filterKey = activeFilter.key.toLowerCase();
+    if (catFilter !== activeFilter.key) {
+      const subKey = catFilter.toLowerCase();
+      return (
+        cat === subKey ||
+        bkt === subKey ||
+        (cat && cat.includes(subKey)) ||
+        (bkt && bkt.includes(subKey)) ||
+        matchJobToTaxonomy(j, subKey)
+      );
+    }
     if (cat === filterKey || bkt === filterKey) return true;
     return activeFilter.cats.some((c) => {
       const cl = c.toLowerCase();

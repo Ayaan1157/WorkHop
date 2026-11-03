@@ -100,6 +100,47 @@ try {
   }
 } catch { /* ignore */ }
 
+// One-time clean slate v6: purge stale remote freelancer cache & ensure Cobblestone Designs skill is Architecture & Interior Design
+const CLEAN_SLATE_FLAG_V6 = "workhop_clean_slate_v6_cobblestone_arch";
+try {
+  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V6)) {
+    localStorage.removeItem("workhop_remote_freelancers");
+    const rawReg = localStorage.getItem("workhop_registered_users");
+    if (rawReg) {
+      try {
+        const users = JSON.parse(rawReg);
+        for (const [em, u] of Object.entries(users)) {
+          if (em.toLowerCase().includes("cobblestone") || (u?.name || "").toLowerCase().includes("cobblestone")) {
+            users[em] = {
+              ...u,
+              role: "freelancer",
+              skill: "Architecture & Interior Design",
+              category: "Graphics & Design",
+            };
+          }
+        }
+        localStorage.setItem("workhop_registered_users", JSON.stringify(users));
+      } catch {}
+    }
+    const rawSub = localStorage.getItem("workhop_submitted_profiles");
+    if (rawSub) {
+      try {
+        const list = JSON.parse(rawSub);
+        if (Array.isArray(list)) {
+          const updated = list.map((item) =>
+            (item?.email || "").toLowerCase().includes("cobblestone") ||
+            (item?.name || "").toLowerCase().includes("cobblestone")
+              ? { ...item, skill: "Architecture & Interior Design", category: "Graphics & Design" }
+              : item
+          );
+          localStorage.setItem("workhop_submitted_profiles", JSON.stringify(updated));
+        }
+      } catch {}
+    }
+    localStorage.setItem(CLEAN_SLATE_FLAG_V6, "1");
+  }
+} catch { /* ignore */ }
+
 // ═══════════ CONNECTS & CREDITS SYSTEM KEYS ═══════════
 const CREDITS_WALLET_KEY = "workhop_credits_wallet";
 const CREDITS_TRANSACTIONS_KEY = "workhop_credits_transactions";
@@ -349,7 +390,7 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
               .slice(0, 2)
               .toUpperCase()),
       skill: resolvedSkill,
-      distance_km: lead.distance_km ?? (Math.round((0.5 + (idx % 10) * 0.3) * 10) / 10),
+      distance_km: isCobblestone ? 0.7 : (lead.distance_km ?? (Math.round((0.5 + (idx % 10) * 0.3) * 10) / 10)),
       rating: (lead.reviews_count > 0 || (lead.is_dummy && lead.rating)) ? lead.rating : null,
       phone: isUnlocked ? lead.phone : maskPhone(lead.phone),
       email: lead.email || `${(resolvedName || "pro").toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
@@ -362,7 +403,9 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       external_rating: lead.external_rating || null,
       external_reviews: lead.external_reviews || null,
       external_url: lead.external_url || "",
-      intro: resolvedIntro,
+      intro:
+        resolvedIntro ||
+        `${resolvedSkill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`,
       keywords: Array.from(
         new Set([
           ...(isCobblestone
@@ -376,7 +419,7 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       ),
       bucket: resolvedBucket,
       category: resolvedCategory,
-      area: lead.area || "Bengaluru",
+      area: isCobblestone ? (lead.area || "Indiranagar") : (lead.area || "Bengaluru"),
       lat: lead.lat || (12.9716 + ((idx % 5) - 2) * 0.02),
       lng: lead.lng || (77.5946 + ((idx % 7) - 3) * 0.02),
       rate_hr: (() => {
@@ -390,14 +433,12 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
             if (map[stripped] !== undefined) return Number(map[stripped]);
           }
         } catch {}
+        if (isCobblestone) return 1200;
         return lead.rate_hr !== undefined && lead.rate_hr !== null ? Number(lead.rate_hr) : (750 + (idx % 5) * 150);
       })(),
       delivery_days: lead.delivery_days ?? (1 + (idx % 3)),
       jobs_done: lead.jobs_done !== undefined && lead.jobs_done !== null ? Number(lead.jobs_done) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
       reviews_count: lead.reviews_count !== undefined && lead.reviews_count !== null ? Number(lead.reviews_count) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
-      intro:
-        lead.intro ||
-        `${lead.skill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`,
       languages: lead.languages || ["English", "Kannada", "Hindi"],
       is_dummy: Boolean(lead.is_dummy),
       paid: Boolean(lead.paid),
@@ -409,7 +450,7 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       profile_status: lead.profile_status || "complete",
       missing_fields: Array.isArray(lead.missing_fields) ? lead.missing_fields : [],
       experience: lead.experience || "",
-      bio: lead.bio || lead.intro || "",
+      bio: isCobblestone ? resolvedIntro : (lead.bio || lead.intro || ""),
       reason: reasonText,
       verifications: lead.verifications || {
         id: true,
@@ -418,11 +459,17 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
         phone: isUnlocked,
         payment: Boolean(lead.paid),
       },
-      samples: lead.samples || [
-        { title: "Brand Identity & Design", type: "Visual Assets", tag: "Figma" },
-        { title: "Digital Campaign Assets", type: "Design", tag: "Deliverable" },
-        { title: "Client Project Milestone", type: "Verified", tag: "Completed" },
-      ],
+      samples: isCobblestone
+        ? [
+            { title: "Residential & Commercial Floor Plans", type: "Architecture", tag: "AutoCAD / BIM" },
+            { title: "3D Architectural & Interior Visualization", type: "Spatial Design", tag: "3D Render" },
+            { title: "Turnkey Interior & Elevation Planning", type: "Verified", tag: "Completed" },
+          ]
+        : (lead.samples || [
+            { title: "Brand Identity & Design", type: "Visual Assets", tag: "Figma" },
+            { title: "Digital Campaign Assets", type: "Design", tag: "Deliverable" },
+            { title: "Client Project Milestone", type: "Verified", tag: "Completed" },
+          ]),
     };
   });
 
@@ -2299,11 +2346,19 @@ export function getOrCreateChatWithCandidate(candidate) {
 
 // 11. Full Freelancer Profile (Upwork-style)
 export function getDefaultFreelancerProfile() {
+  const currentUser = getStoredUser();
+  const isCobblestoneUser = Boolean(
+    (currentUser?.email && currentUser.email.toLowerCase().includes("cobblestone")) ||
+    (currentUser?.name && currentUser.name.toLowerCase().includes("cobblestone"))
+  );
+
   return {
     // Header
-    title: "",
-    rate_hr: 0,
-    description: "",
+    title: isCobblestoneUser ? "Architecture & Interior Design" : (currentUser?.skill || ""),
+    rate_hr: isCobblestoneUser ? 1200 : 0,
+    description: isCobblestoneUser
+      ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
+      : "",
 
     // Employment History
     employment_history: [],
@@ -2312,7 +2367,9 @@ export function getDefaultFreelancerProfile() {
     certifications: [],
 
     // Skills
-    skills: [],
+    skills: isCobblestoneUser
+      ? ["Architecture", "Architecture & Interior Design", "Interior Design", "AutoCAD", "Spatial Planning", "3D Architectural Rendering"]
+      : (currentUser?.skill ? [currentUser.skill] : []),
 
     // Portfolio
     portfolio: [],

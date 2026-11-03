@@ -218,7 +218,7 @@ export const CATEGORY_VISUALS = {
 
 export const CATEGORY_SHORT_LABELS = {
   ALL: "All",
-  "Graphics & Design": "Graphics & Design",
+  "Graphics & Design": "Design & Architecture",
   "Tech & Code": "Tech & Code",
   "Programming & Tech": "Tech & Code",
   Marketing: "Marketing",

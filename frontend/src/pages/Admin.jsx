@@ -2466,16 +2466,35 @@ function ProsTalentTab({ adminFetch }) {
 
       const merged = list.map((p) => {
         const pid = p.freelancer_id || p.id;
+        const isCobblestone =
+          (p.email && p.email.toLowerCase().includes("cobblestone")) ||
+          (p.name && p.name.toLowerCase().includes("cobblestone")) ||
+          (p.full_name && p.full_name.toLowerCase().includes("cobblestone")) ||
+          p.payment_id === "pay_TvGwKVJe2U6Qf2" ||
+          pid === "pro-cobblestonedesigns";
+
+        const normalized = isCobblestone
+          ? {
+              ...p,
+              name: "Cobblestone Designs",
+              full_name: "Cobblestone Designs",
+              skill: "Architecture & Interior Design",
+              category: "Graphics & Design",
+              intro:
+                "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design.",
+            }
+          : p;
+
         const st = localStatuses[pid] || localStatuses[p.id] || localStatuses[p.freelancer_id];
         if (st) {
           return {
-            ...p,
+            ...normalized,
             approved: Boolean(st.approved),
             status: st.status,
-            reason: st.reason || p.reason,
+            reason: st.reason || normalized.reason,
           };
         }
-        return p;
+        return normalized;
       });
 
       // Preserve existing pros on empty/failed background poll

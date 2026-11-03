@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { apiGet, getFreelancerId } from "@/lib/api";
 import { getCreditsWallet } from "@/lib/clientStore";
-import { CATEGORY_VISUALS, CATEGORY_SHORT_LABELS, CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
+import { CATEGORY_VISUALS, CATEGORY_SHORT_LABELS, CATALOG_CATEGORY_NAMES, DISCIPLINES_CATALOG } from "@/lib/catalogFilters";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import NotificationBell from "@/components/NotificationBell";
@@ -722,13 +722,25 @@ export function CategoryTiles({
     }
   };
 
+  const activeDiscipline =
+    DISCIPLINES_CATALOG.find(
+      (d) => d.category === selected || (Array.isArray(d.subcategories) && d.subcategories.includes(selected))
+    ) || DISCIPLINES_CATALOG[0];
+
+  const subPills = Array.isArray(activeDiscipline?.subcategories)
+    ? activeDiscipline.subcategories.slice(0, 8)
+    : [];
+
   return (
     <>
       <div className={`w-full bg-white dark:bg-[#121212] ${className}`}>
         <div className="wh-scroll mx-auto flex w-full max-w-[1600px] gap-3 overflow-x-auto px-4 py-3 sm:px-8">
           {cats.map((key) => {
             const v = CATEGORY_VISUALS[key] || CATEGORY_VISUALS.ALL;
-            const on = selected === key;
+            const disc = DISCIPLINES_CATALOG.find((d) => d.category === key);
+            const on =
+              selected === key ||
+              Boolean(disc && Array.isArray(disc.subcategories) && disc.subcategories.includes(selected));
             return (
               <button
                 key={key}
@@ -765,6 +777,32 @@ export function CategoryTiles({
             </span>
           </button>
         </div>
+
+        {/* Sub-Skill Quick Filter Strip (Shows Architecture & Interior Design under Design on Main Window View) */}
+        {subPills.length > 0 && (
+          <div className="wh-scroll mx-auto flex w-full max-w-[1600px] items-center gap-2 overflow-x-auto border-t border-ink/10 dark:border-white/10 px-4 py-2 sm:px-8">
+            <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-brand">
+              {selected === "ALL" ? "Design & Architecture:" : `${CATEGORY_SHORT_LABELS[activeDiscipline.category] || activeDiscipline.category}:`}
+            </span>
+            {subPills.map((sub) => {
+              const isSubActive = selected === sub;
+              return (
+                <button
+                  key={sub}
+                  type="button"
+                  onClick={() => onSelect(isSubActive ? activeDiscipline.category : sub)}
+                  className={`shrink-0 border border-ink px-2.5 py-1 text-[11px] font-black transition ${
+                    isSubActive
+                      ? "bg-brand text-white"
+                      : "bg-[#FFF3C4] text-black hover:bg-brand hover:text-white"
+                  }`}
+                >
+                  {sub}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Internal Modal Fallback */}

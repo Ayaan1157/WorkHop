@@ -142,15 +142,25 @@ export default function Employer() {
       const proCat = (l.category || l.bucket || "").toLowerCase();
       const proSkill = (l.skill || "").toLowerCase();
       const filterKey = (activeFilter.key || "").toLowerCase();
-      const inThisCat =
-        proCat === filterKey ||
-        proSkill === filterKey ||
-        (Array.isArray(activeFilter.cats) &&
-          activeFilter.cats.some((c) => {
-            const cl = (c || "").toLowerCase();
-            return cl === proSkill || cl === proCat || proSkill.includes(cl) || proCat.includes(cl);
-          }));
-      if (!inThisCat) return false;
+      if (catFilter !== activeFilter.key) {
+        const subKey = catFilter.toLowerCase();
+        const matchesSub =
+          proSkill === subKey ||
+          proSkill.includes(subKey) ||
+          subKey.includes(proSkill) ||
+          matchLeadToTaxonomy(l, subKey);
+        if (!matchesSub) return false;
+      } else {
+        const inThisCat =
+          proCat === filterKey ||
+          proSkill === filterKey ||
+          (Array.isArray(activeFilter.cats) &&
+            activeFilter.cats.some((c) => {
+              const cl = (c || "").toLowerCase();
+              return cl === proSkill || cl === proCat || proSkill.includes(cl) || proCat.includes(cl);
+            }));
+        if (!inThisCat) return false;
+      }
     }
     if (minRating && (Number(l.rating) || 0) < minRating) return false;
     if (!term) return true;
