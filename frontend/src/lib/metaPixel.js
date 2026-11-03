@@ -1,9 +1,9 @@
 /**
  * Meta Pixel helper for tracking conversions and pageviews.
- * Pixel ID: 309500390459765
+ * Pixel ID: 2367533987392256
  */
 
-export const META_PIXEL_ID = "309500390459765";
+export const META_PIXEL_ID = "2367533987392256";
 
 export function trackPixelEvent(eventName, params = {}) {
   try {
