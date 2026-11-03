@@ -99,6 +99,18 @@ let webpackConfig = {
         ],
       };
 
+      // Preserve exact Meta Pixel inline script and comments in index.html during production builds
+      webpackConfig.plugins.forEach((plugin) => {
+        if (plugin && plugin.constructor && plugin.constructor.name === "HtmlWebpackPlugin") {
+          if (plugin.userOptions) {
+            plugin.userOptions.minify = false;
+          }
+          if (plugin.options) {
+            plugin.options.minify = false;
+          }
+        }
+      });
+
       // Add health check plugin to webpack if enabled
       if (config.enableHealthCheck && healthPluginInstance) {
         webpackConfig.plugins.push(healthPluginInstance);
