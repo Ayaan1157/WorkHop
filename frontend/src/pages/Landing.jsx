@@ -3,7 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   ChevronLeft, Mail, KeyRound, ArrowRight, LogOut, UserCircle2, Loader2,
   MapPin, ShieldCheck, Zap, Sparkles, PlusCircle, CheckCircle, Navigation, Users, Briefcase,
-  User, Building2, LocateFixed, CheckCircle2, Eye, EyeOff, Sun, Moon, Menu, X, Star
+  User, Building2, LocateFixed, CheckCircle2, Eye, EyeOff, Sun, Moon, Menu, X, Star,
+  Palette, Code2, Megaphone, PenTool, Video, Cpu, Music, Compass, MessageSquare, PhoneCall, Wallet, Lock
 } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
 import { getStoredLeads, isEmailRegistered } from "@/lib/clientStore";
@@ -1207,195 +1208,425 @@ export default function Landing() {
         )}
       </header>
 
-      {/* Hero Section (Edge-to-Edge) */}
-      <section className="w-full border-b-2 border-ink bg-white dark:bg-[#121212] px-4 py-8 sm:px-10 lg:px-16 xl:px-20">
-        
-        {/* Quick Direct Workspace Shortcut Bar if already authenticated */}
+      {/* ═══════════════════════════════════════════════════════════════════════
+          1. HERO SECTION — Short Headline, 2 CTAs & 5 km Radar Map + Floating UI
+          ═══════════════════════════════════════════════════════════════════════ */}
+      <section className="w-full border-b-2 border-ink bg-white dark:bg-[#121212] px-4 py-8 sm:px-10 sm:py-12 lg:px-16 lg:py-16 xl:px-20 overflow-hidden">
+        {/* Quick Direct Workspace Bar if already authenticated */}
         {user && (
-          <div className="mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-[#FFF3E9] dark:bg-[#251710] p-3.5 sm:p-4 shadow-[3px_3px_0px_#121212]">
+          <div className="mx-auto max-w-7xl mb-6 flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-[#FFF3E9] dark:bg-[#251710] px-4 py-3 shadow-[3px_3px_0px_#121212]">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center border-2 border-ink bg-brand text-white">
-                <Sparkles size={18} />
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center border-2 border-ink bg-brand text-white">
+                <Sparkles size={16} />
               </span>
-              <div>
-                <p className="text-xs sm:text-sm font-black text-ink dark:text-white">Welcome back, {user.name || "Member"}!</p>
-                <p className="text-[10px] sm:text-[11px] text-inkmuted dark:text-stone-400">
-                  {isEmployerUser
-                    ? "Your Employer Workspace · View and hire verified local experts"
-                    : "Your Freelancer Workspace · Apply to active gigs and chat with employers"}
-                </p>
-              </div>
+              <p className="text-xs sm:text-sm font-black text-ink dark:text-white">
+                Welcome back, {user.name || "Member"}!
+              </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               {isEmployerUser ? (
                 <button
                   data-testid="quick-employer-btn"
                   onClick={() => nav("/employer")}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-ink bg-ink text-white px-4 py-2 text-xs font-black shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-ink bg-ink text-white px-4 py-2 text-xs font-black shadow-[2px_2px_0px_#121212]"
                 >
                   <Users size={14} />
-                  <span>🏢 GO TO EMPLOYER SITE</span>
+                  <span>OPEN EMPLOYER WORKSPACE</span>
                 </button>
               ) : (
                 <button
                   data-testid="quick-freelancer-btn"
                   onClick={() => nav("/freelancer/jobs")}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-ink bg-brand text-white px-4 py-2 text-xs font-black shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-ink bg-brand text-white px-4 py-2 text-xs font-black shadow-[2px_2px_0px_#121212]"
                 >
                   <Briefcase size={14} />
-                  <span>💼 GO TO FREELANCER SITE</span>
+                  <span>OPEN FREELANCER WORKSPACE</span>
                 </button>
               )}
             </div>
           </div>
         )}
 
-        <div className="max-w-4xl">
-          <div className="inline-flex max-w-full items-center gap-1.5 sm:gap-2 border-2 border-ink bg-sand dark:bg-[#222] px-2.5 sm:px-3 py-1 text-[9.5px] xs:text-[10px] sm:text-xs font-black tracking-wider">
-            <span className="h-2 w-2 rounded-full bg-ok animate-pulse shrink-0" />
-            <span className="truncate">YOUR NEXT LOCAL GIG, ONE MINUTE AWAY · BENGALURU</span>
-          </div>
-          <h1 className="mt-4 text-3xl xs:text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.06] tracking-tight text-ink dark:text-white">
-            Pick a side.<br />Get to work.
-          </h1>
-          <div className="mt-3 h-1.5 w-20 sm:w-28 bg-brand" />
-          <p className="mt-4 max-w-2xl text-sm sm:text-lg leading-relaxed text-inkmuted dark:text-stone-300">
-            <span className="font-extrabold text-ink dark:text-white">Your next local gig, one minute away.</span> Connect with top-rated, portfolio-verified professionals within 5km. Direct chats, instant hires.
-          </p>
-        </div>
+        <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+          {/* Left Column: Short Headline + 1-Line Subtext + 2 CTAs */}
+          <div className="lg:col-span-6 text-left">
+            <div className="inline-flex items-center gap-2 border-2 border-ink bg-[#FFF3C4] px-3 py-1 text-[10px] sm:text-xs font-black uppercase tracking-wider text-black shadow-[2px_2px_0px_#121212]">
+              <span className="h-2 w-2 rounded-full bg-ok animate-pulse shrink-0" />
+              <span>5 KM GEOFENCED MARKETPLACE · BENGALURU</span>
+            </div>
 
-        {/* Dual Action Cards Stretching Full Width */}
-        <div className={`mt-8 sm:mt-12 grid grid-cols-1 gap-5 sm:gap-8 ${user ? "md:grid-cols-1" : "md:grid-cols-2"}`}>
-          
-          {/* Employer Card: Shown if not logged in OR if logged in as Employer */}
-          {(!user || isEmployerUser) && (
-            <button
-              data-testid="role-employer-card"
-              onClick={() => chooseRole("employer")}
-              className="group border-2 border-ink bg-white dark:bg-[#1a1a1a] p-4 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
-            >
-              <div className="mb-4 sm:mb-6 flex items-center justify-between">
-                <span className="bg-brand px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.1em] text-white">
-                  I'M HIRING (EMPLOYER)
-                </span>
-                <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-ink bg-sand dark:bg-[#2a2a2a] group-hover:bg-brand group-hover:text-white transition">
-                  <ArrowRight size={20} className="text-ink dark:text-white group-hover:text-white" />
-                </div>
-              </div>
-              <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-black dark:text-white">
-                Find 5 verified experts on your block
-              </p>
-              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-black dark:text-white/80 font-semibold">
-                Unlock direct phone numbers and full verified portfolios of top designers, developers, videographers, and creators near you.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-ink/20 dark:border-white/20 pt-4 text-xs font-black text-brand">
-                <span>One-time unlock from ₹199</span>
-                <span>•</span>
-                <span>Instant Call &amp; Chat</span>
-              </div>
-            </button>
-          )}
+            <h1 className="mt-4 text-4xl xs:text-5xl sm:text-6xl xl:text-[64px] font-black leading-[1.04] tracking-tight text-ink dark:text-white">
+              Hire or find gigs within <span className="text-brand">5 km.</span>
+            </h1>
 
-          {/* Freelancer Card: Shown if not logged in OR if logged in as Freelancer */}
-          {(!user || isFreelancerUser) && (
-            <button
-              data-testid="role-freelancer-card"
-              onClick={() => chooseRole("freelancer")}
-              className="group border-2 border-ink bg-brand p-4 sm:p-8 lg:p-10 text-left shadow-[4px_4px_0px_#121212] transition hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-y-1"
-            >
-              <div className="mb-4 sm:mb-6 flex items-center justify-between">
-                <span className="bg-ink px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-black tracking-[0.1em] text-white">
-                  I'M LOOKING FOR GIGS (FREELANCER)
-                </span>
-                <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center border-2 border-white bg-white/10 group-hover:bg-ink transition">
-                  <ArrowRight size={20} className="text-white" />
-                </div>
-              </div>
-              <p className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-white">
-                Apply to 200+ gigs within 5km of you
-              </p>
-              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-white/95 font-semibold">
-                Direct chat with Bengaluru employers looking for immediate hires. Zero middlemen, keep 100% earnings.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/20 pt-4 text-xs font-extrabold text-white">
-                <span>Hyperlocal 5km Matching</span>
-                <span>•</span>
-                <span>Direct Client Payments (0% Fee)</span>
-              </div>
-            </button>
-          )}
+            <p className="mt-4 max-w-lg text-sm sm:text-base lg:text-lg font-medium leading-relaxed text-inkmuted dark:text-stone-300">
+              Verified local freelancers and live gigs on your block — instant direct chat, zero middlemen, 0% commission.
+            </p>
 
-        </div>
-      </section>
+            {/* Primary & Secondary CTAs */}
+            <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
+              <button
+                data-testid="role-freelancer-card"
+                onClick={() => chooseRole("freelancer")}
+                className="flex items-center justify-center gap-2 border-2 border-ink bg-brand px-6 py-3.5 sm:px-7 sm:py-4 text-xs sm:text-sm font-black uppercase tracking-wider text-white shadow-[4px_4px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
+              >
+                <span>Find work nearby</span>
+                <ArrowRight size={17} />
+              </button>
 
-      {/* Featured AI & Smart Automations Strip / Banner */}
-      <section className="border-b-2 border-ink bg-[#121212] text-white px-4 py-5 sm:px-8 lg:px-12 xl:px-16">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center border-2 border-white bg-brand text-white shadow-[2px_2px_0px_#ffffff]">
-              <Sparkles className="h-8 w-8 sm:h-9 sm:w-9 animate-pulse" strokeWidth={2.3} />
-            </span>
-            <div className="shrink-0">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="bg-[#FFE082] !text-black px-2 py-0.5 text-[10px] font-black uppercase tracking-wider"
-                  style={{ color: "#000000" }}
-                >
-                  NEW CATEGORY
-                </span>
-                <span className="text-[11px] font-bold text-stone-400">TRENDING IN BENGALURU</span>
-              </div>
-              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight whitespace-nowrap">
-                AI &amp; Smart Automations
-              </h2>
+              <a
+                href="#how-it-works"
+                className="flex items-center justify-center gap-2 border-2 border-ink bg-sand dark:bg-[#1E1E22] px-5 py-3.5 sm:px-6 sm:py-4 text-xs sm:text-sm font-black uppercase tracking-wider text-ink dark:text-white shadow-[4px_4px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
+              >
+                <span>How it works</span>
+              </a>
+            </div>
+
+            {/* Secondary Role Switch Pill for Employers */}
+            <div className="mt-5 flex flex-wrap items-center gap-2 pt-2">
+              <button
+                data-testid="role-employer-card"
+                onClick={() => chooseRole("employer")}
+                className="group inline-flex items-center gap-2 border border-ink/30 dark:border-white/20 bg-[#E5F8EE] px-3.5 py-2 text-xs font-black text-black transition hover:border-ink"
+              >
+                <Building2 size={14} className="text-ok shrink-0" />
+                <span>Hiring talent? Browse verified pros within 5 km</span>
+                <ArrowRight size={13} className="text-black transition group-hover:translate-x-0.5" />
+              </button>
             </div>
           </div>
 
-          {/* 5 Quick Sub-Tags - all visible at once without horizontal scrolling */}
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap xl:flex-nowrap items-stretch sm:items-center gap-2">
-            {[
-              {
-                title: "AI Video & Reels",
-                sub: "Avatars, UGC Ads",
-                query: "AI UGC & Reel Generation",
-              },
-              {
-                title: "AI Graphic & 3D",
-                sub: "Midjourney & 3D",
-                query: "AI Product & Studio Photography",
-              },
-              {
-                title: "Automations & Bots",
-                sub: "Bots & Workflows",
-                query: "No-Code Workflow Automation",
-              },
-              {
-                title: "AI Content & SEO",
-                sub: "Prompts & Copy",
-                query: "AI Content Humanization & SEO Polishing",
-              },
-              {
-                title: "Coding with AI",
-                sub: "Scripts & Bug Fixes",
-                query: "Custom Vibe Coding, Scripts & Web Fixes",
-              },
-            ].map((tag, idx) => (
-              <button
-                key={tag.title}
-                type="button"
-                onClick={() => nav(isEmployerUser ? `/employer?q=${encodeURIComponent(tag.query)}` : `/freelancer/jobs?q=${encodeURIComponent(tag.query)}`)}
-                className={`group flex flex-col justify-center text-left border-2 border-white/80 bg-white/5 hover:bg-brand hover:border-brand px-2.5 py-2 sm:py-1.5 transition shadow-[2px_2px_0px_rgba(255,255,255,0.4)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 cursor-pointer sm:shrink-0 ${
-                  idx === 4 ? "col-span-2 sm:col-span-1" : ""
-                }`}
-              >
-                <div className="flex items-center justify-between sm:justify-start gap-1">
-                  <span className="text-xs font-black text-white group-hover:text-white leading-tight">
-                    {tag.title}
+          {/* Right Column: Stylized 5 km Geofence Radar Map + 3 Floating UI Cards */}
+          <div className="lg:col-span-6 relative">
+            <div className="relative mx-auto max-w-[540px] border-2 border-ink bg-[#141417] p-5 sm:p-7 shadow-[6px_6px_0px_#121212] overflow-hidden">
+              {/* Top Radar Header Bar */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-ok animate-ping" />
+                  <span className="text-[11px] font-black uppercase tracking-wider text-white">
+                    LIVE 5 KM GEOFENCE · KORAMANGALA
                   </span>
-                  <ArrowRight size={11} className="text-brand group-hover:text-white group-hover:translate-x-0.5 transition shrink-0" />
                 </div>
-                <span className="text-[10px] text-stone-300 font-medium group-hover:text-white/90 leading-tight mt-0.5">
-                  {tag.sub}
+                <span className="bg-brand px-2 py-0.5 text-[10px] font-black uppercase text-white">
+                  18 ACTIVE NEARBY
+                </span>
+              </div>
+
+              {/* Stylized SVG 5 km Radar Canvas */}
+              <div className="relative aspect-[4/3] w-full flex items-center justify-center rounded-sm bg-[#101114] border border-white/10 overflow-hidden">
+                <svg
+                  viewBox="0 0 400 300"
+                  className="w-full h-full"
+                  aria-label="5 km hyperlocal radar map graphic"
+                >
+                  <defs>
+                    <radialGradient id="whRadarGlow" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#E65A1E" stopOpacity="0.28" />
+                      <stop offset="65%" stopColor="#E65A1E" stopOpacity="0.07" />
+                      <stop offset="100%" stopColor="#E65A1E" stopOpacity="0" />
+                    </radialGradient>
+                    <linearGradient id="whSweepGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#E65A1E" stopOpacity="0.38" />
+                      <stop offset="100%" stopColor="#E65A1E" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Subtle street grid lines */}
+                  <g stroke="#27272A" strokeWidth="1" opacity="0.55">
+                    <line x1="0" y1="60" x2="400" y2="60" />
+                    <line x1="0" y1="150" x2="400" y2="150" />
+                    <line x1="0" y1="240" x2="400" y2="240" />
+                    <line x1="80" y1="0" x2="80" y2="300" />
+                    <line x1="200" y1="0" x2="200" y2="300" />
+                    <line x1="320" y1="0" x2="320" y2="300" />
+                  </g>
+
+                  {/* Radar ambient glow */}
+                  <circle cx="200" cy="150" r="130" fill="url(#whRadarGlow)" />
+
+                  {/* Concentric Geofence Rings: 1 km, 3 km, 5 km */}
+                  <circle cx="200" cy="150" r="42" fill="none" stroke="#E65A1E" strokeOpacity="0.45" strokeWidth="1.5" strokeDasharray="4 4" />
+                  <circle cx="200" cy="150" r="85" fill="none" stroke="#E65A1E" strokeOpacity="0.35" strokeWidth="1.5" strokeDasharray="5 5" />
+                  <circle cx="200" cy="150" r="126" fill="none" stroke="#10B981" strokeOpacity="0.45" strokeWidth="1.5" />
+
+                  {/* Ring Distance Labels */}
+                  <text x="206" y="112" fill="#A1A1AA" fontSize="9" fontWeight="800">1 KM</text>
+                  <text x="206" y="69" fill="#A1A1AA" fontSize="9" fontWeight="800">3 KM</text>
+                  <text x="206" y="29" fill="#34D399" fontSize="9" fontWeight="800">5 KM MAX</text>
+
+                  {/* Rotating Radar Wedge */}
+                  <g className="wh-radar-sweep" style={{ transformOrigin: "200px 150px" }}>
+                    <path d="M200,150 L326,150 A126,126 0 0,0 289,61 Z" fill="url(#whSweepGrad)" />
+                  </g>
+
+                  {/* Nearby Pin 1: UI/UX Pro (0.8 km) */}
+                  <g transform="translate(148, 114)">
+                    <circle cx="0" cy="0" r="10" fill="#10B981" fillOpacity="0.25" />
+                    <circle cx="0" cy="0" r="5" fill="#10B981" stroke="#FFFFFF" strokeWidth="1.5" />
+                  </g>
+
+                  {/* Nearby Pin 2: Video Creator (1.6 km) */}
+                  <g transform="translate(262, 108)">
+                    <circle cx="0" cy="0" r="10" fill="#E65A1E" fillOpacity="0.25" />
+                    <circle cx="0" cy="0" r="5" fill="#E65A1E" stroke="#FFFFFF" strokeWidth="1.5" />
+                  </g>
+
+                  {/* Nearby Pin 3: AI Automation Gig (2.4 km) */}
+                  <g transform="translate(248, 206)">
+                    <circle cx="0" cy="0" r="10" fill="#FACC15" fillOpacity="0.25" />
+                    <circle cx="0" cy="0" r="5" fill="#FACC15" stroke="#121212" strokeWidth="1.5" />
+                  </g>
+
+                  {/* Center User Pin */}
+                  <g transform="translate(200, 150)">
+                    <circle cx="0" cy="0" r="16" fill="#E65A1E" fillOpacity="0.25" />
+                    <circle cx="0" cy="0" r="7" fill="#E65A1E" stroke="#FFFFFF" strokeWidth="2.5" />
+                  </g>
+                </svg>
+
+                {/* Floating UI Card 1: Job Card (Top-Left, Cream Accent) */}
+                <div className="wh-float-1 absolute top-2.5 left-2.5 sm:top-4 sm:left-4 max-w-[205px] sm:max-w-[230px] border-2 border-ink bg-[#FFF3C4] p-2.5 sm:p-3 shadow-[3px_3px_0px_#121212]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="bg-ink px-1.5 py-0.5 text-[9px] font-black uppercase text-white">
+                      0.8 KM AWAY
+                    </span>
+                    <span className="text-xs font-black text-brand">₹18,000</span>
+                  </div>
+                  <p className="mt-1 text-[11px] sm:text-xs font-black leading-tight text-black">
+                    Brand &amp; Packaging UI Gig
+                  </p>
+                </div>
+
+                {/* Floating UI Card 2: "Payment Secured" Chip (Bottom-Left, Mint Accent) */}
+                <div className="wh-float-2 absolute bottom-2.5 left-2.5 sm:bottom-4 sm:left-4 border-2 border-ink bg-[#E5F8EE] px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-[3px_3px_0px_#121212] flex items-center gap-2">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ok text-white">
+                    <ShieldCheck size={13} />
+                  </span>
+                  <div>
+                    <p className="text-[10px] sm:text-[11px] font-black uppercase leading-none text-black">
+                      Payment Secured
+                    </p>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-black/80 mt-0.5">
+                      ₹28,000 Escrow · 0% Cut
+                    </p>
+                  </div>
+                </div>
+
+                {/* Floating UI Card 3: Instant Chat Bubble (Bottom-Right, Dark/Orange) */}
+                <div className="wh-float-3 hidden xs:flex absolute bottom-2.5 right-2.5 sm:bottom-4 sm:right-4 max-w-[200px] sm:max-w-[220px] border-2 border-white/80 bg-[#1C1C21] p-2.5 shadow-[3px_3px_0px_#000000] items-start gap-2">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-brand text-[10px] font-black text-white">
+                    KR
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-black text-white leading-none">
+                      Karthik · <span className="text-ok">1.1 km</span>
+                    </p>
+                    <p className="mt-1 text-[10px] font-medium text-stone-300 leading-tight">
+                      &ldquo;Meet at Third Wave in 15m?&rdquo;
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          2. MARQUEE BELT (TASK 1) — Seamless Infinite Horizontal Belt
+          ═══════════════════════════════════════════════════════════════════════ */}
+      <section
+        aria-label="WorkHop platform highlights"
+        className="wh-marquee-belt w-full border-b-2 border-ink py-3.5 sm:py-5 select-none"
+      >
+        <div className="wh-marquee-mask w-full overflow-hidden">
+          <div className="wh-marquee-track items-center">
+            {[0, 1].map((loopIdx) => (
+              <div
+                key={loopIdx}
+                aria-hidden={loopIdx === 1 ? "true" : undefined}
+                className="flex shrink-0 items-center"
+              >
+                {[
+                  "Hyperlocal Gigs",
+                  "Within 5 km",
+                  "Verified Freelancers",
+                  "Secure Escrow Payments",
+                  "Instant Chat",
+                  "AI & Smart Automations",
+                  "Reviews You Can Trust",
+                  "Zero Commute Hiring",
+                  "Keep 100% Earnings",
+                ].map((item) => (
+                  <div key={`${loopIdx}-${item}`} className="flex shrink-0 items-center">
+                    <span className="wh-marquee-item px-5 sm:px-7 lg:px-9 text-lg sm:text-2xl lg:text-[28px] font-black tracking-tight whitespace-nowrap">
+                      {item}
+                    </span>
+                    {/* 4-Point Star / Sparkle Separator in Muted Tone */}
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="wh-marquee-star h-4 w-4 sm:h-5 sm:w-5 shrink-0"
+                      fill="currentColor"
+                    >
+                      <path d="M12 2L14.6 9.4L22 12L14.6 14.6L12 22L9.4 14.6L2 12L9.4 9.4L12 2Z" />
+                    </svg>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          3. HOW IT WORKS — 3 Visual Step Cards in a Row (Max 1 Short Line Each)
+          ═══════════════════════════════════════════════════════════════════════ */}
+      <section
+        id="how-it-works"
+        className="border-b-2 border-ink bg-[#FAFAF8] dark:bg-[#141416] py-10 sm:py-16 px-4 sm:px-10 lg:px-16"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
+            <div>
+              <span className="text-xs font-black uppercase tracking-widest text-brand">
+                HOW IT WORKS
+              </span>
+              <h2 className="mt-1 text-2xl sm:text-4xl font-black text-ink dark:text-white tracking-tight">
+                From pin drop to payout in 3 steps.
+              </h2>
+            </div>
+            <span className="text-xs font-black uppercase tracking-wider text-inkmuted dark:text-stone-400">
+              AVERAGE MATCH TIME: &lt; 5 MINS
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+            {/* Step 1 */}
+            <div className="border-2 border-ink bg-white dark:bg-[#1C1C20] p-6 shadow-[4px_4px_0px_#121212] flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-[#FFF3C4] text-black">
+                    <MapPin size={22} className="text-black" />
+                  </div>
+                  <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
+                    STEP 01
+                  </span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
+                  Post or find a job
+                </h3>
+                <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300 line-clamp-2">
+                  Drop a pin or browse live gigs within 5 km of your block.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-brand">
+                <LocateFixed size={13} />
+                <span>KORAMANGALA · HSR · INDIRANAGAR + MORE</span>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="border-2 border-ink bg-white dark:bg-[#1C1C20] p-6 shadow-[4px_4px_0px_#121212] flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-[#E5F8EE] text-black">
+                    <MessageSquare size={22} className="text-black" />
+                  </div>
+                  <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
+                    STEP 02
+                  </span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
+                  Chat and agree
+                </h3>
+                <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300 line-clamp-2">
+                  Unlock direct phone &amp; WhatsApp to align on scope in minutes.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-ok">
+                <PhoneCall size={13} />
+                <span>INSTANT CALL · DIRECT WHATSAPP</span>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="border-2 border-ink bg-white dark:bg-[#1C1C20] p-6 shadow-[4px_4px_0px_#121212] flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-[#FFEAA0] text-black">
+                    <ShieldCheck size={22} className="text-black" />
+                  </div>
+                  <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
+                    STEP 03
+                  </span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
+                  Get paid securely
+                </h3>
+                <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300 line-clamp-2">
+                  Settle via milestone escrow or direct UPI with 0% commission.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-brand">
+                <Lock size={13} />
+                <span>KEEP 100% OF YOUR EARNINGS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          4. CATEGORIES — 9 Verticals Visual Icon Grid (Label Only, No Paragraphs)
+          ═══════════════════════════════════════════════════════════════════════ */}
+      <section className="border-b-2 border-ink bg-white dark:bg-[#121212] py-10 sm:py-16 px-4 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+            <div>
+              <span className="text-xs font-black uppercase tracking-widest text-brand">
+                9 SPECIALIZED VERTICALS
+              </span>
+              <h2 className="mt-1 text-2xl sm:text-4xl font-black text-ink dark:text-white tracking-tight">
+                Explore by category.
+              </h2>
+            </div>
+            <Link
+              to="/categories"
+              className="inline-flex items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#1E1E22] px-4 py-2 text-xs font-black uppercase text-ink dark:text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
+            >
+              <span>All 45+ Sub-Categories</span>
+              <ArrowRight size={14} className="text-brand" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3 sm:gap-4">
+            {[
+              { label: "Graphics & Design", slug: "graphics-design", Icon: Palette, bg: "#FFF3C4" },
+              { label: "Tech & Code", slug: "programming-tech", Icon: Code2, bg: "#E5F8EE" },
+              { label: "Digital Marketing", slug: "digital-marketing", Icon: Megaphone, bg: "#FCE4EC" },
+              { label: "Video & Motion", slug: "video-animation", Icon: Video, bg: "#E0F7FA" },
+              { label: "AI & Automations", slug: "ai-smart-automations", Icon: Cpu, bg: "#FFEAA0" },
+              { label: "Writing & Copy", slug: "writing-translation", Icon: PenTool, bg: "#F3E5F5" },
+              { label: "Music & Audio", slug: "music-audio", Icon: Music, bg: "#FFF8E7" },
+              { label: "Business & Ops", slug: "business", Icon: Briefcase, bg: "#E8F5E9" },
+              { label: "Hyperlocal Field", slug: "hyperlocal-specialized", Icon: Compass, bg: "#D8F3DC" },
+            ].map(({ label, slug, Icon, bg }) => (
+              <button
+                key={slug}
+                type="button"
+                data-testid={`cat-tile-${slug}`}
+                onClick={() => nav(`/categories?discipline=${encodeURIComponent(slug)}`)}
+                className="group border-2 border-ink bg-[#FAFAF8] dark:bg-[#1B1B1F] p-4 flex flex-col items-center justify-center text-center shadow-[3px_3px_0px_#121212] transition hover:-translate-y-1 hover:border-brand cursor-pointer"
+              >
+                <span
+                  style={{ backgroundColor: bg }}
+                  className="flex h-12 w-12 items-center justify-center border-2 border-ink shadow-[2px_2px_0px_#121212] transition group-hover:scale-105"
+                >
+                  <Icon size={21} className="cat-icon text-black" />
+                </span>
+                <span className="mt-3 text-xs font-black leading-snug text-ink dark:text-white group-hover:text-brand">
+                  {label}
                 </span>
               </button>
             ))}
@@ -1403,330 +1634,219 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Trust & Live Metrics Strip */}
-      <section className="border-b-2 border-ink dark:border-zinc-800 bg-[#FFF3E9] dark:bg-[#1a140f] py-6 sm:py-8 px-4 sm:px-10 lg:px-16">
-        <div className="mx-auto max-w-7xl grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-4 text-center items-center justify-center">
-          <div className="flex flex-col items-center justify-center text-center">
-            <p className="text-2xl sm:text-4xl font-black text-black dark:text-white">5 KM</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Hyperlocal Radius</p>
-          </div>
-          <div className="flex flex-col items-center justify-center text-center">
-            <p className="text-2xl sm:text-4xl font-black text-black dark:text-white">200+</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Active Bengaluru Gigs</p>
-          </div>
-          <div className="flex flex-col items-center justify-center text-center">
-            <p className="text-2xl sm:text-4xl font-black text-brand">100%</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Keep Your Earnings</p>
-          </div>
-          <div className="flex flex-col items-center justify-center text-center">
-            <p className="text-2xl sm:text-4xl font-black text-black dark:text-white">1 MIN</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#333333] dark:text-stone-300">Fast Onboarding</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature Value Props */}
-      <section className="border-b-2 border-ink bg-white dark:bg-[#121212] py-10 sm:py-16 px-4 sm:px-10 lg:px-16">
-        <div className="max-w-3xl">
-          <span className="text-xs font-black uppercase tracking-widest text-brand">WHY WORKHOP</span>
-          <h2 className="mt-1 text-2xl sm:text-4xl font-black text-ink dark:text-white">Built specifically for high-speed local collaborations</h2>
-        </div>
-
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
-          <div className="border-2 border-ink bg-sand/50 dark:bg-[#1c1c1c] p-5 sm:p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-brand text-white font-black text-sm">
-              1
-            </div>
-            <h3 className="mt-3 text-base sm:text-lg font-black text-ink dark:text-white">VERIFIED TALENT</h3>
-            <p className="mt-1.5 text-xs leading-5 text-inkmuted dark:text-stone-400">
-              Every freelancer is verified with email, Aadhaar, and live portfolios.
-            </p>
-          </div>
-
-          <div className="border-2 border-ink bg-sand/50 dark:bg-[#1c1c1c] p-5 sm:p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-ink dark:bg-[#2a2a2a] text-white dark:!text-white font-black text-sm">
-              2
-            </div>
-            <h3 className="mt-3 text-base sm:text-lg font-black text-ink dark:text-white">DIRECT CONTACT</h3>
-            <p className="mt-1.5 text-xs leading-5 text-inkmuted dark:text-stone-400">
-              Unlock direct mobile numbers and start chatting on WhatsApp/Phone immediately without waiting.
-            </p>
-          </div>
-
-          <div className="border-2 border-ink bg-sand/50 dark:bg-[#1c1c1c] p-5 sm:p-6 shadow-[3px_3px_0px_#121212]">
-            <div className="flex h-9 w-9 items-center justify-center border-2 border-ink bg-ok text-white font-black text-sm">
-              3
-            </div>
-            <h3 className="mt-3 text-base sm:text-lg font-black text-ink dark:text-white">TRANSPARENT PRICING</h3>
-            <p className="mt-1.5 text-xs leading-5 text-inkmuted dark:text-stone-400">
-              Transparent 1 Hop = ₹15 bidding. Direct client payments with zero platform commission taken from your earnings.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Verified Pros & Talent Showcase */}
-      <section className="border-b-2 border-ink bg-white dark:bg-[#121212] py-12 sm:py-16 px-4 sm:px-10 lg:px-16">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b-2 border-ink dark:border-white/10">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 border border-ok/40 bg-ok/10 dark:bg-ok/20 px-3 py-1 text-xs font-black uppercase tracking-wider text-ok mb-3">
-              <ShieldCheck size={14} className="text-ok" />
-              <span>LIVE TALENT POOL · BENGALURU</span>
-            </div>
-            <h2 className="text-2xl sm:text-4xl font-black text-ink dark:text-white leading-tight">
-              Meet Verified Local Freelancers Near You
-            </h2>
-            <p className="mt-2 text-xs sm:text-sm text-inkmuted dark:text-stone-400 font-medium">
-              Portfolio-screened, ID-verified creators, developers &amp; marketers active across Bengaluru. Direct WhatsApp chat, zero commission.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/employer"
-              className="inline-flex items-center gap-2 border-2 border-ink bg-ink text-white dark:bg-brand px-5 py-3 text-xs sm:text-sm font-black uppercase shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
-            >
-              <span>EXPLORE ALL FREELANCERS</span>
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-
-        {/* Pros Cards Grid */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {featuredPros.map((pro, idx) => (
-            <div
-              key={pro.id || idx}
-              onClick={() => nav(`/employer?q=${encodeURIComponent(pro.name)}`)}
-              className="group border-2 border-ink bg-sand/30 dark:bg-[#1a1a1a] p-5 shadow-[3px_3px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 transition cursor-pointer flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-brand text-white font-black text-sm shadow-[1px_1px_0px_#121212]">
-                      {pro.initials || (pro.name || "VP").slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-sm font-black text-ink dark:text-white">{pro.name}</p>
-                        <span className="flex items-center gap-0.5 bg-ok/15 text-ok border border-ok px-1.5 py-0.2 text-[9px] font-black">
-                          <ShieldCheck size={9} /> VERIFIED
-                        </span>
-                        {pro.paid && (
-                          <span className="flex items-center gap-0.5 bg-[#FFF3C4] text-brand border border-brand px-1.5 py-0.2 text-[9px] font-black">
-                            <Sparkles size={9} /> TOP PRO
-                          </span>
-                        )}
+      {/* ═══════════════════════════════════════════════════════════════════════
+          5. FEATURE HIGHLIGHTS — 3 Alternating Visual Mockup + Short Copy Blocks
+          ═══════════════════════════════════════════════════════════════════════ */}
+      <section className="border-b-2 border-ink bg-[#FAFAF8] dark:bg-[#151518] py-12 sm:py-16 px-4 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-7xl space-y-10 sm:space-y-14">
+          {/* Highlight 1: 5 km Hyperlocal Map Match (Visual Left, Text Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+            <div className="lg:col-span-6 border-2 border-ink bg-white dark:bg-[#1C1C21] p-5 sm:p-6 shadow-[4px_4px_0px_#121212]">
+              <div className="flex items-center justify-between border-b border-ink/10 dark:border-white/10 pb-3 mb-4">
+                <span className="text-[11px] font-black uppercase tracking-wider text-brand">
+                  NEARBY VERIFIED PROS · &lt; 2 KM
+                </span>
+                <span className="bg-[#E5F8EE] border border-ink px-2 py-0.5 text-[10px] font-black text-black">
+                  LIVE GPS FILTER
+                </span>
+              </div>
+              <div className="space-y-2.5">
+                {(featuredPros.slice(0, 3).length > 0
+                  ? featuredPros.slice(0, 3)
+                  : [
+                      { name: "Karthik Raja", skill: "UI/UX & Product Design", area: "Indiranagar · 0.8 km", rate_hr: 850 },
+                      { name: "Sneha Rao", skill: "Brand Identity & Packaging", area: "Koramangala · 1.2 km", rate_hr: 750 },
+                      { name: "Rahul Verma", skill: "Architecture & CAD Drafting", area: "HSR Layout · 1.9 km", rate_hr: 900 },
+                    ]
+                ).map((pro, idx) => (
+                  <div
+                    key={pro.id || idx}
+                    onClick={() => nav(`/employer?q=${encodeURIComponent(pro.name)}`)}
+                    className="flex items-center justify-between gap-3 border-2 border-ink bg-[#FAFAF8] dark:bg-[#242429] p-3 cursor-pointer transition hover:border-brand"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-ink bg-brand text-xs font-black text-white">
+                        {(pro.initials || (pro.name || "VP").slice(0, 2)).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-black text-ink dark:text-white truncate">
+                          {pro.name}
+                        </p>
+                        <p className="text-[11px] font-bold text-brand truncate">
+                          {pro.skill}
+                        </p>
                       </div>
-                      <p className="text-xs font-bold text-brand truncate max-w-[200px]">{pro.skill}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="inline-block bg-[#FFF3C4] border border-ink px-2 py-0.5 text-[10px] font-black text-black">
+                        📍 {pro.area || "1.1 km"}
+                      </span>
+                      <p className="mt-1 text-[11px] font-black text-ink dark:text-white">
+                        ₹{pro.rate_hr || 800}/hr
+                      </p>
                     </div>
                   </div>
-                  {Number(pro.reviews_count) > 0 && pro.rating ? (
-                    <span className="flex items-center gap-1 border border-ink bg-white dark:bg-zinc-800 px-2 py-0.5 text-xs font-black dark:text-white">
-                      <Star size={11} fill="#E65A1E" className="text-brand" /> {pro.rating}
-                    </span>
-                  ) : (
-                    <span className="border border-ink/40 bg-sand/60 dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-inkmuted dark:text-stone-300">
-                      No reviews yet
-                    </span>
-                  )}
+                ))}
+              </div>
+            </div>
+
+            <div className="lg:col-span-6 lg:pl-4">
+              <span className="inline-block border border-ink bg-[#FFF3C4] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-black">
+                5 KM GEOFENCE MATCHING
+              </span>
+              <h3 className="mt-3 text-2xl sm:text-4xl font-black leading-tight text-ink dark:text-white">
+                Talent on your street, not across timezones.
+              </h3>
+              <p className="mt-3 max-w-lg text-sm sm:text-base font-medium leading-relaxed text-inkmuted dark:text-stone-300 line-clamp-2">
+                Filter verified pros and urgent gigs within 5 km of your pin — meet over coffee or kick off remotely in minutes.
+              </p>
+            </div>
+          </div>
+
+          {/* Highlight 2: Escrow & Hops Wallet (Text Left, Visual Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+            <div className="lg:col-span-6 order-2 lg:order-1">
+              <span className="inline-block border border-ink bg-[#E5F8EE] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-black">
+                ZERO PLATFORM CUT
+              </span>
+              <h3 className="mt-3 text-2xl sm:text-4xl font-black leading-tight text-ink dark:text-white">
+                Protected escrow &amp; 100% take-home pay.
+              </h3>
+              <p className="mt-3 max-w-lg text-sm sm:text-base font-medium leading-relaxed text-inkmuted dark:text-stone-300 line-clamp-2">
+                Bid transparently with Hops (1 Hop = ₹15) and lock milestone funds safely — freelancers keep every rupee earned.
+              </p>
+            </div>
+
+            <div className="lg:col-span-6 order-1 lg:order-2 border-2 border-ink bg-white dark:bg-[#1C1C21] p-5 sm:p-6 shadow-[4px_4px_0px_#121212]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="border-2 border-ink bg-[#E5F8EE] p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-black">ESCROW VAULT</span>
+                    <ShieldCheck size={16} className="text-ok" />
+                  </div>
+                  <p className="mt-2 text-2xl font-black text-black">₹28,000</p>
+                  <p className="mt-1 text-[11px] font-bold text-black/80">
+                    Milestone Locked · Auto-Releases on Approval
+                  </p>
                 </div>
 
-                <p className="mt-3 text-xs text-inkmuted dark:text-stone-300 font-medium line-clamp-2 leading-relaxed">
-                  {pro.intro}
-                </p>
-
-                <div className="mt-3 flex items-center gap-2 flex-wrap text-[11px] font-bold text-inkmuted dark:text-stone-400">
-                  <span className="border border-ink/20 bg-white dark:bg-zinc-800 px-2 py-0.5 text-[10px]">
-                    📍 {pro.area || "Bengaluru"}
-                  </span>
-                  <span className="border border-ink/20 bg-white dark:bg-zinc-800 px-2 py-0.5 text-[10px]">
-                    ₹{pro.rate_hr}/hr
-                  </span>
+                <div className="border-2 border-ink bg-[#FFF3C4] p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-black">PLATFORM CUT</span>
+                    <Wallet size={16} className="text-brand" />
+                  </div>
+                  <p className="mt-2 text-2xl font-black text-brand">₹0 (0%)</p>
+                  <p className="mt-1 text-[11px] font-bold text-black/80">
+                    100% Direct Payout · 1 Hop = ₹15 Bidding
+                  </p>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div className="mt-4 pt-3 border-t border-ink/10 flex items-center justify-between text-xs font-black text-brand group-hover:text-ink dark:group-hover:text-white transition">
-                <span>VIEW PROFILE &amp; CONTACT</span>
-                <ArrowRight size={14} className="group-hover:translate-x-1 transition" />
+          {/* Highlight 3: Direct Chat & Instant Call (Visual Left, Text Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+            <div className="lg:col-span-6 border-2 border-ink bg-white dark:bg-[#1C1C21] p-5 sm:p-6 shadow-[4px_4px_0px_#121212]">
+              <div className="flex items-center justify-between border-b border-ink/10 dark:border-white/10 pb-3 mb-3.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 items-center justify-center border border-ink bg-ok text-xs font-black text-white">
+                    SR
+                  </span>
+                  <div>
+                    <p className="text-xs font-black text-ink dark:text-white">
+                      Sneha Rao · <span className="text-ok">Verified Pro</span>
+                    </p>
+                    <p className="text-[10px] font-bold text-inkmuted dark:text-stone-400">
+                      Koramangala 4th Block · 0.9 km away
+                    </p>
+                  </div>
+                </div>
+                <span className="bg-brand px-2.5 py-1 text-[10px] font-black uppercase text-white flex items-center gap-1">
+                  <PhoneCall size={11} /> CALL READY
+                </span>
               </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="border border-ink/20 bg-sand dark:bg-[#25252B] p-2.5 font-medium text-ink dark:text-white">
+                  &ldquo;Hey! Saw your packaging brief. I’m 5 mins from Third Wave Koramangala — free for a quick call?&rdquo;
+                </div>
+                <div className="border border-brand/40 bg-brand/10 dark:bg-brand/20 p-2.5 font-bold text-ink dark:text-white flex items-center justify-between">
+                  <span>✓ Direct WhatsApp &amp; Phone Unlocked</span>
+                  <span className="text-[10px] font-black uppercase text-brand">4.9 ★ (34 Gigs)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-6 lg:pl-4">
+              <span className="inline-block border border-ink bg-[#FFEAA0] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-black">
+                INSTANT DIRECT CHAT
+              </span>
+              <h3 className="mt-3 text-2xl sm:text-4xl font-black leading-tight text-ink dark:text-white">
+                Direct WhatsApp &amp; phone in one click.
+              </h3>
+              <p className="mt-3 max-w-lg text-sm sm:text-base font-medium leading-relaxed text-inkmuted dark:text-stone-300 line-clamp-2">
+                Skip gatekept ticket queues — unlock verified phone numbers, chat live, and check real neighborhood reviews.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          6. TRUST / STATS STRIP — Big Numbers + Tiny Labels
+          NOTE: Placeholder numbers below are clearly marked for easy updating.
+          ═══════════════════════════════════════════════════════════════════════ */}
+      <section className="border-b-2 border-ink bg-[#FFF3E9] dark:bg-[#19130E] py-8 sm:py-10 px-4 sm:px-10 lg:px-16">
+        {/* PLACEHOLDER STATS — Update the numbers in the array below anytime */}
+        <div className="mx-auto max-w-7xl grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {[
+            { value: "5 km", label: "Hyperlocal Match Radius", highlight: false },
+            { value: "1,400+", label: "Local Gigs Completed", highlight: false }, /* PLACEHOLDER STAT */
+            { value: "4.9 ★", label: "Verified Client Rating", highlight: true },  /* PLACEHOLDER STAT */
+            { value: "0%", label: "Platform Commission", highlight: false },
+          ].map((stat) => (
+            <div key={stat.label} className="flex flex-col items-center justify-center">
+              <p
+                className={`text-3xl sm:text-5xl font-black tracking-tight ${
+                  stat.highlight ? "text-brand" : "text-ink dark:text-white"
+                }`}
+              >
+                {stat.value}
+              </p>
+              <p className="mt-1 text-[10px] sm:text-xs font-black uppercase tracking-wider text-inkmuted dark:text-stone-300">
+                {stat.label}
+              </p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Verified Community Reviews Section */}
-      <section id="reviews" className="border-b-2 border-ink bg-[#FAFAF8] dark:bg-[#151515] py-12 sm:py-16 px-4 sm:px-10 lg:px-16 transition-colors">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b-2 border-ink dark:border-white/10">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 border border-brand/40 bg-brand/10 dark:bg-brand/20 px-3 py-1 text-xs font-black uppercase tracking-wider text-brand mb-3">
-              <Star size={14} fill="#E65A1E" className="text-brand" />
-              <span>VERIFIED BENGALURU REVIEWS</span>
-            </div>
-            <h2 className="text-2xl sm:text-4xl font-black text-ink dark:text-white leading-tight">
-              Real gigs. Real founders. Real Bangalore talent.
-            </h2>
-            <p className="mt-2 text-xs sm:text-sm text-inkmuted dark:text-stone-400 font-medium">
-              Over 1,400+ gigs completed across Indiranagar, Koramangala, HSR Layout, and Whitefield with a 4.9★ rating.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/reviews"
-              className="inline-flex items-center gap-2 border-2 border-ink bg-brand px-5 py-3 text-xs sm:text-sm font-black uppercase text-white shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 active:translate-x-1 active:translate-y-1"
+      {/* ═══════════════════════════════════════════════════════════════════════
+          7. FINAL CTA BANNER + CLEAN FOOTER
+          ═══════════════════════════════════════════════════════════════════════ */}
+      <section className="border-b-2 border-ink bg-[#121212] text-white py-12 sm:py-16 px-4 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-5xl text-center">
+          <span className="inline-block bg-brand px-3 py-1 text-[10px] sm:text-xs font-black uppercase tracking-widest text-white">
+            READY IN 60 SECONDS
+          </span>
+          <h2 className="mt-4 text-3xl sm:text-5xl font-black tracking-tight text-white">
+            Your next gig or hire is <span className="text-brand">within 5 km.</span>
+          </h2>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
+            <button
+              onClick={() => chooseRole("freelancer")}
+              className="flex items-center gap-2 border-2 border-white bg-brand px-7 py-4 text-xs sm:text-sm font-black uppercase tracking-wider text-white shadow-[4px_4px_0px_#ffffff] transition hover:translate-x-0.5 hover:translate-y-0.5"
             >
-              <span>VIEW ALL 1,400+ REVIEWS</span>
+              <span>Find work nearby</span>
               <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-
-        {/* 3 Featured Review Cards */}
-        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-          
-          {/* Card 1 */}
-          <div className="border-2 border-ink bg-white dark:bg-[#1C1C1C] p-6 shadow-[3px_3px_0px_#121212] flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={15} fill="#E65A1E" className="text-brand" />
-                  ))}
-                </div>
-                <span className="border border-green-600 bg-green-500/10 dark:bg-green-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-green-700 dark:text-green-400">
-                  VERIFIED GIG
-                </span>
-              </div>
-              
-              <h4 className="text-sm font-black text-ink dark:text-white">
-                "Delivered ahead of schedule. Pixel-perfect Tailwind &amp; flawless mobile responsiveness."
-              </h4>
-              <p className="mt-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
-                Outstanding communication on WhatsApp. Escrow milestone settlement was released instantly upon sign-off.
-              </p>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-stone-200 dark:border-white/10">
-              <div className="flex items-center justify-between text-xs">
-                <div>
-                  <p className="font-black text-ink dark:text-white">Siddharth Rao</p>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400">UrbanKrafts • Indiranagar (0.8km)</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-black text-brand">₹28,000</span>
-                  <p className="text-[10px] text-stone-400">Escrow Settled</p>
-                </div>
-              </div>
-              <div className="mt-2 text-[11px] text-stone-500 dark:text-stone-400 bg-sand dark:bg-[#252525] p-2 border border-ink/20">
-                Worked with: <span className="font-bold text-ink dark:text-stone-200">Karthik Raja</span> (UI/UX)
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2 */}
-          <div className="border-2 border-ink bg-white dark:bg-[#1C1C1C] p-6 shadow-[3px_3px_0px_#121212] flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={15} fill="#E65A1E" className="text-brand" />
-                  ))}
-                </div>
-                <span className="border border-brand/40 bg-brand/10 dark:bg-brand/20 px-2 py-0.5 text-[10px] font-black uppercase text-brand">
-                  0% PLATFORM FEE
-                </span>
-              </div>
-              
-              <h4 className="text-sm font-black text-ink dark:text-white">
-                "Super responsive and understands the Bengaluru cafe aesthetic perfectly."
-              </h4>
-              <p className="mt-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
-                Sent 3 strong creative directions within 24 hours. Settled directly via UPI without any platform fee cuts.
-              </p>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-stone-200 dark:border-white/10">
-              <div className="flex items-center justify-between text-xs">
-                <div>
-                  <p className="font-black text-ink dark:text-white">Karan Somani</p>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400">BrewBlock • Koramangala (1.2km)</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-black text-brand">₹16,000</span>
-                  <p className="text-[10px] text-stone-400">Direct Pay</p>
-                </div>
-              </div>
-              <div className="mt-2 text-[11px] text-stone-500 dark:text-stone-400 bg-sand dark:bg-[#252525] p-2 border border-ink/20">
-                Worked with: <span className="font-bold text-ink dark:text-stone-200">Sneha Rao</span> (Brand Designer)
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3 */}
-          <div className="border-2 border-ink bg-white dark:bg-[#1C1C1C] p-6 shadow-[3px_3px_0px_#121212] flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={15} fill="#E65A1E" className="text-brand" />
-                  ))}
-                </div>
-                <span className="border border-green-600 bg-green-500/10 dark:bg-green-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-green-700 dark:text-green-400">
-                  VERIFIED GIG
-                </span>
-              </div>
-              
-              <h4 className="text-sm font-black text-ink dark:text-white">
-                "Accurate architectural dielines and quick kickoff at an HSR Layout cafe."
-              </h4>
-              <p className="mt-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
-                Quick 10-minute kickoff at an HSR cafe to align on elevations. WorkHop's 5km matching made it seamless.
-              </p>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-stone-200 dark:border-white/10">
-              <div className="flex items-center justify-between text-xs">
-                <div>
-                  <p className="font-black text-ink dark:text-white">Anita Jayaram</p>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400">LedgerLite • HSR Layout (1.5km)</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-black text-brand">₹32,000</span>
-                  <p className="text-[10px] text-stone-400">Escrow Settled</p>
-                </div>
-              </div>
-              <div className="mt-2 text-[11px] text-stone-500 dark:text-stone-400 bg-sand dark:bg-[#252525] p-2 border border-ink/20">
-                Worked with: <span className="font-bold text-ink dark:text-stone-200">Rahul Verma</span> (CAD Drafter)
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Bottom Banner */}
-        <div className="mt-8 border-2 border-ink bg-brand/10 dark:bg-brand/20 p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-black text-ink dark:text-white uppercase tracking-wide">
-              Have you completed a gig with a Bengaluru freelancer or client?
-            </p>
-            <p className="text-xs text-stone-600 dark:text-stone-300 mt-0.5">
-              Leave verified feedback and help build the most transparent hyperlocal network in Bangalore.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <Link
-              to="/reviews"
-              className="border-2 border-ink bg-white dark:bg-[#222] text-ink dark:text-white px-4 py-2.5 text-xs font-black uppercase hover:bg-stone-100 transition shadow-[2px_2px_0px_#121212]"
+            </button>
+            <button
+              onClick={() => chooseRole("employer")}
+              className="flex items-center gap-2 border-2 border-white bg-ink px-7 py-4 text-xs sm:text-sm font-black uppercase tracking-wider text-white shadow-[4px_4px_0px_#E65A1E] transition hover:translate-x-0.5 hover:translate-y-0.5"
             >
-              Browse All Reviews
-            </Link>
-            <Link
-              to="/reviews"
-              className="border-2 border-ink bg-brand text-white px-4 py-2.5 text-xs font-black uppercase hover:bg-black transition shadow-[2px_2px_0px_#121212]"
-            >
-              ★ Leave A Review
-            </Link>
+              <span>Hire local talent</span>
+              <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       </section>

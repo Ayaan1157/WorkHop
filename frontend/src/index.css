@@ -464,6 +464,104 @@ code {
         source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
+/* ═══════ Homepage Marquee Belt & Visual Motion ═══════ */
+@keyframes wh-marquee {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+    100% {
+        transform: translate3d(-50%, 0, 0);
+    }
+}
+
+@keyframes wh-float-y {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+@keyframes wh-radar-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.wh-marquee-belt {
+    background-color: #121212 !important;
+    color: #F8F7F4 !important;
+    position: relative;
+    overflow: hidden;
+}
+
+html.dark .wh-marquee-belt {
+    background-color: #161618 !important;
+    color: #F8F7F4 !important;
+}
+
+.wh-marquee-belt .wh-marquee-item {
+    color: #F8F7F4 !important;
+}
+
+.wh-marquee-belt .wh-marquee-star {
+    color: #71717A !important;
+}
+
+html.dark .wh-marquee-belt .wh-marquee-star {
+    color: #8E8E98 !important;
+}
+
+.wh-marquee-mask {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
+}
+
+.wh-marquee-track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+    animation: wh-marquee 34s linear infinite;
+}
+
+.wh-marquee-belt:hover .wh-marquee-track {
+    animation-play-state: paused;
+}
+
+.wh-float-1 {
+    animation: wh-float-y 4.8s ease-in-out infinite;
+}
+
+.wh-float-2 {
+    animation: wh-float-y 5.6s ease-in-out 1.2s infinite;
+}
+
+.wh-float-3 {
+    animation: wh-float-y 5.2s ease-in-out 2.4s infinite;
+}
+
+.wh-radar-sweep {
+    animation: wh-radar-spin 9s linear infinite;
+    transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wh-marquee-track {
+        animation-duration: 120s;
+        animation-play-state: paused;
+    }
+    .wh-float-1,
+    .wh-float-2,
+    .wh-float-3,
+    .wh-radar-sweep {
+        animation: none !important;
+    }
+}
+
 
 @layer base {
     :root {
