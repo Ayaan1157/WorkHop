@@ -44,6 +44,24 @@ function rzpRequest(method, path, data = null) {
 const freelancerStatusOverrides = {};
 const freelancerRateOverrides = {};
 
+const PLACEHOLDER_SKILLS = new Set([
+  "freelancer pro",
+  "creative pro",
+  "creative & tech pro",
+  "pro",
+  "brand identity, digital design & creative pro",
+  "incomplete profile",
+  "full stack pro",
+  "ui/ux & brand designer",
+]);
+
+function cleanFreelancerSkill(val) {
+  if (!val || typeof val !== "string") return "";
+  const trimmed = val.trim();
+  if (PLACEHOLDER_SKILLS.has(trimmed.toLowerCase())) return "";
+  return trimmed;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
@@ -73,13 +91,13 @@ module.exports = async function handler(req, res) {
 
       try {
         await rzpRequest("POST", "/customers", {
-          name: name || "WorkHop Verified Pro",
+          name: name || "WorkHop Freelancer",
           email: email || `${contactPhone || "pro"}@workhop.in`,
           contact: contactPhone.slice(-10),
           notes: {
             freelancer_id: freelancer_id || `freelancer-${Date.now()}`,
-            skill: skill || "Creative Pro",
-            category: category || "Graphics & Design",
+            skill: cleanFreelancerSkill(skill),
+            category: category || "",
             rate_hr: String(rate_hr || 500),
             delivery_days: String(delivery_days || 2),
             portfolio_url: portfolio_url || "",
@@ -286,10 +304,10 @@ module.exports = async function handler(req, res) {
 
       const skill = isCobblestone
         ? "Architecture & Interior Design"
-        : (notes.skill || seed?.skill || "Brand Identity, Digital Design & Creative Pro");
+        : (cleanFreelancerSkill(notes.skill) || cleanFreelancerSkill(seed?.skill) || "");
       const category = isCobblestone
         ? "Graphics & Design"
-        : (notes.category || seed?.category || "Graphics & Design");
+        : (skill ? (notes.category || seed?.category || "") : (notes.category && notes.category !== "Graphics & Design" ? notes.category : ""));
 
       paidFreelancers.push({
         id: proId,
@@ -299,7 +317,7 @@ module.exports = async function handler(req, res) {
         initials: isCobblestone ? "CD" : initials,
         skill: skill,
         category: category,
-        bucket: "Creative",
+        bucket: category ? "Creative" : "",
         area: notes.area || "Bengaluru",
         distance_km: 1.2,
         rating: null,
@@ -317,15 +335,13 @@ module.exports = async function handler(req, res) {
         portfolio: notes.portfolio_url || "",
         intro: isCobblestone
           ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
-          : (notes.intro || seed?.intro || (isVerifiedProUser ? "Verified freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround." : "Freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround.")),
+          : (notes.bio || notes.intro || seed?.intro || ""),
         keywords: isCobblestone
           ? [
             "architecture", "architect", "interior design", "floor plan", "spatial design",
             "autocad", "3d rendering", "Graphics & Design", "design", "cobblestone", "elevation", "space planning"
           ]
-          : [
-            "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro"
-          ],
+          : (skill ? [skill] : []),
         paid: true,
         paid_amount: amountInr,
         paid_plan: planName,
@@ -426,10 +442,12 @@ module.exports = async function handler(req, res) {
         : `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || c.id}`;
       const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[c.id];
 
+      const cleanedCustSkill = isCobblestone ? "Architecture & Interior Design" : cleanFreelancerSkill(notes.skill);
+
       const isIncomplete =
         !isCobblestone &&
         (notes.profile_status === "incomplete" ||
-          (!notes.profile_status && phoneDigits.length < 10 && (!notes.skill || notes.skill === "Pro")));
+          (!notes.profile_status && phoneDigits.length < 10 && !cleanedCustSkill));
 
       const missingFields = notes.missing_fields
         ? String(notes.missing_fields)
@@ -440,7 +458,7 @@ module.exports = async function handler(req, res) {
         ? [
             ...(phoneDigits.length < 10 ? ["Phone Number"] : []),
             ...(!notes.category ? ["Profession / Service Category"] : []),
-            ...(!notes.skill || notes.skill === "Pro" ? ["Skills"] : []),
+            ...(!cleanedCustSkill ? ["Skills"] : []),
             ...(!notes.experience ? ["Experience"] : []),
             ...(!notes.bio && !notes.intro ? ["Bio"] : []),
             ...(!notes.area ? ["Location"] : []),
@@ -453,15 +471,9 @@ module.exports = async function handler(req, res) {
         name: isCobblestone ? "Cobblestone Designs" : name,
         full_name: isCobblestone ? "Cobblestone Designs" : name,
         initials: isCobblestone ? "CD" : initials,
-        skill: isCobblestone
-          ? "Architecture & Interior Design"
-          : notes.skill && notes.skill !== "Pro"
-          ? notes.skill
-          : isIncomplete
-          ? "Incomplete Profile"
-          : "Creative & Tech Pro",
-        category: isCobblestone ? "Graphics & Design" : (notes.category || "Graphics & Design"),
-        bucket: "Creative",
+        skill: cleanedCustSkill,
+        category: isCobblestone ? "Graphics & Design" : (cleanedCustSkill ? (notes.category || "") : ""),
+        bucket: isCobblestone ? "Creative" : (notes.category ? "Creative" : ""),
         area: notes.area || (isIncomplete ? "Not set" : "Bengaluru"),
         distance_km: 1.2,
         rating: null,
@@ -477,13 +489,13 @@ module.exports = async function handler(req, res) {
         bio: notes.bio || notes.intro || "",
         intro: isCobblestone
           ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
-          : (notes.bio || notes.intro || (isIncomplete ? "Signed up with Google — profile details pending completion." : "Registered freelancer awaiting admin review.")),
+          : (notes.bio || notes.intro || ""),
         keywords: isCobblestone
           ? [
             "architecture", "architect", "interior design", "floor plan", "spatial design",
             "autocad", "3d rendering", "Graphics & Design", "design", "cobblestone", "elevation", "space planning"
           ]
-          : ["freelancer", "bengaluru pro"],
+          : (cleanedCustSkill ? [cleanedCustSkill] : []),
         paid: false,
         paid_amount: 0,
         paid_plan: "Free Signup",
@@ -567,9 +579,9 @@ module.exports = async function handler(req, res) {
         name: "Shamanthnmurthy",
         full_name: "Shamanthnmurthy",
         initials: "SM",
-        skill: "Brand Identity, Digital Design & Creative Pro",
-        category: "Graphics & Design",
-        bucket: "Creative",
+        skill: "",
+        category: "",
+        bucket: "",
         area: "Bengaluru",
         distance_km: 1.2,
         rating: null,
@@ -581,10 +593,8 @@ module.exports = async function handler(req, res) {
         email: "shamanthnmurthy@gmail.com",
         phone: "+91 72046 65071",
         portfolio: "",
-        intro: "Freelance creative and designer based in Bengaluru. Specializing in brand identity, digital marketing assets, and product design with fast local turnaround.",
-        keywords: [
-          "figma", "branding", "graphic design", "logo", "identity", "design", "Graphics & Design", "creative", "bengaluru pro"
-        ],
+        intro: "",
+        keywords: [],
         paid: true,
         paid_amount: 150,
         paid_plan: "20 Bidding Hops Pack · ₹150",
@@ -629,8 +639,8 @@ module.exports = async function handler(req, res) {
           "architecture", "architect", "interior design", "floor plan", "spatial design", "autocad", "3d rendering", "Graphics & Design", "design", "cobblestone", "elevation", "space planning"
         ],
         paid: true,
-        paid_amount: 150,
-        paid_plan: "20 Bidding Hops Pack · ₹150",
+        paid_amount: 149,
+        paid_plan: "Verified Pro onboarding · ₹149",
         payment_id: "pay_TvGwKVJe2U6Qf2",
         created_at: "2026-11-03T00:00:00.000Z",
         approved: true,

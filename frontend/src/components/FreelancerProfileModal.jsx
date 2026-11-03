@@ -130,9 +130,11 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
                 })()}
               </div>
 
-              <p className="text-xs sm:text-sm font-bold text-inkmuted dark:text-zinc-300 line-clamp-1 mt-0.5">
-                {pro.skill}
-              </p>
+              {pro.skill ? (
+                <p className="text-xs sm:text-sm font-bold text-inkmuted dark:text-zinc-300 line-clamp-1 mt-0.5">
+                  {pro.skill}
+                </p>
+              ) : null}
 
               <div className="flex items-center gap-2 mt-1.5 flex-wrap text-[11px] font-bold">
                 <span className="flex items-center gap-1 text-ink dark:text-zinc-200">
@@ -142,9 +144,11 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
                     <strong className="text-brand">{pro.distance_km || 0.8} km away</strong>
                   </span>
                 </span>
-                <span className="border border-ink/20 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-1.5 py-0.2 text-[10px] font-black uppercase text-inkmuted dark:text-zinc-400">
-                  {pro.category || pro.bucket || "Creative"}
-                </span>
+                {(pro.category || pro.bucket) ? (
+                  <span className="border border-ink/20 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-1.5 py-0.2 text-[10px] font-black uppercase text-inkmuted dark:text-zinc-400">
+                    {pro.category || pro.bucket}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
@@ -214,7 +218,11 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
             <p className="text-xs sm:text-[13px] leading-relaxed text-ink dark:text-zinc-200 font-medium">
               {(() => {
                 const verified = isVerifiedPro(pro);
-                let text = pro.intro || `${pro.name} is a professional specializing in ${pro.skill} in Bengaluru. Experienced in fast delivery, clear communication, and high quality deliverables.`;
+                let text =
+                  pro.intro ||
+                  (pro.skill
+                    ? `${pro.name} is a professional specializing in ${pro.skill} in Bengaluru. Experienced in fast delivery, clear communication, and high quality deliverables.`
+                    : "No bio or skill details added yet.");
                 if (!verified && text.startsWith("Verified ")) {
                   text = text.replace(/^Verified\s+/i, "");
                 }

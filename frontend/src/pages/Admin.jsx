@@ -31,6 +31,7 @@ import {
   getStoredLeads,
   getFreelancerStatuses,
   updateFreelancerStatus,
+  cleanRealSkill,
 } from "@/lib/clientStore";
 import FreelancerProfileModal from "@/components/FreelancerProfileModal";
 import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
@@ -2435,7 +2436,8 @@ function ProsTalentTab({ adminFetch }) {
             const sid = (u.id || `pro-${em.split("@")[0]}`).toLowerCase();
             const semail = em.toLowerCase().trim();
             if (!existingIds.has(sid) && !existingEmails.has(semail)) {
-              const isInc = u.profile_status === "incomplete" || (!u.phone && !u.skill);
+              const cleanedSkill = cleanRealSkill(u.skill);
+              const isInc = u.profile_status === "incomplete" || (!u.phone && !cleanedSkill);
               list.push({
                 id: sid,
                 freelancer_id: sid,
@@ -2443,11 +2445,11 @@ function ProsTalentTab({ adminFetch }) {
                 full_name: u.name || em.split("@")[0],
                 email: semail,
                 phone: u.phone || "",
-                skill: u.skill || (isInc ? "Incomplete Profile" : "Freelancer Pro"),
-                category: u.category || "Graphics & Design",
+                skill: cleanedSkill,
+                category: cleanedSkill ? (u.category || "") : "",
                 experience: u.experience || "",
                 bio: u.bio || u.intro || "",
-                bucket: "Creative",
+                bucket: cleanedSkill ? "Creative" : "",
                 area: u.area || (isInc ? "Not set" : "Bengaluru"),
                 paid: Boolean(u.paid),
                 approved: u.approved !== undefined ? Boolean(u.approved) : false,
@@ -2473,6 +2475,18 @@ function ProsTalentTab({ adminFetch }) {
           p.payment_id === "pay_TvGwKVJe2U6Qf2" ||
           pid === "pro-cobblestonedesigns";
 
+        const cleanedSkill = isCobblestone
+          ? "Architecture & Interior Design"
+          : p.is_dummy
+          ? (p.skill || "")
+          : cleanRealSkill(p.skill);
+
+        const cleanedCategory = isCobblestone
+          ? "Graphics & Design"
+          : p.is_dummy
+          ? (p.category || "")
+          : (cleanedSkill ? (p.category || "") : "");
+
         const normalized = isCobblestone
           ? {
               ...p,
@@ -2483,7 +2497,11 @@ function ProsTalentTab({ adminFetch }) {
               intro:
                 "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design.",
             }
-          : p;
+          : {
+              ...p,
+              skill: cleanedSkill,
+              category: cleanedCategory,
+            };
 
         const st = localStatuses[pid] || localStatuses[p.id] || localStatuses[p.freelancer_id];
         if (st) {
@@ -2781,7 +2799,9 @@ function ProsTalentTab({ adminFetch }) {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-sm font-black text-ink">{f.name || f.full_name || "Freelancer"}</p>
-                      <p className="text-xs font-bold text-brand">{f.skill || "Creative Pro"}</p>
+                      {f.skill ? (
+                        <p className="text-xs font-bold text-brand">{f.skill}</p>
+                      ) : null}
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       {isIncomplete && (
@@ -2825,9 +2845,11 @@ function ProsTalentTab({ adminFetch }) {
 
                   {/* Category & Stats */}
                   <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px] text-inkmuted font-semibold">
-                    <span className="border border-ink/30 bg-sand px-1.5 py-0.5 text-[9px] uppercase font-bold text-ink">
-                      {f.category || "Creative"}
-                    </span>
+                    {f.category ? (
+                      <span className="border border-ink/30 bg-sand px-1.5 py-0.5 text-[9px] uppercase font-bold text-ink">
+                        {f.category}
+                      </span>
+                    ) : null}
                     {Number(f.reviews_count) > 0 && f.rating ? (
                       <span>⭐ {f.rating} ({f.reviews_count} {f.reviews_count === 1 ? "review" : "reviews"})</span>
                     ) : (

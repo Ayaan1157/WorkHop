@@ -721,7 +721,7 @@ module.exports = async function handler(req, res) {
         company_name: notes.company_name || (isEmp && status === "complete" ? c.name : ""),
         hiring_for: notes.hiring_for || notes.job_category || "",
         category: notes.category || "",
-        skill: notes.skill || (!isEmp && status === "complete" ? "Pro" : ""),
+        skill: notes.skill && !["Pro", "Freelancer Pro", "Creative Pro", "Creative & Tech Pro"].includes(notes.skill) ? notes.skill : "",
         experience: notes.experience || "",
         bio: notes.bio || notes.intro || "",
         area: notes.area || (status === "complete" ? "Bengaluru" : ""),

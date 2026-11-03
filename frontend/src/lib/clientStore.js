@@ -141,6 +141,72 @@ try {
   }
 } catch { /* ignore */ }
 
+const PLACEHOLDER_SKILLS = new Set([
+  "freelancer pro",
+  "creative pro",
+  "creative & tech pro",
+  "pro",
+  "brand identity, digital design & creative pro",
+  "incomplete profile",
+  "full stack pro",
+  "ui/ux & brand designer",
+]);
+
+export function cleanRealSkill(val) {
+  if (!val || typeof val !== "string") return "";
+  const trimmed = val.trim();
+  if (PLACEHOLDER_SKILLS.has(trimmed.toLowerCase())) return "";
+  return trimmed;
+}
+
+// One-time clean slate v7: strip fake 'Freelancer Pro' / 'Creative Pro' placeholder skills from cached users/profiles
+const CLEAN_SLATE_FLAG_V7 = "workhop_clean_slate_v7_strip_fake_freelancer_pro";
+try {
+  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V7)) {
+    localStorage.removeItem("workhop_remote_freelancers");
+    const rawReg = localStorage.getItem("workhop_registered_users");
+    if (rawReg) {
+      try {
+        const users = JSON.parse(rawReg);
+        for (const [em, u] of Object.entries(users)) {
+          const isCobble = em.toLowerCase().includes("cobblestone") || (u?.name || "").toLowerCase().includes("cobblestone");
+          if (isCobble) {
+            users[em] = { ...u, skill: "Architecture & Interior Design", category: "Graphics & Design" };
+          } else if (u && !u.is_dummy) {
+            const cleaned = cleanRealSkill(u.skill);
+            users[em] = { ...u, skill: cleaned, category: cleaned ? (u.category || "") : "" };
+          }
+        }
+        localStorage.setItem("workhop_registered_users", JSON.stringify(users));
+      } catch {}
+    }
+    const rawSub = localStorage.getItem("workhop_submitted_profiles");
+    if (rawSub) {
+      try {
+        const list = JSON.parse(rawSub);
+        if (Array.isArray(list)) {
+          const updated = list.map((item) => {
+            if (!item) return item;
+            const isCobble =
+              (item.email || "").toLowerCase().includes("cobblestone") ||
+              (item.name || "").toLowerCase().includes("cobblestone");
+            if (isCobble) {
+              return { ...item, skill: "Architecture & Interior Design", category: "Graphics & Design" };
+            }
+            if (!item.is_dummy) {
+              const cleaned = cleanRealSkill(item.skill);
+              return { ...item, skill: cleaned, category: cleaned ? (item.category || "") : "" };
+            }
+            return item;
+          });
+          localStorage.setItem("workhop_submitted_profiles", JSON.stringify(updated));
+        }
+      } catch {}
+    }
+    localStorage.setItem(CLEAN_SLATE_FLAG_V7, "1");
+  }
+} catch { /* ignore */ }
+
 // ═══════════ CONNECTS & CREDITS SYSTEM KEYS ═══════════
 const CREDITS_WALLET_KEY = "workhop_credits_wallet";
 const CREDITS_TRANSACTIONS_KEY = "workhop_credits_transactions";
@@ -362,13 +428,17 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
 
     const resolvedSkill = isCobblestone
       ? "Architecture & Interior Design"
-      : (lead.skill || "Creative Pro");
+      : lead.is_dummy
+      ? (lead.skill || "")
+      : cleanRealSkill(lead.skill);
     const resolvedCategory = isCobblestone
       ? "Graphics & Design"
-      : (lead.category || lead.bucket || "Graphics & Design");
+      : lead.is_dummy
+      ? (lead.category || lead.bucket || "Graphics & Design")
+      : (resolvedSkill ? (lead.category || lead.bucket || "") : "");
     const resolvedBucket = isCobblestone
       ? "Creative"
-      : (lead.bucket || "Creative");
+      : (resolvedCategory ? (lead.bucket || "Creative") : "");
     const resolvedName = isCobblestone
       ? "Cobblestone Designs"
       : (lead.name || lead.full_name || "Verified Pro");
@@ -405,7 +475,9 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       external_url: lead.external_url || "",
       intro:
         resolvedIntro ||
-        `${resolvedSkill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`,
+        (resolvedSkill
+          ? `${resolvedSkill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`
+          : ""),
       keywords: Array.from(
         new Set([
           ...(isCobblestone
@@ -413,8 +485,8 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
                 "architecture", "architect", "interior design", "floor plan", "spatial design",
                 "autocad", "3d rendering", "Graphics & Design", "design", "cobblestone", "elevation", "space planning"
               ]
-            : (lead.keywords || [resolvedSkill])),
-          ...expandSkillKeywords(resolvedSkill, resolvedCategory),
+            : (lead.keywords || (resolvedSkill ? [resolvedSkill] : []))),
+          ...(resolvedSkill ? expandSkillKeywords(resolvedSkill, resolvedCategory) : []),
         ])
       ),
       bucket: resolvedBucket,
@@ -1312,8 +1384,8 @@ export function saveRegisteredUser(email, password, profile = {}) {
         full_name: profile.name || cleanEmail.split("@")[0],
         email: cleanEmail,
         phone: profile.phone || "",
-        skill: profile.skill || (isInc ? "Incomplete Profile" : "Creative Pro"),
-        category: profile.category || "Graphics & Design",
+        skill: cleanRealSkill(profile.skill),
+        category: cleanRealSkill(profile.skill) ? (profile.category || "") : "",
         experience: profile.experience || "",
         bio: profile.bio || profile.intro || "",
         intro: profile.bio || profile.intro || (isInc ? "Signed up with Google — profile details pending completion." : ""),
