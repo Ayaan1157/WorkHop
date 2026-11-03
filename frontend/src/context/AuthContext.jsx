@@ -68,12 +68,67 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let isMounted = true;
 
+    function hasOAuthReturnParams() {
+      if (typeof window === "undefined") return false;
+      const hash = window.location.hash || "";
+      const search = window.location.search || "";
+      return (
+        hash.includes("access_token=") ||
+        hash.includes("error_description=") ||
+        search.includes("code=") ||
+        search.includes("error_description=")
+      );
+    }
+
+    function isOAuthPending() {
+      try {
+        return (
+          localStorage.getItem("workhop_oauth_pending") === "1" ||
+          sessionStorage.getItem("workhop_oauth_pending") === "1" ||
+          document.cookie.includes("workhop_oauth_pending=1")
+        );
+      } catch {
+        return false;
+      }
+    }
+
     async function initAuth() {
       try {
-        // 1. Check for real active Supabase / Google OAuth session
+        const onCallbackRoute =
+          typeof window !== "undefined" && window.location.pathname.startsWith("/auth/callback");
+
+        // If we are on /auth/callback, NEVER auto-adopt the session in AuthContext.
+        // AuthCallback.jsx exclusively owns registration verification and mandatory onboarding.
+        if (onCallbackRoute) {
+          return;
+        }
+
+        // If Supabase returned OAuth tokens to "/" instead of "/auth/callback", redirect to "/auth/callback" immediately!
+        if (typeof window !== "undefined" && (hasOAuthReturnParams() || isOAuthPending())) {
+          const { data: { session: pendingSession } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+          if (hasOAuthReturnParams() || pendingSession?.user) {
+            window.location.replace(`/auth/callback${window.location.search || ""}${window.location.hash || ""}`);
+            return;
+          }
+        }
+
+        // 1. Check for real active Supabase / Google OAuth session that has ALREADY passed /auth/callback verification
         const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
         if (session?.user && isMounted) {
-          const role = localStorage.getItem("workhop_auth_role") || "freelancer";
+          const isVerifiedSession =
+            localStorage.getItem(`workhop_oauth_verified_${session.user.id}`) === "1" ||
+            Boolean(getStoredUser()?.email && getStoredUser()?.email.toLowerCase() === (session.user.email || "").toLowerCase());
+
+          if (!isVerifiedSession) {
+            // Unverified Google OAuth session — route through /auth/callback check!
+            if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth/callback")) {
+              window.location.replace("/auth/callback");
+            }
+            return;
+          }
+
+          const existingStored = getStoredUser();
+          const role = existingStored?.role || localStorage.getItem("workhop_auth_role") || "freelancer";
           const linkedUser = linkOrUpdateGoogleUser(session.user, role);
           setToken(session.access_token);
           saveStoredUser(linkedUser);
@@ -100,12 +155,21 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
       if (event === "SIGNED_IN" && session?.user) {
-        // If we are currently handling the auth callback, let AuthCallback.jsx process the unregistered guard and mandatory profile completion!
-        if (typeof window !== "undefined" && window.location.pathname.startsWith("/auth/callback")) {
-          return;
+        // Never auto-login while on /auth/callback or when OAuth verification is pending
+        if (typeof window !== "undefined") {
+          if (window.location.pathname.startsWith("/auth/callback")) {
+            return;
+          }
+          const isVerifiedSession =
+            localStorage.getItem(`workhop_oauth_verified_${session.user.id}`) === "1";
+          if (!isVerifiedSession || isOAuthPending() || hasOAuthReturnParams()) {
+            window.location.replace(`/auth/callback${window.location.search || ""}${window.location.hash || ""}`);
+            return;
+          }
         }
 
-        const role = localStorage.getItem("workhop_auth_role") || "freelancer";
+        const existingStored = getStoredUser();
+        const role = existingStored?.role || localStorage.getItem("workhop_auth_role") || "freelancer";
         const linkedUser = linkOrUpdateGoogleUser(session.user, role);
         setToken(session.access_token);
         saveStoredUser(linkedUser);

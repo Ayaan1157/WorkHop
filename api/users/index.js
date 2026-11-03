@@ -41,6 +41,127 @@ function rzpRequest(method, path, data = null) {
   });
 }
 
+function supabaseRequest(method, path, data = null, extraHeaders = {}) {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://kdfrbkxpuwbrvhidihvj.supabase.co";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!serviceKey) return Promise.resolve(null);
+
+  const urlObj = new URL(path, supabaseUrl);
+  return new Promise((resolve, reject) => {
+    const postData = data ? JSON.stringify(data) : "";
+    const req = https.request(
+      {
+        hostname: urlObj.hostname,
+        port: 443,
+        path: urlObj.pathname + urlObj.search,
+        method,
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+          ...(data
+            ? {
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(postData),
+              }
+            : {}),
+          ...extraHeaders,
+        },
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          if (!body) return resolve({ status: res.statusCode });
+          try {
+            resolve(JSON.parse(body));
+          } catch {
+            resolve({ raw: body, status: res.statusCode });
+          }
+        });
+      }
+    );
+    req.on("error", () => resolve(null));
+    if (postData) req.write(postData);
+    req.end();
+  });
+}
+
+const PROTECTED_EMAILS = new Set([
+  "zenithdeveleoperss@gmail.com",
+  "zenithdeveloperss@gmail.com",
+  "manarastudio22@gmail.com",
+  "alia.m@cobblestonedesigns.in",
+  "aliamansoor@gmail.com",
+  "ayaanwann@gmail.com",
+  "ayaaan.vlogs@gmail.com",
+  "shamanthnmurthy@gmail.com",
+]);
+
+function computeMissingFields(role, data = {}) {
+  const missing = [];
+  const phoneDigits = String(data.phone || "").replace(/\D/g, "").slice(-10);
+  if (phoneDigits.length !== 10) missing.push("Phone Number");
+
+  if (role === "employer") {
+    const comp = String(data.company_name || "").trim();
+    const hiring = String(data.hiring_for || data.category || "").trim();
+    const area = String(data.area || "").trim();
+    if (!comp) missing.push("Business / Organization Name");
+    if (!hiring) missing.push("Type of Work Hired For");
+    if (!area) missing.push("Location");
+  } else {
+    const category = String(data.category || "").trim();
+    const skill = String(data.skill || "").trim();
+    const experience = String(data.experience || "").trim();
+    const bio = String(data.bio || data.intro || "").trim();
+    const area = String(data.area || "").trim();
+    if (!category) missing.push("Profession / Service Category");
+    if (!skill || skill === "Pro") missing.push("Skills");
+    if (!experience) missing.push("Experience");
+    if (!bio) missing.push("Bio");
+    if (!area) missing.push("Location");
+  }
+  return missing;
+}
+
+function isGenuineCloudCustomer(cust) {
+  if (!cust) return false;
+  const em = (cust.email || "").trim().toLowerCase();
+  const nm = (cust.name || "").trim();
+  if (
+    nm === "Deleted Account" ||
+    nm.startsWith("[DELETED]") ||
+    em.startsWith("archived.") ||
+    em.startsWith("deleted.") ||
+    em.endsWith("@workhop.invalid")
+  ) {
+    return false;
+  }
+  const notes = cust.notes || {};
+  if (notes.deleted === "true" || notes.oauth_unregistered === "true") return false;
+  if (notes.workhop_registered === "true") return true;
+  if (notes.profile_status === "complete" || notes.profile_status === "incomplete") return true;
+  const phoneDigits = String(cust.contact || "").replace(/\D/g, "");
+  if (phoneDigits.length >= 10) return true;
+  if (notes.role === "employer" && notes.company_name && notes.company_name !== cust.name) return true;
+  if (notes.skill && notes.skill !== "Pro") return true;
+  const email = (cust.email || "").trim().toLowerCase();
+  if (PROTECTED_EMAILS.has(email)) return true;
+  return false;
+}
+
+function isGenuineSupabaseProfile(prof) {
+  if (!prof) return false;
+  if (prof.profile_status === "complete" || prof.profile_status === "incomplete") return true;
+  if (prof.phone && String(prof.phone).replace(/\D/g, "").length >= 10) return true;
+  if (prof.skill && String(prof.skill).trim() && prof.skill !== "Pro") return true;
+  if (prof.bio && String(prof.bio).trim()) return true;
+  if (prof.hops_balance !== undefined && prof.hops_balance !== null && Number(prof.hops_balance) === 0) return true;
+  const email = (prof.email || "").trim().toLowerCase();
+  if (PROTECTED_EMAILS.has(email)) return true;
+  return false;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -48,78 +169,478 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  // 1. POST: Real-Time Sync when any user registers
+  // 1. POST: OAuth Check / Init OR Real-Time Profile Sync
   if (req.method === "POST") {
     try {
       const body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}");
+
+      // ──────────────────────────────────────────────────────────────────
+      // A. Post-Google-OAuth Registration Check & Initialization
+      // ──────────────────────────────────────────────────────────────────
+      if (body.action === "oauth_check_or_init" || body.action === "cleanup_unregistered_oauth") {
+        const intent = body.intent === "signup" ? "signup" : "signin";
+        const requestedRole = body.role === "employer" ? "employer" : "freelancer";
+        const accessToken = body.access_token || "";
+
+        let authUser = null;
+        if (accessToken && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          const supabaseUrl = process.env.SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://kdfrbkxpuwbrvhidihvj.supabase.co";
+          const urlObj = new URL("/auth/v1/user", supabaseUrl);
+          authUser = await new Promise((resolve) => {
+            const r = https.request(
+              {
+                hostname: urlObj.hostname,
+                port: 443,
+                path: urlObj.pathname,
+                method: "GET",
+                headers: {
+                  apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              },
+              (resp) => {
+                let d = "";
+                resp.on("data", (c) => (d += c));
+                resp.on("end", () => {
+                  try {
+                    const parsed = JSON.parse(d);
+                    resolve(parsed?.id ? parsed : null);
+                  } catch {
+                    resolve(null);
+                  }
+                });
+              }
+            );
+            r.on("error", () => resolve(null));
+            r.end();
+          });
+        }
+
+        const cleanEmail = (authUser?.email || body.email || "").trim().toLowerCase();
+        const userId = authUser?.id || body.user_id || "";
+        const userMeta = authUser?.user_metadata || body.user_metadata || {};
+
+        if (!cleanEmail) {
+          return res.status(400).json({ detail: "Email is required for OAuth verification" });
+        }
+
+        // 1. Check Razorpay Cloud Customers
+        const custRes = await rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] }));
+        const customers = Array.isArray(custRes?.items) ? custRes.items : [];
+        const cloudMatch = customers.find((c) => (c.email || "").trim().toLowerCase() === cleanEmail);
+        const hasCloudAccount = isGenuineCloudCustomer(cloudMatch);
+
+        // 2. Check Supabase profiles (if service role key is configured)
+        let sbProfile = null;
+        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          const profRes = await supabaseRequest(
+            "GET",
+            `/rest/v1/profiles?email=ilike.${encodeURIComponent(cleanEmail)}&select=*`
+          );
+          if (Array.isArray(profRes) && profRes.length > 0) {
+            sbProfile = profRes[0];
+          }
+        }
+        const hasSbProfile = isGenuineSupabaseProfile(sbProfile);
+        const hasMetaRegistered =
+          Boolean(userMeta?.workhop_registered) ||
+          userMeta?.profile_status === "complete" ||
+          userMeta?.profile_status === "incomplete";
+
+        const isRegistered =
+          hasCloudAccount ||
+          hasSbProfile ||
+          hasMetaRegistered ||
+          PROTECTED_EMAILS.has(cleanEmail);
+
+        // CASE 1: Unregistered user attempting Log In (or explicit cleanup)
+        if (body.action === "cleanup_unregistered_oauth" || (intent === "signin" && !isRegistered)) {
+          let cleanedUp = false;
+          if (!PROTECTED_EMAILS.has(cleanEmail)) {
+            if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+              if (userId) {
+                await supabaseRequest("DELETE", `/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`);
+                await supabaseRequest("DELETE", `/auth/v1/admin/users/${encodeURIComponent(userId)}`);
+              }
+              await supabaseRequest("DELETE", `/rest/v1/profiles?email=ilike.${encodeURIComponent(cleanEmail)}`);
+              cleanedUp = true;
+            }
+            const matchingCustomers = customers.filter(
+              (c) => (c.email || "").trim().toLowerCase() === cleanEmail
+            );
+            for (const mc of matchingCustomers) {
+              if (body.action === "cleanup_unregistered_oauth" || !hasCloudAccount) {
+                const cleanMcId = String(mc.id || "").replace(/[^a-zA-Z0-9]/g, "");
+                await rzpRequest("PUT", `/customers/${mc.id}`, {
+                  name: "Deleted Account",
+                  email: `deleted.${cleanMcId}@workhop.in`,
+                }).catch(() => {});
+                cleanedUp = true;
+              }
+            }
+          }
+          return res.status(200).json({
+            ok: true,
+            status: "not_registered",
+            registered: false,
+            cleaned: cleanedUp,
+            cleaned_up: cleanedUp,
+          });
+        }
+
+        // Determine effective role & existing data (only use sbProfile.role when hasSbProfile is true)
+        const notes = cloudMatch?.notes || {};
+        const effectiveRole =
+          ((hasCloudAccount ? notes.role : null) ||
+            (hasSbProfile ? sbProfile?.role : null) ||
+            (hasMetaRegistered ? userMeta?.role : null) ||
+            requestedRole) === "employer"
+            ? "employer"
+            : "freelancer";
+
+        const mergedData = {
+          name:
+            sbProfile?.name ||
+            cloudMatch?.name ||
+            userMeta?.full_name ||
+            userMeta?.name ||
+            body.name ||
+            cleanEmail.split("@")[0],
+          email: cleanEmail,
+          phone: sbProfile?.phone || cloudMatch?.contact || notes.phone || userMeta?.phone || "",
+          role: effectiveRole,
+          area: sbProfile?.area || notes.area || userMeta?.area || "",
+          company_name: notes.company_name || userMeta?.company_name || (effectiveRole === "employer" ? sbProfile?.skill || "" : ""),
+          hiring_for: notes.hiring_for || notes.job_category || userMeta?.hiring_for || (effectiveRole === "employer" ? sbProfile?.category || "" : ""),
+          category: notes.category || userMeta?.category || (effectiveRole !== "employer" ? sbProfile?.category || "" : ""),
+          skill: notes.skill || sbProfile?.skill || userMeta?.skill || "",
+          experience: notes.experience || userMeta?.experience || "",
+          bio: sbProfile?.bio || notes.bio || notes.intro || userMeta?.bio || "",
+          rate_hr: notes.rate_hr || userMeta?.rate_hr || 500,
+          avatar_url: sbProfile?.avatar_url || userMeta?.avatar_url || userMeta?.picture || body.avatar_url || "",
+        };
+
+        const missingFields = computeMissingFields(effectiveRole, mergedData);
+
+        const explicitIncomplete =
+          notes.profile_status === "incomplete" ||
+          sbProfile?.profile_status === "incomplete" ||
+          userMeta?.profile_status === "incomplete";
+        const explicitComplete =
+          notes.profile_status === "complete" ||
+          sbProfile?.profile_status === "complete" ||
+          userMeta?.profile_status === "complete" ||
+          PROTECTED_EMAILS.has(cleanEmail);
+
+        const isComplete = !explicitIncomplete && (explicitComplete || missingFields.length === 0);
+
+        // CASE 2: Already registered user attempting Sign Up
+        if (intent === "signup" && isRegistered) {
+          return res.status(200).json({
+            ok: true,
+            status: "already_registered",
+            registered: true,
+            role: effectiveRole,
+            profile: {
+              ...mergedData,
+              id: userId || sbProfile?.id || cloudMatch?.id || `user-${Date.now()}`,
+              user_id: userId || sbProfile?.id || cloudMatch?.id || `user-${Date.now()}`,
+              profile_status: isComplete ? "complete" : "incomplete",
+              missing_fields: isComplete ? [] : missingFields,
+            },
+          });
+        }
+
+        // CASE 3: New Sign Up -> Immediately create Incomplete Profile so Admin sees it right away
+        if (intent === "signup" && !isRegistered) {
+          const initialMissing = computeMissingFields(effectiveRole, { role: effectiveRole });
+          const displayName =
+            userMeta?.full_name ||
+            userMeta?.name ||
+            body.name ||
+            cleanEmail.split("@")[0] ||
+            "WorkHop User";
+          const avatarUrl = userMeta?.avatar_url || userMeta?.picture || body.avatar_url || "";
+
+          // Save to Razorpay customer for immediate Admin visibility (max 15 keys in Razorpay notes)
+          let customer = null;
+          const rzpNotes = {
+            role: effectiveRole,
+            workhop_registered: "true",
+            profile_status: "incomplete",
+            missing_fields: initialMissing.join(", "),
+            phone: "",
+            company_name: "",
+            hiring_for: "",
+            category: "",
+            skill: "",
+            experience: "",
+            bio: "",
+            area: "",
+            rate_hr: "500",
+            source: "google_oauth_signup",
+          };
+
+          if (cloudMatch) {
+            const cleanCloudId = String(cloudMatch.id || "").replace(/[^a-zA-Z0-9]/g, "");
+            await rzpRequest("PUT", `/customers/${cloudMatch.id}`, {
+              name: "Deleted Account",
+              email: `archived.${cleanCloudId}@workhop.in`,
+            }).catch(() => {});
+          }
+          customer = await rzpRequest("POST", "/customers", {
+            name: displayName,
+            email: cleanEmail,
+            notes: rzpNotes,
+          }).catch(() => null);
+
+          // Save to Supabase profiles & user_metadata if service role key is available
+          if (process.env.SUPABASE_SERVICE_ROLE_KEY && userId) {
+            await supabaseRequest(
+              "POST",
+              "/rest/v1/profiles?on_conflict=id",
+              {
+                id: userId,
+                email: cleanEmail,
+                name: displayName,
+                role: effectiveRole,
+                phone: null,
+                skill: null,
+                bio: null,
+                area: null,
+                hops_balance: 0,
+                avatar_url: avatarUrl || null,
+                updated_at: new Date().toISOString(),
+              },
+              { Prefer: "resolution=merge-duplicates,return=representation" }
+            );
+            await supabaseRequest("PUT", `/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+              user_metadata: {
+                ...userMeta,
+                workhop_registered: true,
+                role: effectiveRole,
+                profile_status: "incomplete",
+                missing_fields: initialMissing,
+              },
+            });
+          }
+
+          return res.status(200).json({
+            ok: true,
+            status: "onboarding",
+            registered: false,
+            created_incomplete: true,
+            profile_status: "incomplete",
+            role: effectiveRole,
+            missing_fields: initialMissing,
+            profile: {
+              id: userId || customer?.id || `user-${Date.now()}`,
+              user_id: userId || customer?.id || `user-${Date.now()}`,
+              name: displayName,
+              email: cleanEmail,
+              role: effectiveRole,
+              avatar_url: avatarUrl,
+              profile_status: "incomplete",
+              missing_fields: initialMissing,
+            },
+          });
+        }
+
+        // CASE 4: Registered user logging in -> Check if profile is complete or incomplete
+        return res.status(200).json({
+          ok: true,
+          status: isComplete ? "complete" : "onboarding",
+          registered: true,
+          profile_status: isComplete ? "complete" : "incomplete",
+          role: effectiveRole,
+          missing_fields: isComplete ? [] : missingFields,
+          profile: {
+            ...mergedData,
+            id: userId || sbProfile?.id || cloudMatch?.id || `user-${Date.now()}`,
+            user_id: userId || sbProfile?.id || cloudMatch?.id || `user-${Date.now()}`,
+            profile_status: isComplete ? "complete" : "incomplete",
+            missing_fields: isComplete ? [] : missingFields,
+          },
+        });
+      }
+
+      // ──────────────────────────────────────────────────────────────────
+      // B. Standard User Registration / Profile Completion Sync
+      // ──────────────────────────────────────────────────────────────────
       const {
+        user_id,
+        id,
         email,
         name,
         phone,
         role,
         area,
         company_name,
+        hiring_for,
+        category,
         skill,
+        skills,
+        experience,
+        bio,
+        intro,
         rate_hr,
+        hourly_rate,
+        gst_number,
+        avatar_url,
+        profile_status,
       } = body;
 
       const cleanEmail = (email || "").trim().toLowerCase();
       const phoneDigits = (phone || "").replace(/\D/g, "");
-      const userRole = (role || "freelancer").toLowerCase();
+      const userRole = (role || "freelancer").toLowerCase() === "employer" ? "employer" : "freelancer";
       const userName = (name || (userRole === "employer" ? company_name : cleanEmail.split("@")[0]) || "WorkHop Member").trim();
 
+      const skillStr = Array.isArray(skills) && skills.length > 0
+        ? skills.join(", ")
+        : (skill || "");
+      const bioStr = bio || intro || "";
+      const categoryStr = userRole === "employer" ? (hiring_for || category || "") : (category || "");
+      const hiringForStr = hiring_for || (userRole === "employer" ? category || "" : "");
+      const effectiveRate = rate_hr || hourly_rate || 500;
+
+      const computedMissing = computeMissingFields(userRole, {
+        phone: phoneDigits,
+        company_name,
+        hiring_for: hiringForStr,
+        category: categoryStr,
+        skill: skillStr,
+        experience,
+        bio: bioStr,
+        area,
+      });
+
+      const finalStatus =
+        profile_status === "incomplete"
+          ? "incomplete"
+          : profile_status === "complete" || computedMissing.length === 0
+          ? "complete"
+          : "incomplete";
+      const finalMissing = finalStatus === "complete" ? [] : computedMissing;
+
+      // Strictly 14 keys (Razorpay enforces max 15 keys in notes)
+      const rzpNotes = {
+        role: userRole,
+        workhop_registered: "true",
+        profile_status: finalStatus,
+        missing_fields: finalMissing.join(", "),
+        phone: phoneDigits.slice(-10) || "",
+        company_name: company_name || (userRole === "employer" && finalStatus === "complete" ? userName : ""),
+        hiring_for: hiringForStr,
+        category: categoryStr,
+        skill: skillStr,
+        experience: experience || "",
+        bio: bioStr ? String(bioStr).slice(0, 240) : "",
+        area: area || "",
+        rate_hr: String(effectiveRate),
+        source: "workhop_registration",
+      };
+
       let customer = null;
-      try {
+      const custRes = await rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] }));
+      const existingCustomers = Array.isArray(custRes?.items) ? custRes.items : [];
+      const emailMatches = cleanEmail
+        ? existingCustomers.filter((c) => (c.email || "").trim().toLowerCase() === cleanEmail)
+        : [];
+
+      if (emailMatches.length > 0) {
+        // Since Razorpay PUT /customers/:id does not mutate notes, archive old record(s) and create fresh customer record with updated notes
+        for (const em of emailMatches) {
+          const cleanEmId = String(em.id || "").replace(/[^a-zA-Z0-9]/g, "");
+          await rzpRequest("PUT", `/customers/${em.id}`, {
+            name: "Deleted Account",
+            email: `archived.${cleanEmId}@workhop.in`,
+          }).catch(() => {});
+        }
+      }
+
+      customer = await rzpRequest("POST", "/customers", {
+        name: userName,
+        email: cleanEmail || `${phoneDigits || Date.now()}@workhop.in`,
+        contact: phoneDigits.slice(-10) || undefined,
+        notes: rzpNotes,
+      }).catch(() => null);
+
+      if (!customer || customer?.error) {
         customer = await rzpRequest("POST", "/customers", {
           name: userName,
           email: cleanEmail || `${phoneDigits || Date.now()}@workhop.in`,
-          contact: phoneDigits.slice(-10) || undefined,
-          notes: {
-            role: userRole,
-            company_name: company_name || (userRole === "employer" ? userName : ""),
-            skill: skill || (userRole !== "employer" ? "Pro" : ""),
-            area: area || "Bengaluru",
-            rate_hr: rate_hr ? String(rate_hr) : "500",
-            source: "workhop_registration",
-            registered_at: new Date().toISOString(),
-          }
-        });
-      } catch (e) {
-        // Customer exists, update their record
-        const custRes = await rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] }));
-        const match = (custRes?.items || []).find(
-          (c) => (c.email || "").toLowerCase() === cleanEmail || (c.contact && phoneDigits.endsWith(c.contact))
-        );
-        if (match) {
-          customer = await rzpRequest("PUT", `/customers/${match.id}`, {
+          notes: rzpNotes,
+        }).catch(() => null);
+      }
+
+      // Sync to Supabase if service role key is present
+      const targetUuid = user_id || id;
+      const isUuid = typeof targetUuid === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUuid);
+      if (process.env.SUPABASE_SERVICE_ROLE_KEY && isUuid) {
+        await supabaseRequest(
+          "POST",
+          "/rest/v1/profiles?on_conflict=id",
+          {
+            id: targetUuid,
+            email: cleanEmail,
             name: userName,
-            notes: {
-              ...(match.notes || {}),
-              role: userRole,
-              company_name: company_name || match.notes?.company_name || "",
-              skill: skill || match.notes?.skill || "",
-              area: area || match.notes?.area || "Bengaluru",
-              rate_hr: rate_hr ? String(rate_hr) : (match.notes?.rate_hr || "500"),
-              registered_at: new Date().toISOString(),
-            }
-          }).catch(() => match);
-        }
+            phone: phoneDigits.length >= 10 ? phoneDigits.slice(-10) : null,
+            role: userRole,
+            bio: bioStr || null,
+            skill: userRole === "employer" ? (company_name || null) : (skillStr || null),
+            category: categoryStr || "Graphics & Design",
+            area: area || null,
+            hops_balance: 0,
+            phone_verified: phoneDigits.length >= 10,
+            avatar_url: avatar_url || null,
+            updated_at: new Date().toISOString(),
+          },
+          { Prefer: "resolution=merge-duplicates,return=representation" }
+        );
+        await supabaseRequest("PUT", `/auth/v1/admin/users/${encodeURIComponent(targetUuid)}`, {
+          user_metadata: {
+            full_name: userName,
+            name: userName,
+            workhop_registered: true,
+            role: userRole,
+            profile_status: finalStatus,
+            missing_fields: finalMissing,
+            phone: phoneDigits.slice(-10),
+            company_name: company_name || "",
+            hiring_for: hiringForStr,
+            category: categoryStr,
+            skill: skillStr,
+            experience: experience || "",
+            bio: bioStr,
+            area: area || "",
+            rate_hr: Number(rate_hr) || 500,
+            gst_number: gst_number || "",
+          },
+        });
       }
 
       return res.status(200).json({
         ok: true,
         user: {
-          user_id: customer?.id || `user-${Date.now()}`,
-          id: customer?.id || `user-${Date.now()}`,
+          user_id: targetUuid || customer?.id || `user-${Date.now()}`,
+          id: targetUuid || customer?.id || `user-${Date.now()}`,
           name: userName,
           email: cleanEmail,
-          phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phone,
+          phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : (phone || ""),
           role: userRole,
           company_name: company_name || "",
-          skill: skill || "",
-          area: area || "Bengaluru",
+          hiring_for: hiringForStr,
+          category: categoryStr,
+          skill: skillStr,
+          experience: experience || "",
+          bio: bioStr,
+          area: area || "",
+          rate_hr: Number(rate_hr) || 500,
+          profile_status: finalStatus,
+          missing_fields: finalMissing,
+          workhop_registered: true,
           created_at: new Date().toISOString(),
-        }
+        },
       });
     } catch (err) {
       return res.status(400).json({ detail: err?.message || "Failed to register user" });
@@ -140,23 +661,55 @@ module.exports = async function handler(req, res) {
         phone: "+91 80530 827",
         role: "admin",
         area: "Bengaluru",
+        profile_status: "complete",
+        missing_fields: [],
+        workhop_registered: true,
         created_at: "2026-01-01T00:00:00.000Z",
-      }
+      },
     ];
 
     const seenEmails = new Set(["zenithdeveleoperss@gmail.com"]);
 
     for (const c of customers) {
       const notes = c.notes || {};
-      if (notes.deleted === "true") continue;
+      if (notes.deleted === "true" || notes.oauth_unregistered === "true") continue;
+      if (!isGenuineCloudCustomer(c)) continue;
 
       const email = (c.email || "").trim().toLowerCase();
       if (email && seenEmails.has(email)) continue;
       if (email) seenEmails.add(email);
 
-      const phoneRaw = c.contact || "";
+      const phoneRaw = c.contact || notes.phone || "";
       const phoneDigits = phoneRaw.replace(/\D/g, "");
       const isEmp = notes.role === "employer";
+      const roleStr = isEmp ? "employer" : (notes.role || "freelancer");
+
+      const status =
+        notes.profile_status === "incomplete"
+          ? "incomplete"
+          : notes.profile_status === "complete"
+          ? "complete"
+          : phoneDigits.length >= 10
+          ? "complete"
+          : "incomplete";
+
+      const missingList = notes.missing_fields
+        ? String(notes.missing_fields)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : status === "incomplete"
+        ? computeMissingFields(roleStr, {
+            phone: phoneDigits,
+            company_name: notes.company_name,
+            hiring_for: notes.hiring_for || notes.job_category,
+            category: notes.category,
+            skill: notes.skill,
+            experience: notes.experience,
+            bio: notes.bio || notes.intro,
+            area: notes.area,
+          })
+        : [];
 
       users.push({
         user_id: c.id,
@@ -164,10 +717,17 @@ module.exports = async function handler(req, res) {
         name: c.name || (email ? email.split("@")[0] : "WorkHop Member"),
         email: email,
         phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw || "",
-        role: isEmp ? "employer" : (notes.role || "freelancer"),
-        company_name: notes.company_name || (isEmp ? c.name : ""),
-        skill: notes.skill || (!isEmp ? "Pro" : ""),
-        area: notes.area || "Bengaluru",
+        role: roleStr,
+        company_name: notes.company_name || (isEmp && status === "complete" ? c.name : ""),
+        hiring_for: notes.hiring_for || notes.job_category || "",
+        category: notes.category || "",
+        skill: notes.skill || (!isEmp && status === "complete" ? "Pro" : ""),
+        experience: notes.experience || "",
+        bio: notes.bio || notes.intro || "",
+        area: notes.area || (status === "complete" ? "Bengaluru" : ""),
+        profile_status: status,
+        missing_fields: missingList,
+        workhop_registered: true,
         created_at: new Date(c.created_at * 1000).toISOString(),
         source: "cloud",
       });
@@ -182,8 +742,11 @@ module.exports = async function handler(req, res) {
         name: "Zenith Developers (Admin)",
         email: "Zenithdeveleoperss@gmail.com",
         role: "admin",
+        profile_status: "complete",
+        missing_fields: [],
+        workhop_registered: true,
         created_at: "2026-01-01T00:00:00.000Z",
-      }
+      },
     ]);
   }
 };

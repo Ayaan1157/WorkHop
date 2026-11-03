@@ -49,16 +49,21 @@ export async function supabaseSignInWithGoogle({ redirectTo = null, intent = "si
     throw new Error("Supabase is not configured. Please ensure REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY are set.");
   }
   const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
-  const callbackUrl = redirectTo || `${origin}/auth/callback?intent=${encodeURIComponent(intent)}${role ? `&role=${encodeURIComponent(role)}` : ""}`;
+  // Keep redirectTo as exact /auth/callback so Supabase's allowlist matches without falling back to Site URL (/)
+  const callbackUrl = redirectTo || `${origin}/auth/callback`;
 
   try {
     localStorage.setItem("workhop_auth_intent", intent);
     sessionStorage.setItem("workhop_auth_intent", intent);
+    localStorage.setItem("workhop_oauth_pending", "1");
+    sessionStorage.setItem("workhop_oauth_pending", "1");
     if (role) {
       localStorage.setItem("workhop_pending_role", role);
       sessionStorage.setItem("workhop_pending_role", role);
+      document.cookie = `workhop_pending_role=${encodeURIComponent(role)}; path=/; max-age=3600`;
     }
     document.cookie = `workhop_auth_intent=${encodeURIComponent(intent)}; path=/; max-age=3600`;
+    document.cookie = `workhop_oauth_pending=1; path=/; max-age=3600`;
   } catch {}
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -92,9 +97,25 @@ export async function supabaseGetSession() {
 export async function supabaseUpsertProfile(profile) {
   if (!isSupabaseConfigured() || !profile?.id) return null;
   try {
+    const safeProfile = {
+      id: profile.id,
+      email: profile.email || null,
+      phone: profile.phone || null,
+      name: profile.name || "WorkHop User",
+      role: profile.role === "employer" ? "employer" : "freelancer",
+      bio: profile.bio ?? null,
+      skill: profile.skill ?? null,
+      category: profile.category || "Graphics & Design",
+      area: profile.area ?? null,
+      portfolio: Array.isArray(profile.portfolio) ? profile.portfolio : [],
+      hops_balance: profile.hops_balance !== undefined ? Number(profile.hops_balance) : 0,
+      phone_verified: Boolean(profile.phone_verified),
+      avatar_url: profile.avatar_url || null,
+      updated_at: profile.updated_at || new Date().toISOString(),
+    };
     const { data, error } = await supabase
       .from("profiles")
-      .upsert(profile, { onConflict: "id" })
+      .upsert(safeProfile, { onConflict: "id" })
       .select()
       .maybeSingle();
     if (error) {

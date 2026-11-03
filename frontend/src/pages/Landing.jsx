@@ -87,6 +87,15 @@ export default function Landing() {
 
   useEffect(() => {
     if (loading || user) return;
+    const params = new URLSearchParams(window.location.search);
+    const urlAuth = params.get("auth");
+    if (urlAuth === "signup" || urlAuth === "signin") {
+      const savedRole = localStorage.getItem("workhop_pending_role") || "freelancer";
+      setPendingRole(savedRole);
+      setAuthMode(urlAuth === "signup" ? "signup" : "signin");
+      localStorage.setItem("workhop_auth_intent", urlAuth === "signup" ? "signup" : "signin");
+      return;
+    }
     if (localStorage.getItem("workhop_auth_intent") === "freelancer") {
       localStorage.removeItem("workhop_auth_intent");
       localStorage.setItem("workhop_pending_role", "freelancer");

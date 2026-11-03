@@ -2435,6 +2435,7 @@ function ProsTalentTab({ adminFetch }) {
             const sid = (u.id || `pro-${em.split("@")[0]}`).toLowerCase();
             const semail = em.toLowerCase().trim();
             if (!existingIds.has(sid) && !existingEmails.has(semail)) {
+              const isInc = u.profile_status === "incomplete" || (!u.phone && !u.skill);
               list.push({
                 id: sid,
                 freelancer_id: sid,
@@ -2442,13 +2443,17 @@ function ProsTalentTab({ adminFetch }) {
                 full_name: u.name || em.split("@")[0],
                 email: semail,
                 phone: u.phone || "",
-                skill: u.skill || "Freelancer Pro",
-                category: "Graphics & Design",
+                skill: u.skill || (isInc ? "Incomplete Profile" : "Freelancer Pro"),
+                category: u.category || "Graphics & Design",
+                experience: u.experience || "",
+                bio: u.bio || u.intro || "",
                 bucket: "Creative",
-                area: u.area || "Bengaluru",
+                area: u.area || (isInc ? "Not set" : "Bengaluru"),
                 paid: Boolean(u.paid),
                 approved: u.approved !== undefined ? Boolean(u.approved) : false,
                 status: u.status || (u.approved ? "approved" : "pending"),
+                profile_status: isInc ? "incomplete" : (u.profile_status || "complete"),
+                missing_fields: Array.isArray(u.missing_fields) ? u.missing_fields : [],
                 created_at: u.created_at || new Date().toISOString(),
                 source: "local",
               });
@@ -2737,6 +2742,12 @@ function ProsTalentTab({ adminFetch }) {
             const isApproved = Boolean(f.approved || f.status === "approved");
             const isDeclined = Boolean(!f.approved && f.status === "declined");
             const isPending = !isApproved && !isDeclined;
+            const isIncomplete = f.profile_status === "incomplete" || (!f.is_dummy && !f.phone && (!f.skill || f.skill === "Incomplete Profile"));
+            const missingFields = Array.isArray(f.missing_fields) && f.missing_fields.length > 0
+              ? f.missing_fields
+              : isIncomplete
+              ? ["Phone Number", "Profession / Service Category", "Skills", "Experience", "Bio", "Location"]
+              : [];
             const isBusy = busyId === fId;
 
             return (
@@ -2754,6 +2765,14 @@ function ProsTalentTab({ adminFetch }) {
                       <p className="text-xs font-bold text-brand">{f.skill || "Creative Pro"}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
+                      {isIncomplete && (
+                        <span
+                          data-testid="admin-incomplete-profile-badge"
+                          className="border-2 border-rose-600 bg-rose-100 px-2 py-0.5 text-[9px] font-black text-rose-900 uppercase flex items-center gap-1"
+                        >
+                          <AlertTriangle size={10} /> INCOMPLETE PROFILE
+                        </span>
+                      )}
                       {isApproved && (
                         <span className="border border-ok bg-[#E5F7E0] px-2 py-0.5 text-[9px] font-black text-[#1E4620] uppercase flex items-center gap-1">
                           <Check size={11} /> APPROVED
@@ -2801,10 +2820,19 @@ function ProsTalentTab({ adminFetch }) {
                     <span>{Number(f.jobs_done) > 0 ? `${f.jobs_done}+ jobs done` : "0 jobs done (New)"}</span>
                   </div>
 
+                  {/* Missing Fields Banner if profile is incomplete */}
+                  {isIncomplete && missingFields.length > 0 && (
+                    <div className="mt-2 border border-rose-400 bg-rose-50 p-2 text-[10px] font-bold text-rose-900">
+                      <span className="font-black uppercase block text-rose-700">⚠️ Incomplete Profile — Missing Fields:</span>
+                      <span>{missingFields.join(", ")}</span>
+                    </div>
+                  )}
+
                   {/* Contact Info */}
                   <div className="mt-2 text-xs text-inkmuted space-y-0.5 border-t border-ink/10 pt-2">
                     <p className="truncate">📧 {f.email || "No email"}</p>
                     <p>📞 {f.phone || "No phone"}</p>
+                    {f.experience && <p>⏱️ Experience: {f.experience}</p>}
                     {f.payment_id && (
                       <p className="text-[10px] text-brand font-mono font-bold">💳 Txn: {f.payment_id}</p>
                     )}
@@ -4460,6 +4488,21 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
         list = [...(data.devices || []), ...(data.accounts || [])];
       }
 
+      // Also merge local stored employers so incomplete Google signups appear immediately
+      try {
+        const localEmps = getStoredEmployers();
+        const existingKeys = new Set(
+          list.map((emp) => (emp.email || emp.employer_id || emp.company_name || "").toLowerCase().trim()).filter(Boolean)
+        );
+        for (const le of localEmps) {
+          const lKey = (le.email || le.employer_id || le.company_name || "").toLowerCase().trim();
+          if (lKey && !existingKeys.has(lKey)) {
+            list.push(le);
+            existingKeys.add(lKey);
+          }
+        }
+      } catch {}
+
       const gigsList = Array.isArray(gigsData) ? gigsData : [];
       setAllGigs(gigsList);
       const gigsCount = {};
@@ -4819,12 +4862,23 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
           {employers.map((e) => {
             const empId = e.employer_id;
             const empHops = getEmployerHops(empId);
+            const isIncomplete =
+              e.profile_status === "incomplete" ||
+              (!e.phone && (!e.company_name || e.company_name === "Pending Business Name"));
+            const missingFields = Array.isArray(e.missing_fields) && e.missing_fields.length > 0
+              ? e.missing_fields
+              : isIncomplete
+              ? ["Phone Number", "Business / Organization Name", "Type of Work Hired For", "Location"]
+              : [];
             return (
               <div key={empId} className="border-2 border-ink bg-white p-4 shadow-[3px_3px_0px_#121212]">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-black text-ink">{e.company_name}</p>
                     <p className="truncate text-xs font-bold text-inkmuted">{e.name}</p>
+                    {e.hiring_for && (
+                      <p className="text-[10px] font-bold text-brand mt-0.5">Hiring for: {e.hiring_for}</p>
+                    )}
                     <p className="mt-0.5 truncate text-[10px] font-semibold text-inkmuted flex items-center gap-1.5 flex-wrap">
                       <span>📍 {e.area || "Bengaluru"}{e.email ? ` · ${e.email}` : ""}{e.phone ? ` · ${e.phone}` : ""}</span>
                       {e.phone && (
@@ -4839,8 +4893,24 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
                       )}
                     </p>
                   </div>
-                  <Badge text="EMPLOYER" tone="gray" />
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {isIncomplete && (
+                      <span
+                        data-testid="admin-employer-incomplete-badge"
+                        className="border-2 border-rose-600 bg-rose-100 px-2 py-0.5 text-[9px] font-black text-rose-900 uppercase flex items-center gap-1"
+                      >
+                        <AlertTriangle size={10} /> INCOMPLETE PROFILE
+                      </span>
+                    )}
+                    <Badge text="EMPLOYER" tone="gray" />
+                  </div>
                 </div>
+                {isIncomplete && missingFields.length > 0 && (
+                  <div className="mt-2 border border-rose-400 bg-rose-50 p-2 text-[10px] font-bold text-rose-900">
+                    <span className="font-black uppercase block text-rose-700">⚠️ Incomplete Profile — Missing Fields:</span>
+                    <span>{missingFields.join(", ")}</span>
+                  </div>
+                )}
                 <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2 text-xs">
                   <span>Spend: ₹{Number(e.spent_rupees || 0).toLocaleString("en-IN")}</span>
                   <button

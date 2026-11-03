@@ -452,19 +452,48 @@ module.exports = async function handler(req, res) {
         notes.source === "workhop_employer_registration";
 
       if (!isEmployer) continue;
-      if (notes.deleted === "true" || deletedEmployerIds.has(c.id) || deletedEmployerIds.has((c.name || "").toLowerCase())) {
+      const emLower = (c.email || "").trim().toLowerCase();
+      if (
+        (c.name || "").trim() === "Deleted Account" ||
+        (c.name || "").startsWith("[DELETED]") ||
+        emLower.startsWith("archived.") ||
+        emLower.startsWith("deleted.") ||
+        emLower.endsWith("@workhop.invalid") ||
+        notes.deleted === "true" ||
+        notes.oauth_unregistered === "true" ||
+        deletedEmployerIds.has(c.id) ||
+        deletedEmployerIds.has((c.name || "").toLowerCase())
+      ) {
         continue;
       }
 
       const email = (c.email || "").trim().toLowerCase();
-      const phoneRaw = c.contact || "";
+      const phoneRaw = c.contact || notes.phone || "";
       const phoneDigits = phoneRaw.replace(/\D/g, "");
       const compName = (notes.company_name || c.name || "Employer").trim();
       const compLower = compName.toLowerCase();
-      const key = (compName || email || c.id).toLowerCase();
+      const key = (email || compName || c.id).toLowerCase();
 
       if (seenKeys.has(key)) continue;
       seenKeys.add(key);
+
+      const isIncomplete =
+        notes.profile_status === "incomplete" ||
+        (!notes.profile_status && phoneDigits.length < 10 && !notes.company_name);
+
+      const missingFields = notes.missing_fields
+        ? String(notes.missing_fields)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : isIncomplete
+        ? [
+            ...(phoneDigits.length < 10 ? ["Phone Number"] : []),
+            ...(!notes.company_name ? ["Business / Organization Name"] : []),
+            ...(!notes.hiring_for && !notes.job_category ? ["Type of Work Hired For"] : []),
+            ...(!notes.area ? ["Location"] : []),
+          ]
+        : [];
 
       const spend = spendMap[email] || spendMap[phoneDigits.slice(-10)] || 0;
       const liveGigs = gigsCountMap[c.id.toLowerCase()] ||
@@ -474,11 +503,14 @@ module.exports = async function handler(req, res) {
       employers.push({
         employer_id: c.id,
         id: c.id,
-        company_name: compName,
+        company_name: notes.company_name || (isIncomplete ? "Pending Business Name" : compName),
         name: c.name || compName,
         email: email,
         phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw || "",
-        area: notes.area || "Bengaluru",
+        area: notes.area || (isIncomplete ? "Not set" : "Bengaluru"),
+        hiring_for: notes.hiring_for || notes.job_category || "",
+        profile_status: isIncomplete ? "incomplete" : "complete",
+        missing_fields: missingFields,
         spent_rupees: spend,
         jobs_posted: liveGigs,
         created_at: new Date(c.created_at * 1000).toISOString(),

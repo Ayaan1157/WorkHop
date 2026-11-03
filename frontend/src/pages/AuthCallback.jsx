@@ -1,10 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase, supabaseSignInWithGoogle, supabaseUpsertProfile } from "@/lib/supabase";
-import { linkOrUpdateGoogleUser, getRegisteredUserByEmail, saveRegisteredUser, updateProHourlyRate } from "@/lib/clientStore";
+import {
+  linkOrUpdateGoogleUser,
+  getRegisteredUserByEmail,
+  saveRegisteredUser,
+  updateProHourlyRate,
+  isUserAdmin,
+} from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
-import { apiPost } from "@/lib/api";
-import { BENGALURU_AREAS } from "@/lib/locationAreas";
+import { apiPost, clearToken } from "@/lib/api";
+import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
+import { DISCIPLINES_CATALOG } from "@/lib/catalogFilters";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -20,42 +27,118 @@ import {
   User,
   Sparkles,
   Building,
-  ShieldCheck,
-  IndianRupee
+  Mail,
+  FileText,
+  Clock,
+  Navigation,
+  LogIn,
 } from "lucide-react";
+
+const CATEGORY_OPTIONS = DISCIPLINES_CATALOG.map((d) => d.category);
+const EXPERIENCE_OPTIONS = [
+  "Fresher (< 1 Year)",
+  "1–3 Years",
+  "3–5 Years",
+  "5–8 Years",
+  "8+ Years",
+];
+
+function computeLocalMissingFields(role, data = {}) {
+  const missing = [];
+  const phoneDigits = String(data.phone || "").replace(/\D/g, "").slice(-10);
+  if (phoneDigits.length !== 10) missing.push("Phone Number");
+
+  if (role === "employer") {
+    if (!String(data.company_name || "").trim()) missing.push("Business / Organization Name");
+    if (!String(data.hiring_for || data.category || "").trim()) missing.push("Type of Work Hired For");
+    if (!String(data.area || "").trim()) missing.push("Location");
+  } else {
+    if (!String(data.category || "").trim()) missing.push("Profession / Service Category");
+    if (!String(data.skill || "").trim() || data.skill === "Pro") missing.push("Skills");
+    if (!String(data.experience || "").trim()) missing.push("Experience");
+    if (!String(data.bio || data.intro || "").trim()) missing.push("Bio");
+    if (!String(data.area || "").trim()) missing.push("Location");
+  }
+  return missing;
+}
+
+function isProtectedEmail(email) {
+  if (!email) return false;
+  const clean = email.trim().toLowerCase();
+  return [
+    "zenithdeveleoperss@gmail.com",
+    "zenithdeveloperss@gmail.com",
+    "manarastudio22@gmail.com",
+    "alia.m@cobblestonedesigns.in",
+    "aliamansoor@gmail.com",
+    "ayaanwann@gmail.com",
+    "ayaaan.vlogs@gmail.com",
+    "shamanthnmurthy@gmail.com",
+  ].includes(clean);
+}
 
 export default function AuthCallback() {
   const navigate = useNavigate();
   const location = useLocation();
   const { adoptSession } = useAuth();
+  const processedRef = useRef(false);
 
-  const [status, setStatus] = useState("verifying"); // 'verifying' | 'not_registered' | 'onboarding' | 'error'
+  // 'verifying' | 'not_registered' | 'already_registered' | 'onboarding' | 'error'
+  const [status, setStatus] = useState("verifying");
   const [errorMessage, setErrorMessage] = useState("");
   const [authUser, setAuthUser] = useState(null);
+  const [rejectedEmail, setRejectedEmail] = useState("");
 
-  // First-time onboarding states
-  const [selectedRole, setSelectedRole] = useState(
-    () => localStorage.getItem("workhop_pending_role") || "freelancer"
-  );
-  const [selectedArea, setSelectedArea] = useState(
-    () => localStorage.getItem("workhop_user_area") || "Indiranagar"
+  // Onboarding form states
+  const [selectedRole, setSelectedRole] = useState(() => {
+    const saved =
+      localStorage.getItem("workhop_pending_role") ||
+      sessionStorage.getItem("workhop_pending_role");
+    return saved === "employer" ? "employer" : "freelancer";
+  });
+  const [roleLocked, setRoleLocked] = useState(() =>
+    Boolean(
+      localStorage.getItem("workhop_pending_role") ||
+        sessionStorage.getItem("workhop_pending_role")
+    )
   );
   const [fullNameInput, setFullNameInput] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
+  const [selectedArea, setSelectedArea] = useState("Indiranagar");
+  const [detectingLoc, setDetectingLoc] = useState(false);
+
+  // Freelancer fields
+  const [categoryInput, setCategoryInput] = useState("Graphics & Design");
   const [skillInput, setSkillInput] = useState("");
-  const [companyInput, setCompanyInput] = useState("");
+  const [experienceInput, setExperienceInput] = useState("1–3 Years");
+  const [bioInput, setBioInput] = useState("");
   const [rateInput, setRateInput] = useState("500");
+
+  // Employer fields
+  const [companyInput, setCompanyInput] = useState("");
+  const [hiringForInput, setHiringForInput] = useState("Graphics & Design");
   const [gstInput, setGstInput] = useState("");
+
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (processedRef.current) return;
+    processedRef.current = true;
     let isMounted = true;
+
+    function clearPendingFlags() {
+      try {
+        localStorage.removeItem("workhop_oauth_pending");
+        sessionStorage.removeItem("workhop_oauth_pending");
+        document.cookie = "workhop_oauth_pending=; path=/; max-age=0";
+      } catch {}
+    }
 
     async function handleAuth() {
       try {
-        // 1. Check for error params in URL query or hash
+        // 1. Check for OAuth error params in URL query or hash
         const searchParams = new URLSearchParams(location.search);
         const hashParams = new URLSearchParams(
           location.hash ? location.hash.replace(/^#/, "") : ""
@@ -68,6 +151,7 @@ export default function AuthCallback() {
           searchParams.get("message");
 
         if (error) {
+          clearPendingFlags();
           if (error === "access_denied" || error.includes("cancel")) {
             throw new Error(
               "Google sign-in was cancelled. You did not grant permissions or closed the account picker."
@@ -76,26 +160,57 @@ export default function AuthCallback() {
           throw new Error(errorDesc || "Google authentication failed. Please try again.");
         }
 
-        // 2. Fetch or exchange session
+        // 2. Read intent ('signup' | 'signin') and role ('freelancer' | 'employer')
+        const intentParam = searchParams.get("intent") || hashParams.get("intent");
+        const roleParam = searchParams.get("role") || hashParams.get("role");
+
+        const cookieIntentMatch =
+          typeof document !== "undefined" &&
+          document.cookie.match(/workhop_auth_intent=([^;]+)/);
+        const cookieRoleMatch =
+          typeof document !== "undefined" &&
+          document.cookie.match(/workhop_pending_role=([^;]+)/);
+
+        const storedIntentRaw =
+          intentParam ||
+          sessionStorage.getItem("workhop_auth_intent") ||
+          localStorage.getItem("workhop_auth_intent") ||
+          (cookieIntentMatch ? decodeURIComponent(cookieIntentMatch[1]) : null) ||
+          "signin";
+        const storedIntent = storedIntentRaw === "signup" ? "signup" : "signin";
+
+        const storedRoleRaw =
+          roleParam ||
+          sessionStorage.getItem("workhop_pending_role") ||
+          localStorage.getItem("workhop_pending_role") ||
+          (cookieRoleMatch ? decodeURIComponent(cookieRoleMatch[1]) : null);
+        const chosenRole = storedRoleRaw === "employer" ? "employer" : "freelancer";
+
+        if (storedRoleRaw) {
+          setSelectedRole(chosenRole);
+          setRoleLocked(true);
+        }
+
+        // 3. Retrieve or exchange Supabase session
         let session = null;
         const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
-        
         if (sessionErr) throw sessionErr;
 
         if (sessionData?.session) {
           session = sessionData.session;
         } else if (location.search.includes("code=")) {
           try {
-            const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
-            if (!error && data?.session) {
+            const { data, error: codeExErr } = await supabase.auth.exchangeCodeForSession(
+              window.location.href
+            );
+            if (!codeExErr && data?.session) {
               session = data.session;
             }
           } catch (codeErr) {
-            console.warn("Manual exchange code notice:", codeErr?.message);
+            console.warn("Exchange code notice:", codeErr?.message);
           }
         }
 
-        // Wait brief delay if hash token is being parsed by client
         if (!session) {
           await new Promise((r) => setTimeout(r, 600));
           const retry = await supabase.auth.getSession();
@@ -103,6 +218,7 @@ export default function AuthCallback() {
         }
 
         if (!session?.user) {
+          clearPendingFlags();
           throw new Error(
             "Could not retrieve an authenticated Google session. Please click 'Try Again with Google' below."
           );
@@ -111,114 +227,365 @@ export default function AuthCallback() {
         if (!isMounted) return;
 
         const user = session.user;
-        setAuthUser(user);
-
+        const cleanEmail = (user.email || "").trim().toLowerCase();
         const googleName =
           user.user_metadata?.full_name ||
           user.user_metadata?.name ||
-          user.email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-        setFullNameInput((prev) => prev || googleName);
+          cleanEmail
+            .split("@")[0]
+            .replace(/[._]/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+        const avatarUrl =
+          user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
 
-        // 3. Check for existing profile in Supabase
-        let existingProfile = null;
+        setAuthUser(user);
+        setRejectedEmail(cleanEmail);
+        setFullNameInput(googleName);
+
+        // 4. Check existing Supabase profile & local registration
+        let existingSbProfile = null;
         try {
-          const profileRes = await supabase
+          const { data: sbByEmail } = await supabase
             .from("profiles")
             .select("*")
-            .eq("id", user.id)
-            .maybeSingle();
-          existingProfile = profileRes?.data || null;
-        } catch (profileErr) {
-          console.warn("Supabase profile fetch notice:", profileErr?.message);
-        }
-
-        // Also check by email in Supabase if id didn't match
-        if (!existingProfile && user.email) {
-          try {
-            const emailRes = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("email", user.email)
-              .maybeSingle();
-            if (emailRes?.data) {
-              existingProfile = emailRes.data;
-            }
-          } catch (e) {
-            console.warn("Supabase email lookup notice:", e?.message);
+            .ilike("email", cleanEmail);
+          if (Array.isArray(sbByEmail) && sbByEmail.length > 0) {
+            existingSbProfile = sbByEmail[0];
           }
-        }
+        } catch {}
 
-        const intentParam = searchParams.get("intent") || hashParams.get("intent");
-        const roleParam = searchParams.get("role") || hashParams.get("role");
+        const existingLocal = getRegisteredUserByEmail(cleanEmail);
+        const userMeta = user.user_metadata || {};
 
-        // Read stored intent from storage / cookie
-        const cookieMatch = typeof document !== "undefined" && document.cookie.match(/workhop_auth_intent=([^;]+)/);
-        const cookieIntent = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-        const storedIntent =
-          intentParam ||
-          localStorage.getItem("workhop_auth_intent") ||
-          sessionStorage.getItem("workhop_auth_intent") ||
-          cookieIntent ||
-          "signup"; // Default to signup so new signups are ALWAYS prompted for details!
-
-        // Also check existing local user by email
-        const existingLocal = getRegisteredUserByEmail(user.email);
-        const pendingRole = roleParam || localStorage.getItem("workhop_pending_role");
-
-        // Determine if account record exists in Supabase or locally
-        const hasExistingAccount = Boolean(
-          existingProfile?.id ||
-          existingLocal?.id ||
-          (existingProfile && (existingProfile.phone || existingProfile.skill || existingProfile.company_name)) ||
-          (existingLocal && (existingLocal.phone || existingLocal.skill || existingLocal.company_name))
+        const isGenuineSbProfile = Boolean(
+          existingSbProfile &&
+            (existingSbProfile.profile_status === "complete" ||
+              existingSbProfile.profile_status === "incomplete" ||
+              (existingSbProfile.phone &&
+                String(existingSbProfile.phone).replace(/\D/g, "").length >= 10) ||
+              (existingSbProfile.skill &&
+                String(existingSbProfile.skill).trim() &&
+                existingSbProfile.skill !== "Pro") ||
+              (existingSbProfile.bio && String(existingSbProfile.bio).trim()) ||
+              (existingSbProfile.hops_balance !== undefined &&
+                existingSbProfile.hops_balance !== null &&
+                Number(existingSbProfile.hops_balance) === 0))
         );
 
-        // Check if profile is complete (has valid 10-digit phone AND profession/company)
-        const cleanExistingPhone = (existingProfile?.phone || existingLocal?.phone || "").replace(/\D/g, "");
-        const hasValidPhone = cleanExistingPhone.length === 10;
-        const targetRole = existingProfile?.role || existingLocal?.role || roleParam || pendingRole || "freelancer";
-        const hasSkillOrCompany = Boolean(
-          targetRole === "employer"
-            ? (existingProfile?.company_name || existingLocal?.company_name)
-            : (existingProfile?.skill || existingLocal?.skill)
+        const isGenuineLocal = Boolean(
+          existingLocal &&
+            (existingLocal.workhop_registered === true ||
+              existingLocal.profile_status === "complete" ||
+              existingLocal.profile_status === "incomplete" ||
+              (existingLocal.phone &&
+                String(existingLocal.phone).replace(/\D/g, "").length >= 10) ||
+              (existingLocal.skill &&
+                String(existingLocal.skill).trim() &&
+                existingLocal.skill !== "Pro") ||
+              existingLocal.company_name)
         );
-        const isProfileComplete = hasValidPhone && hasSkillOrCompany;
 
-        // Populate known fields for onboarding form
-        if (cleanExistingPhone.length >= 10) {
-          setPhoneInput(cleanExistingPhone.slice(-10));
-        }
-        if (existingProfile?.skill || existingLocal?.skill) {
-          setSkillInput(existingProfile?.skill || existingLocal?.skill || "");
-        }
-        if (existingProfile?.company_name || existingLocal?.company_name) {
-          setCompanyInput(existingProfile?.company_name || existingLocal?.company_name || "");
-        }
-        if (existingProfile?.area || existingLocal?.area) {
-          setSelectedArea(existingProfile?.area || existingLocal?.area || "Indiranagar");
-        }
-        if (targetRole) {
-          setSelectedRole(targetRole);
-        }
-        if (existingProfile?.rate_hr) {
-          setRateInput(String(existingProfile.rate_hr));
+        const isMetaRegistered = Boolean(
+          userMeta.workhop_registered === true ||
+            userMeta.profile_status === "complete" ||
+            userMeta.profile_status === "incomplete"
+        );
+
+        // 5. Call server-side /api/users (action: oauth_check_or_init) for authoritative check + service_role cleanup
+        let serverDecision = null;
+        try {
+          serverDecision = await apiPost("/users", {
+            action: "oauth_check_or_init",
+            access_token: session.access_token,
+            intent: storedIntent,
+            role: chosenRole,
+            user_id: user.id,
+            email: cleanEmail,
+            name: googleName,
+            avatar_url: avatarUrl,
+            user_metadata: userMeta,
+          });
+        } catch (srvErr) {
+          console.warn("Server OAuth check fallback to local check:", srvErr?.message);
         }
 
-        // Case 1: If user clicked SIGN IN and genuinely has NO WorkHop account at all:
-        if (storedIntent === "signin" && !hasExistingAccount) {
-          setStatus("not_registered");
+        // Also invoke Supabase Edge Function if deployed (non-blocking backup)
+        if (storedIntent === "signin" && (!serverDecision || serverDecision.status === "not_registered")) {
+          try {
+            supabase.functions
+              .invoke("google-oauth-guard", {
+                body: {
+                  action: "oauth_check_or_init",
+                  access_token: session.access_token,
+                  intent: storedIntent,
+                  role: chosenRole,
+                },
+              })
+              .catch(() => {});
+          } catch {}
+        }
+
+        const isRegistered = Boolean(
+          serverDecision?.registered === true ||
+            isGenuineSbProfile ||
+            isGenuineLocal ||
+            isMetaRegistered ||
+            isProtectedEmail(cleanEmail) ||
+            isUserAdmin(cleanEmail)
+        );
+
+        clearPendingFlags();
+
+        // ──────────────────────────────────────────────────────────────────
+        // CASE A: User clicked "Log In" with a NEVER-REGISTERED Google account
+        // ──────────────────────────────────────────────────────────────────
+        if (
+          storedIntent === "signin" &&
+          (serverDecision?.status === "not_registered" || !isRegistered) &&
+          !isProtectedEmail(cleanEmail) &&
+          !isUserAdmin(cleanEmail)
+        ) {
+          try {
+            await supabase.auth.signOut();
+          } catch {}
+          clearToken();
+          localStorage.removeItem("workhop_user_data");
+          localStorage.removeItem(`workhop_oauth_verified_${user.id}`);
+          if (isMounted) {
+            setStatus("not_registered");
+          }
           return;
         }
 
-        // Case 2: User has an account and profile is complete (phone + profession):
-        if (hasExistingAccount && isProfileComplete) {
-          const finalRole = existingProfile?.role || existingLocal?.role || targetRole;
-          const finalArea = existingProfile?.area || existingLocal?.area || "Bengaluru";
+        // ──────────────────────────────────────────────────────────────────
+        // CASE B: User clicked "Sign Up" with an ALREADY-REGISTERED Google account
+        // ──────────────────────────────────────────────────────────────────
+        if (
+          storedIntent === "signup" &&
+          (serverDecision?.status === "already_registered" ||
+            isGenuineSbProfile ||
+            isGenuineLocal ||
+            isMetaRegistered ||
+            isProtectedEmail(cleanEmail) ||
+            isUserAdmin(cleanEmail))
+        ) {
+          try {
+            await supabase.auth.signOut();
+          } catch {}
+          clearToken();
+          localStorage.removeItem("workhop_user_data");
+          localStorage.removeItem(`workhop_oauth_verified_${user.id}`);
+          if (isMounted) {
+            setStatus("already_registered");
+          }
+          return;
+        }
 
-          const sessionUser = linkOrUpdateGoogleUser(user, finalRole, finalArea);
+        // Determine effective role & merged profile data (ignore trigger-default 'freelancer' on uninitialized profiles)
+        const srvProfile = serverDecision?.profile || {};
+        const effectiveRole =
+          (srvProfile.role ||
+            (isGenuineSbProfile ? existingSbProfile?.role : null) ||
+            (isGenuineLocal ? existingLocal?.role : null) ||
+            (isMetaRegistered ? userMeta?.role : null) ||
+            chosenRole) === "employer"
+            ? "employer"
+            : "freelancer";
+
+        setSelectedRole(effectiveRole);
+
+        // ──────────────────────────────────────────────────────────────────
+        // CASE C: New Sign Up -> Immediately save Incomplete Profile & show Onboarding
+        // ──────────────────────────────────────────────────────────────────
+        if (storedIntent === "signup" && !isRegistered) {
+          const initialMissing = computeLocalMissingFields(effectiveRole, {});
+
+          // Ensure Supabase profile has hops_balance = 0 & role (distinguishing from trigger defaults)
+          await supabaseUpsertProfile({
+            id: user.id,
+            email: cleanEmail,
+            name: googleName,
+            role: effectiveRole,
+            avatar_url: avatarUrl,
+            hops_balance: 0,
+            updated_at: new Date().toISOString(),
+          });
+
+          try {
+            await supabase.auth.updateUser({
+              data: {
+                workhop_registered: true,
+                role: effectiveRole,
+                profile_status: "incomplete",
+                missing_fields: initialMissing,
+              },
+            });
+          } catch {}
+
+          // Save incomplete profile locally so Admin Dashboard shows "Incomplete profile" right away
+          saveRegisteredUser(cleanEmail, "", {
+            id: user.id,
+            email: cleanEmail,
+            name: googleName,
+            picture: avatarUrl,
+            role: effectiveRole,
+            phone: "",
+            area: "",
+            skill: "",
+            category: "",
+            company_name: "",
+            hiring_for: "",
+            experience: "",
+            bio: "",
+            profile_status: "incomplete",
+            missing_fields: initialMissing,
+            workhop_registered: true,
+            auth_provider: "google",
+          });
+
+          if (isMounted) {
+            setStatus("onboarding");
+          }
+          return;
+        }
+
+        // ──────────────────────────────────────────────────────────────────
+        // CASE D: Registered User Logging In -> Check if Complete or Incomplete
+        // ──────────────────────────────────────────────────────────────────
+        const mergedProfile = {
+          name:
+            srvProfile.name ||
+            existingSbProfile?.name ||
+            existingLocal?.name ||
+            googleName,
+          email: cleanEmail,
+          phone:
+            srvProfile.phone ||
+            existingSbProfile?.phone ||
+            existingLocal?.phone ||
+            userMeta?.phone ||
+            "",
+          role: effectiveRole,
+          area:
+            srvProfile.area ||
+            existingSbProfile?.area ||
+            existingLocal?.area ||
+            userMeta?.area ||
+            "",
+          category:
+            srvProfile.category ||
+            existingSbProfile?.category ||
+            existingLocal?.category ||
+            userMeta?.category ||
+            "",
+          skill:
+            srvProfile.skill ||
+            existingSbProfile?.skill ||
+            existingLocal?.skill ||
+            userMeta?.skill ||
+            "",
+          experience:
+            srvProfile.experience ||
+            existingLocal?.experience ||
+            userMeta?.experience ||
+            "",
+          bio:
+            srvProfile.bio ||
+            existingSbProfile?.bio ||
+            existingLocal?.bio ||
+            existingLocal?.intro ||
+            userMeta?.bio ||
+            "",
+          company_name:
+            srvProfile.company_name ||
+            existingLocal?.company_name ||
+            userMeta?.company_name ||
+            (effectiveRole === "employer" ? existingSbProfile?.skill || "" : ""),
+          hiring_for:
+            srvProfile.hiring_for ||
+            existingLocal?.hiring_for ||
+            userMeta?.hiring_for ||
+            (effectiveRole === "employer" ? existingSbProfile?.category || "" : ""),
+          rate_hr:
+            srvProfile.rate_hr ||
+            existingLocal?.rate_hr ||
+            userMeta?.rate_hr ||
+            500,
+          profile_status:
+            srvProfile.profile_status ||
+            existingSbProfile?.profile_status ||
+            existingLocal?.profile_status ||
+            userMeta?.profile_status ||
+            "",
+        };
+
+        // Pre-populate onboarding inputs with any already-saved fields
+        if (mergedProfile.name) setFullNameInput(mergedProfile.name);
+        const cleanDigits = String(mergedProfile.phone || "").replace(/\D/g, "");
+        if (cleanDigits.length >= 10) setPhoneInput(cleanDigits.slice(-10));
+        if (mergedProfile.area && mergedProfile.area !== "Not set") {
+          setSelectedArea(mergedProfile.area);
+        }
+        if (mergedProfile.category) setCategoryInput(mergedProfile.category);
+        if (mergedProfile.skill && mergedProfile.skill !== "Pro" && mergedProfile.skill !== "Incomplete Profile") {
+          setSkillInput(mergedProfile.skill);
+        }
+        if (mergedProfile.experience) setExperienceInput(mergedProfile.experience);
+        if (mergedProfile.bio) setBioInput(mergedProfile.bio);
+        if (mergedProfile.company_name && mergedProfile.company_name !== "Pending Business Name") {
+          setCompanyInput(mergedProfile.company_name);
+        }
+        if (mergedProfile.hiring_for) setHiringForInput(mergedProfile.hiring_for);
+        if (mergedProfile.rate_hr) setRateInput(String(mergedProfile.rate_hr));
+
+        const missingNow = computeLocalMissingFields(effectiveRole, mergedProfile);
+        const isExplicitlyIncomplete =
+          serverDecision?.status === "onboarding" ||
+          mergedProfile.profile_status === "incomplete" ||
+          userMeta?.profile_status === "incomplete";
+
+        const isComplete =
+          !isExplicitlyIncomplete &&
+          (serverDecision?.status === "complete" ||
+            mergedProfile.profile_status === "complete" ||
+            isProtectedEmail(cleanEmail) ||
+            isUserAdmin(cleanEmail) ||
+            (cleanDigits.length === 10 &&
+              (effectiveRole === "employer"
+                ? Boolean(mergedProfile.company_name)
+                : Boolean(mergedProfile.skill && mergedProfile.skill !== "Pro"))) ||
+            missingNow.length === 0);
+
+        if (isComplete) {
+          localStorage.setItem(`workhop_oauth_verified_${user.id}`, "1");
+          const finalArea = mergedProfile.area || "Bengaluru";
+          const sessionUser = linkOrUpdateGoogleUser(user, effectiveRole, finalArea);
+          sessionUser.role = effectiveRole;
+          sessionUser.name = mergedProfile.name || googleName;
+          sessionUser.phone = mergedProfile.phone || sessionUser.phone || "";
+          sessionUser.profile_status = "complete";
+          sessionUser.workhop_registered = true;
+          if (effectiveRole === "employer") {
+            sessionUser.company_name = mergedProfile.company_name || sessionUser.name;
+            sessionUser.hiring_for = mergedProfile.hiring_for || "Graphics & Design";
+          } else {
+            sessionUser.skill = mergedProfile.skill || "Creative Pro";
+            sessionUser.category = mergedProfile.category || "Graphics & Design";
+            sessionUser.experience = mergedProfile.experience || "";
+            sessionUser.bio = mergedProfile.bio || "";
+          }
+
+          saveRegisteredUser(cleanEmail, "", sessionUser);
           await adoptSession(session.access_token || `token_${Date.now()}`, sessionUser);
 
-          if (finalRole === "employer") {
+          localStorage.removeItem("workhop_pending_role");
+          localStorage.removeItem("workhop_auth_intent");
+          sessionStorage.removeItem("workhop_pending_role");
+          sessionStorage.removeItem("workhop_auth_intent");
+
+          if (sessionUser.is_admin || isUserAdmin(cleanEmail)) {
+            navigate("/admin", { replace: true });
+          } else if (effectiveRole === "employer") {
             navigate("/employer/dashboard", { replace: true });
           } else {
             navigate("/freelancer/jobs", { replace: true });
@@ -226,9 +593,10 @@ export default function AuthCallback() {
           return;
         }
 
-        // Case 3: Profile details are missing or user clicked SIGN UP:
-        // Prompt them to complete their full profile (Name, Role, Area, Phone, Profession, Rate, Terms)!
-        setStatus("onboarding");
+        // Registered user with incomplete profile -> send to mandatory profile completion!
+        if (isMounted) {
+          setStatus("onboarding");
+        }
       } catch (err) {
         if (!isMounted) return;
         console.warn("OAuth Callback processing failed:", err.message);
@@ -246,7 +614,36 @@ export default function AuthCallback() {
     };
   }, [location, adoptSession, navigate]);
 
-  // Handle first-time onboarding completion
+  const handleDetectLocation = async () => {
+    setDetectingLoc(true);
+    try {
+      if (typeof navigator !== "undefined" && navigator.geolocation) {
+        await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const nearest = findNearestArea({
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+              });
+              if (nearest?.name) {
+                setSelectedArea(nearest.name);
+                setSavedArea(nearest.name);
+              }
+              resolve();
+            },
+            () => resolve(),
+            { timeout: 6000 }
+          );
+        });
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setDetectingLoc(false);
+    }
+  };
+
+  // Handle mandatory profile completion submit
   const handleCompleteOnboarding = async (e) => {
     e.preventDefault();
     if (!authUser) return;
@@ -265,20 +662,36 @@ export default function AuthCallback() {
     }
 
     if (!selectedArea) {
-      setFormError("Please select your Bengaluru neighborhood.");
+      setFormError("Please select your Bengaluru location.");
       return;
     }
 
-    const cleanSkill = skillInput.trim();
-    if (selectedRole === "freelancer" && (!cleanSkill || cleanSkill.length < 2)) {
-      setFormError("Please enter your primary profession / skill (e.g. Logo Designer, Developer, Electrician).");
-      return;
-    }
-
-    const cleanCompany = companyInput.trim();
-    if (selectedRole === "employer" && (!cleanCompany || cleanCompany.length < 2)) {
-      setFormError("Please enter your company or business name.");
-      return;
+    if (selectedRole === "freelancer") {
+      if (!categoryInput) {
+        setFormError("Please select your profession / service category.");
+        return;
+      }
+      if (!skillInput.trim() || skillInput.trim().length < 2) {
+        setFormError("Please enter your skills (e.g. Architecture, UI/UX Design, React, Video Editing).");
+        return;
+      }
+      if (!experienceInput) {
+        setFormError("Please select your years of experience.");
+        return;
+      }
+      if (!bioInput.trim() || bioInput.trim().length < 10) {
+        setFormError("Please write a short bio (at least 10 characters) describing your work.");
+        return;
+      }
+    } else {
+      if (!companyInput.trim() || companyInput.trim().length < 2) {
+        setFormError("Please enter your business or organization name.");
+        return;
+      }
+      if (!hiringForInput) {
+        setFormError("Please select the type of work you hire for.");
+        return;
+      }
     }
 
     if (!termsAccepted) {
@@ -289,120 +702,166 @@ export default function AuthCallback() {
     setSubmitting(true);
 
     try {
+      const cleanEmail = (authUser.email || "").trim().toLowerCase();
       const avatarUrl =
         authUser.user_metadata?.avatar_url ||
         authUser.user_metadata?.picture ||
         null;
+      const cleanSkill = skillInput.trim();
+      const cleanBio = bioInput.trim();
+      const cleanCompany = companyInput.trim();
       const cleanGst = gstInput.trim().toUpperCase();
-      const numRate = selectedRole === "freelancer" ? (Math.max(50, Number(rateInput)) || 500) : null;
+      const numRate = selectedRole === "freelancer" ? (Math.max(50, Number(rateInput)) || 500) : 500;
+      const formattedPhone = `+91 ${cleanPhone.slice(0, 5)} ${cleanPhone.slice(5)}`;
 
-      // 1. Reliably save profile to Supabase database
+      // 1. Save complete profile to Supabase profiles table
       await supabaseUpsertProfile({
         id: authUser.id,
-        email: authUser.email,
+        email: cleanEmail,
         name: cleanName,
         avatar_url: avatarUrl,
         role: selectedRole,
         area: selectedArea,
-        phone: `+91 ${cleanPhone}`,
+        phone: formattedPhone,
         phone_verified: true,
-        email_verified: true,
-        skill: selectedRole === "freelancer" ? cleanSkill : null,
-        company_name: selectedRole === "employer" ? cleanCompany : null,
-        gst_number: selectedRole === "employer" && cleanGst ? cleanGst : null,
-        rate_hr: numRate,
+        bio: selectedRole === "freelancer" ? cleanBio : `Hiring for ${hiringForInput} at ${cleanCompany}`,
+        skill: selectedRole === "freelancer" ? cleanSkill : cleanCompany,
+        category: selectedRole === "freelancer" ? categoryInput : hiringForInput,
         hops_balance: 0,
         updated_at: new Date().toISOString(),
       });
 
-      // 2. Real-time sync to /api/users for Admin dashboard
+      // 2. Save extended onboarding metadata to Supabase Auth user_metadata
+      try {
+        await supabase.auth.updateUser({
+          data: {
+            full_name: cleanName,
+            name: cleanName,
+            workhop_registered: true,
+            role: selectedRole,
+            profile_status: "complete",
+            missing_fields: [],
+            phone: formattedPhone,
+            area: selectedArea,
+            category: selectedRole === "freelancer" ? categoryInput : hiringForInput,
+            skill: selectedRole === "freelancer" ? cleanSkill : "",
+            experience: selectedRole === "freelancer" ? experienceInput : "",
+            bio: selectedRole === "freelancer" ? cleanBio : "",
+            rate_hr: numRate,
+            company_name: selectedRole === "employer" ? cleanCompany : "",
+            hiring_for: selectedRole === "employer" ? hiringForInput : "",
+            gst_number: selectedRole === "employer" ? cleanGst : "",
+          },
+        });
+      } catch {}
+
+      // 3. Sync complete profile to /api/users for Admin Dashboard
       await apiPost("/users", {
-        email: authUser.email,
+        user_id: authUser.id,
+        id: authUser.id,
+        email: cleanEmail,
         role: selectedRole,
         name: cleanName,
         phone: cleanPhone,
         area: selectedArea,
+        profile_status: "complete",
+        missing_fields: [],
+        category: selectedRole === "freelancer" ? categoryInput : hiringForInput,
+        skill: selectedRole === "freelancer" ? cleanSkill : undefined,
+        experience: selectedRole === "freelancer" ? experienceInput : undefined,
+        bio: selectedRole === "freelancer" ? cleanBio : undefined,
+        rate_hr: selectedRole === "freelancer" ? numRate : undefined,
         company_name: selectedRole === "employer" ? cleanCompany : undefined,
-        skill: selectedRole !== "employer" ? cleanSkill : undefined,
+        hiring_for: selectedRole === "employer" ? hiringForInput : undefined,
         gst_number: selectedRole === "employer" && cleanGst ? cleanGst : undefined,
-        rate_hr: numRate || undefined,
+        avatar_url: avatarUrl,
       }).catch(() => {});
 
-      // 3. Link & register locally in clientStore
-      saveRegisteredUser(authUser.email, "", {
+      // 4. Save complete profile in local clientStore
+      const completedProfile = {
         id: authUser.id,
-        email: authUser.email,
+        email: cleanEmail,
         name: cleanName,
+        picture: avatarUrl,
         role: selectedRole,
         area: selectedArea,
-        phone: `+91 ${cleanPhone}`,
+        phone: formattedPhone,
+        category: selectedRole === "freelancer" ? categoryInput : hiringForInput,
         skill: selectedRole === "freelancer" ? cleanSkill : "",
+        experience: selectedRole === "freelancer" ? experienceInput : "",
+        bio: selectedRole === "freelancer" ? cleanBio : "",
+        intro: selectedRole === "freelancer" ? cleanBio : "",
+        rate_hr: numRate,
         company_name: selectedRole === "employer" ? cleanCompany : "",
-        rate_hr: numRate || undefined,
-      });
+        hiring_for: selectedRole === "employer" ? hiringForInput : "",
+        gst_number: selectedRole === "employer" ? cleanGst : "",
+        profile_status: "complete",
+        missing_fields: [],
+        workhop_registered: true,
+        email_verified: true,
+        auth_provider: "google",
+      };
 
+      saveRegisteredUser(cleanEmail, "", completedProfile);
+
+      localStorage.setItem(`workhop_oauth_verified_${authUser.id}`, "1");
       localStorage.setItem("workhop_auth_role", selectedRole);
       localStorage.setItem("workhop_user_area", selectedArea);
-      localStorage.setItem("workhop_pro_phone", `+91 ${cleanPhone}`);
+      localStorage.setItem("workhop_pro_phone", formattedPhone);
       localStorage.setItem("workhop_pro_name", cleanName);
+
       if (selectedRole === "freelancer") {
         localStorage.removeItem("workhop_company_name");
         localStorage.removeItem("workhop_employer_gst");
         localStorage.setItem("workhop_pro_skill", cleanSkill);
-        if (numRate) {
-          localStorage.setItem("workhop_pro_rate_hr", String(numRate));
-          updateProHourlyRate(authUser.id, numRate);
-          updateProHourlyRate(authUser.email, numRate);
-        }
+        localStorage.setItem("workhop_pro_rate_hr", String(numRate));
+        updateProHourlyRate(authUser.id, numRate);
+        updateProHourlyRate(cleanEmail, numRate);
       } else {
         localStorage.setItem("workhop_company_name", cleanCompany);
         if (cleanGst) localStorage.setItem("workhop_employer_gst", cleanGst);
       }
 
       const sessionUser = linkOrUpdateGoogleUser(authUser, selectedRole, selectedArea);
-      sessionUser.role = selectedRole;
-      sessionUser.name = cleanName;
-      sessionUser.phone = `+91 ${cleanPhone}`;
-      if (selectedRole === "freelancer") {
-        sessionUser.skill = cleanSkill;
-        delete sessionUser.company_name;
-      }
-      if (selectedRole === "employer") sessionUser.company_name = cleanCompany;
+      Object.assign(sessionUser, completedProfile);
 
-      // 4. Adopt session in AuthContext
       const session = await supabase.auth.getSession();
       const token = session?.data?.session?.access_token || `token_${Date.now()}`;
       await adoptSession(token, sessionUser);
 
-      // Clean up temporary role flag & intent
+      // Clear temporary OAuth flags
       localStorage.removeItem("workhop_pending_role");
       localStorage.removeItem("workhop_auth_intent");
+      sessionStorage.removeItem("workhop_pending_role");
+      sessionStorage.removeItem("workhop_auth_intent");
+      document.cookie = "workhop_auth_intent=; path=/; max-age=0";
+      document.cookie = "workhop_pending_role=; path=/; max-age=0";
 
-      // 5. Redirect: freelancers go to Onboarding flow (/freelancer), employers go to /employer/dashboard
+      // 5. Redirect to role dashboard
       if (selectedRole === "employer") {
         navigate("/employer/dashboard", { replace: true });
       } else {
-        navigate("/freelancer", { replace: true });
+        navigate("/freelancer/jobs", { replace: true });
       }
     } catch (err) {
       console.warn("Failed to complete onboarding:", err);
-      // Fallback navigation
-      navigate(selectedRole === "employer" ? "/employer/dashboard" : "/freelancer", {
-        replace: true,
-      });
+      setFormError(err.message || "Failed to save profile details. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleRetryGoogle = async () => {
+  const handleStartGoogleWithIntent = async (newIntent, roleOverride = null) => {
     setStatus("verifying");
     setErrorMessage("");
     try {
       if (typeof window !== "undefined") {
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState({}, document.title, "/auth/callback");
       }
-      await supabaseSignInWithGoogle();
+      await supabaseSignInWithGoogle({
+        intent: newIntent,
+        role: roleOverride || selectedRole || "freelancer",
+      });
     } catch (err) {
       setErrorMessage(err.message || "Failed to initiate Google OAuth.");
       setStatus("error");
@@ -410,10 +869,9 @@ export default function AuthCallback() {
   };
 
   // ══════════════════════════════════════════════════
-  // UI: NOT REGISTERED SCREEN (User said "Sign In" but account not found)
+  // UI 1: NOT REGISTERED (User clicked "Log In" with a never-registered Google account)
   // ══════════════════════════════════════════════════
   if (status === "not_registered") {
-    const userEmail = authUser?.email || "this email";
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4 text-white font-sans">
         <div className="w-full max-w-md border-4 border-white bg-[#1A1A1A] p-6 sm:p-8 shadow-[8px_8px_0px_#FF5500]">
@@ -423,44 +881,70 @@ export default function AuthCallback() {
             </div>
             <div>
               <span className="text-[10px] font-black tracking-widest text-[#FF5500] uppercase">
-                Account Status
+                Account Not Found
               </span>
               <h1 className="text-xl font-black uppercase text-white">Not Registered</h1>
             </div>
           </div>
 
-          <div className="bg-[#242424] p-4 border border-zinc-700 mb-6">
-            <p className="text-xs text-zinc-300 font-semibold leading-relaxed">
-              No WorkHop account was found associated with <span className="text-white font-mono font-bold">{userEmail}</span>.
+          <div className="bg-[#242424] p-4 border-2 border-amber-500/60 mb-6">
+            <p className="text-sm text-white font-extrabold leading-relaxed" data-testid="not-registered-message">
+              No WorkHop account found for this email. Please sign up first.
             </p>
-            <p className="text-xs text-amber-300 font-bold mt-2.5">
-              Not registered. Please register first to create your profile and start using WorkHop.
+            {rejectedEmail && (
+              <p className="text-xs text-zinc-400 font-mono mt-2">
+                Email checked: <span className="text-zinc-200 font-bold">{rejectedEmail}</span>
+              </p>
+            )}
+          </div>
+
+          {/* Choose Role & Sign Up */}
+          <div className="mb-4">
+            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">
+              Select your role to Sign Up:
             </p>
+            <div className="grid grid-cols-2 gap-2.5 mb-3">
+              <button
+                type="button"
+                onClick={() => setSelectedRole("freelancer")}
+                className={`p-2.5 text-left border-2 transition ${
+                  selectedRole === "freelancer"
+                    ? "border-[#FF5500] bg-[#FF5500]/15 text-white"
+                    : "border-zinc-700 bg-[#242424] text-zinc-400 hover:border-zinc-500"
+                }`}
+              >
+                <div className="text-xs font-black uppercase">Freelancer</div>
+                <div className="text-[10px] text-zinc-400">I want to work</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedRole("employer")}
+                className={`p-2.5 text-left border-2 transition ${
+                  selectedRole === "employer"
+                    ? "border-[#FF5500] bg-[#FF5500]/15 text-white"
+                    : "border-zinc-700 bg-[#242424] text-zinc-400 hover:border-zinc-500"
+                }`}
+              >
+                <div className="text-xs font-black uppercase">Employer</div>
+                <div className="text-[10px] text-zinc-400">I want to hire</div>
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => {
-                localStorage.setItem("workhop_auth_intent", "signup");
-                setStatus("onboarding");
-              }}
+              onClick={() => handleStartGoogleWithIntent("signup", selectedRole)}
+              data-testid="oauth-go-to-signup-btn"
               className="flex w-full items-center justify-center gap-2 border-2 border-white bg-[#FF5500] text-white py-3.5 px-4 text-xs font-black tracking-wider uppercase shadow-[3px_3px_0px_#FFFFFF] hover:bg-[#E04B00] active:translate-y-0.5 transition"
             >
               <ArrowRight size={16} />
-              Register Profile with This Account
-            </button>
-            <button
-              onClick={handleRetryGoogle}
-              className="flex w-full items-center justify-center gap-2 border-2 border-zinc-600 bg-[#242424] text-zinc-200 py-3 px-4 text-xs font-bold tracking-wider uppercase hover:bg-zinc-700 transition"
-            >
-              <RefreshCw size={15} />
-              Sign In with a Different Account
+              Sign Up as {selectedRole === "employer" ? "Employer" : "Freelancer"}
             </button>
             <button
               onClick={() => {
                 window.location.href = "/";
               }}
-              className="flex w-full items-center justify-center gap-2 border-2 border-zinc-800 bg-transparent text-zinc-400 py-2.5 px-4 text-xs font-bold tracking-wider uppercase hover:text-white transition"
+              className="flex w-full items-center justify-center gap-2 border-2 border-zinc-700 bg-transparent text-zinc-300 py-2.5 px-4 text-xs font-bold tracking-wider uppercase hover:text-white transition"
             >
               <Home size={15} />
               Return to Homepage
@@ -472,7 +956,61 @@ export default function AuthCallback() {
   }
 
   // ══════════════════════════════════════════════════
-  // UI: ERROR VIEW (Cancelled consent, invalid code, denied access)
+  // UI 2: ALREADY REGISTERED (User clicked "Sign Up" with an existing email)
+  // ══════════════════════════════════════════════════
+  if (status === "already_registered") {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4 text-white font-sans">
+        <div className="w-full max-w-md border-4 border-white bg-[#1A1A1A] p-6 sm:p-8 shadow-[8px_8px_0px_#FF5500]">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-12 w-12 items-center justify-center border-2 border-white bg-amber-950 text-amber-400 shrink-0">
+              <AlertTriangle size={26} />
+            </div>
+            <div>
+              <span className="text-[10px] font-black tracking-widest text-[#FF5500] uppercase">
+                Duplicate Sign-Up
+              </span>
+              <h1 className="text-xl font-black uppercase text-white">Account Already Exists</h1>
+            </div>
+          </div>
+
+          <div className="bg-[#242424] p-4 border-2 border-amber-500/60 mb-6">
+            <p className="text-sm text-white font-extrabold leading-relaxed" data-testid="already-registered-message">
+              An account with this email already exists. Please log in instead.
+            </p>
+            {rejectedEmail && (
+              <p className="text-xs text-zinc-400 font-mono mt-2">
+                Registered email: <span className="text-zinc-200 font-bold">{rejectedEmail}</span>
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => handleStartGoogleWithIntent("signin")}
+              data-testid="oauth-go-to-login-btn"
+              className="flex w-full items-center justify-center gap-2 border-2 border-white bg-[#FF5500] text-white py-3.5 px-4 text-xs font-black tracking-wider uppercase shadow-[3px_3px_0px_#FFFFFF] hover:bg-[#E04B00] active:translate-y-0.5 transition"
+            >
+              <LogIn size={16} />
+              Log In Instead
+            </button>
+            <button
+              onClick={() => {
+                window.location.href = "/";
+              }}
+              className="flex w-full items-center justify-center gap-2 border-2 border-zinc-700 bg-transparent text-zinc-300 py-2.5 px-4 text-xs font-bold tracking-wider uppercase hover:text-white transition"
+            >
+              <Home size={15} />
+              Return to Homepage
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════
+  // UI 3: ERROR VIEW (Cancelled consent, invalid code, network failure)
   // ══════════════════════════════════════════════════
   if (status === "error") {
     return (
@@ -496,7 +1034,12 @@ export default function AuthCallback() {
 
           <div className="flex flex-col gap-3">
             <button
-              onClick={handleRetryGoogle}
+              onClick={() =>
+                handleStartGoogleWithIntent(
+                  localStorage.getItem("workhop_auth_intent") || "signin",
+                  selectedRole
+                )
+              }
               className="flex w-full items-center justify-center gap-2 border-2 border-white bg-[#FF5500] text-white py-3 px-4 text-xs font-black tracking-wider uppercase shadow-[3px_3px_0px_#FFFFFF] hover:bg-[#E04B00] active:translate-y-0.5 transition"
             >
               <RefreshCw size={15} />
@@ -518,7 +1061,7 @@ export default function AuthCallback() {
   }
 
   // ══════════════════════════════════════════════════
-  // UI: ONBOARDING VIEW (Fill in details to complete profile)
+  // UI 4: MANDATORY PROFILE COMPLETION (New Sign Up or Incomplete Profile)
   // ══════════════════════════════════════════════════
   if (status === "onboarding" && authUser) {
     const userEmail = authUser.email;
@@ -526,29 +1069,31 @@ export default function AuthCallback() {
 
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4 text-white font-sans py-10">
-        <div className="w-full max-w-lg border-4 border-white bg-[#1A1A1A] p-6 sm:p-8 shadow-[10px_10px_0px_#FF5500]">
-          {/* Header */}
+        <div className="w-full max-w-xl border-4 border-white bg-[#1A1A1A] p-6 sm:p-8 shadow-[10px_10px_0px_#FF5500]">
+          {/* Header with Google Avatar & Verified Badge */}
           <div className="flex items-center gap-3.5 pb-5 border-b-2 border-zinc-700">
             {userAvatar ? (
               <img
                 src={userAvatar}
                 alt={fullNameInput || "User"}
-                className="h-12 w-12 rounded-full border-2 border-white object-cover"
+                className="h-14 w-14 rounded-full border-2 border-[#FF5500] object-cover shrink-0"
               />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center border-2 border-white bg-[#FF5500] font-black text-white text-lg">
+              <div className="flex h-14 w-14 items-center justify-center border-2 border-white bg-[#FF5500] font-black text-white text-xl shrink-0">
                 {(fullNameInput || "U")[0]}
               </div>
             )}
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 text-[10px] font-black tracking-wider text-emerald-400 uppercase">
                 <CheckCircle2 size={13} />
-                <span>Google Verified Account</span>
+                <span>Google Account Connected · Mandatory Onboarding</span>
               </div>
               <h2 className="text-xl font-black text-white uppercase tracking-tight">
-                Complete Your Profile
+                Complete Your {selectedRole === "employer" ? "Employer" : "Freelancer"} Profile
               </h2>
-              <p className="text-xs text-zinc-400 font-semibold">{userEmail}</p>
+              <p className="text-xs text-zinc-400 font-semibold truncate">
+                Please fill in your details below to activate your WorkHop account.
+              </p>
             </div>
           </div>
 
@@ -560,13 +1105,23 @@ export default function AuthCallback() {
           )}
 
           <form onSubmit={handleCompleteOnboarding} className="mt-6 space-y-4">
-            {/* 1. Role Selection */}
+            {/* Role Indicator / Switcher */}
             <div>
-              <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-2">
-                1. Select Your Role on WorkHop: *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300">
+                  Account Role: *
+                </label>
+                {roleLocked && (
+                  <button
+                    type="button"
+                    onClick={() => setRoleLocked(false)}
+                    className="text-[10px] font-bold text-[#FF5500] underline cursor-pointer"
+                  >
+                    Change Role
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Freelancer Card */}
                 <button
                   type="button"
                   onClick={() => setSelectedRole("freelancer")}
@@ -576,24 +1131,18 @@ export default function AuthCallback() {
                       : "border-zinc-700 bg-[#242424] hover:border-zinc-500"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center justify-between mb-1">
                     <UserCheck
-                      size={20}
-                      className={
-                        selectedRole === "freelancer" ? "text-[#FF5500]" : "text-zinc-400"
-                      }
+                      size={18}
+                      className={selectedRole === "freelancer" ? "text-[#FF5500]" : "text-zinc-400"}
                     />
                     <span className="text-[9px] font-black uppercase px-2 py-0.5 border border-zinc-600 bg-black/40 text-zinc-300">
-                      0% Commission
+                      Freelancer
                     </span>
                   </div>
-                  <h3 className="text-sm font-black text-white uppercase">I Want to Work</h3>
-                  <p className="text-[10px] text-zinc-400 font-medium mt-0.5 leading-snug">
-                    Discover local gigs in Bengaluru and apply directly within 5km.
-                  </p>
+                  <h3 className="text-xs font-black text-white uppercase">I Want to Work</h3>
                 </button>
 
-                {/* Employer Card */}
                 <button
                   type="button"
                   onClick={() => setSelectedRole("employer")}
@@ -603,52 +1152,100 @@ export default function AuthCallback() {
                       : "border-zinc-700 bg-[#242424] hover:border-zinc-500"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center justify-between mb-1">
                     <Briefcase
-                      size={20}
-                      className={
-                        selectedRole === "employer" ? "text-[#FF5500]" : "text-zinc-400"
-                      }
+                      size={18}
+                      className={selectedRole === "employer" ? "text-[#FF5500]" : "text-zinc-400"}
                     />
                     <span className="text-[9px] font-black uppercase px-2 py-0.5 border border-zinc-600 bg-black/40 text-zinc-300">
-                      Direct Hire
+                      Employer
                     </span>
                   </div>
-                  <h3 className="text-sm font-black text-white uppercase">I Want to Hire</h3>
-                  <p className="text-[10px] text-zinc-400 font-medium mt-0.5 leading-snug">
-                    Post gigs and connect with verified creators &amp; engineers.
-                  </p>
+                  <h3 className="text-xs font-black text-white uppercase">I Want to Hire</h3>
                 </button>
               </div>
             </div>
 
-            {/* 2. Full Name */}
+            {/* Prefilled Google Name & Read-Only Email */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                  Full Name: *
+                </label>
+                <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
+                  <User size={15} className="text-zinc-400 mr-2 shrink-0" />
+                  <input
+                    type="text"
+                    value={fullNameInput}
+                    onChange={(e) => setFullNameInput(e.target.value)}
+                    placeholder="Your Full Name"
+                    className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-black uppercase tracking-wider text-zinc-400 block mb-1">
+                  Google Email (Read-Only):
+                </label>
+                <div className="flex items-center border-2 border-zinc-800 bg-zinc-900/80 px-3 py-2.5 opacity-80">
+                  <Mail size={15} className="text-emerald-400 mr-2 shrink-0" />
+                  <input
+                    type="email"
+                    value={userEmail || ""}
+                    readOnly
+                    disabled
+                    className="w-full bg-transparent text-xs font-bold text-zinc-300 outline-none cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Phone Number */}
             <div>
-              <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
-                2. Full Name: *
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300">
+                  Phone / WhatsApp Number: *
+                </label>
+                <span className="text-[10px] text-zinc-400 font-bold">10-Digit Indian Mobile</span>
+              </div>
               <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
-                <User size={16} className="text-zinc-400 mr-2 shrink-0" />
+                <Phone size={16} className="text-[#FF5500] mr-2 shrink-0" />
+                <span className="text-xs font-bold text-zinc-300 mr-1.5">+91</span>
                 <input
-                  type="text"
-                  value={fullNameInput}
-                  onChange={(e) => setFullNameInput(e.target.value)}
-                  placeholder="e.g. Rahul Sharma"
+                  type="tel"
+                  maxLength={10}
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="98765 43210"
+                  data-testid="onboarding-phone-input"
                   className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
                 />
               </div>
             </div>
 
-            {/* 3. Bengaluru Neighborhood Picker */}
+            {/* Location Picker + GPS Auto-Detect */}
             <div>
-              <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
-                3. Your Bengaluru Neighborhood: *
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300">
+                  Bengaluru Location / Neighborhood: *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleDetectLocation}
+                  disabled={detectingLoc}
+                  className="inline-flex items-center gap-1 text-[10px] font-black text-[#FF5500] hover:underline cursor-pointer"
+                >
+                  <Navigation size={11} />
+                  {detectingLoc ? "Detecting..." : "Use My GPS"}
+                </button>
+              </div>
               <div className="flex items-center border-2 border-white bg-[#242424] px-3 py-2.5">
                 <MapPin size={16} className="text-[#FF5500] mr-2 shrink-0" />
                 <select
                   value={selectedArea}
                   onChange={(e) => setSelectedArea(e.target.value)}
+                  data-testid="onboarding-location-select"
                   className="w-full bg-transparent text-xs font-black text-white outline-none cursor-pointer"
                 >
                   {BENGALURU_AREAS.map((a) => (
@@ -660,34 +1257,59 @@ export default function AuthCallback() {
               </div>
             </div>
 
-            {/* 4. WhatsApp / Mobile Phone */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300">
-                  4. WhatsApp / Contact Phone: *
-                </label>
-                <span className="text-[10px] text-zinc-400 font-bold">10-Digit Mobile Number</span>
-              </div>
-              <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
-                <Phone size={16} className="text-[#FF5500] mr-2 shrink-0" />
-                <span className="text-xs font-bold text-zinc-300 mr-1.5">+91</span>
-                <input
-                  type="tel"
-                  maxLength={10}
-                  value={phoneInput}
-                  onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, ""))}
-                  placeholder="98765 43210"
-                  className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
-                />
-              </div>
-            </div>
-
-            {/* 5. Role-Specific Details */}
+            {/* Role-Specific Mandatory Fields */}
             {selectedRole === "freelancer" ? (
-              <div className="flex flex-col gap-3">
+              <div className="space-y-4 pt-1">
+                {/* Profession / Service Category */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                      Profession / Service Category: *
+                    </label>
+                    <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white">
+                      <Briefcase size={15} className="text-[#FF5500] mr-2 shrink-0" />
+                      <select
+                        value={categoryInput}
+                        onChange={(e) => setCategoryInput(e.target.value)}
+                        data-testid="onboarding-category-select"
+                        className="w-full bg-transparent text-xs font-bold text-white outline-none cursor-pointer"
+                      >
+                        {CATEGORY_OPTIONS.map((cat) => (
+                          <option key={cat} value={cat} className="bg-[#242424] text-white">
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Experience */}
+                  <div>
+                    <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                      Experience Level: *
+                    </label>
+                    <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white">
+                      <Clock size={15} className="text-[#FF5500] mr-2 shrink-0" />
+                      <select
+                        value={experienceInput}
+                        onChange={(e) => setExperienceInput(e.target.value)}
+                        data-testid="onboarding-experience-select"
+                        className="w-full bg-transparent text-xs font-bold text-white outline-none cursor-pointer"
+                      >
+                        {EXPERIENCE_OPTIONS.map((exp) => (
+                          <option key={exp} value={exp} className="bg-[#242424] text-white">
+                            {exp}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Skills */}
                 <div>
                   <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
-                    5. Primary Skill / Profession: *
+                    Primary Profession &amp; Skills: *
                   </label>
                   <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
                     <Sparkles size={16} className="text-[#FF5500] mr-2 shrink-0" />
@@ -695,20 +1317,40 @@ export default function AuthCallback() {
                       type="text"
                       value={skillInput}
                       onChange={(e) => setSkillInput(e.target.value)}
-                      placeholder="e.g. Logo Designer, React Developer, Videographer"
+                      placeholder="e.g. Architecture & Interior Design, Figma, React, Video Editing"
+                      data-testid="onboarding-skills-input"
                       className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
                     />
                   </div>
                 </div>
 
+                {/* Bio */}
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                    Short Professional Bio: *
+                  </label>
+                  <div className="flex items-start border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
+                    <FileText size={16} className="text-[#FF5500] mr-2 mt-0.5 shrink-0" />
+                    <textarea
+                      rows={3}
+                      value={bioInput}
+                      onChange={(e) => setBioInput(e.target.value)}
+                      placeholder="Briefly describe your expertise, notable work, and turnaround speed..."
+                      data-testid="onboarding-bio-input"
+                      className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Starting Hourly Rate */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300">
-                      6. Starting Rate per Hour (₹ INR): *
+                      Starting Rate per Hour (₹ INR):
                     </label>
-                    <span className="text-[10px] text-[#FF5500] font-bold">You can change this anytime</span>
+                    <span className="text-[10px] text-[#FF5500] font-bold">Changeable anytime</span>
                   </div>
-                  <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
+                  <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2 focus-within:border-white transition">
                     <span className="text-sm font-black text-[#FF5500] mr-2">₹</span>
                     <input
                       type="number"
@@ -717,34 +1359,18 @@ export default function AuthCallback() {
                       step={50}
                       value={rateInput}
                       onChange={(e) => setRateInput(e.target.value)}
-                      placeholder="500"
-                      className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
+                      className="w-full bg-transparent text-xs font-bold text-white outline-none"
                     />
                     <span className="text-[10px] font-bold text-zinc-400 ml-1">/ hr</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                    {[350, 500, 750, 1000, 1500, 2500].map((preset) => (
-                      <button
-                        type="button"
-                        key={preset}
-                        onClick={() => setRateInput(String(preset))}
-                        className={`px-2 py-0.5 text-[10px] font-black border transition cursor-pointer ${
-                          Number(rateInput) === preset
-                            ? "border-white bg-[#FF5500] text-white"
-                            : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-500"
-                        }`}
-                      >
-                        ₹{preset}/hr
-                      </button>
-                    ))}
                   </div>
                 </div>
               </div>
             ) : (
-              <>
+              <div className="space-y-4 pt-1">
+                {/* Business / Organization Name */}
                 <div>
                   <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
-                    5. Company / Business Name: *
+                    Business / Organization Name: *
                   </label>
                   <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
                     <Building size={16} className="text-[#FF5500] mr-2 shrink-0" />
@@ -752,12 +1378,36 @@ export default function AuthCallback() {
                       type="text"
                       value={companyInput}
                       onChange={(e) => setCompanyInput(e.target.value)}
-                      placeholder="e.g. Acme Tech Studio, Freelance Recruiter"
+                      placeholder="e.g. Cobblestone Studio, Zenith Tech Pvt Ltd"
+                      data-testid="onboarding-company-input"
                       className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
                     />
                   </div>
                 </div>
 
+                {/* Type of Work They Hire For */}
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                    Type of Work You Hire For: *
+                  </label>
+                  <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white">
+                    <Briefcase size={16} className="text-[#FF5500] mr-2 shrink-0" />
+                    <select
+                      value={hiringForInput}
+                      onChange={(e) => setHiringForInput(e.target.value)}
+                      data-testid="onboarding-hiring-for-select"
+                      className="w-full bg-transparent text-xs font-bold text-white outline-none cursor-pointer"
+                    >
+                      {CATEGORY_OPTIONS.map((cat) => (
+                        <option key={cat} value={cat} className="bg-[#242424] text-white">
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Optional GSTIN */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300">
@@ -776,20 +1426,30 @@ export default function AuthCallback() {
                     />
                   </div>
                 </div>
-              </>
+              </div>
             )}
 
-            {/* 6. Terms & 18+ Age Checkbox */}
+            {/* Terms & 18+ Age Checkbox */}
             <div className="pt-2">
               <label className="flex items-start gap-2.5 cursor-pointer text-xs text-zinc-300">
                 <input
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
+                  data-testid="onboarding-terms-checkbox"
                   className="mt-0.5 h-4 w-4 accent-[#FF5500] border-zinc-600 bg-[#242424]"
                 />
                 <span className="leading-snug text-[11px]">
-                  I agree to the <a href="/legal" target="_blank" rel="noreferrer" className="text-[#FF5500] underline font-bold">Terms of Service</a> &amp; confirm that I am 18+ years of age.
+                  I agree to the{" "}
+                  <a
+                    href="/legal"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#FF5500] underline font-bold"
+                  >
+                    Terms of Service
+                  </a>{" "}
+                  &amp; confirm that I am 18+ years of age.
                 </span>
               </label>
             </div>
@@ -797,6 +1457,7 @@ export default function AuthCallback() {
             <button
               type="submit"
               disabled={submitting}
+              data-testid="onboarding-submit-btn"
               className="mt-5 flex w-full items-center justify-center gap-2 border-2 border-white bg-[#FF5500] py-3.5 px-4 text-xs font-black tracking-wider text-white uppercase shadow-[4px_4px_0px_#FFFFFF] hover:bg-[#E04B00] active:translate-y-0.5 transition disabled:opacity-60"
             >
               {submitting ? (
@@ -818,7 +1479,7 @@ export default function AuthCallback() {
   }
 
   // ══════════════════════════════════════════════════
-  // UI: DEFAULT VERIFYING SPINNER
+  // UI 5: DEFAULT VERIFYING SPINNER
   // ══════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4 text-white font-sans">
@@ -831,7 +1492,7 @@ export default function AuthCallback() {
         </span>
         <h2 className="text-lg font-black uppercase text-white mt-1">Verifying Account...</h2>
         <p className="text-xs text-zinc-400 font-semibold mt-2">
-          Exchanging secure session with Supabase. Please wait a moment.
+          Checking registration status with WorkHop. Please wait a moment.
         </p>
       </div>
     </div>

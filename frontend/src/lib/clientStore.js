@@ -406,6 +406,10 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       payment_id: lead.payment_id || null,
       approved: isApproved,
       status: statusText,
+      profile_status: lead.profile_status || "complete",
+      missing_fields: Array.isArray(lead.missing_fields) ? lead.missing_fields : [],
+      experience: lead.experience || "",
+      bio: lead.bio || lead.intro || "",
       reason: reasonText,
       verifications: lead.verifications || {
         id: true,
@@ -1214,28 +1218,65 @@ export function saveRegisteredUser(email, password, profile = {}) {
   // Automatically register employer into admin employers store if role is employer
   if (profile.role === "employer") {
     try {
-      const company = (profile.company_name && profile.company_name !== "Hyperlocal Co." ? profile.company_name : profile.name) || "Independent Employer";
+      const isInc = profile.profile_status === "incomplete";
+      const company = (profile.company_name && profile.company_name !== "Hyperlocal Co."
+        ? profile.company_name
+        : isInc
+        ? "Pending Business Name"
+        : profile.name) || "Independent Employer";
       const existing = readAdminEmployers();
-      const match = existing.find(
-        (e) => (e.email && e.email.toLowerCase() === cleanEmail) ||
-               (e.company_name && e.company_name.toLowerCase() === company.toLowerCase()) ||
-               (profile.name && e.name && e.name.toLowerCase() === profile.name.toLowerCase())
+      const matchIdx = existing.findIndex(
+        (e) =>
+          (e.email && e.email.toLowerCase() === cleanEmail) ||
+          (profile.id && e.employer_id === profile.id) ||
+          (!isInc && e.company_name && e.company_name.toLowerCase() === company.toLowerCase())
       );
-      if (!match) {
-        const slug = (profile.name || company).toLowerCase().replace(/[^a-z0-9]+/g, "") || "employer";
-        const newEmp = {
-          employer_id: profile.id || `emp-${slug}-${Date.now().toString(36)}`,
-          company_name: company,
-          name: profile.name || company,
-          email: profile.email || (cleanEmail.includes("@mobile.workhop.local") ? "" : cleanEmail),
-          phone: profile.phone || "",
-          area: profile.area || "Bengaluru",
-          spent_rupees: 0,
-          created_at: new Date().toISOString(),
-          source: "registered",
-        };
-        localStorage.setItem(ADMIN_EMPLOYERS_KEY, JSON.stringify([newEmp, ...existing]));
+      const slug = (profile.name || company).toLowerCase().replace(/[^a-z0-9]+/g, "") || "employer";
+      const empEntry = {
+        employer_id: profile.id || (matchIdx >= 0 ? existing[matchIdx].employer_id : `emp-${slug}-${Date.now().toString(36)}`),
+        company_name: company,
+        name: profile.name || company,
+        email: profile.email || (cleanEmail.includes("@mobile.workhop.local") ? "" : cleanEmail),
+        phone: profile.phone || "",
+        area: profile.area || (isInc ? "Not set" : "Bengaluru"),
+        hiring_for: profile.hiring_for || profile.category || "",
+        profile_status: profile.profile_status || "complete",
+        missing_fields: Array.isArray(profile.missing_fields) ? profile.missing_fields : [],
+        spent_rupees: matchIdx >= 0 ? (existing[matchIdx].spent_rupees || 0) : 0,
+        created_at: matchIdx >= 0 ? existing[matchIdx].created_at : new Date().toISOString(),
+        source: "registered",
+      };
+      if (matchIdx >= 0) {
+        existing[matchIdx] = { ...existing[matchIdx], ...empEntry };
+        localStorage.setItem(ADMIN_EMPLOYERS_KEY, JSON.stringify(existing));
+      } else {
+        localStorage.setItem(ADMIN_EMPLOYERS_KEY, JSON.stringify([empEntry, ...existing]));
       }
+    } catch {}
+  } else {
+    // Also register freelancer into submitted profiles so Admin Pros & Talent tab sees them immediately (even when incomplete)
+    try {
+      const isInc = profile.profile_status === "incomplete";
+      const proId = profile.id || `pro-${cleanEmail.split("@")[0].replace(/[^a-z0-9]/gi, "")}`;
+      saveSubmittedProfile({
+        id: proId,
+        freelancer_id: proId,
+        name: profile.name || cleanEmail.split("@")[0],
+        full_name: profile.name || cleanEmail.split("@")[0],
+        email: cleanEmail,
+        phone: profile.phone || "",
+        skill: profile.skill || (isInc ? "Incomplete Profile" : "Creative Pro"),
+        category: profile.category || "Graphics & Design",
+        experience: profile.experience || "",
+        bio: profile.bio || profile.intro || "",
+        intro: profile.bio || profile.intro || (isInc ? "Signed up with Google — profile details pending completion." : ""),
+        area: profile.area || (isInc ? "Not set" : "Bengaluru"),
+        rate_hr: Number(profile.rate_hr) || 500,
+        status: "pending",
+        approved: false,
+        profile_status: profile.profile_status || "complete",
+        missing_fields: Array.isArray(profile.missing_fields) ? profile.missing_fields : [],
+      });
     } catch {}
   }
 
@@ -2612,7 +2653,12 @@ export function getStoredEmployers() {
     const regUsers = getRegisteredUsers();
     for (const [email, u] of Object.entries(regUsers)) {
       if (u && u.role === "employer") {
-        const company = (u.company_name && u.company_name !== "Hyperlocal Co." ? u.company_name : (u.name || "Independent Employer")).trim();
+        const isInc = u.profile_status === "incomplete";
+        const company = (u.company_name && u.company_name !== "Hyperlocal Co."
+          ? u.company_name
+          : isInc
+          ? "Pending Business Name"
+          : (u.name || "Independent Employer")).trim();
         const key = (u.email || email || u.id || u.phone || company).toLowerCase();
         const empId = u.id || `emp-${key.replace(/[^a-z0-9]/g, "")}`;
         if (!deleted.has(key) && !deleted.has(String(empId).toLowerCase()) && !deleted.has(String(email).toLowerCase())) {
@@ -2623,7 +2669,10 @@ export function getStoredEmployers() {
               name: u.name || company,
               email: u.email || email,
               phone: u.phone || "",
-              area: u.area || "Bengaluru",
+              area: u.area || (isInc ? "Not set" : "Bengaluru"),
+              hiring_for: u.hiring_for || u.category || "",
+              profile_status: u.profile_status || "complete",
+              missing_fields: Array.isArray(u.missing_fields) ? u.missing_fields : [],
               spent_rupees: u.spent_rupees || 0,
               created_at: u.created_at || u.updated_at || new Date().toISOString(),
               source: "registered",
@@ -2632,6 +2681,10 @@ export function getStoredEmployers() {
             const existing = employersMap.get(key);
             if (!existing.email && (u.email || email)) existing.email = u.email || email;
             if (!existing.phone && u.phone) existing.phone = u.phone;
+            if (u.profile_status) existing.profile_status = u.profile_status;
+            if (Array.isArray(u.missing_fields) && u.missing_fields.length) existing.missing_fields = u.missing_fields;
+            if (u.hiring_for) existing.hiring_for = u.hiring_for;
+            if (u.company_name) existing.company_name = u.company_name;
             if (u.name && (!existing.name || existing.name.includes("Hiring Team"))) existing.name = u.name;
           }
         }

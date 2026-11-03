@@ -375,14 +375,33 @@ module.exports = async function handler(req, res) {
     // Also include registered freelancers from customers who haven't paid yet
     for (const c of customers) {
       const email = (c.email || "").trim().toLowerCase();
-      const phoneRaw = c.contact || "";
-      const phoneDigits = phoneRaw.replace(/\D/g, "");
       const notes = c.notes || {};
+      const phoneRaw = c.contact || notes.phone || "";
+      const phoneDigits = phoneRaw.replace(/\D/g, "");
 
       const isEmployer = notes.role === "employer";
       if (isEmployer) continue;
+      if (
+        (c.name || "").trim() === "Deleted Account" ||
+        (c.name || "").startsWith("[DELETED]") ||
+        email.startsWith("archived.") ||
+        email.startsWith("deleted.") ||
+        email.endsWith("@workhop.invalid") ||
+        notes.deleted === "true" ||
+        notes.oauth_unregistered === "true"
+      ) {
+        continue;
+      }
 
-      const isFreelancer = notes.role === "freelancer" || Boolean(notes.skill) || notes.source?.includes("onboarding") || notes.source?.includes("signup");
+      const isFreelancer =
+        notes.role === "freelancer" ||
+        notes.workhop_registered === "true" ||
+        notes.profile_status === "incomplete" ||
+        notes.profile_status === "complete" ||
+        Boolean(notes.skill) ||
+        notes.source?.includes("onboarding") ||
+        notes.source?.includes("signup") ||
+        notes.source?.includes("registration");
       if (!isFreelancer) continue;
 
       if (email && seenEmails.has(email)) continue;
@@ -407,16 +426,43 @@ module.exports = async function handler(req, res) {
         : `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || c.id}`;
       const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[c.id];
 
+      const isIncomplete =
+        !isCobblestone &&
+        (notes.profile_status === "incomplete" ||
+          (!notes.profile_status && phoneDigits.length < 10 && (!notes.skill || notes.skill === "Pro")));
+
+      const missingFields = notes.missing_fields
+        ? String(notes.missing_fields)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : isIncomplete
+        ? [
+            ...(phoneDigits.length < 10 ? ["Phone Number"] : []),
+            ...(!notes.category ? ["Profession / Service Category"] : []),
+            ...(!notes.skill || notes.skill === "Pro" ? ["Skills"] : []),
+            ...(!notes.experience ? ["Experience"] : []),
+            ...(!notes.bio && !notes.intro ? ["Bio"] : []),
+            ...(!notes.area ? ["Location"] : []),
+          ]
+        : [];
+
       paidFreelancers.push({
         id: proId,
         freelancer_id: proId,
         name: isCobblestone ? "Cobblestone Designs" : name,
         full_name: isCobblestone ? "Cobblestone Designs" : name,
         initials: isCobblestone ? "CD" : initials,
-        skill: isCobblestone ? "Architecture & Interior Design" : (notes.skill || "Creative & Tech Pro"),
+        skill: isCobblestone
+          ? "Architecture & Interior Design"
+          : notes.skill && notes.skill !== "Pro"
+          ? notes.skill
+          : isIncomplete
+          ? "Incomplete Profile"
+          : "Creative & Tech Pro",
         category: isCobblestone ? "Graphics & Design" : (notes.category || "Graphics & Design"),
         bucket: "Creative",
-        area: notes.area || "Bengaluru",
+        area: notes.area || (isIncomplete ? "Not set" : "Bengaluru"),
         distance_km: 1.2,
         rating: null,
         jobs_done: 0,
@@ -427,9 +473,11 @@ module.exports = async function handler(req, res) {
         email: email,
         phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw,
         portfolio: notes.portfolio_url || "",
+        experience: notes.experience || "",
+        bio: notes.bio || notes.intro || "",
         intro: isCobblestone
           ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
-          : (notes.intro || "Registered freelancer awaiting admin review."),
+          : (notes.bio || notes.intro || (isIncomplete ? "Signed up with Google — profile details pending completion." : "Registered freelancer awaiting admin review.")),
         keywords: isCobblestone
           ? [
             "architecture", "architect", "interior design", "floor plan", "spatial design",
@@ -442,6 +490,8 @@ module.exports = async function handler(req, res) {
         created_at: new Date(c.created_at * 1000).toISOString(),
         approved: ovr ? Boolean(ovr.approved) : (notes.status === "approved"),
         status: ovr ? (ovr.status || (ovr.approved ? "approved" : "declined")) : (notes.status || "pending"),
+        profile_status: isIncomplete ? "incomplete" : "complete",
+        missing_fields: missingFields,
         reason: ovr ? ovr.reason : (notes.reason || null),
         verifications: {
           id: false,
