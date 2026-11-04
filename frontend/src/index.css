@@ -278,6 +278,12 @@ a.bg-brand * {
     color: #FFFFFF !important;
 }
 
+html.dark .credit-cost-badge,
+html.dark .credit-cost-badge * {
+    color: #FFFFFF !important;
+    --hops-badge-color: #FFFFFF !important;
+}
+
 /* Ensure bg-ink buttons stay solid dark in both modes, NEVER light grey */
 .bg-ink,
 button.bg-ink,
