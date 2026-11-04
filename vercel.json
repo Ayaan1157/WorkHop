@@ -98,6 +98,10 @@
       "destination": "/api/freelancers/index"
     },
     {
+      "source": "/api/upload",
+      "destination": "/api/upload"
+    },
+    {
       "source": "/api/freelancer/submit",
       "destination": "/api/freelancers/index"
     },

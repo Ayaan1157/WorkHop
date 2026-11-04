@@ -44,12 +44,21 @@ function rzpRequest(method, path, data = null) {
 const DEFAULT_SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZnJia3hwdXdicnZoaWRpaHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMDEwNzMsImV4cCI6MjEwNjY3NzA3M30.uaXuh0iPqiHezrWt5zJA_bV1EnhP-XFI59GIs9RH7sk";
 
+const DEFAULT_SUPABASE_SERVICE_ROLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZnJia3hwdXdicnZoaWRpaHZqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTEwMTA3MywiZXhwIjoyMTA2Njc3MDczfQ.k1fdVhfk06yjA4K18iEfoNmIpxg5iRkdr3oSuiw4Q84";
+
 function unpackPortfolioMeta(rawPortfolio) {
-  if (!Array.isArray(rawPortfolio)) {
+  let list = rawPortfolio;
+  if (typeof rawPortfolio === "string" && rawPortfolio.trim()) {
+    try {
+      list = JSON.parse(rawPortfolio);
+    } catch {}
+  }
+  if (!Array.isArray(list)) {
     return { portfolioItems: [], portfolioImages: [], meta: {} };
   }
-  const meta = rawPortfolio.find((item) => item && item._workhop_meta) || {};
-  const portfolioItems = rawPortfolio.filter((item) => item && !item._workhop_meta);
+  const meta = list.find((item) => item && item._workhop_meta) || {};
+  const portfolioItems = list.filter((item) => item && !item._workhop_meta);
   const portfolioImages = [];
   portfolioItems.forEach((item) => {
     if (typeof item === "string" && item.trim()) {
@@ -81,6 +90,7 @@ function supabaseRequest(method, path, data = null, extraHeaders = {}) {
     "https://kdfrbkxpuwbrvhidihvj.supabase.co";
   const apiKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    DEFAULT_SUPABASE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_ANON_KEY ||
     process.env.REACT_APP_SUPABASE_ANON_KEY ||
     DEFAULT_SUPABASE_ANON_KEY;

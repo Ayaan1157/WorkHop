@@ -21,29 +21,65 @@ export const isSupabaseConfigured = () => {
   return Boolean(SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.length > 20);
 };
 
-export async function supabaseUploadPortfolioImage(file, userId = "anonymous") {
-  if (!isSupabaseConfigured() || !file) return null;
+export async function supabaseUploadPortfolioImage(file, userId = "anonymous", dataUrl = null) {
+  if (!file && !dataUrl) return null;
   try {
-    const fileExt = file.name ? file.name.split(".").pop().toLowerCase() : "jpg";
-    const cleanExt = ["jpg", "jpeg", "png", "webp", "gif", "svg"].includes(fileExt) ? fileExt : "jpg";
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${cleanExt}`;
-    const safeUserId = String(userId || "anonymous").replace(/[^a-zA-Z0-9_-]/g, "_");
-    const filePath = `${safeUserId}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("portfolios")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: true,
+    // 1. Convert file to base64 if not already provided
+    let base64Data = dataUrl;
+    if (!base64Data && file) {
+      base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
-
-    if (uploadError) {
-      console.warn("Supabase storage upload error:", uploadError.message);
-      return null;
     }
 
-    const { data } = supabase.storage.from("portfolios").getPublicUrl(filePath);
-    return data?.publicUrl || null;
+    // 2. Upload via backend proxy (/api/upload) using service role key (bypasses RLS)
+    try {
+      const resp = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          file_data: base64Data,
+          file_name: file?.name || "portfolio.jpg",
+          file_type: file?.type || "image/jpeg",
+          user_id: userId,
+          folder: "portfolios",
+        }),
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data?.public_url || data?.url) {
+          return data.public_url || data.url;
+        }
+      }
+    } catch (e) {
+      console.warn("Backend /api/upload proxy failed, trying direct Supabase client:", e);
+    }
+
+    // 3. Fallback to direct client storage if backend proxy wasn't reachable
+    if (isSupabaseConfigured() && file) {
+      const fileExt = file.name ? file.name.split(".").pop().toLowerCase() : "jpg";
+      const cleanExt = ["jpg", "jpeg", "png", "webp", "gif", "svg"].includes(fileExt) ? fileExt : "jpg";
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${cleanExt}`;
+      const safeUserId = String(userId || "anonymous").replace(/[^a-zA-Z0-9_-]/g, "_");
+      const filePath = `${safeUserId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("portfolios")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (!uploadError) {
+        const { data } = supabase.storage.from("portfolios").getPublicUrl(filePath);
+        if (data?.publicUrl) return data.publicUrl;
+      }
+    }
+    return null;
   } catch (err) {
     console.warn("supabaseUploadPortfolioImage failed:", err.message);
     return null;
@@ -143,11 +179,17 @@ export function packProfilePortfolioJson(portfolioItems = [], meta = {}) {
 }
 
 export function unpackProfilePortfolioJson(rawPortfolio) {
-  if (!Array.isArray(rawPortfolio)) {
+  let list = rawPortfolio;
+  if (typeof rawPortfolio === "string" && rawPortfolio.trim()) {
+    try {
+      list = JSON.parse(rawPortfolio);
+    } catch {}
+  }
+  if (!Array.isArray(list)) {
     return { portfolioItems: [], portfolioImages: [], meta: {} };
   }
-  const metaObj = rawPortfolio.find((item) => item && item._workhop_meta) || {};
-  const portfolioItems = rawPortfolio.filter((item) => item && !item._workhop_meta);
+  const metaObj = list.find((item) => item && item._workhop_meta) || {};
+  const portfolioItems = list.filter((item) => item && !item._workhop_meta);
   const extractedImages = [];
   portfolioItems.forEach((item) => {
     if (typeof item === "string" && item.trim()) {

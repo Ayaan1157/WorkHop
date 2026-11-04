@@ -11,6 +11,7 @@ import { ADMIN_EMAILS, getStoredPaymentTransactions, recordPaymentTransaction } 
 import { useAuth } from "@/context/AuthContext";
 import { sanitizeInput } from "@/lib/security";
 import { scanUploadFile } from "@/lib/contactScanner";
+import { supabaseUploadPortfolioImage } from "@/lib/supabase";
 
 const TOTAL = 4;
 
@@ -389,7 +390,20 @@ export default function Onboarding() {
     }
 
     const reader = new FileReader();
-    reader.onload = () => setSlots((prev) => { const n = [...prev]; n[i] = String(reader.result).split(",")[1] || ""; return n; });
+    reader.onload = async () => {
+      const dataUrl = String(reader.result);
+      let publicUrl = null;
+      try {
+        publicUrl = await supabaseUploadPortfolioImage(file, state.freelancerId || user?.id, dataUrl);
+      } catch {}
+
+      const val = publicUrl || dataUrl;
+      setSlots((prev) => {
+        const n = [...prev];
+        n[i] = val;
+        return n;
+      });
+    };
     reader.readAsDataURL(file);
   };
 
