@@ -1762,9 +1762,9 @@ const FiverrGigCard = memo(function FiverrGigCard({ job, index, verified, applie
             {/* Credit Cost Badge */}
             <span
               data-testid={`credit-cost-badge-${index}`}
-              className="border border-ink dark:border-amber-700 bg-[#FFF3C4] dark:bg-amber-950/60 px-2 py-0.5 text-[10px] font-black text-ink dark:text-amber-200 flex items-center gap-1 shadow-[1px_1px_0px_#121212]"
+              className="border border-ink dark:border-amber-700 bg-[#FFF3C4] dark:bg-amber-950/60 px-2 py-0.5 text-[10px] font-black text-ink dark:!text-white flex items-center gap-1 shadow-[1px_1px_0px_#121212]"
             >
-              <Coins size={10} className="text-brand" /> {creditsCost} {creditsCost === 1 ? "HOP" : "HOPS"}
+              <Coins size={10} className="text-brand" /> <span className="dark:!text-white">{creditsCost} {creditsCost === 1 ? "HOP" : "HOPS"}</span>
             </span>
           </div>
 

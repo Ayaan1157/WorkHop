@@ -307,13 +307,22 @@ export function saveSubmittedProfile(profile) {
         (p.id || p.freelancer_id) === targetId ||
         (profile.email && p.email && p.email.toLowerCase() === profile.email.toLowerCase())
     );
+    const prevEntry = existingIdx >= 0 ? list[existingIdx] : null;
     const normalized = {
       ...profile,
-      status: profile.status || "pending",
-      approved: profile.approved !== undefined ? Boolean(profile.approved) : false,
-      reason: profile.reason || null,
+      status: profile.status || prevEntry?.status || "pending",
+      approved:
+        profile.approved !== undefined
+          ? Boolean(profile.approved)
+          : prevEntry?.approved !== undefined
+          ? Boolean(prevEntry.approved)
+          : false,
+      reason: profile.reason || prevEntry?.reason || null,
       is_dummy: false,
     };
+    Object.keys(normalized).forEach((k) => {
+      if (normalized[k] === undefined) delete normalized[k];
+    });
     if (existingIdx >= 0) {
       list[existingIdx] = { ...list[existingIdx], ...normalized, updated_at: new Date().toISOString() };
     } else {
@@ -373,21 +382,74 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
     ...leadsSeed,
   ];
 
-  const seenIds = new Set();
-  const seenEmails = new Set();
+  const isBlank = (v) =>
+    v === undefined ||
+    v === null ||
+    v === "" ||
+    (Array.isArray(v) && v.length === 0);
+
+  // Merge duplicates by id/email: later local sources (submitted profiles) override stale remote fields
+  const mergedByKey = new Map();
+  const keyAlias = new Map();
   const deduped = [];
   for (const item of allRaw) {
     if (!item || typeof item !== "object") continue;
-    const idKey = (item.id || item.freelancer_id || "").toLowerCase().trim();
-    const emailKey = (item.email || "").toLowerCase().trim();
-    if (idKey && seenIds.has(idKey)) continue;
-    if (emailKey && seenEmails.has(emailKey)) continue;
-    if (idKey) seenIds.add(idKey);
-    if (emailKey) seenEmails.add(emailKey);
-    deduped.push(item);
+    const idKey = String(item.id || item.freelancer_id || "").toLowerCase().trim();
+    const emailKey = String(item.email || "").toLowerCase().trim();
+    const existingKey =
+      (idKey && keyAlias.get(`id:${idKey}`)) ||
+      (emailKey && keyAlias.get(`em:${emailKey}`)) ||
+      null;
+    if (existingKey) {
+      const prev = mergedByKey.get(existingKey);
+      const merged = { ...prev };
+      Object.entries(item).forEach(([k, v]) => {
+        if (isBlank(v)) return;
+        // Keep remote approval state; local values win for profile content
+        if (["approved", "status", "reason", "paid", "paid_amount", "paid_plan", "payment_id", "is_verified", "verified", "id", "freelancer_id"].includes(k) && !isBlank(prev[k])) return;
+        merged[k] = v;
+      });
+      mergedByKey.set(existingKey, merged);
+      if (idKey) keyAlias.set(`id:${idKey}`, existingKey);
+      if (emailKey) keyAlias.set(`em:${emailKey}`, existingKey);
+      continue;
+    }
+    const newKey = `k${deduped.length}`;
+    deduped.push(newKey);
+    mergedByKey.set(newKey, { ...item });
+    if (idKey) keyAlias.set(`id:${idKey}`, newKey);
+    if (emailKey) keyAlias.set(`em:${emailKey}`, newKey);
   }
 
-  const mapped = deduped.map((lead, idx) => {
+  // Overlay the logged-in freelancer's own live profile edits
+  try {
+    if (currentUser?.email && currentUser.role !== "employer") {
+      const k = keyAlias.get(`em:${currentUser.email.toLowerCase().trim()}`);
+      if (k) {
+        const own = getFreelancerProfile();
+        const prev = mergedByKey.get(k);
+        mergedByKey.set(k, {
+          ...prev,
+          name: currentUser.name || prev.name,
+          picture: currentUser.picture || currentUser.avatar_url || prev.picture || prev.avatar_url || null,
+          phone: currentUser.phone || prev.phone,
+          area: currentUser.area || prev.area,
+          skill: own?.title || currentUser.skill || prev.skill,
+          category: own?.category || currentUser.category || prev.category,
+          rate_hr: Number(own?.rate_hr) > 0 ? Number(own.rate_hr) : prev.rate_hr,
+          intro: own?.description || prev.intro || prev.bio,
+          bio: own?.description || prev.bio || prev.intro,
+          languages: Array.isArray(own?.languages) && own.languages.length > 0 ? own.languages : prev.languages,
+          portfolio_items: Array.isArray(own?.portfolio) && own.portfolio.length > 0 ? own.portfolio : prev.portfolio_items,
+          portfolio_images: Array.isArray(own?.portfolio_images) && own.portfolio_images.length > 0 ? own.portfolio_images : prev.portfolio_images,
+        });
+      }
+    }
+  } catch {}
+
+  const dedupedItems = deduped.map((k) => mergedByKey.get(k));
+
+  const mapped = dedupedItems.map((lead, idx) => {
     const leadId = lead.id || lead.freelancer_id || `lead-${idx + 1}`;
     const st = statuses[leadId];
 
@@ -465,8 +527,15 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       phone: isUnlocked ? lead.phone : maskPhone(lead.phone),
       email: lead.email || `${(resolvedName || "pro").toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
       is_unlocked: isUnlocked,
-      portfolio: lead.portfolio || lead.portfolio_url || "",
-      portfolio_url: lead.portfolio_url || lead.portfolio || "",
+      picture: lead.picture || lead.avatar_url || null,
+      avatar_url: lead.avatar_url || lead.picture || null,
+      portfolio: typeof lead.portfolio === "string" ? lead.portfolio : (lead.portfolio_url || ""),
+      portfolio_url: lead.portfolio_url || (typeof lead.portfolio === "string" ? lead.portfolio : ""),
+      portfolio_items: Array.isArray(lead.portfolio_items)
+        ? lead.portfolio_items
+        : Array.isArray(lead.portfolio)
+        ? lead.portfolio
+        : [],
       portfolio_images: Array.isArray(lead.portfolio_images) ? lead.portfolio_images : [],
       linkedin_url: lead.linkedin_url || lead.linkedin || "",
       external_platform: lead.external_platform || "",
@@ -475,7 +544,8 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
       external_url: lead.external_url || "",
       intro:
         resolvedIntro ||
-        (resolvedSkill
+        lead.bio ||
+        (lead.is_dummy && resolvedSkill
           ? `${resolvedSkill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`
           : ""),
       keywords: Array.from(
@@ -506,12 +576,17 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
           }
         } catch {}
         if (isCobblestone) return 1200;
-        return lead.rate_hr !== undefined && lead.rate_hr !== null ? Number(lead.rate_hr) : (750 + (idx % 5) * 150);
+        if (lead.rate_hr !== undefined && lead.rate_hr !== null && lead.rate_hr !== "") return Number(lead.rate_hr) || 0;
+        return lead.is_dummy ? (750 + (idx % 5) * 150) : 0;
       })(),
       delivery_days: lead.delivery_days ?? (1 + (idx % 3)),
       jobs_done: lead.jobs_done !== undefined && lead.jobs_done !== null ? Number(lead.jobs_done) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
       reviews_count: lead.reviews_count !== undefined && lead.reviews_count !== null ? Number(lead.reviews_count) : (lead.is_dummy ? (idx % 2 === 0 ? 2 : 3) : 0),
-      languages: lead.languages || ["English", "Kannada", "Hindi"],
+      languages: Array.isArray(lead.languages)
+        ? lead.languages
+        : lead.is_dummy
+        ? ["English", "Kannada", "Hindi"]
+        : [],
       is_dummy: Boolean(lead.is_dummy),
       paid: Boolean(lead.paid),
       paid_amount: lead.paid ? (Number(lead.paid_amount) || 150) : 0,

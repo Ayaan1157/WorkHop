@@ -29,8 +29,29 @@ function formatImageSrc(img) {
 export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
   const nav = useNavigate();
   const [lightboxImage, setLightboxImage] = useState(null);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   if (!isOpen || !pro) return null;
+
+  const avatarSrc = formatImageSrc(pro.picture || pro.avatar_url || "");
+
+  const languageLabels = (Array.isArray(pro.languages) ? pro.languages : [])
+    .map((l) => {
+      if (typeof l === "string") return l.trim();
+      if (l && typeof l === "object" && l.language) {
+        return l.proficiency ? `${l.language} (${l.proficiency})` : l.language;
+      }
+      return "";
+    })
+    .filter(Boolean);
+
+  const portfolioProjects = (
+    Array.isArray(pro.portfolio_items) && pro.portfolio_items.length > 0
+      ? pro.portfolio_items
+      : Array.isArray(pro.portfolio)
+      ? pro.portfolio
+      : []
+  ).filter((p) => p && typeof p === "object" && !p._workhop_meta);
 
   const firstName = pro.name?.split(" ")?.[0] || pro.name || "Freelancer";
   const initials =
@@ -83,7 +104,17 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
           <div className="flex items-start gap-3.5 min-w-0 pr-6">
             {/* Avatar Initials with live active dot */}
             <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-brand text-lg sm:text-xl font-black text-white shadow-[2px_2px_0px_#121212]">
-              {initials}
+              {avatarSrc && !avatarFailed ? (
+                <img
+                  src={avatarSrc}
+                  alt={pro.name}
+                  referrerPolicy="no-referrer"
+                  onError={() => setAvatarFailed(true)}
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                initials
+              )}
               <span
                 className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-[#10B981] border-2 border-white dark:border-[#161618]"
                 title="Available Now"
@@ -191,7 +222,7 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
 
             <div className="flex flex-col items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand/60 dark:bg-zinc-800/80 p-2 text-center">
               <span className="flex items-center gap-1 text-xs sm:text-sm font-black text-brand">
-                ₹{pro.rate_hr || 550}/hr
+                {Number(pro.rate_hr) > 0 ? `₹${pro.rate_hr}/hr` : "Not set"}
               </span>
               <span className="text-[9px] font-black tracking-wider text-inkmuted dark:text-zinc-400 uppercase mt-0.5">
                 Rate / Hour
@@ -220,6 +251,8 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
                 const verified = isVerifiedPro(pro);
                 let text =
                   pro.intro ||
+                  pro.bio ||
+                  pro.description ||
                   (pro.skill
                     ? `${pro.name} is a professional specializing in ${pro.skill} in Bengaluru. Experienced in fast delivery, clear communication, and high quality deliverables.`
                     : "No bio or skill details added yet.");
@@ -252,14 +285,14 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
           )}
 
           {/* Languages Spoken */}
-          {Array.isArray(pro.languages) && pro.languages.length > 0 && (
+          {languageLabels.length > 0 && (
             <div>
               <h3 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400 mb-1.5">
                 <Globe size={13} className="text-brand" />
                 <span>Languages</span>
               </h3>
               <div className="flex flex-wrap gap-1.5">
-                {pro.languages.map((lang, i) => (
+                {languageLabels.map((lang, i) => (
                   <span
                     key={i}
                     className="border border-ink/20 dark:border-zinc-700 bg-sand dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-black text-ink dark:text-zinc-200"
@@ -273,15 +306,29 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
 
           {/* Work Samples / Portfolio Preview */}
           {(() => {
-            const portfolioImages = (
-              Array.isArray(pro.portfolio_images) && pro.portfolio_images.length > 0
-                ? pro.portfolio_images
-                : Array.isArray(pro.samples)
-                ? pro.samples.filter((s) => s?.image).map((s) => s.image)
-                : []
-            ).filter(Boolean);
+            const projectImages = portfolioProjects.flatMap((p) => {
+              if (Array.isArray(p.images) && p.images.length > 0) {
+                return p.images
+                  .map((img) => (typeof img === "string" ? img : img?.data || img?.url || ""))
+                  .filter(Boolean);
+              }
+              return p.image_data ? [p.image_data] : [];
+            });
+            const portfolioImages = Array.from(
+              new Set(
+                [
+                  ...projectImages,
+                  ...(Array.isArray(pro.portfolio_images) ? pro.portfolio_images : []),
+                  ...(Array.isArray(pro.samples)
+                    ? pro.samples.filter((s) => s?.image).map((s) => s.image)
+                    : []),
+                ].filter((x) => typeof x === "string" && x)
+              )
+            );
 
-            const portfolioUrl = (pro.portfolio_url || pro.portfolio || "").trim();
+            const portfolioUrl = String(
+              pro.portfolio_url || (typeof pro.portfolio === "string" ? pro.portfolio : "") || ""
+            ).trim();
             const isDummyDomain = (url) => {
               if (!url) return true;
               const lower = url.toLowerCase();

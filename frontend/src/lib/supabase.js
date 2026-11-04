@@ -94,6 +94,58 @@ export async function supabaseGetSession() {
   }
 }
 
+export function packProfilePortfolioJson(portfolioItems = [], meta = {}) {
+  const cleanItems = Array.isArray(portfolioItems)
+    ? portfolioItems.filter((item) => item && !item._workhop_meta)
+    : [];
+  const cleanMeta = {};
+  if (meta && typeof meta === "object") {
+    Object.entries(meta).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && k !== "_workhop_meta") {
+        cleanMeta[k] = v;
+      }
+    });
+  }
+  if (Object.keys(cleanMeta).length > 0) {
+    return [...cleanItems, { _workhop_meta: true, ...cleanMeta }];
+  }
+  return cleanItems;
+}
+
+export function unpackProfilePortfolioJson(rawPortfolio) {
+  if (!Array.isArray(rawPortfolio)) {
+    return { portfolioItems: [], portfolioImages: [], meta: {} };
+  }
+  const metaObj = rawPortfolio.find((item) => item && item._workhop_meta) || {};
+  const portfolioItems = rawPortfolio.filter((item) => item && !item._workhop_meta);
+  const extractedImages = [];
+  portfolioItems.forEach((item) => {
+    if (typeof item === "string" && item.trim()) {
+      extractedImages.push(item.trim());
+    } else if (item && typeof item === "object") {
+      if (Array.isArray(item.images) && item.images.length > 0) {
+        item.images.forEach((img) => {
+          const src = typeof img === "string" ? img : img?.data || img?.url || img?.src;
+          if (src) extractedImages.push(src);
+        });
+      } else if (item.image_data || item.url || item.src) {
+        extractedImages.push(item.image_data || item.url || item.src);
+      }
+    }
+  });
+  if (Array.isArray(metaObj.portfolio_images)) {
+    metaObj.portfolio_images.forEach((img) => {
+      const src = typeof img === "string" ? img : img?.data || img?.url || img?.src;
+      if (src && !extractedImages.includes(src)) extractedImages.push(src);
+    });
+  }
+  return {
+    portfolioItems,
+    portfolioImages: extractedImages,
+    meta: metaObj,
+  };
+}
+
 export async function supabaseUpsertProfile(profile) {
   if (!isSupabaseConfigured() || !profile?.id) return null;
   try {
@@ -110,7 +162,7 @@ export async function supabaseUpsertProfile(profile) {
       portfolio: Array.isArray(profile.portfolio) ? profile.portfolio : [],
       hops_balance: profile.hops_balance !== undefined ? Number(profile.hops_balance) : 0,
       phone_verified: Boolean(profile.phone_verified),
-      avatar_url: profile.avatar_url || null,
+      avatar_url: profile.avatar_url || profile.picture || null,
       updated_at: profile.updated_at || new Date().toISOString(),
     };
     const { data, error } = await supabase
@@ -128,6 +180,189 @@ export async function supabaseUpsertProfile(profile) {
     return null;
   }
 }
+
+export async function supabaseSyncCurrentUserProfile(updates = {}) {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    let targetId = updates.id || updates.user_id || null;
+    let targetEmail = (updates.email || "").trim().toLowerCase();
+    const isUuid = (val) =>
+      typeof val === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+    if (!isUuid(targetId)) {
+      const session = await supabaseGetSession();
+      if (session?.user?.id) {
+        targetId = session.user.id;
+        if (!targetEmail && session.user.email) {
+          targetEmail = session.user.email.toLowerCase();
+        }
+      }
+    }
+
+    let existingRow = null;
+    if (isUuid(targetId)) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", targetId)
+        .maybeSingle();
+      existingRow = data || null;
+    } else if (targetEmail) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .ilike("email", targetEmail)
+        .maybeSingle();
+      if (data) {
+        existingRow = data;
+        targetId = data.id;
+      }
+    }
+
+    if (!isUuid(targetId)) return null;
+
+    const { portfolioItems: prevItems, meta: prevMeta } = unpackProfilePortfolioJson(
+      existingRow?.portfolio
+    );
+
+    const nextPortfolioItems =
+      updates.portfolio !== undefined
+        ? Array.isArray(updates.portfolio)
+          ? updates.portfolio.filter((item) => item && !item._workhop_meta)
+          : prevItems
+        : prevItems;
+
+    const nextMeta = {
+      ...prevMeta,
+      ...(updates.rate_hr !== undefined ? { rate_hr: Number(updates.rate_hr) || 0 } : {}),
+      ...(updates.languages !== undefined ? { languages: updates.languages } : {}),
+      ...(updates.skills !== undefined ? { skills: updates.skills } : {}),
+      ...(updates.experience !== undefined ? { experience: updates.experience } : {}),
+      ...(updates.company_name !== undefined ? { company_name: updates.company_name } : {}),
+      ...(updates.hiring_for !== undefined ? { hiring_for: updates.hiring_for } : {}),
+      ...(updates.portfolio_images !== undefined ? { portfolio_images: updates.portfolio_images } : {}),
+      ...(updates.portfolio_url !== undefined ? { portfolio_url: updates.portfolio_url } : {}),
+      ...(updates.github_url !== undefined ? { github_url: updates.github_url } : {}),
+      ...(updates.hours_per_week !== undefined ? { hours_per_week: updates.hours_per_week } : {}),
+      ...(updates.availability !== undefined ? { availability: updates.availability } : {}),
+      ...(updates.employment_history !== undefined ? { employment_history: updates.employment_history } : {}),
+      ...(updates.education !== undefined ? { education: updates.education } : {}),
+      ...(updates.certifications !== undefined ? { certifications: updates.certifications } : {}),
+    };
+
+    const packedPortfolio = packProfilePortfolioJson(nextPortfolioItems, nextMeta);
+
+    const payload = {
+      id: targetId,
+      email: targetEmail || existingRow?.email || null,
+      phone:
+        updates.phone !== undefined
+          ? updates.phone || null
+          : existingRow?.phone || null,
+      name:
+        updates.name ||
+        existingRow?.name ||
+        (targetEmail ? targetEmail.split("@")[0] : "WorkHop User"),
+      role:
+        (updates.role || existingRow?.role) === "employer"
+          ? "employer"
+          : "freelancer",
+      bio:
+        updates.bio !== undefined
+          ? updates.bio
+          : updates.description !== undefined
+          ? updates.description
+          : existingRow?.bio ?? null,
+      skill:
+        updates.skill !== undefined
+          ? updates.skill
+          : updates.title !== undefined
+          ? updates.title
+          : existingRow?.skill ?? null,
+      category:
+        updates.category || existingRow?.category || "Design & Architecture",
+      area:
+        updates.area !== undefined
+          ? updates.area
+          : existingRow?.area ?? null,
+      portfolio: packedPortfolio,
+      hops_balance:
+        updates.hops_balance !== undefined
+          ? Number(updates.hops_balance)
+          : existingRow?.hops_balance ?? 0,
+      phone_verified:
+        updates.phone_verified !== undefined
+          ? Boolean(updates.phone_verified)
+          : Boolean(existingRow?.phone_verified || updates.phone),
+      avatar_url:
+        updates.picture !== undefined
+          ? updates.picture || null
+          : updates.avatar_url !== undefined
+          ? updates.avatar_url || null
+          : existingRow?.avatar_url || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .upsert(payload, { onConflict: "id" })
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.warn("Supabase sync profile error:", error.message);
+      return null;
+    }
+    return data;
+  } catch (e) {
+    console.warn("Supabase sync profile failed:", e.message);
+    return null;
+  }
+}
+
+export async function supabaseFetchAllProfiles() {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    if (error || !Array.isArray(data)) return [];
+    return data.map((row) => {
+      const { portfolioItems, portfolioImages, meta } = unpackProfilePortfolioJson(
+        row.portfolio
+      );
+      return {
+        ...row,
+        picture: row.avatar_url || meta.picture || null,
+        avatar_url: row.avatar_url || meta.picture || null,
+        portfolio_items: portfolioItems,
+        portfolio_images: portfolioImages,
+        rate_hr: meta.rate_hr !== undefined ? Number(meta.rate_hr) || 0 : 0,
+        languages: Array.isArray(meta.languages) ? meta.languages : [],
+        skills: Array.isArray(meta.skills)
+          ? meta.skills
+          : row.skill
+          ? [row.skill]
+          : [],
+        experience: meta.experience || "",
+        company_name: meta.company_name || (row.role === "employer" ? row.skill || row.name : ""),
+        hiring_for: meta.hiring_for || (row.role === "employer" ? row.category || "" : ""),
+        portfolio_url: meta.portfolio_url || "",
+        github_url: meta.github_url || "",
+        hours_per_week: meta.hours_per_week || "",
+        availability: meta.availability || "",
+        employment_history: Array.isArray(meta.employment_history) ? meta.employment_history : [],
+        education: Array.isArray(meta.education) ? meta.education : [],
+        certifications: Array.isArray(meta.certifications) ? meta.certifications : [],
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 
 export async function supabaseSignUp({ email, password, name, role = "freelancer", phone = "" }) {
   if (!isSupabaseConfigured()) return null;

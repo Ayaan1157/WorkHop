@@ -41,8 +41,94 @@ function rzpRequest(method, path, data = null) {
   });
 }
 
+const DEFAULT_SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZnJia3hwdXdicnZoaWRpaHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMDEwNzMsImV4cCI6MjEwNjY3NzA3M30.uaXuh0iPqiHezrWt5zJA_bV1EnhP-XFI59GIs9RH7sk";
+
+function unpackPortfolioMeta(rawPortfolio) {
+  if (!Array.isArray(rawPortfolio)) {
+    return { portfolioItems: [], portfolioImages: [], meta: {} };
+  }
+  const meta = rawPortfolio.find((item) => item && item._workhop_meta) || {};
+  const portfolioItems = rawPortfolio.filter((item) => item && !item._workhop_meta);
+  const portfolioImages = [];
+  portfolioItems.forEach((item) => {
+    if (typeof item === "string" && item.trim()) {
+      portfolioImages.push(item.trim());
+    } else if (item && typeof item === "object") {
+      if (Array.isArray(item.images) && item.images.length > 0) {
+        item.images.forEach((img) => {
+          const src = typeof img === "string" ? img : img?.data || img?.url || img?.src;
+          if (src) portfolioImages.push(src);
+        });
+      } else if (item.image_data || item.url || item.src) {
+        portfolioImages.push(item.image_data || item.url || item.src);
+      }
+    }
+  });
+  if (Array.isArray(meta.portfolio_images)) {
+    meta.portfolio_images.forEach((img) => {
+      const src = typeof img === "string" ? img : img?.data || img?.url || img?.src;
+      if (src && !portfolioImages.includes(src)) portfolioImages.push(src);
+    });
+  }
+  return { portfolioItems, portfolioImages, meta };
+}
+
+function supabaseRequest(method, path, data = null, extraHeaders = {}) {
+  const supabaseUrl =
+    process.env.SUPABASE_URL ||
+    process.env.REACT_APP_SUPABASE_URL ||
+    "https://kdfrbkxpuwbrvhidihvj.supabase.co";
+  const apiKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.REACT_APP_SUPABASE_ANON_KEY ||
+    DEFAULT_SUPABASE_ANON_KEY;
+  if (!apiKey) return Promise.resolve(null);
+
+  const urlObj = new URL(path, supabaseUrl);
+  return new Promise((resolve) => {
+    const postData = data ? JSON.stringify(data) : "";
+    const req = https.request(
+      {
+        hostname: urlObj.hostname,
+        port: 443,
+        path: urlObj.pathname + urlObj.search,
+        method,
+        headers: {
+          apikey: apiKey,
+          Authorization: `Bearer ${apiKey}`,
+          ...(data
+            ? {
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(postData),
+              }
+            : {}),
+          ...extraHeaders,
+        },
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          if (!body) return resolve({ status: res.statusCode });
+          try {
+            resolve(JSON.parse(body));
+          } catch {
+            resolve({ raw: body, status: res.statusCode });
+          }
+        });
+      }
+    );
+    req.on("error", () => resolve(null));
+    if (postData) req.write(postData);
+    req.end();
+  });
+}
+
 const freelancerStatusOverrides = {};
 const freelancerRateOverrides = {};
+const freelancerProfileCache = {};
 
 const PLACEHOLDER_SKILLS = new Set([
   "freelancer pro",
@@ -62,6 +148,28 @@ function cleanFreelancerSkill(val) {
   return trimmed;
 }
 
+function normalizeLanguageArray(langs) {
+  if (!langs) return [];
+  if (Array.isArray(langs)) {
+    return langs
+      .map((l) => {
+        if (typeof l === "string") return l.trim();
+        if (l && typeof l === "object" && l.language) {
+          return l.proficiency ? `${l.language.trim()} (${l.proficiency})` : l.language.trim();
+        }
+        return "";
+      })
+      .filter(Boolean);
+  }
+  if (typeof langs === "string") {
+    return langs
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
@@ -69,8 +177,22 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
+  const reqUrl = req.url || "";
+
+  // Handle GET /api/freelancer/:id/full-profile
+  if (req.method === "GET" && reqUrl.includes("full-profile")) {
+    const urlClean = reqUrl.split("?")[0].replace(/\/full-profile\/?$/, "");
+    const parts = urlClean.split("/");
+    const fId = decodeURIComponent(parts[parts.length - 1] || "");
+    const cached = freelancerProfileCache[fId] || freelancerProfileCache[fId.toLowerCase()] || null;
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+    return res.status(200).json({});
+  }
+
   // Handle Freelancer Profile Submission: POST /api/freelancer/submit
-  if (req.method === "POST" && (req.url || "").includes("submit")) {
+  if (req.method === "POST" && reqUrl.includes("submit")) {
     try {
       const body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}");
       const {
@@ -83,22 +205,53 @@ module.exports = async function handler(req, res) {
         rate_hr,
         intro,
         portfolio_url,
+        portfolio,
+        portfolio_images,
         languages,
         delivery_days,
+        picture,
+        avatar_url,
+        area,
       } = body;
 
+      const cleanEmail = (email || "").trim().toLowerCase();
       const contactPhone = (phone || "").replace(/\D/g, "");
+      const fId = freelancer_id || (cleanEmail ? `pro-${cleanEmail.split("@")[0].replace(/[^a-z0-9]/gi, "")}` : `freelancer-${Date.now()}`);
+
+      const cacheEntry = {
+        ...(freelancerProfileCache[cleanEmail] || freelancerProfileCache[fId] || {}),
+        id: fId,
+        freelancer_id: fId,
+        name: name || undefined,
+        email: cleanEmail || undefined,
+        phone: contactPhone || undefined,
+        skill: cleanFreelancerSkill(skill) || undefined,
+        category: category || undefined,
+        area: area || undefined,
+        rate_hr: rate_hr !== undefined ? Number(rate_hr) || 0 : undefined,
+        intro: intro || undefined,
+        bio: intro || undefined,
+        portfolio_url: portfolio_url || undefined,
+        portfolio: Array.isArray(portfolio) ? portfolio : undefined,
+        portfolio_images: Array.isArray(portfolio_images) ? portfolio_images : undefined,
+        languages: languages !== undefined ? normalizeLanguageArray(languages) : undefined,
+        picture: picture || avatar_url || undefined,
+        avatar_url: avatar_url || picture || undefined,
+        updated_at: new Date().toISOString(),
+      };
+      if (cleanEmail) freelancerProfileCache[cleanEmail] = cacheEntry;
+      if (fId) freelancerProfileCache[fId] = cacheEntry;
 
       try {
         await rzpRequest("POST", "/customers", {
           name: name || "WorkHop Freelancer",
-          email: email || `${contactPhone || "pro"}@workhop.in`,
+          email: cleanEmail || `${contactPhone || "pro"}@workhop.in`,
           contact: contactPhone.slice(-10),
           notes: {
-            freelancer_id: freelancer_id || `freelancer-${Date.now()}`,
+            freelancer_id: fId,
             skill: cleanFreelancerSkill(skill),
             category: category || "",
-            rate_hr: String(rate_hr || 500),
+            rate_hr: rate_hr ? String(rate_hr) : "",
             delivery_days: String(delivery_days || 2),
             portfolio_url: portfolio_url || "",
             source: "workhop_onboarding",
@@ -114,13 +267,13 @@ module.exports = async function handler(req, res) {
         under_review: true,
         message: "Profile submitted for verification. WorkHop admin will review and approve your profile.",
         profile: {
-          freelancer_id,
+          freelancer_id: fId,
           name,
           phone,
-          email,
+          email: cleanEmail,
           skill,
           category,
-          rate_hr,
+          rate_hr: Number(rate_hr) || 0,
           intro,
           portfolio_url,
           approved: false,
@@ -129,6 +282,139 @@ module.exports = async function handler(req, res) {
       });
     } catch (err) {
       return res.status(400).json({ detail: err?.message || "Failed to submit profile." });
+    }
+  }
+
+  // Handle Freelancer Profile Real-Time Sync: PUT /api/freelancer/:id/profile or /full-profile or POST /api/freelancers/sync
+  const isAdminApprovalAction =
+    reqUrl.includes("approve") ||
+    reqUrl.includes("decline");
+
+  if ((req.method === "POST" || req.method === "PUT") && !isAdminApprovalAction) {
+    try {
+      const body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}");
+      // If caller explicitly sent { approved: true/false } for admin status toggle without /profile in URL
+      if (body?.approved !== undefined && !reqUrl.includes("profile") && !reqUrl.includes("sync")) {
+        // Fall through to admin approval handler below
+      } else {
+        const urlClean = reqUrl
+          .split("?")[0]
+          .replace(/\/full-profile\/?$/, "")
+          .replace(/\/profile\/?$/, "")
+          .replace(/\/sync\/?$/, "");
+        const urlParts = urlClean.split("/");
+        const urlId = decodeURIComponent(urlParts[urlParts.length - 1] || "");
+        const fId =
+          body?.freelancer_id ||
+          body?.owner_id ||
+          body?.id ||
+          (urlId && urlId !== "freelancers" && urlId !== "freelancer" && urlId !== "index" ? urlId : "");
+        const cleanEmail = (body?.email || body?.owner_email || "").trim().toLowerCase();
+        const prev =
+          (cleanEmail && freelancerProfileCache[cleanEmail]) ||
+          (fId && freelancerProfileCache[fId]) ||
+          {};
+
+        const portfolioList = Array.isArray(body?.portfolio)
+          ? body.portfolio.filter((item) => item && !item._workhop_meta)
+          : prev.portfolio || [];
+        const extractedImgs = [];
+        portfolioList.forEach((item) => {
+          if (typeof item === "string" && item.trim()) extractedImgs.push(item.trim());
+          else if (item && typeof item === "object") {
+            if (Array.isArray(item.images)) {
+              item.images.forEach((img) => {
+                const src = typeof img === "string" ? img : img?.data || img?.url;
+                if (src) extractedImgs.push(src);
+              });
+            } else if (item.image_data) {
+              extractedImgs.push(item.image_data);
+            }
+          }
+        });
+        if (Array.isArray(body?.portfolio_images)) {
+          body.portfolio_images.forEach((src) => {
+            if (typeof src === "string" && src && !extractedImgs.includes(src)) {
+              extractedImgs.push(src);
+            }
+          });
+        }
+
+        const resolvedRate =
+          body?.rate_hr !== undefined
+            ? Number(body.rate_hr) || 0
+            : prev.rate_hr !== undefined
+            ? Number(prev.rate_hr) || 0
+            : undefined;
+
+        const resolvedSkill =
+          cleanFreelancerSkill(body?.skill || body?.title) || prev.skill || "";
+
+        const updatedEntry = {
+          ...prev,
+          ...body,
+          id: fId || prev.id,
+          freelancer_id: fId || prev.freelancer_id,
+          email: cleanEmail || prev.email,
+          name: body?.name || body?.owner_name || prev.name,
+          phone: body?.phone !== undefined ? body.phone : prev.phone,
+          skill: resolvedSkill,
+          title: resolvedSkill,
+          skills: Array.isArray(body?.skills)
+            ? body.skills
+            : prev.skills || (resolvedSkill ? [resolvedSkill] : []),
+          category: body?.category || prev.category,
+          area: body?.area || prev.area,
+          rate_hr: resolvedRate,
+          description:
+            body?.description !== undefined
+              ? body.description
+              : body?.bio !== undefined
+              ? body.bio
+              : body?.intro !== undefined
+              ? body.intro
+              : prev.description,
+          bio:
+            body?.bio !== undefined
+              ? body.bio
+              : body?.description !== undefined
+              ? body.description
+              : body?.intro !== undefined
+              ? body.intro
+              : prev.bio,
+          languages:
+            body?.languages !== undefined
+              ? normalizeLanguageArray(body.languages)
+              : prev.languages,
+          portfolio: portfolioList,
+          portfolio_items: portfolioList,
+          portfolio_images: extractedImgs.length > 0 ? extractedImgs : prev.portfolio_images || [],
+          picture: body?.picture || body?.avatar_url || prev.picture || null,
+          avatar_url: body?.avatar_url || body?.picture || prev.avatar_url || null,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (fId) {
+          freelancerProfileCache[fId] = updatedEntry;
+          freelancerProfileCache[fId.toLowerCase()] = updatedEntry;
+        }
+        if (cleanEmail) {
+          freelancerProfileCache[cleanEmail] = updatedEntry;
+          const prefix = cleanEmail.split("@")[0].replace(/[^a-z0-9]/gi, "");
+          if (prefix) freelancerProfileCache[`pro-${prefix}`] = updatedEntry;
+        }
+        if (resolvedRate !== undefined) {
+          if (fId) freelancerRateOverrides[fId] = resolvedRate;
+          if (cleanEmail) freelancerRateOverrides[cleanEmail] = resolvedRate;
+        }
+
+        return res.status(200).json({
+          ok: true,
+          profile: updatedEntry,
+        });
+      }
+    } catch (err) {
+      return res.status(200).json({ ok: true });
     }
   }
 
@@ -227,13 +513,21 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const [paymentsRes, customersRes] = await Promise.all([
+    const [paymentsRes, customersRes, sbProfilesRes] = await Promise.all([
       rzpRequest("GET", "/payments?count=100").catch(() => ({ items: [] })),
       rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] })),
+      supabaseRequest("GET", "/rest/v1/profiles?select=*").catch(() => []),
     ]);
 
     const payments = Array.isArray(paymentsRes?.items) ? paymentsRes.items : [];
     const customers = Array.isArray(customersRes?.items) ? customersRes.items : [];
+    const sbProfiles = Array.isArray(sbProfilesRes) ? sbProfilesRes : [];
+
+    const sbByEmail = {};
+    for (const sb of sbProfiles) {
+      const em = (sb.email || "").trim().toLowerCase();
+      if (em && !sbByEmail[em]) sbByEmail[em] = sb;
+    }
 
     // Also load platform directory talent (from leads.json)
     let leadsSeed = [];
@@ -248,11 +542,15 @@ module.exports = async function handler(req, res) {
       if (s.phone) seedMap[s.phone.replace(/\D/g, "")] = s;
     }
 
-    // Map customers by email or phone
+    // Map customers by email or phone (customers are newest-first, so keep first match)
     const customerMap = {};
     for (const c of customers) {
-      if (c.email) customerMap[c.email.trim().toLowerCase()] = c;
-      if (c.contact) customerMap[c.contact.replace(/\D/g, "")] = c;
+      const em = (c.email || "").trim().toLowerCase();
+      if (em && !em.startsWith("archived.") && !em.startsWith("deleted.") && !customerMap[em]) {
+        customerMap[em] = c;
+      }
+      const ph = (c.contact || "").replace(/\D/g, "");
+      if (ph && !customerMap[ph]) customerMap[ph] = c;
     }
 
     const paidFreelancers = [];
@@ -262,8 +560,15 @@ module.exports = async function handler(req, res) {
       if (p.status !== "captured") continue;
 
       const email = (p.email || p.notes?.email || "").trim().toLowerCase();
-      const phoneRaw = p.contact || p.notes?.phone || "";
-      const phoneDigits = phoneRaw.replace(/\D/g, "");
+      const sb = email ? sbByEmail[email] : null;
+      const sbUnpacked = unpackPortfolioMeta(sb?.portfolio);
+      const cached =
+        (email && freelancerProfileCache[email]) ||
+        freelancerProfileCache[p.id] ||
+        null;
+
+      const phoneRaw = cached?.phone || sb?.phone || p.contact || p.notes?.phone || "";
+      const phoneDigits = String(phoneRaw).replace(/\D/g, "");
 
       if (email && seenEmails.has(email)) continue;
       if (email) seenEmails.add(email);
@@ -271,8 +576,15 @@ module.exports = async function handler(req, res) {
       const cust = customerMap[email] || customerMap[phoneDigits] || null;
       const notes = { ...(cust?.notes || {}), ...(p.notes || {}) };
 
-      const name = notes.full_name || notes.name || cust?.name || (email ? email.split("@")[0] : "Verified Pro");
-      const initials = name
+      const rawName =
+        cached?.name ||
+        (sb?.name && sb.name !== "WorkHop User" && sb.name !== email.split("@")[0] ? sb.name : null) ||
+        notes.full_name ||
+        notes.name ||
+        cust?.name ||
+        sb?.name ||
+        (email ? email.split("@")[0] : "Verified Pro");
+      const initials = rawName
         .split(" ")
         .map((w) => w[0])
         .join("")
@@ -293,7 +605,7 @@ module.exports = async function handler(req, res) {
 
       const isCobblestone =
         (email && email.toLowerCase().includes("cobblestone")) ||
-        (name && name.toLowerCase().includes("cobblestone")) ||
+        (rawName && rawName.toLowerCase().includes("cobblestone")) ||
         p.id === "pay_TvGwKVJe2U6Qf2" ||
         (phoneDigits && phoneDigits.endsWith("9739463546"));
 
@@ -304,38 +616,84 @@ module.exports = async function handler(req, res) {
 
       const skill = isCobblestone
         ? "Architecture & Interior Design"
-        : (cleanFreelancerSkill(notes.skill) || cleanFreelancerSkill(seed?.skill) || "");
+        : (cleanFreelancerSkill(cached?.skill || cached?.title) ||
+           cleanFreelancerSkill(sb?.skill) ||
+           cleanFreelancerSkill(notes.skill) ||
+           cleanFreelancerSkill(seed?.skill) ||
+           "");
       const category = isCobblestone
         ? "Graphics & Design"
-        : (skill ? (notes.category || seed?.category || "") : (notes.category && notes.category !== "Graphics & Design" ? notes.category : ""));
+        : (cached?.category || sb?.category || (skill ? (notes.category || seed?.category || "") : (notes.category && notes.category !== "Graphics & Design" ? notes.category : "")));
+
+      const resolvedPicture =
+        cached?.picture ||
+        cached?.avatar_url ||
+        sb?.avatar_url ||
+        notes.avatar_url ||
+        seed?.picture ||
+        null;
+
+      const resolvedLanguages = normalizeLanguageArray(
+        cached?.languages !== undefined
+          ? cached.languages
+          : Array.isArray(sbUnpacked.meta?.languages) && sbUnpacked.meta.languages.length > 0
+          ? sbUnpacked.meta.languages
+          : notes.languages || []
+      );
+
+      const resolvedPortfolioItems =
+        Array.isArray(cached?.portfolio) && cached.portfolio.length > 0
+          ? cached.portfolio
+          : sbUnpacked.portfolioItems;
+
+      const resolvedPortfolioImages =
+        Array.isArray(cached?.portfolio_images) && cached.portfolio_images.length > 0
+          ? cached.portfolio_images
+          : sbUnpacked.portfolioImages;
+
+      const resolvedBio = isCobblestone
+        ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
+        : (cached?.description || cached?.bio || sb?.bio || notes.bio || notes.intro || seed?.intro || "");
 
       paidFreelancers.push({
         id: proId,
         freelancer_id: proId,
-        name: isCobblestone ? "Cobblestone Designs" : name,
-        full_name: isCobblestone ? "Cobblestone Designs" : name,
+        supabase_id: sb?.id || null,
+        name: isCobblestone ? "Cobblestone Designs" : rawName,
+        full_name: isCobblestone ? "Cobblestone Designs" : rawName,
         initials: isCobblestone ? "CD" : initials,
+        picture: resolvedPicture,
+        avatar_url: resolvedPicture,
         skill: skill,
+        skills: Array.isArray(cached?.skills) && cached.skills.length > 0
+          ? cached.skills
+          : Array.isArray(sbUnpacked.meta?.skills) && sbUnpacked.meta.skills.length > 0
+          ? sbUnpacked.meta.skills
+          : (skill ? [skill] : []),
         category: category,
         bucket: category ? "Creative" : "",
-        area: notes.area || "Bengaluru",
+        area: cached?.area || sb?.area || notes.area || "Bengaluru",
         distance_km: 1.2,
         rating: null,
         jobs_done: 0,
         rate_hr: (() => {
-          const cleanEmail = (email || "").toLowerCase().split("@")[0];
-          const ovr = freelancerRateOverrides[proId] || freelancerRateOverrides[p.id] || freelancerRateOverrides[cleanEmail] || freelancerRateOverrides[email];
-          if (ovr) return Number(ovr);
+          const cleanEmPrefix = (email || "").toLowerCase().split("@")[0];
+          const ovr = freelancerRateOverrides[proId] || freelancerRateOverrides[p.id] || freelancerRateOverrides[cleanEmPrefix] || freelancerRateOverrides[email];
+          if (ovr !== undefined) return Number(ovr) || 0;
+          if (cached?.rate_hr !== undefined) return Number(cached.rate_hr) || 0;
+          if (sbUnpacked.meta?.rate_hr !== undefined) return Number(sbUnpacked.meta.rate_hr) || 0;
           if (isCobblestone) return 1200;
-          return Number(notes.rate_hr) || 500;
+          return Number(notes.rate_hr) || 0;
         })(),
-        languages: ["English", "Kannada", "Hindi"],
+        languages: resolvedLanguages,
         email: email,
-        phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw || "+91 72046 65071",
-        portfolio: notes.portfolio_url || "",
-        intro: isCobblestone
-          ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
-          : (notes.bio || notes.intro || seed?.intro || ""),
+        phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw || "",
+        portfolio: cached?.portfolio_url || sbUnpacked.meta?.portfolio_url || notes.portfolio_url || "",
+        portfolio_url: cached?.portfolio_url || sbUnpacked.meta?.portfolio_url || notes.portfolio_url || "",
+        portfolio_items: resolvedPortfolioItems,
+        portfolio_images: resolvedPortfolioImages,
+        bio: resolvedBio,
+        intro: resolvedBio,
         keywords: isCobblestone
           ? [
             "architecture", "architect", "interior design", "floor plan", "spatial design",
@@ -348,10 +706,10 @@ module.exports = async function handler(req, res) {
         payment_id: p.id,
         is_verified: isVerifiedProUser,
         verified: isVerifiedProUser,
-        created_at: new Date(p.created_at * 1000).toISOString(),
+        created_at: sb?.created_at || new Date(p.created_at * 1000).toISOString(),
         approved: (() => {
-          const cleanEmail = (email || "").toLowerCase().split("@")[0];
-          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmail] || freelancerStatusOverrides[email];
+          const cleanEmPrefix = (email || "").toLowerCase().split("@")[0];
+          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmPrefix] || freelancerStatusOverrides[email];
           if (ovr) return Boolean(ovr.approved);
           if (notes.status === "approved" || p.notes?.status === "approved" || p.notes?.approved_by_admin === "true") return true;
           const seed = seedMap[email] || seedMap[proId.toLowerCase()] || (phoneDigits && seedMap[phoneDigits]);
@@ -360,9 +718,8 @@ module.exports = async function handler(req, res) {
           return false;
         })(),
         status: (() => {
-          const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
-          const cleanEmail = (email || "").toLowerCase().split("@")[0];
-          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmail] || freelancerStatusOverrides[email];
+          const cleanEmPrefix = (email || "").toLowerCase().split("@")[0];
+          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmPrefix] || freelancerStatusOverrides[email];
           if (ovr) return ovr.status || (ovr.approved ? "approved" : "declined");
           if (notes.status === "approved" || p.notes?.status === "approved" || p.notes?.approved_by_admin === "true") return "approved";
           const seed = seedMap[email] || seedMap[proId.toLowerCase()] || (phoneDigits && seedMap[phoneDigits]);
@@ -371,17 +728,16 @@ module.exports = async function handler(req, res) {
           return "pending";
         })(),
         reason: (() => {
-          const proId = `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || p.id}`;
-          const cleanEmail = (email || "").toLowerCase().split("@")[0];
-          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmail] || freelancerStatusOverrides[email];
+          const cleanEmPrefix = (email || "").toLowerCase().split("@")[0];
+          const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[p.id] || freelancerStatusOverrides[cleanEmPrefix] || freelancerStatusOverrides[email];
           if (ovr) return ovr.reason || null;
           return notes.reason || p.notes?.reason || null;
         })(),
         verifications: {
           id: isVerifiedProUser,
           email: true,
-          phone: true,
-          portfolio: true,
+          phone: Boolean(phoneDigits),
+          portfolio: Boolean(resolvedPortfolioItems.length > 0 || resolvedPortfolioImages.length > 0 || notes.portfolio_url),
           payment: isVerifiedProUser,
         },
         is_dummy: false,
@@ -392,10 +748,17 @@ module.exports = async function handler(req, res) {
     for (const c of customers) {
       const email = (c.email || "").trim().toLowerCase();
       const notes = c.notes || {};
-      const phoneRaw = c.contact || notes.phone || "";
-      const phoneDigits = phoneRaw.replace(/\D/g, "");
+      const sb = email ? sbByEmail[email] : null;
+      const sbUnpacked = unpackPortfolioMeta(sb?.portfolio);
+      const cached =
+        (email && freelancerProfileCache[email]) ||
+        freelancerProfileCache[c.id] ||
+        null;
 
-      const isEmployer = notes.role === "employer";
+      const phoneRaw = cached?.phone || sb?.phone || c.contact || notes.phone || "";
+      const phoneDigits = String(phoneRaw).replace(/\D/g, "");
+
+      const isEmployer = (sb?.role || notes.role) === "employer";
       if (isEmployer) continue;
       if (
         (c.name || "").trim() === "Deleted Account" ||
@@ -410,11 +773,13 @@ module.exports = async function handler(req, res) {
       }
 
       const isFreelancer =
+        sb?.role === "freelancer" ||
         notes.role === "freelancer" ||
         notes.workhop_registered === "true" ||
         notes.profile_status === "incomplete" ||
         notes.profile_status === "complete" ||
         Boolean(notes.skill) ||
+        Boolean(sb?.skill) ||
         notes.source?.includes("onboarding") ||
         notes.source?.includes("signup") ||
         notes.source?.includes("registration");
@@ -423,8 +788,16 @@ module.exports = async function handler(req, res) {
       if (email && seenEmails.has(email)) continue;
       if (email) seenEmails.add(email);
 
-      const name = notes.full_name || notes.name || c.name || (email ? email.split("@")[0] : "Registered Freelancer");
-      const initials = name
+      const rawName =
+        cached?.name ||
+        (sb?.name && sb.name !== "WorkHop User" && sb.name !== email.split("@")[0] ? sb.name : null) ||
+        notes.full_name ||
+        notes.name ||
+        (c.name && c.name !== email.split("@")[0] ? c.name : null) ||
+        sb?.name ||
+        c.name ||
+        (email ? email.split("@")[0] : "Registered Freelancer");
+      const initials = rawName
         .split(" ")
         .map((w) => w[0])
         .join("")
@@ -433,21 +806,36 @@ module.exports = async function handler(req, res) {
 
       const isCobblestone =
         (email && email.toLowerCase().includes("cobblestone")) ||
-        (name && name.toLowerCase().includes("cobblestone")) ||
+        (rawName && rawName.toLowerCase().includes("cobblestone")) ||
         c.id === "pay_TvGwKVJe2U6Qf2" ||
         (phoneDigits && phoneDigits.endsWith("9739463546"));
 
       const proId = isCobblestone
         ? "pro-cobblestonedesigns"
         : `pro-${email ? email.split("@")[0].replace(/[^a-z0-9]/gi, "") : phoneDigits || c.id}`;
-      const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[c.id];
+      const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[c.id] || (email ? freelancerStatusOverrides[email] : null);
 
-      const cleanedCustSkill = isCobblestone ? "Architecture & Interior Design" : cleanFreelancerSkill(notes.skill);
+      const cleanedCustSkill = isCobblestone
+        ? "Architecture & Interior Design"
+        : (cleanFreelancerSkill(cached?.skill || cached?.title) ||
+           cleanFreelancerSkill(sb?.skill) ||
+           cleanFreelancerSkill(notes.skill));
+
+      const resolvedCategory = isCobblestone
+        ? "Graphics & Design"
+        : (cached?.category || sb?.category || (cleanedCustSkill ? (notes.category || "") : ""));
+
+      const resolvedBio = isCobblestone
+        ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
+        : (cached?.description || cached?.bio || sb?.bio || notes.bio || notes.intro || "");
+
+      const resolvedArea = cached?.area || sb?.area || notes.area || "";
 
       const isIncomplete =
         !isCobblestone &&
-        (notes.profile_status === "incomplete" ||
-          (!notes.profile_status && phoneDigits.length < 10 && !cleanedCustSkill));
+        notes.profile_status === "incomplete" &&
+        phoneDigits.length < 10 &&
+        !cleanedCustSkill;
 
       const missingFields = notes.missing_fields
         ? String(notes.missing_fields)
@@ -457,39 +845,83 @@ module.exports = async function handler(req, res) {
         : isIncomplete
         ? [
             ...(phoneDigits.length < 10 ? ["Phone Number"] : []),
-            ...(!notes.category ? ["Profession / Service Category"] : []),
+            ...(!resolvedCategory ? ["Profession / Service Category"] : []),
             ...(!cleanedCustSkill ? ["Skills"] : []),
-            ...(!notes.experience ? ["Experience"] : []),
-            ...(!notes.bio && !notes.intro ? ["Bio"] : []),
-            ...(!notes.area ? ["Location"] : []),
+            ...(!(cached?.experience || sbUnpacked.meta?.experience || notes.experience) ? ["Experience"] : []),
+            ...(!resolvedBio ? ["Bio"] : []),
+            ...(!resolvedArea ? ["Location"] : []),
           ]
         : [];
+
+      const resolvedPicture =
+        cached?.picture ||
+        cached?.avatar_url ||
+        sb?.avatar_url ||
+        notes.avatar_url ||
+        null;
+
+      const resolvedLanguages = normalizeLanguageArray(
+        cached?.languages !== undefined
+          ? cached.languages
+          : Array.isArray(sbUnpacked.meta?.languages) && sbUnpacked.meta.languages.length > 0
+          ? sbUnpacked.meta.languages
+          : notes.languages || []
+      );
+
+      const resolvedPortfolioItems =
+        Array.isArray(cached?.portfolio) && cached.portfolio.length > 0
+          ? cached.portfolio
+          : sbUnpacked.portfolioItems;
+
+      const resolvedPortfolioImages =
+        Array.isArray(cached?.portfolio_images) && cached.portfolio_images.length > 0
+          ? cached.portfolio_images
+          : sbUnpacked.portfolioImages;
+
+      const resolvedRate = (() => {
+        const cleanEmPrefix = (email || "").toLowerCase().split("@")[0];
+        const rOvr = freelancerRateOverrides[proId] || freelancerRateOverrides[c.id] || freelancerRateOverrides[cleanEmPrefix] || freelancerRateOverrides[email];
+        if (rOvr !== undefined) return Number(rOvr) || 0;
+        if (cached?.rate_hr !== undefined) return Number(cached.rate_hr) || 0;
+        if (sbUnpacked.meta?.rate_hr !== undefined) return Number(sbUnpacked.meta.rate_hr) || 0;
+        if (isCobblestone) return 1200;
+        return Number(notes.rate_hr) || 0;
+      })();
 
       paidFreelancers.push({
         id: proId,
         freelancer_id: proId,
-        name: isCobblestone ? "Cobblestone Designs" : name,
-        full_name: isCobblestone ? "Cobblestone Designs" : name,
+        supabase_id: sb?.id || null,
+        name: isCobblestone ? "Cobblestone Designs" : rawName,
+        full_name: isCobblestone ? "Cobblestone Designs" : rawName,
         initials: isCobblestone ? "CD" : initials,
+        picture: resolvedPicture,
+        avatar_url: resolvedPicture,
         skill: cleanedCustSkill,
-        category: isCobblestone ? "Graphics & Design" : (cleanedCustSkill ? (notes.category || "") : ""),
-        bucket: isCobblestone ? "Creative" : (notes.category ? "Creative" : ""),
-        area: notes.area || (isIncomplete ? "Not set" : "Bengaluru"),
+        skills: Array.isArray(cached?.skills) && cached.skills.length > 0
+          ? cached.skills
+          : Array.isArray(sbUnpacked.meta?.skills) && sbUnpacked.meta.skills.length > 0
+          ? sbUnpacked.meta.skills
+          : (cleanedCustSkill ? [cleanedCustSkill] : []),
+        category: resolvedCategory,
+        bucket: isCobblestone ? "Creative" : (resolvedCategory ? "Creative" : ""),
+        area: resolvedArea || (isIncomplete ? "Not set" : "Bengaluru"),
         distance_km: 1.2,
         rating: null,
         jobs_done: 0,
         reviews_count: 0,
-        rate_hr: isCobblestone ? 1200 : (Number(notes.rate_hr) || 800),
+        rate_hr: resolvedRate,
         delivery_days: Number(notes.delivery_days) || 3,
-        languages: ["English", "Hindi", "Kannada"],
+        languages: resolvedLanguages,
         email: email,
         phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw,
-        portfolio: notes.portfolio_url || "",
-        experience: notes.experience || "",
-        bio: notes.bio || notes.intro || "",
-        intro: isCobblestone
-          ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
-          : (notes.bio || notes.intro || ""),
+        portfolio: cached?.portfolio_url || sbUnpacked.meta?.portfolio_url || notes.portfolio_url || "",
+        portfolio_url: cached?.portfolio_url || sbUnpacked.meta?.portfolio_url || notes.portfolio_url || "",
+        portfolio_items: resolvedPortfolioItems,
+        portfolio_images: resolvedPortfolioImages,
+        experience: cached?.experience || sbUnpacked.meta?.experience || notes.experience || "",
+        bio: resolvedBio,
+        intro: resolvedBio,
         keywords: isCobblestone
           ? [
             "architecture", "architect", "interior design", "floor plan", "spatial design",
@@ -499,7 +931,7 @@ module.exports = async function handler(req, res) {
         paid: false,
         paid_amount: 0,
         paid_plan: "Free Signup",
-        created_at: new Date(c.created_at * 1000).toISOString(),
+        created_at: sb?.created_at || new Date(c.created_at * 1000).toISOString(),
         approved: ovr ? Boolean(ovr.approved) : (notes.status === "approved"),
         status: ovr ? (ovr.status || (ovr.approved ? "approved" : "declined")) : (notes.status || "pending"),
         profile_status: isIncomplete ? "incomplete" : "complete",
@@ -509,7 +941,107 @@ module.exports = async function handler(req, res) {
           id: false,
           email: true,
           phone: Boolean(phoneDigits),
-          portfolio: Boolean(notes.portfolio_url),
+          portfolio: Boolean(resolvedPortfolioItems.length > 0 || resolvedPortfolioImages.length > 0 || notes.portfolio_url),
+          payment: false,
+        },
+        is_dummy: false,
+        is_unlocked: true,
+      });
+    }
+
+    // Also include any Supabase freelancer profiles not yet in Razorpay customers
+    for (const sb of sbProfiles) {
+      if (sb.role === "employer") continue;
+      const email = (sb.email || "").trim().toLowerCase();
+      if (!email || seenEmails.has(email)) continue;
+      if (email.startsWith("archived.") || email.startsWith("deleted.")) continue;
+      seenEmails.add(email);
+
+      const sbUnpacked = unpackPortfolioMeta(sb.portfolio);
+      const cached = freelancerProfileCache[email] || freelancerProfileCache[sb.id] || null;
+      const phoneRaw = cached?.phone || sb.phone || "";
+      const phoneDigits = String(phoneRaw).replace(/\D/g, "");
+      const rawName = cached?.name || sb.name || email.split("@")[0];
+      const initials = rawName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || "RF";
+
+      const proId = `pro-${email.split("@")[0].replace(/[^a-z0-9]/gi, "") || sb.id}`;
+      const ovr = freelancerStatusOverrides[proId] || freelancerStatusOverrides[sb.id] || freelancerStatusOverrides[email];
+      const cleanedSkill = cleanFreelancerSkill(cached?.skill || cached?.title) || cleanFreelancerSkill(sb.skill);
+      const resolvedCategory = cached?.category || sb.category || "";
+      const resolvedBio = cached?.description || cached?.bio || sb.bio || "";
+      const resolvedPicture = cached?.picture || cached?.avatar_url || sb.avatar_url || null;
+      const resolvedLanguages = normalizeLanguageArray(
+        cached?.languages !== undefined ? cached.languages : sbUnpacked.meta?.languages || []
+      );
+      const resolvedPortfolioItems =
+        Array.isArray(cached?.portfolio) && cached.portfolio.length > 0
+          ? cached.portfolio
+          : sbUnpacked.portfolioItems;
+      const resolvedPortfolioImages =
+        Array.isArray(cached?.portfolio_images) && cached.portfolio_images.length > 0
+          ? cached.portfolio_images
+          : sbUnpacked.portfolioImages;
+      const resolvedRate =
+        cached?.rate_hr !== undefined
+          ? Number(cached.rate_hr) || 0
+          : sbUnpacked.meta?.rate_hr !== undefined
+          ? Number(sbUnpacked.meta.rate_hr) || 0
+          : 0;
+
+      paidFreelancers.push({
+        id: proId,
+        freelancer_id: proId,
+        supabase_id: sb.id,
+        name: rawName,
+        full_name: rawName,
+        initials,
+        picture: resolvedPicture,
+        avatar_url: resolvedPicture,
+        skill: cleanedSkill,
+        skills: Array.isArray(cached?.skills) && cached.skills.length > 0
+          ? cached.skills
+          : Array.isArray(sbUnpacked.meta?.skills) && sbUnpacked.meta.skills.length > 0
+          ? sbUnpacked.meta.skills
+          : (cleanedSkill ? [cleanedSkill] : []),
+        category: resolvedCategory,
+        bucket: resolvedCategory ? "Creative" : "",
+        area: cached?.area || sb.area || "Bengaluru",
+        distance_km: 1.2,
+        rating: null,
+        jobs_done: 0,
+        reviews_count: 0,
+        rate_hr: resolvedRate,
+        delivery_days: 3,
+        languages: resolvedLanguages,
+        email,
+        phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw,
+        portfolio: cached?.portfolio_url || sbUnpacked.meta?.portfolio_url || "",
+        portfolio_url: cached?.portfolio_url || sbUnpacked.meta?.portfolio_url || "",
+        portfolio_items: resolvedPortfolioItems,
+        portfolio_images: resolvedPortfolioImages,
+        experience: cached?.experience || sbUnpacked.meta?.experience || "",
+        bio: resolvedBio,
+        intro: resolvedBio,
+        keywords: cleanedSkill ? [cleanedSkill] : [],
+        paid: false,
+        paid_amount: 0,
+        paid_plan: "Free Signup",
+        created_at: sb.created_at || new Date().toISOString(),
+        approved: ovr ? Boolean(ovr.approved) : false,
+        status: ovr ? (ovr.status || (ovr.approved ? "approved" : "declined")) : "pending",
+        profile_status: phoneDigits.length >= 10 || cleanedSkill ? "complete" : "incomplete",
+        missing_fields: [],
+        reason: ovr ? ovr.reason : null,
+        verifications: {
+          id: false,
+          email: true,
+          phone: Boolean(phoneDigits),
+          portfolio: Boolean(resolvedPortfolioItems.length > 0 || resolvedPortfolioImages.length > 0),
           payment: false,
         },
         is_dummy: false,

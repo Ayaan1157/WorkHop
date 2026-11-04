@@ -17,6 +17,7 @@ import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, apiPost, getFreelancerId } from "@/lib/api";
+import { supabaseSyncCurrentUserProfile } from "@/lib/supabase";
 import {
   getFreelancerProfile,
   saveFreelancerProfile,
@@ -303,7 +304,7 @@ export default function FreelancerProfile() {
         category: cleanCategory || user?.category || "",
         skill: cleanSkill || user?.skill || "",
         bio: cleanBio,
-        rate_hr: cleanRate || user?.rate_hr || 500,
+        rate_hr: cleanRate || user?.rate_hr || 0,
       });
     }
 
@@ -317,7 +318,7 @@ export default function FreelancerProfile() {
         skill: cleanSkill,
         category: cleanCategory || "Design & Architecture",
         area: cleanArea || "Indiranagar",
-        rate_hr: cleanRate || 500,
+        rate_hr: cleanRate || 0,
         intro: cleanBio,
         picture: picture !== undefined ? (picture || null) : (user?.picture || null),
         approved: proStatusObj?.approved,
@@ -434,13 +435,60 @@ export default function FreelancerProfile() {
         if (user?.email) updateProHourlyRate(user.email, updated.rate_hr);
         if (user?.id) updateProHourlyRate(user.id, updated.rate_hr);
       }
+      const portfolioList = Array.isArray(updated.portfolio) ? updated.portfolio : [];
+      const allPortfolioImages = portfolioList
+        .flatMap((p) => {
+          if (Array.isArray(p?.images) && p.images.length > 0) {
+            return p.images.map((img) => (typeof img === "string" ? img : img?.data)).filter(Boolean);
+          }
+          return p?.image_data ? [p.image_data] : [];
+        })
+        .filter(Boolean);
+      supabaseSyncCurrentUserProfile({
+        id: user?.id,
+        email: user?.email,
+        name: user?.name,
+        role: "freelancer",
+        phone: updated.phone || user?.phone || undefined,
+        skill: updated.title || updated.skill || undefined,
+        category: updated.category || undefined,
+        area: updated.area || user?.area || undefined,
+        bio: updated.description ?? undefined,
+        rate_hr: Number(updated.rate_hr) || 0,
+        languages: Array.isArray(updated.languages) ? updated.languages : [],
+        skills: Array.isArray(updated.skills) ? updated.skills : [],
+        portfolio: portfolioList,
+        picture: user?.picture || undefined,
+        github_url: updated.github_url || undefined,
+      }).catch(() => {});
       try {
-        await apiPut(`/freelancer/${freelancerId}/full-profile`, updated);
+        saveSubmittedProfile({
+          id: freelancerId || user?.id,
+          freelancer_id: freelancerId || user?.id,
+          email: user?.email || "",
+          name: user?.name || undefined,
+          picture: user?.picture || undefined,
+          rate_hr: Number(updated.rate_hr) || 0,
+          languages: Array.isArray(updated.languages) ? updated.languages : [],
+          intro: updated.description || "",
+          bio: updated.description || "",
+          portfolio_items: portfolioList,
+          portfolio_images: allPortfolioImages,
+        });
+      } catch {}
+      try {
+        await apiPut(`/freelancer/${freelancerId}/full-profile`, {
+          ...updated,
+          email: user?.email || "",
+          name: user?.name || undefined,
+          picture: user?.picture || undefined,
+          portfolio_images: allPortfolioImages,
+        });
       } catch {
         /* saved locally */
       }
     },
-    [freelancerId, user?.email, user?.id]
+    [freelancerId, user?.email, user?.id, user?.name, user?.picture, user?.phone, user?.area]
   );
 
   const openEdit = (section, data = null) => {
@@ -514,7 +562,7 @@ export default function FreelancerProfile() {
           phone: (proPhone || user?.phone || "").replace(/\D/g, "").slice(-10),
           area: user?.area || profile.area || localStorage.getItem("workhop_user_area") || "Indiranagar",
           description: profile.description || "",
-          rate_hr: profile.rate_hr || 500,
+          rate_hr: profile.rate_hr || 0,
         });
         const el = document.getElementById("overview-section");
         if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -653,7 +701,7 @@ export default function FreelancerProfile() {
         skill: profile.title || proSkill || user?.skill || "",
         category: profile.category || user?.category || "Design & Architecture",
         area: user?.area || profile.area || "Indiranagar",
-        rate_hr: profile.rate_hr || user?.rate_hr || 500,
+        rate_hr: profile.rate_hr || user?.rate_hr || 0,
         intro: profile.description || user?.bio || "",
         portfolio_images: allImages,
         approved: proStatusObj?.approved,

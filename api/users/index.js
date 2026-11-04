@@ -41,13 +41,50 @@ function rzpRequest(method, path, data = null) {
   });
 }
 
+const DEFAULT_SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZnJia3hwdXdicnZoaWRpaHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMDEwNzMsImV4cCI6MjEwNjY3NzA3M30.uaXuh0iPqiHezrWt5zJA_bV1EnhP-XFI59GIs9RH7sk";
+
+function unpackPortfolioMeta(rawPortfolio) {
+  if (!Array.isArray(rawPortfolio)) {
+    return { portfolioItems: [], portfolioImages: [], meta: {} };
+  }
+  const meta = rawPortfolio.find((item) => item && item._workhop_meta) || {};
+  const portfolioItems = rawPortfolio.filter((item) => item && !item._workhop_meta);
+  const portfolioImages = [];
+  portfolioItems.forEach((item) => {
+    if (typeof item === "string" && item.trim()) {
+      portfolioImages.push(item.trim());
+    } else if (item && typeof item === "object") {
+      if (Array.isArray(item.images) && item.images.length > 0) {
+        item.images.forEach((img) => {
+          const src = typeof img === "string" ? img : img?.data || img?.url || img?.src;
+          if (src) portfolioImages.push(src);
+        });
+      } else if (item.image_data || item.url || item.src) {
+        portfolioImages.push(item.image_data || item.url || item.src);
+      }
+    }
+  });
+  if (Array.isArray(meta.portfolio_images)) {
+    meta.portfolio_images.forEach((img) => {
+      const src = typeof img === "string" ? img : img?.data || img?.url || img?.src;
+      if (src && !portfolioImages.includes(src)) portfolioImages.push(src);
+    });
+  }
+  return { portfolioItems, portfolioImages, meta };
+}
+
 function supabaseRequest(method, path, data = null, extraHeaders = {}) {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://kdfrbkxpuwbrvhidihvj.supabase.co";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!serviceKey) return Promise.resolve(null);
+  const apiKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.REACT_APP_SUPABASE_ANON_KEY ||
+    DEFAULT_SUPABASE_ANON_KEY;
+  if (!apiKey) return Promise.resolve(null);
 
   const urlObj = new URL(path, supabaseUrl);
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const postData = data ? JSON.stringify(data) : "";
     const req = https.request(
       {
@@ -56,8 +93,8 @@ function supabaseRequest(method, path, data = null, extraHeaders = {}) {
         path: urlObj.pathname + urlObj.search,
         method,
         headers: {
-          apikey: serviceKey,
-          Authorization: `Bearer ${serviceKey}`,
+          apikey: apiKey,
+          Authorization: `Bearer ${apiKey}`,
           ...(data
             ? {
                 "Content-Type": "application/json",
@@ -483,35 +520,135 @@ module.exports = async function handler(req, res) {
         experience,
         bio,
         intro,
+        description,
         rate_hr,
         hourly_rate,
         gst_number,
         avatar_url,
+        picture,
+        languages,
+        portfolio,
+        portfolio_images,
         profile_status,
       } = body;
 
       const cleanEmail = (email || "").trim().toLowerCase();
-      const phoneDigits = (phone || "").replace(/\D/g, "");
-      const userRole = (role || "freelancer").toLowerCase() === "employer" ? "employer" : "freelancer";
-      const userName = (name || (userRole === "employer" ? company_name : cleanEmail.split("@")[0]) || "WorkHop Member").trim();
 
-      const skillStr = Array.isArray(skills) && skills.length > 0
-        ? skills.join(", ")
-        : (skill || "");
-      const bioStr = bio || intro || "";
-      const categoryStr = userRole === "employer" ? (hiring_for || category || "") : (category || "");
-      const hiringForStr = hiring_for || (userRole === "employer" ? category || "" : "");
-      const effectiveRate = rate_hr || hourly_rate || 500;
+      const [custRes, sbRows] = await Promise.all([
+        rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] })),
+        cleanEmail
+          ? supabaseRequest(
+              "GET",
+              `/rest/v1/profiles?select=*&email=ilike.${encodeURIComponent(cleanEmail)}`
+            ).catch(() => [])
+          : Promise.resolve([]),
+      ]);
 
-      const computedMissing = computeMissingFields(userRole, {
+      const existingCustomers = Array.isArray(custRes?.items) ? custRes.items : [];
+      const emailMatches = cleanEmail
+        ? existingCustomers.filter((c) => (c.email || "").trim().toLowerCase() === cleanEmail)
+        : [];
+      const latestExisting = emailMatches[0] || null;
+      const existingNotes = latestExisting?.notes || {};
+      const sbExisting = Array.isArray(sbRows) && sbRows.length > 0 ? sbRows[0] : null;
+      const sbUnpacked = unpackPortfolioMeta(sbExisting?.portfolio);
+
+      const rawPhone =
+        phone !== undefined
+          ? phone
+          : existingNotes.phone || latestExisting?.contact || sbExisting?.phone || "";
+      const phoneDigits = String(rawPhone || "").replace(/\D/g, "");
+      const resolvedRole = (
+        role ||
+        existingNotes.role ||
+        sbExisting?.role ||
+        "freelancer"
+      ).toLowerCase() === "employer"
+        ? "employer"
+        : "freelancer";
+
+      const resolvedCompanyName =
+        company_name !== undefined
+          ? company_name
+          : existingNotes.company_name || sbUnpacked.meta?.company_name || "";
+
+      const userName = (
+        name ||
+        sbExisting?.name ||
+        latestExisting?.name ||
+        (resolvedRole === "employer" ? resolvedCompanyName : cleanEmail.split("@")[0]) ||
+        "WorkHop Member"
+      ).trim();
+
+      const skillStr =
+        Array.isArray(skills) && skills.length > 0
+          ? skills.join(", ")
+          : skill !== undefined
+          ? skill || ""
+          : existingNotes.skill || sbExisting?.skill || "";
+
+      const bioStr =
+        bio !== undefined
+          ? bio
+          : intro !== undefined
+          ? intro
+          : description !== undefined
+          ? description
+          : existingNotes.bio || existingNotes.intro || sbExisting?.bio || "";
+
+      const categoryStr =
+        resolvedRole === "employer"
+          ? hiring_for || category || existingNotes.hiring_for || existingNotes.category || sbExisting?.category || ""
+          : category || existingNotes.category || sbExisting?.category || "";
+
+      const hiringForStr =
+        hiring_for ||
+        (resolvedRole === "employer"
+          ? category || existingNotes.hiring_for || existingNotes.category || ""
+          : "");
+
+      const effectiveRate =
+        rate_hr !== undefined
+          ? Number(rate_hr) || 0
+          : hourly_rate !== undefined
+          ? Number(hourly_rate) || 0
+          : sbUnpacked.meta?.rate_hr !== undefined
+          ? Number(sbUnpacked.meta.rate_hr) || 0
+          : Number(existingNotes.rate_hr) || 0;
+
+      const resolvedArea =
+        area !== undefined ? area : existingNotes.area || sbExisting?.area || "";
+      const resolvedExperience =
+        experience !== undefined
+          ? experience
+          : existingNotes.experience || sbUnpacked.meta?.experience || "";
+      const resolvedAvatar =
+        picture || avatar_url || sbExisting?.avatar_url || existingNotes.avatar_url || "";
+
+      const resolvedLanguagesList = Array.isArray(languages)
+        ? languages
+            .map((l) => (typeof l === "string" ? l : l?.language || ""))
+            .filter(Boolean)
+        : Array.isArray(sbUnpacked.meta?.languages)
+        ? sbUnpacked.meta.languages
+            .map((l) => (typeof l === "string" ? l : l?.language || ""))
+            .filter(Boolean)
+        : existingNotes.languages
+        ? String(existingNotes.languages)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
+
+      const computedMissing = computeMissingFields(resolvedRole, {
         phone: phoneDigits,
-        company_name,
+        company_name: resolvedCompanyName,
         hiring_for: hiringForStr,
         category: categoryStr,
         skill: skillStr,
-        experience,
+        experience: resolvedExperience,
         bio: bioStr,
-        area,
+        area: resolvedArea,
       });
 
       const finalStatus =
@@ -522,33 +659,33 @@ module.exports = async function handler(req, res) {
           : "incomplete";
       const finalMissing = finalStatus === "complete" ? [] : computedMissing;
 
-      // Strictly 14 keys (Razorpay enforces max 15 keys in notes)
+      // Max 15 keys in Razorpay notes
       const rzpNotes = {
-        role: userRole,
+        role: resolvedRole,
         workhop_registered: "true",
         profile_status: finalStatus,
-        missing_fields: finalMissing.join(", "),
+        missing_fields: finalMissing.join(", ").slice(0, 240),
         phone: phoneDigits.slice(-10) || "",
-        company_name: company_name || (userRole === "employer" && finalStatus === "complete" ? userName : ""),
+        company_name:
+          resolvedCompanyName ||
+          (resolvedRole === "employer" && finalStatus === "complete" ? userName : ""),
         hiring_for: hiringForStr,
         category: categoryStr,
-        skill: skillStr,
-        experience: experience || "",
+        skill: String(skillStr || "").slice(0, 240),
+        experience: resolvedExperience || "",
         bio: bioStr ? String(bioStr).slice(0, 240) : "",
-        area: area || "",
-        rate_hr: String(effectiveRate),
-        source: "workhop_registration",
+        area: resolvedArea || "",
+        rate_hr: effectiveRate ? String(effectiveRate) : "",
+        avatar_url:
+          resolvedAvatar && resolvedAvatar.startsWith("http")
+            ? resolvedAvatar.slice(0, 245)
+            : "",
+        languages: resolvedLanguagesList.join(", ").slice(0, 240),
       };
 
       let customer = null;
-      const custRes = await rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] }));
-      const existingCustomers = Array.isArray(custRes?.items) ? custRes.items : [];
-      const emailMatches = cleanEmail
-        ? existingCustomers.filter((c) => (c.email || "").trim().toLowerCase() === cleanEmail)
-        : [];
-
       if (emailMatches.length > 0) {
-        // Since Razorpay PUT /customers/:id does not mutate notes, archive old record(s) and create fresh customer record with updated notes
+        // Archive old record(s) and create fresh customer record with updated notes
         for (const em of emailMatches) {
           const cleanEmId = String(em.id || "").replace(/[^a-zA-Z0-9]/g, "");
           await rzpRequest("PUT", `/customers/${em.id}`, {
@@ -574,9 +711,26 @@ module.exports = async function handler(req, res) {
       }
 
       // Sync to Supabase if service role key is present
-      const targetUuid = user_id || id;
-      const isUuid = typeof targetUuid === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUuid);
+      const targetUuid = user_id || id || sbExisting?.id;
+      const isUuid =
+        typeof targetUuid === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUuid);
       if (process.env.SUPABASE_SERVICE_ROLE_KEY && isUuid) {
+        const nextPortfolioItems = Array.isArray(portfolio)
+          ? portfolio.filter((item) => item && !item._workhop_meta)
+          : sbUnpacked.portfolioItems;
+        const nextMeta = {
+          ...(sbUnpacked.meta || {}),
+          rate_hr: effectiveRate,
+          languages: Array.isArray(languages) ? languages : resolvedLanguagesList,
+          skills: Array.isArray(skills) ? skills : skillStr ? skillStr.split(",").map((s) => s.trim()).filter(Boolean) : [],
+          experience: resolvedExperience,
+          company_name: resolvedCompanyName,
+          hiring_for: hiringForStr,
+          ...(Array.isArray(portfolio_images) ? { portfolio_images } : {}),
+        };
+        const packedPortfolio = [...nextPortfolioItems, { _workhop_meta: true, ...nextMeta }];
+
         await supabaseRequest(
           "POST",
           "/rest/v1/profiles?on_conflict=id",
@@ -585,14 +739,15 @@ module.exports = async function handler(req, res) {
             email: cleanEmail,
             name: userName,
             phone: phoneDigits.length >= 10 ? phoneDigits.slice(-10) : null,
-            role: userRole,
+            role: resolvedRole,
             bio: bioStr || null,
-            skill: userRole === "employer" ? (company_name || null) : (skillStr || null),
-            category: categoryStr || "Graphics & Design",
-            area: area || null,
-            hops_balance: 0,
+            skill: resolvedRole === "employer" ? (resolvedCompanyName || null) : (skillStr || null),
+            category: categoryStr || "Design & Architecture",
+            area: resolvedArea || null,
+            portfolio: packedPortfolio,
+            hops_balance: sbExisting?.hops_balance ?? 0,
             phone_verified: phoneDigits.length >= 10,
-            avatar_url: avatar_url || null,
+            avatar_url: resolvedAvatar || null,
             updated_at: new Date().toISOString(),
           },
           { Prefer: "resolution=merge-duplicates,return=representation" }
@@ -602,18 +757,18 @@ module.exports = async function handler(req, res) {
             full_name: userName,
             name: userName,
             workhop_registered: true,
-            role: userRole,
+            role: resolvedRole,
             profile_status: finalStatus,
             missing_fields: finalMissing,
             phone: phoneDigits.slice(-10),
-            company_name: company_name || "",
+            company_name: resolvedCompanyName || "",
             hiring_for: hiringForStr,
             category: categoryStr,
             skill: skillStr,
-            experience: experience || "",
+            experience: resolvedExperience || "",
             bio: bioStr,
-            area: area || "",
-            rate_hr: Number(rate_hr) || 500,
+            area: resolvedArea || "",
+            rate_hr: effectiveRate,
             gst_number: gst_number || "",
           },
         });
@@ -626,16 +781,22 @@ module.exports = async function handler(req, res) {
           id: targetUuid || customer?.id || `user-${Date.now()}`,
           name: userName,
           email: cleanEmail,
-          phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : (phone || ""),
-          role: userRole,
-          company_name: company_name || "",
+          phone:
+            phoneDigits.length >= 10
+              ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}`
+              : phone || "",
+          role: resolvedRole,
+          company_name: resolvedCompanyName || "",
           hiring_for: hiringForStr,
           category: categoryStr,
           skill: skillStr,
-          experience: experience || "",
+          experience: resolvedExperience || "",
           bio: bioStr,
-          area: area || "",
-          rate_hr: Number(rate_hr) || 500,
+          area: resolvedArea || "",
+          rate_hr: effectiveRate,
+          picture: resolvedAvatar || null,
+          avatar_url: resolvedAvatar || null,
+          languages: Array.isArray(languages) ? languages : resolvedLanguagesList,
           profile_status: finalStatus,
           missing_fields: finalMissing,
           workhop_registered: true,
@@ -647,10 +808,20 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // 2. GET: List all real-time registered users
+  // 2. GET: List all real-time registered users (merged with Supabase profiles)
   try {
-    const custRes = await rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] }));
+    const [custRes, sbProfilesRes] = await Promise.all([
+      rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] })),
+      supabaseRequest("GET", "/rest/v1/profiles?select=*").catch(() => []),
+    ]);
     const customers = Array.isArray(custRes?.items) ? custRes.items : [];
+    const sbProfiles = Array.isArray(sbProfilesRes) ? sbProfilesRes : [];
+
+    const sbByEmail = new Map();
+    sbProfiles.forEach((p) => {
+      const em = (p.email || "").trim().toLowerCase();
+      if (em && !sbByEmail.has(em)) sbByEmail.set(em, p);
+    });
 
     const users = [
       {
@@ -679,19 +850,61 @@ module.exports = async function handler(req, res) {
       if (email && seenEmails.has(email)) continue;
       if (email) seenEmails.add(email);
 
-      const phoneRaw = c.contact || notes.phone || "";
-      const phoneDigits = phoneRaw.replace(/\D/g, "");
-      const isEmp = notes.role === "employer";
-      const roleStr = isEmp ? "employer" : (notes.role || "freelancer");
+      const sb = email ? sbByEmail.get(email) : null;
+      const sbUnpacked = unpackPortfolioMeta(sb?.portfolio);
+
+      const phoneRaw = sb?.phone || c.contact || notes.phone || "";
+      const phoneDigits = String(phoneRaw).replace(/\D/g, "");
+      const isEmp = (sb?.role || notes.role) === "employer";
+      const roleStr = isEmp ? "employer" : (sb?.role || notes.role || "freelancer");
 
       const status =
-        notes.profile_status === "incomplete"
+        notes.profile_status === "incomplete" && !sb?.phone
           ? "incomplete"
-          : notes.profile_status === "complete"
-          ? "complete"
-          : phoneDigits.length >= 10
+          : notes.profile_status === "complete" || phoneDigits.length >= 10
           ? "complete"
           : "incomplete";
+
+      const resolvedName =
+        sb?.name && sb.name !== "WorkHop User" && sb.name !== email.split("@")[0]
+          ? sb.name
+          : c.name && c.name !== email.split("@")[0]
+          ? c.name
+          : sb?.name || c.name || (email ? email.split("@")[0] : "WorkHop Member");
+
+      const resolvedCompany =
+        sbUnpacked.meta?.company_name ||
+        notes.company_name ||
+        (isEmp && sb?.skill ? sb.skill : "") ||
+        (isEmp && status === "complete" ? resolvedName : "");
+
+      const resolvedHiringFor =
+        sbUnpacked.meta?.hiring_for ||
+        notes.hiring_for ||
+        notes.job_category ||
+        (isEmp ? sb?.category || "" : "");
+
+      const resolvedCategory = sb?.category || notes.category || "";
+      const rawSkill = !isEmp ? sb?.skill || notes.skill || "" : notes.skill || "";
+      const resolvedSkill =
+        rawSkill && !["Pro", "Freelancer Pro", "Creative Pro", "Creative & Tech Pro"].includes(rawSkill)
+          ? rawSkill
+          : "";
+      const resolvedBio = sb?.bio || notes.bio || notes.intro || "";
+      const resolvedArea = sb?.area || notes.area || (status === "complete" ? "Bengaluru" : "");
+      const resolvedRate =
+        sbUnpacked.meta?.rate_hr !== undefined
+          ? Number(sbUnpacked.meta.rate_hr) || 0
+          : Number(notes.rate_hr) || 0;
+      const resolvedPicture = sb?.avatar_url || notes.avatar_url || null;
+      const resolvedLanguages = Array.isArray(sbUnpacked.meta?.languages)
+        ? sbUnpacked.meta.languages
+        : notes.languages
+        ? String(notes.languages)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
 
       const missingList = notes.missing_fields
         ? String(notes.missing_fields)
@@ -701,35 +914,110 @@ module.exports = async function handler(req, res) {
         : status === "incomplete"
         ? computeMissingFields(roleStr, {
             phone: phoneDigits,
-            company_name: notes.company_name,
-            hiring_for: notes.hiring_for || notes.job_category,
-            category: notes.category,
-            skill: notes.skill,
-            experience: notes.experience,
-            bio: notes.bio || notes.intro,
-            area: notes.area,
+            company_name: resolvedCompany,
+            hiring_for: resolvedHiringFor,
+            category: resolvedCategory,
+            skill: resolvedSkill,
+            experience: sbUnpacked.meta?.experience || notes.experience,
+            bio: resolvedBio,
+            area: resolvedArea,
           })
         : [];
 
       users.push({
-        user_id: c.id,
-        id: c.id,
-        name: c.name || (email ? email.split("@")[0] : "WorkHop Member"),
+        user_id: sb?.id || c.id,
+        id: sb?.id || c.id,
+        name: resolvedName,
         email: email,
-        phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phoneRaw || "",
+        phone:
+          phoneDigits.length >= 10
+            ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}`
+            : phoneRaw || "",
         role: roleStr,
-        company_name: notes.company_name || (isEmp && status === "complete" ? c.name : ""),
-        hiring_for: notes.hiring_for || notes.job_category || "",
-        category: notes.category || "",
-        skill: notes.skill && !["Pro", "Freelancer Pro", "Creative Pro", "Creative & Tech Pro"].includes(notes.skill) ? notes.skill : "",
-        experience: notes.experience || "",
-        bio: notes.bio || notes.intro || "",
-        area: notes.area || (status === "complete" ? "Bengaluru" : ""),
+        company_name: resolvedCompany,
+        hiring_for: resolvedHiringFor,
+        category: resolvedCategory,
+        skill: resolvedSkill,
+        skills: Array.isArray(sbUnpacked.meta?.skills)
+          ? sbUnpacked.meta.skills
+          : resolvedSkill
+          ? [resolvedSkill]
+          : [],
+        experience: sbUnpacked.meta?.experience || notes.experience || "",
+        bio: resolvedBio,
+        area: resolvedArea,
+        rate_hr: resolvedRate,
+        picture: resolvedPicture,
+        avatar_url: resolvedPicture,
+        languages: resolvedLanguages,
+        portfolio_items: sbUnpacked.portfolioItems,
+        portfolio_images: sbUnpacked.portfolioImages,
         profile_status: status,
         missing_fields: missingList,
         workhop_registered: true,
-        created_at: new Date(c.created_at * 1000).toISOString(),
+        created_at: sb?.created_at || new Date(c.created_at * 1000).toISOString(),
         source: "cloud",
+      });
+    }
+
+    // Also include any Supabase profile not yet in Razorpay customers
+    for (const sb of sbProfiles) {
+      const email = (sb.email || "").trim().toLowerCase();
+      if (!email || seenEmails.has(email)) continue;
+      if (email.startsWith("archived.") || email.startsWith("deleted.")) continue;
+      seenEmails.add(email);
+
+      const sbUnpacked = unpackPortfolioMeta(sb.portfolio);
+      const phoneRaw = sb.phone || "";
+      const phoneDigits = String(phoneRaw).replace(/\D/g, "");
+      const isEmp = sb.role === "employer";
+      const roleStr = isEmp ? "employer" : "freelancer";
+      const rawSkill = !isEmp ? sb.skill || "" : "";
+      const resolvedSkill =
+        rawSkill && !["Pro", "Freelancer Pro", "Creative Pro", "Creative & Tech Pro"].includes(rawSkill)
+          ? rawSkill
+          : "";
+
+      users.push({
+        user_id: sb.id,
+        id: sb.id,
+        name: sb.name || email.split("@")[0],
+        email,
+        phone:
+          phoneDigits.length >= 10
+            ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}`
+            : phoneRaw || "",
+        role: roleStr,
+        company_name:
+          sbUnpacked.meta?.company_name || (isEmp ? sb.skill || sb.name || "" : ""),
+        hiring_for:
+          sbUnpacked.meta?.hiring_for || (isEmp ? sb.category || "" : ""),
+        category: sb.category || "",
+        skill: resolvedSkill,
+        skills: Array.isArray(sbUnpacked.meta?.skills)
+          ? sbUnpacked.meta.skills
+          : resolvedSkill
+          ? [resolvedSkill]
+          : [],
+        experience: sbUnpacked.meta?.experience || "",
+        bio: sb.bio || "",
+        area: sb.area || "Bengaluru",
+        rate_hr:
+          sbUnpacked.meta?.rate_hr !== undefined
+            ? Number(sbUnpacked.meta.rate_hr) || 0
+            : 0,
+        picture: sb.avatar_url || null,
+        avatar_url: sb.avatar_url || null,
+        languages: Array.isArray(sbUnpacked.meta?.languages)
+          ? sbUnpacked.meta.languages
+          : [],
+        portfolio_items: sbUnpacked.portfolioItems,
+        portfolio_images: sbUnpacked.portfolioImages,
+        profile_status: phoneDigits.length >= 10 ? "complete" : "incomplete",
+        missing_fields: [],
+        workhop_registered: true,
+        created_at: sb.created_at || new Date().toISOString(),
+        source: "supabase",
       });
     }
 

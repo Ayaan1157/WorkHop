@@ -102,6 +102,10 @@
       "destination": "/api/freelancers/index"
     },
     {
+      "source": "/api/freelancer/:path*",
+      "destination": "/api/freelancers/index"
+    },
+    {
       "source": "/api/payments/list",
       "destination": "/api/payments/list"
     },
