@@ -12,7 +12,15 @@ import { ProfileSkeleton } from "@/components/Skeletons";
 import CouponInput from "@/components/CouponInput";
 import { useRazorpay } from "@/hooks/usePayments";
 import { apiGet, getEmployerId } from "@/lib/api";
-import { ADMIN_EMAILS, getLeadById, getSubmittedProfiles, getStoredReviews, updateProHourlyRate } from "@/lib/clientStore";
+import {
+  ADMIN_EMAILS,
+  getLeadById,
+  getSubmittedProfiles,
+  getRemoteFreelancers,
+  saveRemoteFreelancers,
+  getStoredReviews,
+  updateProHourlyRate,
+} from "@/lib/clientStore";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -121,22 +129,50 @@ export default function Pro() {
       setReviews(combined);
     };
 
-    const fallbackLocalPro = () => {
+    const fallbackLocalPro = async () => {
       try {
         const targetId = String(id).trim().toLowerCase();
         const strippedTarget = targetId.replace(/^pro-/, "");
-        const found =
+        let found =
           getLeadById(id) ||
           getSubmittedProfiles().find((p) => {
             const pId = String(p.id || p.freelancer_id || "").toLowerCase();
             const strippedPId = pId.replace(/^pro-/, "");
             return pId === targetId || strippedPId === strippedTarget || String(p.user_id || "").toLowerCase() === targetId;
           });
+
+        if (!found) {
+          const remoteList = getRemoteFreelancers();
+          found = remoteList.find((p) => {
+            const pId = String(p.id || p.freelancer_id || "").toLowerCase();
+            const strippedPId = pId.replace(/^pro-/, "");
+            return pId === targetId || strippedPId === strippedTarget || String(p.email || "").toLowerCase() === targetId;
+          });
+        }
+
         if (found) {
           const proData = found.pro || found;
           const initialReviews = found.reviews || proData.reviews || [];
           syncProfileAndReviews(proData, initialReviews);
         }
+
+        // Also attempt fresh fetch from /api/freelancers to update in real-time
+        fetch("/api/freelancers")
+          .then((res) => (res.ok ? res.json() : []))
+          .then((prosList) => {
+            if (Array.isArray(prosList) && prosList.length > 0) {
+              saveRemoteFreelancers(prosList);
+              const freshMatch = prosList.find((p) => {
+                const pId = String(p.id || p.freelancer_id || "").toLowerCase();
+                const strippedPId = pId.replace(/^pro-/, "");
+                return pId === targetId || strippedPId === strippedTarget || String(p.email || "").toLowerCase() === targetId;
+              });
+              if (freshMatch) {
+                syncProfileAndReviews(freshMatch, freshMatch.reviews || []);
+              }
+            }
+          })
+          .catch(() => {});
       } catch (e) {
         console.error("Local pro fallback error", e);
       }
@@ -301,8 +337,21 @@ export default function Pro() {
           {/* UPWORK-STYLE HERO CARD */}
           <div className="border-2 border-ink bg-white p-6" data-testid="pro-hero">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center border-2 border-ink bg-brand text-3xl font-black text-white">
-                {pro.initials || (pro.name || "?").slice(0, 2).toUpperCase()}
+              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center border-2 border-ink bg-brand text-3xl font-black text-white overflow-hidden shadow-[2px_2px_0px_#121212]">
+                {pro.picture || pro.avatar_url ? (
+                  <img
+                    src={formatImageSrc(pro.picture || pro.avatar_url)}
+                    alt={pro.name || "Freelancer"}
+                    referrerPolicy="no-referrer"
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : null}
+                {!(pro.picture || pro.avatar_url) && (
+                  <span>{pro.initials || (pro.name || "?").slice(0, 2).toUpperCase()}</span>
+                )}
               </div>
 
               <div className="flex-1 text-center sm:text-left min-w-0">
@@ -506,15 +555,36 @@ export default function Pro() {
 
               {/* WORK SAMPLES & PORTFOLIO */}
               {(() => {
-                const portfolioImages = (
-                  Array.isArray(pro.portfolio_images) && pro.portfolio_images.length > 0
-                    ? pro.portfolio_images
-                    : Array.isArray(pro.samples)
-                    ? pro.samples.filter((s) => s?.image).map((s) => s.image)
-                    : []
-                ).filter(Boolean);
+                const portfolioList = Array.isArray(pro.portfolio_items) && pro.portfolio_items.length > 0
+                  ? pro.portfolio_items
+                  : Array.isArray(pro.portfolio)
+                  ? pro.portfolio
+                  : [];
 
-                const portfolioUrl = (pro.portfolio_url || pro.portfolio || "").trim();
+                const itemImages = portfolioList.flatMap((item) => {
+                  if (!item) return [];
+                  if (typeof item === "string" && (item.startsWith("data:") || item.startsWith("http") || item.startsWith("/"))) {
+                    return [item];
+                  }
+                  if (Array.isArray(item.images) && item.images.length > 0) {
+                    return item.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || "")).filter(Boolean);
+                  }
+                  if (item.image_data || item.url || item.src) {
+                    return [item.image_data || item.url || item.src];
+                  }
+                  return [];
+                });
+
+                const rawPortfolioImages = Array.isArray(pro.portfolio_images) ? pro.portfolio_images : [];
+                const sampleImages = Array.isArray(pro.samples)
+                  ? pro.samples.filter((s) => s?.image).map((s) => s.image)
+                  : [];
+
+                const portfolioImages = Array.from(
+                  new Set([...itemImages, ...rawPortfolioImages, ...sampleImages].filter(Boolean))
+                );
+
+                const portfolioUrl = (pro.portfolio_url || (typeof pro.portfolio === "string" ? pro.portfolio : "") || "").trim();
                 const isDummyDomain = (url) => {
                   if (!url) return true;
                   const lower = url.toLowerCase();

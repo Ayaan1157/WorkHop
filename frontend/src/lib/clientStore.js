@@ -307,9 +307,18 @@ export function saveSubmittedProfile(profile) {
         (p.id || p.freelancer_id) === targetId ||
         (profile.email && p.email && p.email.toLowerCase() === profile.email.toLowerCase())
     );
-    const prevEntry = existingIdx >= 0 ? list[existingIdx] : null;
     const normalized = {
       ...profile,
+      picture: profile.picture || profile.avatar_url || prevEntry?.picture || prevEntry?.avatar_url || undefined,
+      avatar_url: profile.avatar_url || profile.picture || prevEntry?.avatar_url || prevEntry?.picture || undefined,
+      portfolio_items: (Array.isArray(profile.portfolio_items) && profile.portfolio_items.length > 0)
+        ? profile.portfolio_items
+        : (Array.isArray(profile.portfolio) && profile.portfolio.length > 0)
+        ? profile.portfolio
+        : prevEntry?.portfolio_items || prevEntry?.portfolio || undefined,
+      portfolio_images: (Array.isArray(profile.portfolio_images) && profile.portfolio_images.length > 0)
+        ? profile.portfolio_images
+        : prevEntry?.portfolio_images || undefined,
       status: profile.status || prevEntry?.status || "pending",
       approved:
         profile.approved !== undefined
@@ -895,6 +904,49 @@ export function getLeadById(id) {
     });
   }
   if (!pro) return null;
+
+  try {
+    const cur = getStoredUser();
+    const own = getFreelancerProfile();
+    const curEmail = (cur?.email || "").toLowerCase().trim();
+    const curId = (cur?.id || "").toLowerCase().trim();
+    const proEmail = (pro.email || "").toLowerCase().trim();
+    const proId = (pro.id || pro.freelancer_id || "").toLowerCase().trim();
+    const isCurMatch =
+      (curEmail && (proEmail === curEmail || targetId.includes(curEmail.split("@")[0]))) ||
+      (curId && (proId === curId || targetId === curId || strippedTarget === curId));
+
+    if (isCurMatch) {
+      const ownItems = Array.isArray(own?.portfolio) && own.portfolio.length > 0 ? own.portfolio : pro.portfolio_items;
+      const ownImgs = Array.isArray(own?.portfolio_images) && own.portfolio_images.length > 0
+        ? own.portfolio_images
+        : (Array.isArray(ownItems)
+          ? ownItems.flatMap((it) => {
+              if (Array.isArray(it?.images) && it.images.length > 0) {
+                return it.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || ""));
+              }
+              return it?.image_data ? [it.image_data] : [];
+            }).filter(Boolean)
+          : []);
+
+      pro = {
+        ...pro,
+        name: cur?.name || pro.name,
+        picture: cur?.picture || cur?.avatar_url || pro.picture || pro.avatar_url || null,
+        avatar_url: cur?.avatar_url || cur?.picture || pro.avatar_url || pro.picture || null,
+        phone: cur?.phone || pro.phone,
+        area: cur?.area || own?.area || pro.area,
+        skill: own?.title || cur?.skill || pro.skill,
+        category: own?.category || cur?.category || pro.category,
+        rate_hr: Number(own?.rate_hr) > 0 ? Number(own.rate_hr) : pro.rate_hr,
+        intro: own?.description || pro.intro || pro.bio,
+        bio: own?.description || pro.bio || pro.intro,
+        languages: Array.isArray(own?.languages) && own.languages.length > 0 ? own.languages : pro.languages,
+        portfolio_items: ownItems || [],
+        portfolio_images: ownImgs.length > 0 ? ownImgs : (pro.portfolio_images || []),
+      };
+    }
+  } catch {}
 
   try {
     const rawRates = localStorage.getItem("workhop_pro_rates");
