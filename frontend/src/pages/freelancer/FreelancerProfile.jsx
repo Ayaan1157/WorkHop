@@ -1267,48 +1267,85 @@ export default function FreelancerProfile() {
                 </div>
 
                 {/* Rating & Performance Summary Banner */}
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-[#F9F9FB] dark:bg-[#161618] border border-[#e5e5e5] dark:border-[#252528] rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 font-black text-lg">
-                      ★
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-lg font-black text-ink dark:text-white">
-                          {(profile.work_history || []).length > 0
-                            ? ((profile.work_history || []).reduce((acc, curr) => acc + (Number(curr.rating) || 5), 0) / (profile.work_history || []).length).toFixed(1)
-                            : "5.0"}
-                        </span>
-                        <div className="flex text-amber-500 text-xs">
-                          {"★★★★★"}
+                {(() => {
+                  const historyList = profile.work_history || [];
+                  const completedCount = historyList.length;
+                  const avgRating =
+                    completedCount > 0
+                      ? (
+                          historyList.reduce((acc, curr) => acc + (Number(curr.rating) || 5), 0) /
+                          completedCount
+                        ).toFixed(1)
+                      : null;
+                  const successCount = historyList.filter((g) => (Number(g.rating) || 5) >= 4).length;
+                  const jobSuccessPct =
+                    completedCount > 0 ? `${Math.round((successCount / completedCount) * 100)}%` : "—";
+
+                  return (
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-[#F9F9FB] dark:bg-[#161618] border border-[#e5e5e5] dark:border-[#252528] rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-11 w-11 items-center justify-center rounded-lg font-black text-lg ${
+                            completedCount > 0
+                              ? "bg-amber-500/10 text-amber-500"
+                              : "bg-stone-200/60 dark:bg-stone-800 text-stone-400 dark:text-stone-500"
+                          }`}
+                        >
+                          ★
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm sm:text-base font-black text-ink dark:text-white">
+                              {avgRating ? avgRating : "No rating yet"}
+                            </span>
+                            {avgRating && (
+                              <div className="flex text-amber-500 text-xs">
+                                {"★".repeat(Math.max(1, Math.min(5, Math.round(Number(avgRating)))))}
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-inkmuted dark:text-[#888]">
+                            {completedCount > 0
+                              ? `Average Rating (${completedCount} ${completedCount === 1 ? "review" : "reviews"})`
+                              : "0 reviews"}
+                          </p>
                         </div>
                       </div>
-                      <p className="text-xs text-inkmuted dark:text-[#888]">
-                        Average Rating ({(profile.work_history || []).length} reviews)
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-3 border-t sm:border-t-0 sm:border-l border-[#e5e5e5] dark:border-[#252528] pt-2 sm:pt-0 sm:pl-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-ok/10 text-ok font-black">
-                      <ShieldCheck size={22} />
-                    </div>
-                    <div>
-                      <span className="text-lg font-black text-ink dark:text-white">100%</span>
-                      <p className="text-xs text-inkmuted dark:text-[#888]">Job Success Score</p>
-                    </div>
-                  </div>
+                      <div className="flex items-center gap-3 border-t sm:border-t-0 sm:border-l border-[#e5e5e5] dark:border-[#252528] pt-2 sm:pt-0 sm:pl-3">
+                        <div
+                          className={`flex h-11 w-11 items-center justify-center rounded-lg font-black ${
+                            completedCount > 0
+                              ? "bg-ok/10 text-ok"
+                              : "bg-stone-200/60 dark:bg-stone-800 text-stone-400 dark:text-stone-500"
+                          }`}
+                        >
+                          <ShieldCheck size={22} />
+                        </div>
+                        <div>
+                          <span className="text-sm sm:text-base font-black text-ink dark:text-white">
+                            {completedCount > 0 ? jobSuccessPct : "Not yet rated"}
+                          </span>
+                          <p className="text-xs text-inkmuted dark:text-[#888]">
+                            Job Success Score
+                          </p>
+                        </div>
+                      </div>
 
-                  <div className="flex items-center gap-3 border-t sm:border-t-0 sm:border-l border-[#e5e5e5] dark:border-[#252528] pt-2 sm:pt-0 sm:pl-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#E65A1E]/10 text-[#E65A1E] font-black">
-                      <Sparkles size={20} />
+                      <div className="flex items-center gap-3 border-t sm:border-t-0 sm:border-l border-[#e5e5e5] dark:border-[#252528] pt-2 sm:pt-0 sm:pl-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#E65A1E]/10 text-[#E65A1E] font-black">
+                          <Sparkles size={20} />
+                        </div>
+                        <div>
+                          <span className="text-sm font-black text-ink dark:text-white">
+                            {completedCount} Completed {completedCount === 1 ? "Gig" : "Gigs"}
+                          </span>
+                          <p className="text-xs text-inkmuted dark:text-[#888]">Verified WorkHop Deals</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-sm font-black text-ink dark:text-white">Verified Gigs</span>
-                      <p className="text-xs text-inkmuted dark:text-[#888]">Verified WorkHop Deals</p>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 {/* List of completed gigs & reviews */}
                 {gigNotice && (
