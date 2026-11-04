@@ -5,7 +5,7 @@ import {
   Globe, Tag, Briefcase, ExternalLink, MessageSquare, PlusCircle,
   ArrowRight, User, CheckCircle2, Lock, Phone, Image as ImageIcon, Sparkles
 } from "lucide-react";
-import { getOrCreateChatWithCandidate } from "@/lib/clientStore";
+import { getOrCreateChatWithCandidate, getSubmittedProfiles, getFreelancerProfile } from "@/lib/clientStore";
 import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
 
 function formatImageSrc(img) {
@@ -33,9 +33,19 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
 
   if (!isOpen || !pro) return null;
 
-  const avatarSrc = formatImageSrc(pro.picture || pro.avatar_url || "");
+  const targetKey = String(pro.id || "").toLowerCase().trim();
+  const strippedKey = targetKey.replace(/^pro-/, "");
+  const matchingSubmitted = getSubmittedProfiles().find((p) => {
+    const pId = String(p.id || p.freelancer_id || "").toLowerCase();
+    return pId === targetKey || pId.replace(/^pro-/, "") === strippedKey || (p.email && pro.email && p.email.toLowerCase() === pro.email.toLowerCase());
+  });
+  const ownProfile = getFreelancerProfile();
+  const isOwn = ownProfile && ((ownProfile.id && (ownProfile.id === pro.id || targetKey.includes(ownProfile.id))) || (ownProfile.email && pro.email && ownProfile.email.toLowerCase() === pro.email.toLowerCase()));
 
-  const languageLabels = (Array.isArray(pro.languages) ? pro.languages : [])
+  const resolvedPicture = pro.picture || pro.avatar_url || matchingSubmitted?.picture || matchingSubmitted?.avatar_url || (isOwn ? (ownProfile.picture || ownProfile.avatar_url) : null);
+  const avatarSrc = formatImageSrc(resolvedPicture || "");
+
+  const languageLabels = (Array.isArray(pro.languages) && pro.languages.length > 0 ? pro.languages : matchingSubmitted?.languages || (isOwn ? ownProfile?.languages : []) || [])
     .map((l) => {
       if (typeof l === "string") return l.trim();
       if (l && typeof l === "object" && l.language) {
@@ -48,8 +58,14 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
   const portfolioProjects = (
     Array.isArray(pro.portfolio_items) && pro.portfolio_items.length > 0
       ? pro.portfolio_items
-      : Array.isArray(pro.portfolio)
+      : Array.isArray(pro.portfolio) && pro.portfolio.length > 0
       ? pro.portfolio
+      : matchingSubmitted?.portfolio_items && matchingSubmitted.portfolio_items.length > 0
+      ? matchingSubmitted.portfolio_items
+      : matchingSubmitted?.portfolio && Array.isArray(matchingSubmitted.portfolio) && matchingSubmitted.portfolio.length > 0
+      ? matchingSubmitted.portfolio
+      : isOwn && Array.isArray(ownProfile?.portfolio) && ownProfile.portfolio.length > 0
+      ? ownProfile.portfolio
       : []
   ).filter((p) => p && typeof p === "object" && !p._workhop_meta);
 
@@ -198,8 +214,8 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
         {/* Scrollable Body Details */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           
-          {/* 4-Metric Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* 3-Metric Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div className="flex flex-col items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand/60 dark:bg-zinc-800/80 p-2 text-center">
               <span className="flex items-center gap-1 text-xs sm:text-sm font-black text-ink dark:text-white">
                 <Star size={12} className="fill-brand text-brand" />
@@ -226,16 +242,6 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
               </span>
               <span className="text-[9px] font-black tracking-wider text-inkmuted dark:text-zinc-400 uppercase mt-0.5">
                 Rate / Hour
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand/60 dark:bg-zinc-800/80 p-2 text-center">
-              <span className="flex items-center gap-1 text-xs sm:text-sm font-black text-ink dark:text-white">
-                <Clock size={12} className="text-brand" />
-                {pro.delivery_days || 1}d
-              </span>
-              <span className="text-[9px] font-black tracking-wider text-inkmuted dark:text-zinc-400 uppercase mt-0.5">
-                Turnaround
               </span>
             </div>
           </div>
@@ -314,11 +320,15 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
               }
               return p.image_data ? [p.image_data] : [];
             });
+            const submittedImages = Array.isArray(matchingSubmitted?.portfolio_images) ? matchingSubmitted.portfolio_images : [];
+            const ownImages = isOwn && Array.isArray(ownProfile?.portfolio_images) ? ownProfile.portfolio_images : [];
             const portfolioImages = Array.from(
               new Set(
                 [
                   ...projectImages,
                   ...(Array.isArray(pro.portfolio_images) ? pro.portfolio_images : []),
+                  ...submittedImages,
+                  ...ownImages,
                   ...(Array.isArray(pro.samples)
                     ? pro.samples.filter((s) => s?.image).map((s) => s.image)
                     : []),

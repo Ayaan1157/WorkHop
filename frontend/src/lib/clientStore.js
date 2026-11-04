@@ -307,18 +307,33 @@ export function saveSubmittedProfile(profile) {
         (p.id || p.freelancer_id) === targetId ||
         (profile.email && p.email && p.email.toLowerCase() === profile.email.toLowerCase())
     );
+    const prevEntry = existingIdx >= 0 ? list[existingIdx] : null;
+    const portfolioList = (Array.isArray(profile.portfolio_items) && profile.portfolio_items.length > 0)
+      ? profile.portfolio_items
+      : (Array.isArray(profile.portfolio) && profile.portfolio.length > 0)
+      ? profile.portfolio
+      : prevEntry?.portfolio_items || prevEntry?.portfolio || [];
+
+    const extractedImages = (Array.isArray(profile.portfolio_images) && profile.portfolio_images.length > 0)
+      ? profile.portfolio_images
+      : portfolioList.flatMap((item) => {
+          if (!item) return [];
+          if (typeof item === "string" && (item.startsWith("data:") || item.startsWith("http") || item.startsWith("/"))) return [item];
+          if (Array.isArray(item.images) && item.images.length > 0) {
+            return item.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || ""));
+          }
+          if (item.image_data || item.url || item.src) return [item.image_data || item.url || item.src];
+          return [];
+        }).filter(Boolean);
+
+    const finalPortfolioImages = extractedImages.length > 0 ? extractedImages : (prevEntry?.portfolio_images || []);
+
     const normalized = {
       ...profile,
       picture: profile.picture || profile.avatar_url || prevEntry?.picture || prevEntry?.avatar_url || undefined,
       avatar_url: profile.avatar_url || profile.picture || prevEntry?.avatar_url || prevEntry?.picture || undefined,
-      portfolio_items: (Array.isArray(profile.portfolio_items) && profile.portfolio_items.length > 0)
-        ? profile.portfolio_items
-        : (Array.isArray(profile.portfolio) && profile.portfolio.length > 0)
-        ? profile.portfolio
-        : prevEntry?.portfolio_items || prevEntry?.portfolio || undefined,
-      portfolio_images: (Array.isArray(profile.portfolio_images) && profile.portfolio_images.length > 0)
-        ? profile.portfolio_images
-        : prevEntry?.portfolio_images || undefined,
+      portfolio_items: portfolioList,
+      portfolio_images: finalPortfolioImages,
       status: profile.status || prevEntry?.status || "pending",
       approved:
         profile.approved !== undefined
@@ -2628,6 +2643,44 @@ export function saveFreelancerProfile(profile) {
   cleaned.search_tags = expandSkillKeywords(skillsToExpand, cleaned.category || cleaned.bucket || "Graphics & Design");
   cleaned.keywords = cleaned.search_tags;
   localStorage.setItem(FREELANCER_PROFILE_KEY, JSON.stringify(cleaned));
+
+  // Sync directly into submitted profiles so public / admin views pick up the updated images and portfolio immediately
+  try {
+    const user = getStoredUser();
+    const portfolioList = Array.isArray(cleaned.portfolio) ? cleaned.portfolio : [];
+    const extractedImages = portfolioList.flatMap((item) => {
+      if (!item) return [];
+      if (typeof item === "string" && (item.startsWith("data:") || item.startsWith("http") || item.startsWith("/"))) return [item];
+      if (Array.isArray(item.images) && item.images.length > 0) {
+        return item.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || ""));
+      }
+      if (item.image_data || item.url || item.src) return [item.image_data || item.url || item.src];
+      return [];
+    }).filter(Boolean);
+    const allImgs = Array.isArray(cleaned.portfolio_images) && cleaned.portfolio_images.length > 0
+      ? cleaned.portfolio_images
+      : extractedImages;
+
+    saveSubmittedProfile({
+      id: cleaned.id || cleaned.freelancer_id || user?.id,
+      freelancer_id: cleaned.freelancer_id || cleaned.id || user?.id,
+      email: cleaned.email || user?.email || "",
+      name: cleaned.name || user?.name || undefined,
+      picture: cleaned.picture || user?.picture || undefined,
+      avatar_url: cleaned.avatar_url || user?.avatar_url || cleaned.picture || user?.picture || undefined,
+      phone: cleaned.phone || user?.phone || undefined,
+      skill: cleaned.title || cleaned.skill || user?.skill || undefined,
+      category: cleaned.category || user?.category || undefined,
+      area: cleaned.area || user?.area || undefined,
+      rate_hr: Number(cleaned.rate_hr) || 0,
+      intro: cleaned.description || cleaned.intro || cleaned.bio || "",
+      bio: cleaned.description || cleaned.bio || cleaned.intro || "",
+      languages: Array.isArray(cleaned.languages) ? cleaned.languages : [],
+      portfolio_items: portfolioList,
+      portfolio_images: allImgs,
+    });
+  } catch {}
+
   return cleaned;
 }
 

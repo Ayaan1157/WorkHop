@@ -16,6 +16,7 @@ import {
   ADMIN_EMAILS,
   getLeadById,
   getSubmittedProfiles,
+  getFreelancerProfile,
   getRemoteFreelancers,
   saveRemoteFreelancers,
   getStoredReviews,
@@ -484,7 +485,7 @@ export default function Pro() {
             </div>
 
             {/* KEY METRICS ROW */}
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2 border-t-2 border-ink pt-4">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-2 border-t-2 border-ink pt-4">
               {[
                 {
                   n: pro.rating ? `★ ${pro.rating}` : "New Pro",
@@ -492,7 +493,6 @@ export default function Pro() {
                   icon: Star,
                 },
                 { n: `${pro.jobs_done || 0}`, l: "JOBS COMPLETED", icon: CheckCheck },
-                { n: `${pro.delivery_days || 3} Days`, l: "DELIVERY TIME", icon: Clock },
                 {
                   n: pro.rate_hr ? `₹${pro.rate_hr}/hr` : "Quote",
                   l: "HOURLY RATE (CLICK TO EDIT)",
@@ -555,10 +555,30 @@ export default function Pro() {
 
               {/* WORK SAMPLES & PORTFOLIO */}
               {(() => {
-                const portfolioList = Array.isArray(pro.portfolio_items) && pro.portfolio_items.length > 0
+                const targetKey = String(pro.id || id || "").toLowerCase().trim();
+                const strippedKey = targetKey.replace(/^pro-/, "");
+                const ownProfile = getFreelancerProfile();
+                const isMatchingLocalFreelancer = Boolean(
+                  user && (
+                    (user.id && (user.id === pro.id || user.id === id)) ||
+                    (user.email && pro.email && user.email.toLowerCase() === pro.email.toLowerCase()) ||
+                    (user.phone && pro.phone && user.phone.replace(/\D/g, "") === pro.phone.replace(/\D/g, ""))
+                  )
+                );
+
+                const matchingSubmitted = getSubmittedProfiles().find((p) => {
+                  const pId = String(p.id || p.freelancer_id || "").toLowerCase();
+                  return pId === targetKey || pId.replace(/^pro-/, "") === strippedKey || (p.email && pro.email && p.email.toLowerCase() === pro.email.toLowerCase());
+                });
+
+                const portfolioList = (Array.isArray(pro.portfolio_items) && pro.portfolio_items.length > 0)
                   ? pro.portfolio_items
-                  : Array.isArray(pro.portfolio)
+                  : (Array.isArray(pro.portfolio) && pro.portfolio.length > 0)
                   ? pro.portfolio
+                  : (matchingSubmitted?.portfolio_items && matchingSubmitted.portfolio_items.length > 0)
+                  ? matchingSubmitted.portfolio_items
+                  : (isMatchingLocalFreelancer && Array.isArray(ownProfile?.portfolio) && ownProfile.portfolio.length > 0)
+                  ? ownProfile.portfolio
                   : [];
 
                 const itemImages = portfolioList.flatMap((item) => {
@@ -576,12 +596,14 @@ export default function Pro() {
                 });
 
                 const rawPortfolioImages = Array.isArray(pro.portfolio_images) ? pro.portfolio_images : [];
+                const submittedImages = Array.isArray(matchingSubmitted?.portfolio_images) ? matchingSubmitted.portfolio_images : [];
+                const ownImages = isMatchingLocalFreelancer && Array.isArray(ownProfile?.portfolio_images) ? ownProfile.portfolio_images : [];
                 const sampleImages = Array.isArray(pro.samples)
                   ? pro.samples.filter((s) => s?.image).map((s) => s.image)
                   : [];
 
                 const portfolioImages = Array.from(
-                  new Set([...itemImages, ...rawPortfolioImages, ...sampleImages].filter(Boolean))
+                  new Set([...itemImages, ...rawPortfolioImages, ...submittedImages, ...ownImages, ...sampleImages].filter(Boolean))
                 );
 
                 const portfolioUrl = (pro.portfolio_url || (typeof pro.portfolio === "string" ? pro.portfolio : "") || "").trim();
