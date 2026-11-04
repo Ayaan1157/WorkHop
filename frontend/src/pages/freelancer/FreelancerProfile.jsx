@@ -192,8 +192,8 @@ export default function FreelancerProfile() {
           return;
         }
 
-        // 3. Optimize image for web performance
-        const res = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.85 });
+        // 3. Optimize image for web performance (max 1000px, 0.72 quality for instant cloud sync)
+        const res = await compressImage(file, { maxWidth: 1000, maxHeight: 1000, quality: 0.72 });
         if (res?.dataUrl) {
           newProcessed.push({
             id: uid(),

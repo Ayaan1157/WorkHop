@@ -138,8 +138,17 @@ async function fetchOrderPortfolio(orderId) {
     const o = await rzpRequest("GET", `/orders/${orderId}`);
     if (!o || !o.notes) return null;
     const { notes } = o;
-    if (notes.payload_json) {
-      const parsed = JSON.parse(notes.payload_json);
+    let rawJson = notes.payload_json;
+    if (!rawJson) {
+      const chunkKeys = Object.keys(notes)
+        .filter((k) => k.startsWith("c_"))
+        .sort((a, b) => Number(a.slice(2)) - Number(b.slice(2)));
+      if (chunkKeys.length > 0) {
+        rawJson = chunkKeys.map((k) => notes[k]).join("");
+      }
+    }
+    if (rawJson) {
+      const parsed = JSON.parse(rawJson);
       orderPortfolioCache[orderId] = parsed;
       return parsed;
     }
@@ -151,7 +160,6 @@ async function persistFreelancerPortfolioToCloud(email, portfolio, portfolioImag
   if (!email) return null;
   const cleanEmail = email.trim().toLowerCase();
   try {
-    // Compress/prune items to ensure they fit in Razorpay order payload
     const pruned = (portfolio || []).map((item) => {
       if (typeof item === "string") return item;
       if (!item || typeof item !== "object") return null;
@@ -167,26 +175,35 @@ async function persistFreelancerPortfolioToCloud(email, portfolio, portfolioImag
       };
     }).filter(Boolean);
 
-    const payload = JSON.stringify({
+    const fullPayload = JSON.stringify({
       portfolio: pruned,
       portfolio_images: portfolioImages || [],
     });
 
-    // 1. Create order storing portfolio payload
+    const notes = {
+      workhop_data: "portfolio",
+      owner_email: cleanEmail,
+    };
+
+    if (fullPayload.length < 3500) {
+      notes.payload_json = fullPayload;
+    } else {
+      const CHUNK_SIZE = 3500;
+      const maxChunks = 4; // up to 14KB
+      for (let i = 0; i < maxChunks && i * CHUNK_SIZE < fullPayload.length; i++) {
+        notes[`c_${i}`] = fullPayload.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+      }
+    }
+
     const orderRes = await rzpRequest("POST", "/orders", {
       amount: 100,
       currency: "INR",
-      notes: {
-        workhop_data: "portfolio",
-        owner_email: cleanEmail,
-        payload_json: payload,
-      },
+      notes,
     });
 
     if (orderRes?.id) {
       orderPortfolioCache[orderRes.id] = { portfolio: pruned, portfolio_images: portfolioImages || [] };
 
-      // 2. Link order to active Razorpay customer
       const custRes = await rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] }));
       const activeCust = (custRes?.items || []).find(
         (c) => (c.email || "").trim().toLowerCase() === cleanEmail && !c.email.startsWith("archived.") && !c.email.startsWith("deleted.")
