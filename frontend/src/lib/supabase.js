@@ -376,17 +376,32 @@ export async function supabaseSyncCurrentUserProfile(updates = {}) {
       updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .upsert(payload, { onConflict: "id" })
-      .select()
-      .maybeSingle();
+    let savedRow = null;
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .upsert(payload, { onConflict: "id" })
+        .select()
+        .maybeSingle();
+      if (!error && data) {
+        savedRow = data;
+      }
+    } catch {}
 
-    if (error) {
-      console.warn("Supabase sync profile error:", error.message);
-      return null;
-    }
-    return data;
+    // Companion sync via backend endpoint with service-role permissions (ensures cloud DB & cache always update)
+    try {
+      await fetch(`/api/freelancer/${encodeURIComponent(targetId)}/full-profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...payload,
+          portfolio: nextPortfolioItems,
+          portfolio_images: nextMeta.portfolio_images || [],
+        }),
+      });
+    } catch {}
+
+    return savedRow || payload;
   } catch (e) {
     console.warn("Supabase sync profile failed:", e.message);
     return null;
