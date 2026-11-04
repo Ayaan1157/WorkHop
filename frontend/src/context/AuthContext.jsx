@@ -333,6 +333,9 @@ export function AuthProvider({ children }) {
         try {
           saveRegisteredUser(next.email, "", next);
         } catch (_) {}
+        try {
+          apiPost("/users", next, false).catch(() => {});
+        } catch (_) {}
       }
       return next;
     });

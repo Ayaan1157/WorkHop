@@ -7,7 +7,7 @@ import {
   Code2, Loader2, Menu, MessagesSquare, Map as MapIcon,
   LayoutGrid, Tag, LifeBuoy, FileText, Shield, ChevronRight,
   LogOut, Wallet, ShieldCheck, Camera, Upload, Coins, Sparkles, History, ArrowUpRight, Building2, CheckCircle2,
-  AlertTriangle, ImageIcon, Bell
+  AlertTriangle, ImageIcon, Bell, Phone
 } from "lucide-react";
 import { Shell } from "@/components/kit";
 import EditModal from "@/components/EditModal";
@@ -16,16 +16,18 @@ import PushSettingsModal from "@/components/PushSettingsModal";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import { useAuth } from "@/context/AuthContext";
-import { apiGet, apiPut, getFreelancerId } from "@/lib/api";
+import { apiGet, apiPut, apiPost, getFreelancerId } from "@/lib/api";
 import {
   getFreelancerProfile,
   saveFreelancerProfile,
+  saveSubmittedProfile,
   getCreditsWallet,
   getCreditTransactions,
   getFreelancerStatuses,
   getStoredLeads,
   updateProHourlyRate,
 } from "@/lib/clientStore";
+import { BENGALURU_AREAS } from "@/lib/locationAreas";
 import {
   validateImageFile,
   compressImage,
@@ -42,6 +44,19 @@ const PROFICIENCY_LEVELS = [
   "Fluent",
   "Conversational",
   "Basic",
+];
+
+const SERVICE_CATEGORIES = [
+  "Design & Architecture",
+  "Graphics & Design",
+  "Programming & Tech",
+  "Digital Marketing",
+  "Video & Animation",
+  "AI & Smart Automations",
+  "Writing & Translation",
+  "Music & Audio",
+  "Business",
+  "Hyperlocal & Field",
 ];
 
 const SKILL_SUGGESTIONS = [
@@ -156,23 +171,106 @@ export default function FreelancerProfile() {
     }
   };
 
+  const syncFreelancerCoreDetails = ({
+    name,
+    picture,
+    phone,
+    area,
+    category,
+    skill,
+    description,
+    rateHr,
+  }) => {
+    const cleanPhone = phone !== undefined ? String(phone || "").replace(/\D/g, "").slice(-10) : (proPhone || user?.phone || "").replace(/\D/g, "").slice(-10);
+    const cleanSkill = skill !== undefined ? String(skill || "").trim() : (profile.title || proSkill || user?.skill || "").trim();
+    const cleanCategory = category !== undefined ? String(category || "").trim() : (profile.category || user?.category || "");
+    const cleanArea = area !== undefined ? String(area || "").trim() : (user?.area || localStorage.getItem("workhop_user_area") || "Indiranagar");
+    const cleanName = name !== undefined ? (String(name || "").trim() || user?.name || "WorkHop User") : (user?.name || "WorkHop User");
+    const cleanBio = description !== undefined ? String(description || "") : (profile.description || user?.bio || "");
+    const cleanRate = rateHr !== undefined ? (Number(rateHr) || 0) : (Number(profile.rate_hr) || 0);
+
+    if (cleanPhone) {
+      setProPhone(cleanPhone);
+      localStorage.setItem("workhop_pro_phone", cleanPhone);
+    }
+    if (cleanSkill) {
+      setProSkill(cleanSkill);
+      localStorage.setItem("workhop_pro_skill", cleanSkill);
+    }
+    if (cleanArea) {
+      localStorage.setItem("workhop_user_area", cleanArea);
+    }
+
+    const updatedSkillsList = cleanSkill && !profile.skills.includes(cleanSkill)
+      ? [cleanSkill, ...profile.skills]
+      : profile.skills;
+
+    const updatedProfile = {
+      ...profile,
+      title: cleanSkill || profile.title,
+      skill: cleanSkill || profile.skill,
+      category: cleanCategory || profile.category,
+      area: cleanArea,
+      phone: cleanPhone,
+      description: cleanBio,
+      rate_hr: cleanRate,
+      skills: updatedSkillsList,
+    };
+    persist(updatedProfile);
+
+    if (updateUserProfile) {
+      updateUserProfile({
+        name: cleanName,
+        picture: picture !== undefined ? (picture || null) : (user?.picture || null),
+        phone: cleanPhone || user?.phone || "",
+        area: cleanArea || user?.area || "Indiranagar",
+        category: cleanCategory || user?.category || "",
+        skill: cleanSkill || user?.skill || "",
+        bio: cleanBio,
+        rate_hr: cleanRate || user?.rate_hr || 500,
+      });
+    }
+
+    try {
+      saveSubmittedProfile({
+        id: freelancerId || user?.id || `pro-${(user?.email || cleanName).toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+        freelancer_id: freelancerId || user?.id,
+        name: cleanName,
+        email: user?.email || "",
+        phone: cleanPhone,
+        skill: cleanSkill,
+        category: cleanCategory || "Design & Architecture",
+        area: cleanArea || "Indiranagar",
+        rate_hr: cleanRate || 500,
+        intro: cleanBio,
+        picture: picture !== undefined ? (picture || null) : (user?.picture || null),
+        approved: proStatusObj?.approved,
+        status: proStatusObj?.status || "approved",
+      });
+    } catch (_) {}
+
+    if (freelancerId) {
+      apiPut(`/freelancer/${freelancerId}/profile`, {
+        name: cleanName,
+        phone: cleanPhone || null,
+        skill: cleanSkill || null,
+        category: cleanCategory || null,
+        area: cleanArea || null,
+      }).catch(() => {});
+    }
+  };
+
   const saveProDetails = async () => {
-    const digits = proPhone.replace(/\D/g, "");
+    const digits = proPhone.replace(/\D/g, "").slice(-10);
     if (digits.length !== 10) return setProSaveMsg({ ok: false, text: "Phone must be exactly 10 digits." });
     setProSaving(true);
     setProSaveMsg(null);
     try {
-      localStorage.setItem("workhop_pro_phone", digits);
-      if (proSkill) localStorage.setItem("workhop_pro_skill", proSkill);
-      if (freelancerId) {
-        await apiPut(`/freelancer/${freelancerId}/profile`, {
-          phone: digits,
-          skill: proSkill.trim() || null,
-        });
-        setProSaveMsg({ ok: true, text: "Saved pro details successfully!" });
-      } else {
-        setProSaveMsg({ ok: true, text: `Saved · phone set to +91 ${digits}` });
-      }
+      syncFreelancerCoreDetails({
+        phone: digits,
+        skill: proSkill.trim(),
+      });
+      setProSaveMsg({ ok: true, text: `Saved · phone set to +91 ${digits}` });
     } catch (e) {
       setProSaveMsg({ ok: false, text: e?.message || "Could not save." });
     } finally {
@@ -278,6 +376,17 @@ export default function FreelancerProfile() {
     setAvatarError(null);
   };
 
+  const openProfileInfoModal = () => {
+    openEdit("name", {
+      name: user?.name || "",
+      picture: user?.picture || "",
+      phone: (proPhone || user?.phone || "").replace(/\D/g, "").slice(-10),
+      area: user?.area || profile.area || localStorage.getItem("workhop_user_area") || "Indiranagar",
+      category: profile.category || user?.category || "Design & Architecture",
+      skill: profile.title || proSkill || user?.skill || "",
+    });
+  };
+
   const closeEdit = () => {
     setEditingSection(null);
     setEditData(null);
@@ -324,7 +433,10 @@ export default function FreelancerProfile() {
         if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
       } else if (editParam === "description" || editParam === "bio" || editParam === "title" || editParam === "skill") {
         openEdit("title", {
-          title: profile.title || user?.skill || "",
+          title: profile.title || proSkill || user?.skill || "",
+          category: profile.category || user?.category || "Design & Architecture",
+          phone: (proPhone || user?.phone || "").replace(/\D/g, "").slice(-10),
+          area: user?.area || profile.area || localStorage.getItem("workhop_user_area") || "Indiranagar",
           description: profile.description || "",
           rate_hr: profile.rate_hr || 500,
         });
@@ -341,10 +453,8 @@ export default function FreelancerProfile() {
         if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
       } else if (editParam === "linked") {
         openEdit("linked", { github_url: profile.github_url || "" });
-      } else if (editParam === "phone") {
-        setMenuDrawerOpen(true);
-      } else if (editParam === "name" || editParam === "photo") {
-        openEdit("name", { name: user?.name || "", picture: user?.picture || "" });
+      } else if (editParam === "phone" || editParam === "name" || editParam === "photo" || editParam === "contact") {
+        openProfileInfoModal();
       }
     }, 250);
     return () => clearTimeout(timer);
@@ -352,18 +462,27 @@ export default function FreelancerProfile() {
   }, [editParam]);
 
   /* ═══════════ save handlers ═══════════ */
-  const saveTitle = (title, description, rateHr) => {
-    persist({ ...profile, title, description, rate_hr: Number(rateHr) || 0 });
+  const saveTitle = (title, description, rateHr, category, phone, area) => {
+    syncFreelancerCoreDetails({
+      skill: title,
+      description,
+      rateHr,
+      category,
+      phone,
+      area,
+    });
     closeEdit();
   };
 
-  const saveName = (name, picture) => {
-    if (updateUserProfile) {
-      updateUserProfile({
-        name: (name || "").trim() || (user?.name || "WorkHop User"),
-        picture: picture !== undefined ? (picture || null) : (user?.picture || null),
-      });
-    }
+  const saveName = (name, picture, phone, area, category, skill) => {
+    syncFreelancerCoreDetails({
+      name,
+      picture,
+      phone,
+      area,
+      category,
+      skill,
+    });
     closeEdit();
   };
 
@@ -596,9 +715,9 @@ export default function FreelancerProfile() {
                   <div className="relative group mb-4">
                     <button
                       type="button"
-                      onClick={() => openEdit("name", { name: user?.name || "", picture: user?.picture || "" })}
+                      onClick={openProfileInfoModal}
                       className="relative block rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-[#E65A1E]/50"
-                      title="Click to edit profile photo & name"
+                      title="Click to edit profile photo, phone & details"
                       data-testid="avatar-edit-button"
                     >
                       {user?.picture ? (
@@ -619,18 +738,49 @@ export default function FreelancerProfile() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => openEdit("name", { name: user?.name || "", picture: user?.picture || "" })}
+                      onClick={openProfileInfoModal}
                       className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-[#E65A1E] flex items-center justify-center text-white shadow-lg hover:bg-[#D44F17] transition"
-                      title="Edit name and photo"
+                      title="Edit profile, phone number & category"
                       data-testid="avatar-pencil-button"
                     >
                       <Pencil size={12} />
                     </button>
                   </div>
                   <h2 className="text-lg font-bold text-ink dark:text-white">{displayName}</h2>
-                  <p className="text-sm text-inkmuted dark:text-[#888] mt-0.5">
-                    {user?.area || "Your Location"} · {user?.email || ""}
+                  {(profile.category || user?.category) && (
+                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#E65A1E]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#E65A1E]">
+                      {profile.category || user?.category}
+                    </span>
+                  )}
+                  <p className="text-xs text-inkmuted dark:text-[#888] mt-1.5 flex items-center justify-center gap-1 flex-wrap">
+                    <MapPin size={12} className="text-[#E65A1E] shrink-0" />
+                    <span>{user?.area || profile.area || "Bengaluru"}</span>
+                    {user?.email ? <span>· {user.email}</span> : null}
                   </p>
+                  {(proPhone || user?.phone) ? (
+                    <p className="text-xs font-semibold text-ink dark:text-stone-300 mt-1 flex items-center justify-center gap-1">
+                      <Phone size={12} className="text-[#E65A1E] shrink-0" />
+                      <span>+91 {(proPhone || user?.phone || "").replace(/\D/g, "").slice(-10)}</span>
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={openProfileInfoModal}
+                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
+                    >
+                      <Phone size={12} /> + Add your phone number
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={openProfileInfoModal}
+                    data-testid="edit-profile-contact-btn"
+                    className="mt-3.5 w-full flex items-center justify-center gap-1.5 rounded-lg border border-[#ddd] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#1a1a1a] hover:border-[#E65A1E] hover:text-[#E65A1E] px-3 py-2 text-xs font-bold text-ink dark:text-white transition"
+                  >
+                    <Pencil size={12} className="text-[#E65A1E]" />
+                    <span>Edit Profile, Phone &amp; Category</span>
+                  </button>
                 </div>
 
                 {/* Quick stats */}
@@ -837,7 +987,10 @@ export default function FreelancerProfile() {
                       <EditBtn
                         onClick={() =>
                           openEdit("title", {
-                            title: profile.title,
+                            title: profile.title || proSkill || user?.skill || "",
+                            category: profile.category || user?.category || "Design & Architecture",
+                            phone: (proPhone || user?.phone || "").replace(/\D/g, "").slice(-10),
+                            area: user?.area || profile.area || localStorage.getItem("workhop_user_area") || "Indiranagar",
                             description: profile.description,
                             rate_hr: profile.rate_hr,
                           })
@@ -1320,28 +1473,92 @@ export default function FreelancerProfile() {
       <EditModal
         isOpen={editingSection === "title"}
         onClose={closeEdit}
-        title="Edit Title, Rate & Description"
+        title="Edit Title, Category, Rate & Bio"
         onSave={() =>
           saveTitle(
             editData?.title,
             editData?.description,
-            editData?.rate_hr
+            editData?.rate_hr,
+            editData?.category,
+            editData?.phone,
+            editData?.area
           )
         }
         wide
       >
         <div className="flex flex-col gap-4">
-          <div>
-            <p className={labelCls}>Your Professional Title</p>
-            <input
-              value={editData?.title || ""}
-              onChange={(e) =>
-                setEditData((d) => ({ ...d, title: e.target.value }))
-              }
-              placeholder="e.g. Full Stack Developer | React & Node.js Expert"
-              className={inputCls}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className={labelCls}>Your Professional Title / Primary Skill</p>
+              <input
+                value={editData?.title || ""}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, title: e.target.value }))
+                }
+                placeholder="e.g. Architecture & Interior Design"
+                className={inputCls}
+                data-testid="edit-title-input"
+              />
+            </div>
+            <div>
+              <p className={labelCls}>Service Category / Discipline</p>
+              <select
+                value={editData?.category || "Design & Architecture"}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, category: e.target.value }))
+                }
+                className={inputCls}
+                data-testid="edit-category-select"
+              >
+                {SERVICE_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className={labelCls}>WhatsApp / Mobile Number (10 Digits)</p>
+              <div className="flex items-center border border-[#ddd] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#1a1a1a] px-3 py-2.5 rounded-lg focus-within:border-[#E65A1E]">
+                <span className="font-bold text-inkmuted dark:text-[#888] mr-2 text-sm">+91</span>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  value={editData?.phone || ""}
+                  onChange={(e) =>
+                    setEditData((d) => ({
+                      ...d,
+                      phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                    }))
+                  }
+                  placeholder="9876543210"
+                  className="w-full bg-transparent text-sm font-semibold text-ink dark:text-white outline-none"
+                  data-testid="edit-title-phone-input"
+                />
+              </div>
+            </div>
+            <div>
+              <p className={labelCls}>Bengaluru Area / Locality</p>
+              <select
+                value={editData?.area || "Indiranagar"}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, area: e.target.value }))
+                }
+                className={inputCls}
+                data-testid="edit-title-area-select"
+              >
+                {BENGALURU_AREAS.map((a) => (
+                  <option key={a.name} value={a.name}>
+                    {a.name} ({a.zone})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div>
             <p className={labelCls}>Hourly Rate (₹ INR / hr)</p>
             <div className="flex items-center border border-ink/20 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 rounded-lg">
@@ -1393,25 +1610,35 @@ export default function FreelancerProfile() {
                 setEditData((d) => ({ ...d, description: e.target.value }))
               }
               placeholder="Write about your experience, skills, and what makes you unique..."
-              rows={6}
+              rows={5}
               className={`${inputCls} resize-none`}
             />
           </div>
         </div>
       </EditModal>
 
-      {/* Name & Profile Photo */}
+      {/* Name, Phone, Location, Category & Profile Photo */}
       <EditModal
         isOpen={editingSection === "name"}
         onClose={closeEdit}
-        title="Edit Profile Info"
-        onSave={() => saveName(editData?.name, editData?.picture)}
+        title="Edit Profile, Contact & Category"
+        onSave={() =>
+          saveName(
+            editData?.name,
+            editData?.picture,
+            editData?.phone,
+            editData?.area,
+            editData?.category,
+            editData?.skill
+          )
+        }
+        wide
       >
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           {/* Avatar upload / preview */}
           <div>
             <p className={labelCls}>Profile Photo</p>
-            <div className="flex items-center gap-4 mt-2 p-3 bg-[#f9f9f9] dark:bg-[#0d0d0d] border border-[#ddd] dark:border-[#222] rounded-xl">
+            <div className="flex items-center gap-4 mt-1.5 p-3 bg-[#f9f9f9] dark:bg-[#0d0d0d] border border-[#ddd] dark:border-[#222] rounded-xl">
               <div className="relative shrink-0">
                 {editData?.picture ? (
                   <img
@@ -1488,16 +1715,124 @@ export default function FreelancerProfile() {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className={labelCls}>Full Name / Studio Name</p>
+              <input
+                value={editData?.name || ""}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, name: e.target.value }))
+                }
+                placeholder="Your full name or studio name"
+                className={inputCls}
+                data-testid="edit-profile-name-input"
+              />
+            </div>
+
+            <div>
+              <p className={labelCls}>WhatsApp / Mobile Number (10 Digits)</p>
+              <div className="flex items-center border border-[#ddd] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#1a1a1a] px-3 py-2.5 rounded-lg focus-within:border-[#E65A1E]">
+                <span className="font-bold text-inkmuted dark:text-[#888] mr-2 text-sm">+91</span>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  value={editData?.phone || ""}
+                  onChange={(e) =>
+                    setEditData((d) => ({
+                      ...d,
+                      phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                    }))
+                  }
+                  placeholder="9876543210"
+                  className="w-full bg-transparent text-sm font-semibold text-ink dark:text-white outline-none"
+                  data-testid="edit-profile-phone-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className={labelCls}>Bengaluru Area / Neighborhood</p>
+              <select
+                value={editData?.area || "Indiranagar"}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, area: e.target.value }))
+                }
+                className={inputCls}
+                data-testid="edit-profile-area-select"
+              >
+                {BENGALURU_AREAS.map((a) => (
+                  <option key={a.name} value={a.name}>
+                    {a.name} ({a.zone})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <p className={labelCls}>Service Category / Discipline</p>
+              <select
+                value={editData?.category || "Design & Architecture"}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, category: e.target.value }))
+                }
+                className={inputCls}
+                data-testid="edit-profile-category-select"
+              >
+                {SERVICE_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div>
-            <p className={labelCls}>Full Name</p>
+            <p className={labelCls}>Primary Skill / Specialization</p>
             <input
-              value={editData?.name || ""}
+              value={editData?.skill || ""}
               onChange={(e) =>
-                setEditData((d) => ({ ...d, name: e.target.value }))
+                setEditData((d) => ({ ...d, skill: e.target.value }))
               }
-              placeholder="Your full name"
+              placeholder="e.g. Architecture & Interior Design, UI/UX Design, Full Stack Dev"
               className={inputCls}
+              data-testid="edit-profile-skill-input"
             />
+            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+              {[
+                "Architecture & Interior Design",
+                "Interior Design",
+                "UI/UX Design",
+                "Web Development",
+                "Brand & Graphic Design",
+                "Video Editing & Motion",
+                "Digital Marketing",
+              ].map((s) => (
+                <button
+                  type="button"
+                  key={s}
+                  onClick={() =>
+                    setEditData((d) => ({
+                      ...d,
+                      skill: s,
+                      category:
+                        s.includes("Architecture") || s.includes("Design")
+                          ? "Design & Architecture"
+                          : d?.category,
+                    }))
+                  }
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded border transition ${
+                    editData?.skill === s
+                      ? "bg-[#E65A1E] text-white border-[#E65A1E]"
+                      : "bg-stone-100 dark:bg-stone-800 border-ink/20 text-ink dark:text-zinc-300 hover:border-[#E65A1E]"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </EditModal>

@@ -28,7 +28,7 @@ const inputCls = "w-full bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#ddd] dar
 
 export default function EmployerDashboard() {
   const nav = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUserProfile } = useAuth();
   const employerId = getEmployerId();
 
   const isAdmin = Boolean(
@@ -192,6 +192,18 @@ export default function EmployerDashboard() {
     localStorage.setItem("workhop_employer_industry", editForm.industry);
     localStorage.setItem("workhop_employer_bio", editForm.bio);
     localStorage.setItem("workhop_employer_gst", editForm.gstNumber ? editForm.gstNumber.trim().toUpperCase() : "");
+
+    if (updateUserProfile) {
+      updateUserProfile({
+        company_name: editForm.companyName,
+        name: editForm.employerName || user?.name,
+        area: editForm.area,
+        phone: editForm.phone,
+        hiring_for: editForm.industry,
+        bio: editForm.bio,
+        gst_number: editForm.gstNumber ? editForm.gstNumber.trim().toUpperCase() : "",
+      });
+    }
 
     setEditModalOpen(false);
   };
