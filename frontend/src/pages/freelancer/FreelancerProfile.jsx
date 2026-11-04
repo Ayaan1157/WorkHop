@@ -111,6 +111,29 @@ export default function FreelancerProfile() {
   const [isProcessingPortfolioImage, setIsProcessingPortfolioImage] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
   const [gigNotice, setGigNotice] = useState(null);
+  const [activeGallery, setActiveGallery] = useState(null);
+
+  const getItemImages = (item) => {
+    if (!item) return [];
+    if (Array.isArray(item.images) && item.images.length > 0) {
+      return item.images.filter((img) => img && (img.data || typeof img === "string")).map((img, i) =>
+        typeof img === "string"
+          ? { id: `img_${i}`, data: img, name: `image-${i + 1}.jpg`, size: "Optimized" }
+          : img
+      );
+    }
+    if (item.image_data) {
+      return [
+        {
+          id: "img_0",
+          data: item.image_data,
+          name: item.image_name || "portfolio-image.jpg",
+          size: item.image_size || "Optimized",
+        },
+      ];
+    }
+    return [];
+  };
 
   const handlePortfolioLinkChange = (value) => {
     setEditData((d) => ({ ...(d || {}), link: value }));
@@ -128,47 +151,100 @@ export default function FreelancerProfile() {
 
   const photoInputRef = useRef(null);
 
-  const handlePortfolioImageChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handlePortfolioImageChange = async (e, replaceIdx = null) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    // 1. Size & format validation (Max 5MB)
-    const validation = validateImageFile(file, MAX_PORTFOLIO_IMAGE_SIZE_MB);
-    if (!validation.valid) {
-      setPortfolioImageError(validation.error);
+    const existingImages = getItemImages(editData);
+    const maxImages = 10;
+    if (replaceIdx === null && existingImages.length + files.length > maxImages) {
+      setPortfolioImageError(`You can upload up to ${maxImages} images per project.`);
+      e.target.value = "";
       return;
+    }
+
+    // 1. Validate all selected files first (Max 5MB each)
+    for (const file of files) {
+      const validation = validateImageFile(file, MAX_PORTFOLIO_IMAGE_SIZE_MB);
+      if (!validation.valid) {
+        setPortfolioImageError(`${file.name}: ${validation.error}`);
+        e.target.value = "";
+        return;
+      }
     }
 
     setPortfolioImageError(null);
     setIsProcessingPortfolioImage(true);
 
     try {
-      // 2. Screen image for contact info (filename, metadata, and OCR)
-      const scanRes = await scanUploadFile(file);
-      if (scanRes?.hasViolations) {
-        const violationDetails = scanRes.violations.map((v) => v.label).join(", ");
-        setPortfolioImageError(
-          `Image contains prohibited contact details (${violationDetails}). Sharing phone numbers, emails, or personal contacts on portfolio items is not allowed.`
-        );
-        setIsProcessingPortfolioImage(false);
-        return;
+      const newProcessed = [];
+      for (const file of files) {
+        // 2. Screen image for contact info (filename, metadata, and OCR)
+        const scanRes = await scanUploadFile(file);
+        if (scanRes?.hasViolations) {
+          const violationDetails = scanRes.violations.map((v) => v.label).join(", ");
+          setPortfolioImageError(
+            `"${file.name}" contains prohibited contact details (${violationDetails}). Sharing phone numbers, emails, or personal contacts on portfolio items is not allowed.`
+          );
+          setIsProcessingPortfolioImage(false);
+          e.target.value = "";
+          return;
+        }
+
+        // 3. Optimize image for web performance
+        const res = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.85 });
+        if (res?.dataUrl) {
+          newProcessed.push({
+            id: uid(),
+            data: res.dataUrl,
+            name: file.name,
+            size: formatFileSize(file.size),
+          });
+        }
       }
 
-      // 3. Optimize image for web performance
-      const res = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.85 });
-      if (res?.dataUrl) {
-        setEditData((d) => ({
-          ...(d || {}),
-          image_data: res.dataUrl,
-          image_name: file.name,
-          image_size: formatFileSize(file.size),
-        }));
+      if (newProcessed.length > 0) {
+        setEditData((d) => {
+          const currentList = getItemImages(d);
+          let nextImages;
+          if (replaceIdx !== null && replaceIdx >= 0 && replaceIdx < currentList.length) {
+            nextImages = [...currentList];
+            nextImages[replaceIdx] = newProcessed[0];
+          } else {
+            nextImages = [...currentList, ...newProcessed].slice(0, maxImages);
+          }
+          const primary = nextImages[0] || null;
+          return {
+            ...(d || {}),
+            images: nextImages,
+            image_data: primary ? primary.data : null,
+            image_name: primary ? primary.name : null,
+            image_size: primary ? primary.size : null,
+          };
+        });
       }
     } catch {
-      setPortfolioImageError("Failed to process image. Please try another one.");
+      setPortfolioImageError("Failed to process image(s). Please try another file.");
     } finally {
       setIsProcessingPortfolioImage(false);
+      if (e?.target) e.target.value = "";
     }
+  };
+
+  const removePortfolioImageAt = (idx) => {
+    setPortfolioImageError(null);
+    setEditData((d) => {
+      const currentList = getItemImages(d);
+      const nextImages = currentList.filter((_, i) => i !== idx);
+      const primary = nextImages[0] || null;
+      return {
+        ...(d || {}),
+        images: nextImages,
+        image_data: primary ? primary.data : null,
+        image_name: primary ? primary.name : null,
+        image_size: primary ? primary.size : null,
+      };
+    });
   };
 
   const syncFreelancerCoreDetails = ({
@@ -560,13 +636,61 @@ export default function FreelancerProfile() {
     closeEdit();
   };
 
+  const syncPortfolioImagesToStore = (portfolioList) => {
+    const allImages = (portfolioList || []).flatMap((p) =>
+      getItemImages(p).map((img) => img.data)
+    ).filter(Boolean);
+    if (updateUserProfile) {
+      updateUserProfile({ portfolio_images: allImages });
+    }
+    try {
+      saveSubmittedProfile({
+        id: freelancerId || user?.id || `pro-${(user?.email || user?.name || "user").toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+        freelancer_id: freelancerId || user?.id,
+        name: user?.name || "WorkHop User",
+        email: user?.email || "",
+        phone: (proPhone || user?.phone || "").replace(/\D/g, "").slice(-10),
+        skill: profile.title || proSkill || user?.skill || "",
+        category: profile.category || user?.category || "Design & Architecture",
+        area: user?.area || profile.area || "Indiranagar",
+        rate_hr: profile.rate_hr || user?.rate_hr || 500,
+        intro: profile.description || user?.bio || "",
+        portfolio_images: allImages,
+        approved: proStatusObj?.approved,
+        status: proStatusObj?.status || "approved",
+      });
+    } catch (_) {}
+    return allImages;
+  };
+
   const addPortfolioItem = (item) => {
-    persist({ ...profile, portfolio: [...profile.portfolio, { ...item, id: uid() }] });
+    const imgs = getItemImages(item);
+    const primary = imgs[0] || null;
+    const normalizedItem = {
+      ...item,
+      id: item.id || uid(),
+      images: imgs,
+      image_data: primary ? primary.data : null,
+      image_name: primary ? primary.name : null,
+      image_size: primary ? primary.size : null,
+    };
+    const existingIdx = profile.portfolio.findIndex((p) => p.id === normalizedItem.id);
+    let updatedList;
+    if (existingIdx >= 0) {
+      updatedList = [...profile.portfolio];
+      updatedList[existingIdx] = normalizedItem;
+    } else {
+      updatedList = [...profile.portfolio, normalizedItem];
+    }
+    const allImages = syncPortfolioImagesToStore(updatedList);
+    persist({ ...profile, portfolio: updatedList, portfolio_images: allImages });
     closeEdit();
   };
 
   const deletePortfolioItem = (id) => {
-    persist({ ...profile, portfolio: profile.portfolio.filter((p) => p.id !== id) });
+    const updatedList = profile.portfolio.filter((p) => p.id !== id);
+    const allImages = syncPortfolioImagesToStore(updatedList);
+    persist({ ...profile, portfolio: updatedList, portfolio_images: allImages });
   };
 
   /* ═══════════ derived ═══════════ */
@@ -1022,65 +1146,106 @@ export default function FreelancerProfile() {
               <section id="portfolio-section" className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <SectionHeader
                   title="Portfolio"
-                  onAdd={() => openEdit("portfolio-add")}
+                  onAdd={() => openEdit("portfolio-add", { title: "", description: "", link: "", images: [] })}
                 />
                 {profile.portfolio.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
-                    {profile.portfolio.map((item) => (
-                      <div
-                        key={item.id}
-                        className="group relative bg-[#f0f0f0] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222] rounded-lg overflow-hidden aspect-[4/3]"
-                      >
-                        {item.image_data ? (
-                          <img
-                            src={
-                              item.image_data.startsWith("data:")
-                                ? item.image_data
-                                : `data:image/jpeg;base64,${item.image_data}`
+                    {profile.portfolio.map((item) => {
+                      const itemImages = getItemImages(item);
+                      const coverImg = itemImages[0]?.data || item.image_data;
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => {
+                            if (itemImages.length > 0) {
+                              setActiveGallery({
+                                title: item.title || "Portfolio Project",
+                                images: itemImages,
+                                index: 0,
+                              });
                             }
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-inkmuted dark:text-[#555] p-3 text-center bg-[#f7f7f7] dark:bg-[#1a1a1a]">
-                            <Code2 size={28} className="text-[#E65A1E]/70 mb-1" />
-                            <p className="text-xs font-bold text-ink dark:text-white line-clamp-1">{item.title}</p>
-                            {item.link && (
-                              <span className="text-[10px] text-inkmuted dark:text-[#888] truncate max-w-[90%] mt-0.5">
-                                {item.link.replace(/^https?:\/\//i, "")}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-3">
-                          <div className="flex-1 min-w-0 pr-2">
-                            <p className="text-sm font-semibold text-white truncate">
-                              {item.title}
-                            </p>
-                            {item.link && (
-                              <a
-                                href={item.link.startsWith("http") ? item.link : `https://${item.link}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF8547] hover:text-white hover:underline mt-0.5"
-                                title="Open verified project link"
+                          }}
+                          className={`group relative bg-[#f0f0f0] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222] rounded-lg overflow-hidden aspect-[4/3] ${
+                            itemImages.length > 0 ? "cursor-pointer" : ""
+                          }`}
+                        >
+                          {itemImages.length > 1 && (
+                            <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm border border-white/15 shadow-sm">
+                              <ImageIcon size={11} className="text-[#FF8547]" />
+                              {itemImages.length} Images
+                            </span>
+                          )}
+                          {coverImg ? (
+                            <img
+                              src={
+                                coverImg.startsWith("data:") || coverImg.startsWith("http")
+                                  ? coverImg
+                                  : `data:image/jpeg;base64,${coverImg}`
+                              }
+                              alt={item.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-inkmuted dark:text-[#555] p-3 text-center bg-[#f7f7f7] dark:bg-[#1a1a1a]">
+                              <Code2 size={28} className="text-[#E65A1E]/70 mb-1" />
+                              <p className="text-xs font-bold text-ink dark:text-white line-clamp-1">{item.title}</p>
+                              {item.link && (
+                                <span className="text-[10px] text-inkmuted dark:text-[#888] truncate max-w-[90%] mt-0.5">
+                                  {item.link.replace(/^https?:\/\//i, "")}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-3">
+                            <div className="flex-1 min-w-0 pr-2">
+                              <p className="text-sm font-semibold text-white truncate">
+                                {item.title}
+                              </p>
+                              {item.link && (
+                                <a
+                                  href={item.link.startsWith("http") ? item.link : `https://${item.link}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF8547] hover:text-white hover:underline mt-0.5"
+                                  title="Open verified project link"
+                                >
+                                  <span>View Project</span>
+                                  <ExternalLink size={11} />
+                                </a>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEdit("portfolio-add", {
+                                    ...item,
+                                    images: itemImages,
+                                  });
+                                }}
+                                className="h-7 w-7 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-[#E65A1E] transition"
+                                title="Edit project or add more images"
                               >
-                                <span>View Project</span>
-                                <ExternalLink size={11} />
-                              </a>
-                            )}
+                                <Pencil size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deletePortfolioItem(item.id);
+                                }}
+                                className="h-7 w-7 rounded-full bg-red-500/80 flex items-center justify-center text-white hover:bg-red-600 transition"
+                                title="Delete portfolio item"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
                           </div>
-                          <button
-                            onClick={() => deletePortfolioItem(item.id)}
-                            className="h-7 w-7 rounded-full bg-red-500/80 flex items-center justify-center text-white hover:bg-red-600 transition shrink-0"
-                            title="Delete portfolio item"
-                          >
-                            <Trash2 size={12} />
-                          </button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <EmptyState text="Showcase your best work — add portfolio items" />
@@ -2225,11 +2390,12 @@ export default function FreelancerProfile() {
         </div>
       </EditModal>
 
-      {/* Portfolio Add */}
+      {/* Portfolio Add / Edit */}
       <EditModal
         isOpen={editingSection === "portfolio-add"}
         onClose={closeEdit}
-        title="Add Portfolio Item"
+        title={editData?.id ? "Edit Portfolio Project" : "Add Portfolio Item"}
+        wide
         onSave={() => {
           if (!editData?.title?.trim()) {
             setPortfolioImageError("Please enter a project title.");
@@ -2283,7 +2449,7 @@ export default function FreelancerProfile() {
               onChange={(e) =>
                 setEditData((d) => ({ ...(d || {}), title: e.target.value }))
               }
-              placeholder="e.g. Brand Redesign"
+              placeholder="e.g. Brand Redesign / Architectural Elevation"
               className={inputCls}
             />
           </div>
@@ -2334,117 +2500,242 @@ export default function FreelancerProfile() {
             )}
           </div>
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className={labelCls}>Project Image</p>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FFF0E6] dark:bg-[#E65A1E]/20 text-[#E65A1E] border border-[#E65A1E]/30 shadow-xs">
-                Limit: 5 MB
-              </span>
-            </div>
-
-            {portfolioImageError && (
-              <div className="mb-3 flex items-start gap-2.5 p-3 bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs rounded-lg shadow-sm">
-                <AlertTriangle size={16} className="shrink-0 text-red-500 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-bold text-red-800 dark:text-red-200">Upload & Privacy Alert</p>
-                  <p className="mt-0.5">{portfolioImageError}</p>
-                </div>
-              </div>
-            )}
-
-            {editData?.image_data ? (
-              <div className="rounded-xl overflow-hidden border-2 border-[#ddd] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#1a1a1a] shadow-sm">
-                <div className="h-48 w-full flex items-center justify-center p-3 bg-black/5 dark:bg-black/40">
-                  <img
-                    src={editData.image_data}
-                    alt="Preview"
-                    className="max-h-full max-w-full object-contain rounded"
-                  />
-                </div>
-                <div className="p-3 bg-white dark:bg-[#1f1f1f] border-t border-[#eee] dark:border-[#333] flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-                      <span className="text-xs font-bold text-ink dark:text-white truncate max-w-[200px]">
-                        {editData.image_name || "portfolio-image.jpg"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                        {editData.image_size || "Optimized"}
-                      </span>
-                      <span className="text-[11px] text-inkmuted dark:text-[#777]">
-                        Within 5 MB limit
-                      </span>
-                    </div>
+            {(() => {
+              const currentImages = getItemImages(editData);
+              return (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className={labelCls}>
+                      Project Images ({currentImages.length}/10)
+                    </p>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FFF0E6] dark:bg-[#E65A1E]/20 text-[#E65A1E] border border-[#E65A1E]/30 shadow-xs">
+                      Up to 10 Images · Max 5 MB each
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <label className="px-3 py-1.5 text-xs font-bold text-[#E65A1E] bg-[#FFF0E6] dark:bg-[#E65A1E]/20 hover:bg-[#FFE0CE] border border-[#E65A1E]/30 rounded-lg cursor-pointer transition">
-                      Change
+
+                  {portfolioImageError && (
+                    <div className="mb-3 flex items-start gap-2.5 p-3 bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs rounded-lg shadow-sm">
+                      <AlertTriangle size={16} className="shrink-0 text-red-500 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-bold text-red-800 dark:text-red-200">Upload &amp; Privacy Alert</p>
+                        <p className="mt-0.5">{portfolioImageError}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {currentImages.length > 0 && (
+                    <div className="flex flex-col gap-3 mb-3">
+                      {currentImages.map((img, idx) => (
+                        <div
+                          key={img.id || idx}
+                          className="rounded-xl overflow-hidden border-2 border-[#ddd] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#1a1a1a] shadow-sm"
+                        >
+                          <div className="relative h-44 w-full flex items-center justify-center p-3 bg-black/5 dark:bg-black/40">
+                            {idx === 0 && (
+                              <span className="absolute top-2.5 left-2.5 rounded bg-[#E65A1E] px-2 py-0.5 text-[10px] font-black uppercase text-white shadow">
+                                Cover Image
+                              </span>
+                            )}
+                            <span className="absolute top-2.5 right-2.5 rounded bg-black/70 px-2 py-0.5 text-[10px] font-bold text-white">
+                              #{idx + 1} of {currentImages.length}
+                            </span>
+                            <img
+                              src={img.data}
+                              alt={img.name || `Image ${idx + 1}`}
+                              className="max-h-full max-w-full object-contain rounded"
+                            />
+                          </div>
+                          <div className="p-3 bg-white dark:bg-[#1f1f1f] border-t border-[#eee] dark:border-[#333] flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                                <span className="text-xs font-bold text-ink dark:text-white truncate max-w-[200px]">
+                                  {img.name || `portfolio-image-${idx + 1}.jpg`}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                  {img.size || "Optimized"}
+                                </span>
+                                <span className="text-[11px] text-inkmuted dark:text-[#777]">
+                                  Within 5 MB limit
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <label className="px-3 py-1.5 text-xs font-bold text-[#E65A1E] bg-[#FFF0E6] dark:bg-[#E65A1E]/20 hover:bg-[#FFE0CE] border border-[#E65A1E]/30 rounded-lg cursor-pointer transition">
+                                Change
+                                <input
+                                  type="file"
+                                  accept="image/png, image/jpeg, image/webp, image/gif"
+                                  className="hidden"
+                                  onChange={(e) => handlePortfolioImageChange(e, idx)}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => removePortfolioImageAt(idx)}
+                                className="px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {currentImages.length < 10 && (
+                    <label
+                      data-testid="add-more-portfolio-images-btn"
+                      className={`flex flex-col items-center justify-center ${
+                        currentImages.length > 0 ? "p-4" : "p-6"
+                      } border-2 border-dashed border-[#ccc] dark:border-[#3a3a3a] rounded-xl cursor-pointer hover:border-[#E65A1E] dark:hover:border-[#E65A1E] transition bg-[#fcfcfc] dark:bg-[#181818] hover:bg-[#FFF9F6] dark:hover:bg-[#201612] group`}
+                    >
+                      {isProcessingPortfolioImage ? (
+                        <div className="text-center flex flex-col items-center gap-2 py-2">
+                          <Loader2 size={24} className="animate-spin text-[#E65A1E]" />
+                          <p className="text-xs font-semibold text-ink dark:text-white">
+                            Optimizing project image(s)...
+                          </p>
+                          <p className="text-[11px] text-inkmuted dark:text-[#888]">
+                            Scaling for web performance
+                          </p>
+                        </div>
+                      ) : currentImages.length > 0 ? (
+                        <div className="flex items-center justify-center gap-2.5 text-sm font-bold text-[#E65A1E]">
+                          <div className="h-8 w-8 rounded-full bg-[#FFE5D6] dark:bg-[#E65A1E]/20 flex items-center justify-center">
+                            <Plus size={18} className="text-[#E65A1E]" />
+                          </div>
+                          <span>+ Add More Images ({10 - currentImages.length} remaining)</span>
+                        </div>
+                      ) : (
+                        <div className="text-center flex flex-col items-center">
+                          <div className="h-12 w-12 rounded-full bg-[#f0f0f0] dark:bg-[#262626] group-hover:bg-[#FFE5D6] dark:group-hover:bg-[#E65A1E]/30 flex items-center justify-center transition mb-3">
+                            <Upload size={22} className="text-inkmuted dark:text-[#888] group-hover:text-[#E65A1E] transition" />
+                          </div>
+                          <p className="text-sm font-bold text-ink dark:text-white">
+                            Click to upload project images (select 1 or more)
+                          </p>
+                          <div className="mt-2.5 flex items-center gap-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black bg-[#FFE5D6] dark:bg-[#E65A1E]/30 text-[#E65A1E] border border-[#E65A1E]/40 tracking-wider">
+                              UP TO 10 IMAGES · MAX 5 MB EACH
+                            </span>
+                            <span className="text-[11px] text-inkmuted dark:text-[#888]">
+                              JPG, PNG, WEBP, GIF
+                            </span>
+                          </div>
+                        </div>
+                      )}
                       <input
                         type="file"
+                        multiple
                         accept="image/png, image/jpeg, image/webp, image/gif"
                         className="hidden"
-                        onChange={handlePortfolioImageChange}
+                        onChange={(e) => handlePortfolioImageChange(e, null)}
                       />
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPortfolioImageError(null);
-                        setEditData((d) => ({
-                          ...(d || {}),
-                          image_data: null,
-                          image_name: null,
-                          image_size: null,
-                        }));
-                      }}
-                      className="px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#ccc] dark:border-[#3a3a3a] rounded-xl cursor-pointer hover:border-[#E65A1E] dark:hover:border-[#E65A1E] transition bg-[#fcfcfc] dark:bg-[#181818] hover:bg-[#FFF9F6] dark:hover:bg-[#201612] group">
-                {isProcessingPortfolioImage ? (
-                  <div className="text-center flex flex-col items-center gap-2 py-4">
-                    <Loader2 size={26} className="animate-spin text-[#E65A1E]" />
-                    <p className="text-xs font-semibold text-ink dark:text-white">Optimizing project image...</p>
-                    <p className="text-[11px] text-inkmuted dark:text-[#888]">Scaling for web performance</p>
-                  </div>
-                ) : (
-                  <div className="text-center flex flex-col items-center">
-                    <div className="h-12 w-12 rounded-full bg-[#f0f0f0] dark:bg-[#262626] group-hover:bg-[#FFE5D6] dark:group-hover:bg-[#E65A1E]/30 flex items-center justify-center transition mb-3">
-                      <Upload size={22} className="text-inkmuted dark:text-[#888] group-hover:text-[#E65A1E] transition" />
-                    </div>
-                    <p className="text-sm font-bold text-ink dark:text-white">
-                      Click to upload project image
-                    </p>
-                    <div className="mt-2.5 flex items-center gap-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black bg-[#FFE5D6] dark:bg-[#E65A1E]/30 text-[#E65A1E] border border-[#E65A1E]/40 tracking-wider">
-                        MAX 5 MB
-                      </span>
-                      <span className="text-[11px] text-inkmuted dark:text-[#888]">
-                        JPG, PNG, WEBP, GIF
-                      </span>
-                    </div>
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/png, image/jpeg, image/webp, image/gif"
-                  className="hidden"
-                  onChange={handlePortfolioImageChange}
-                />
-              </label>
-            )}
+                  )}
+                </>
+              );
+            })()}
             <p className="mt-2 text-[11px] text-inkmuted dark:text-[#777]">
-              Notice: Maximum upload limit is <strong>5 MB</strong> per project image. All text and files are screened to ensure no phone numbers or email addresses are shared.
+              Notice: You can upload up to <strong>10 images</strong> per project (maximum <strong>5 MB</strong> per image). All text and files are screened to ensure no phone numbers or email addresses are shared.
             </p>
           </div>
         </div>
       </EditModal>
+
+      {/* ═══════════ MULTI-IMAGE PORTFOLIO GALLERY LIGHTBOX ═══════════ */}
+      {activeGallery && Array.isArray(activeGallery.images) && activeGallery.images.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
+          onClick={() => setActiveGallery(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl bg-[#111] border border-[#333] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#262626]">
+              <div>
+                <h3 className="text-sm font-bold text-white">{activeGallery.title}</h3>
+                <p className="text-xs text-[#888]">
+                  Image {activeGallery.index + 1} of {activeGallery.images.length}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveGallery(null)}
+                className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="relative h-[55vh] sm:h-[65vh] bg-black flex items-center justify-center p-4">
+              <img
+                src={activeGallery.images[activeGallery.index]?.data}
+                alt={`${activeGallery.title} ${activeGallery.index + 1}`}
+                className="max-h-full max-w-full object-contain rounded"
+              />
+              {activeGallery.images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveGallery((g) => ({
+                        ...g,
+                        index: (g.index - 1 + g.images.length) % g.images.length,
+                      }))
+                    }
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/70 hover:bg-[#E65A1E] text-white flex items-center justify-center border border-white/20 transition"
+                    title="Previous image"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveGallery((g) => ({
+                        ...g,
+                        index: (g.index + 1) % g.images.length,
+                      }))
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/70 hover:bg-[#E65A1E] text-white flex items-center justify-center border border-white/20 transition"
+                    title="Next image"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {activeGallery.images.length > 1 && (
+              <div className="flex items-center gap-2 p-3 bg-[#161616] border-t border-[#262626] overflow-x-auto">
+                {activeGallery.images.map((img, i) => (
+                  <button
+                    key={img.id || i}
+                    type="button"
+                    onClick={() => setActiveGallery((g) => ({ ...g, index: i }))}
+                    className={`h-14 w-20 shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                      activeGallery.index === i
+                        ? "border-[#E65A1E] opacity-100"
+                        : "border-transparent opacity-50 hover:opacity-80"
+                    }`}
+                  >
+                    <img
+                      src={img.data}
+                      alt={`Thumb ${i + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ═══════════ TOP RIGHT SLIDE-OVER DRAWER MENU ═══════════ */}
       {menuDrawerOpen && (
