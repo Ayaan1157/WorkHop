@@ -129,6 +129,93 @@ function supabaseRequest(method, path, data = null, extraHeaders = {}) {
 const freelancerStatusOverrides = {};
 const freelancerRateOverrides = {};
 const freelancerProfileCache = {};
+const orderPortfolioCache = {};
+
+async function fetchOrderPortfolio(orderId) {
+  if (!orderId) return null;
+  if (orderPortfolioCache[orderId]) return orderPortfolioCache[orderId];
+  try {
+    const o = await rzpRequest("GET", `/orders/${orderId}`);
+    if (!o || !o.notes) return null;
+    const { notes } = o;
+    if (notes.payload_json) {
+      const parsed = JSON.parse(notes.payload_json);
+      orderPortfolioCache[orderId] = parsed;
+      return parsed;
+    }
+  } catch {}
+  return null;
+}
+
+async function persistFreelancerPortfolioToCloud(email, portfolio, portfolioImages) {
+  if (!email) return null;
+  const cleanEmail = email.trim().toLowerCase();
+  try {
+    // Compress/prune items to ensure they fit in Razorpay order payload
+    const pruned = (portfolio || []).map((item) => {
+      if (typeof item === "string") return item;
+      if (!item || typeof item !== "object") return null;
+      const images = (Array.isArray(item.images) ? item.images : [])
+        .map((img) => (typeof img === "string" ? img : img?.data || img?.url || img?.src || ""))
+        .filter(Boolean);
+      return {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        link: item.link || item.url || undefined,
+        images: images.length > 0 ? images : (item.image_data ? [item.image_data] : []),
+      };
+    }).filter(Boolean);
+
+    const payload = JSON.stringify({
+      portfolio: pruned,
+      portfolio_images: portfolioImages || [],
+    });
+
+    // 1. Create order storing portfolio payload
+    const orderRes = await rzpRequest("POST", "/orders", {
+      amount: 100,
+      currency: "INR",
+      notes: {
+        workhop_data: "portfolio",
+        owner_email: cleanEmail,
+        payload_json: payload,
+      },
+    });
+
+    if (orderRes?.id) {
+      orderPortfolioCache[orderRes.id] = { portfolio: pruned, portfolio_images: portfolioImages || [] };
+
+      // 2. Link order to active Razorpay customer
+      const custRes = await rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] }));
+      const activeCust = (custRes?.items || []).find(
+        (c) => (c.email || "").trim().toLowerCase() === cleanEmail && !c.email.startsWith("archived.") && !c.email.startsWith("deleted.")
+      );
+
+      if (activeCust) {
+        const cleanId = String(activeCust.id || "").replace(/[^a-zA-Z0-9]/g, "");
+        await rzpRequest("PUT", `/customers/${activeCust.id}`, {
+          name: "Deleted Account",
+          email: `archived.${cleanId}@workhop.in`,
+        }).catch(() => {});
+
+        await rzpRequest("POST", "/customers", {
+          name: activeCust.name,
+          email: activeCust.email,
+          contact: activeCust.contact,
+          notes: {
+            ...(activeCust.notes || {}),
+            portfolio_order: orderRes.id,
+          },
+        }).catch(() => {});
+      }
+      return orderRes.id;
+    }
+  } catch (e) {
+    console.warn("persistFreelancerPortfolioToCloud error", e);
+  }
+  return null;
+}
 
 const PLACEHOLDER_SKILLS = new Set([
   "freelancer pro",
@@ -408,6 +495,10 @@ module.exports = async function handler(req, res) {
           if (cleanEmail) freelancerRateOverrides[cleanEmail] = resolvedRate;
         }
 
+        if (cleanEmail && (portfolioList.length > 0 || extractedImgs.length > 0)) {
+          persistFreelancerPortfolioToCloud(cleanEmail, portfolioList, extractedImgs).catch(() => {});
+        }
+
         return res.status(200).json({
           ok: true,
           profile: updatedEntry,
@@ -544,6 +635,7 @@ module.exports = async function handler(req, res) {
 
     // Map customers by email or phone (customers are newest-first, so keep first match)
     const customerMap = {};
+    const orderPortfolioMap = {};
     for (const c of customers) {
       const em = (c.email || "").trim().toLowerCase();
       if (em && !em.startsWith("archived.") && !em.startsWith("deleted.") && !customerMap[em]) {
@@ -552,6 +644,19 @@ module.exports = async function handler(req, res) {
       const ph = (c.contact || "").replace(/\D/g, "");
       if (ph && !customerMap[ph]) customerMap[ph] = c;
     }
+
+    // Pre-fetch portfolios stored in Razorpay order notes for customers
+    const portfolioOrderPromises = Object.entries(customerMap).map(async ([em, c]) => {
+      const pOrderId = c?.notes?.portfolio_order;
+      if (pOrderId) {
+        const pData = await fetchOrderPortfolio(pOrderId);
+        if (pData) {
+          orderPortfolioMap[em] = pData;
+          if (c.contact) orderPortfolioMap[c.contact.replace(/\D/g, "")] = pData;
+        }
+      }
+    });
+    await Promise.all(portfolioOrderPromises);
 
     const paidFreelancers = [];
     const seenEmails = new Set();
@@ -641,14 +746,32 @@ module.exports = async function handler(req, res) {
           : notes.languages || []
       );
 
+      const orderPortfolio = (email && orderPortfolioMap[email]) || (phoneDigits && orderPortfolioMap[phoneDigits]) || null;
+      const orderItems = Array.isArray(orderPortfolio?.portfolio) ? orderPortfolio.portfolio : [];
+      const orderImages = Array.isArray(orderPortfolio?.portfolio_images) ? orderPortfolio.portfolio_images : [];
+
       const resolvedPortfolioItems =
         Array.isArray(cached?.portfolio) && cached.portfolio.length > 0
           ? cached.portfolio
+          : orderItems.length > 0
+          ? orderItems
           : sbUnpacked.portfolioItems;
+
+      const itemExtractedImages = orderItems.flatMap((it) => {
+        if (!it) return [];
+        if (typeof it === "string") return [it];
+        if (Array.isArray(it.images)) return it.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || ""));
+        if (it.image_data || it.url || it.src) return [it.image_data || it.url || it.src];
+        return [];
+      }).filter(Boolean);
 
       const resolvedPortfolioImages =
         Array.isArray(cached?.portfolio_images) && cached.portfolio_images.length > 0
           ? cached.portfolio_images
+          : orderImages.length > 0
+          ? orderImages
+          : itemExtractedImages.length > 0
+          ? itemExtractedImages
           : sbUnpacked.portfolioImages;
 
       const resolvedBio = isCobblestone
@@ -868,14 +991,32 @@ module.exports = async function handler(req, res) {
           : notes.languages || []
       );
 
+      const orderPortfolio = (email && orderPortfolioMap[email]) || (phoneDigits && orderPortfolioMap[phoneDigits]) || null;
+      const orderItems = Array.isArray(orderPortfolio?.portfolio) ? orderPortfolio.portfolio : [];
+      const orderImages = Array.isArray(orderPortfolio?.portfolio_images) ? orderPortfolio.portfolio_images : [];
+
       const resolvedPortfolioItems =
         Array.isArray(cached?.portfolio) && cached.portfolio.length > 0
           ? cached.portfolio
+          : orderItems.length > 0
+          ? orderItems
           : sbUnpacked.portfolioItems;
+
+      const itemExtractedImages = orderItems.flatMap((it) => {
+        if (!it) return [];
+        if (typeof it === "string") return [it];
+        if (Array.isArray(it.images)) return it.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || ""));
+        if (it.image_data || it.url || it.src) return [it.image_data || it.url || it.src];
+        return [];
+      }).filter(Boolean);
 
       const resolvedPortfolioImages =
         Array.isArray(cached?.portfolio_images) && cached.portfolio_images.length > 0
           ? cached.portfolio_images
+          : orderImages.length > 0
+          ? orderImages
+          : itemExtractedImages.length > 0
+          ? itemExtractedImages
           : sbUnpacked.portfolioImages;
 
       const resolvedRate = (() => {
