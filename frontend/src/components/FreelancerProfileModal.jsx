@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   X, ShieldCheck, MapPin, Star, IndianRupee, Clock, CheckCheck,
   Globe, Tag, Briefcase, ExternalLink, MessageSquare, PlusCircle,
-  ArrowRight, User, CheckCircle2, Lock, Phone, Image as ImageIcon, Sparkles
+  ArrowRight, User, CheckCircle2, Lock, Phone, Image as ImageIcon, Sparkles,
+  ChevronLeft, ChevronRight, Loader2
 } from "lucide-react";
 import { getOrCreateChatWithCandidate, getSubmittedProfiles, getFreelancerProfile } from "@/lib/clientStore";
 import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
@@ -28,8 +29,27 @@ function formatImageSrc(img) {
 
 export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
   const nav = useNavigate();
-  const [lightboxImage, setLightboxImage] = useState(null);
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [lightboxImages, setLightboxImages] = useState([]);
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const [brokenImages, setBrokenImages] = useState({});
+  const [loadingImages, setLoadingImages] = useState({});
+
+  // Keyboard navigation for lightbox
+  React.useEffect(() => {
+    if (lightboxIndex === null) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setLightboxIndex(null);
+      } else if (e.key === "ArrowLeft") {
+        setLightboxIndex((prev) => (prev > 0 ? prev - 1 : lightboxImages.length - 1));
+      } else if (e.key === "ArrowRight") {
+        setLightboxIndex((prev) => (prev < lightboxImages.length - 1 ? prev + 1 : 0));
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxIndex, lightboxImages.length]);
 
   if (!isOpen || !pro) return null;
 
@@ -390,24 +410,54 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
                 </div>
 
                 {portfolioImages.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                     {portfolioImages.map((img, idx) => {
                       const src = formatImageSrc(img);
+                      const isBroken = brokenImages[src];
+                      const isLoading = loadingImages[src] !== false;
+
                       return (
                         <div
                           key={idx}
-                          onClick={() => setLightboxImage(src)}
-                          className="group relative cursor-pointer border border-ink/30 dark:border-zinc-700 bg-sand dark:bg-zinc-800 overflow-hidden shadow-xs hover:border-brand transition"
+                          onClick={() => {
+                            if (!isBroken) {
+                              setLightboxImages(portfolioImages.map(formatImageSrc));
+                              setLightboxIndex(idx);
+                            }
+                          }}
+                          className={`group relative cursor-pointer border border-ink/30 dark:border-zinc-700 bg-sand dark:bg-zinc-800 overflow-hidden shadow-xs hover:border-brand transition rounded-sm ${
+                            isBroken ? "cursor-not-allowed opacity-80" : ""
+                          }`}
                         >
-                          <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100 dark:bg-zinc-900 flex items-center justify-center">
-                            <img
-                              src={src}
-                              alt={`Work sample ${idx + 1}`}
-                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                              loading="lazy"
-                            />
+                          <div className="aspect-[4/3] w-full overflow-hidden bg-stone-200 dark:bg-zinc-900 relative flex items-center justify-center">
+                            {isLoading && !isBroken && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-stone-100 dark:bg-zinc-800 animate-pulse">
+                                <Loader2 size={18} className="animate-spin text-inkmuted dark:text-zinc-500" />
+                              </div>
+                            )}
+
+                            {isBroken ? (
+                              <div className="flex flex-col items-center justify-center p-2 text-center text-inkmuted dark:text-zinc-500">
+                                <ImageIcon size={20} className="mb-1 opacity-60" />
+                                <span className="text-[9px] font-bold">Image Unavailable</span>
+                              </div>
+                            ) : (
+                              <img
+                                src={src}
+                                alt={`Work sample ${idx + 1}`}
+                                onLoad={() => setLoadingImages((prev) => ({ ...prev, [src]: false }))}
+                                onError={() => {
+                                  setLoadingImages((prev) => ({ ...prev, [src]: false }));
+                                  setBrokenImages((prev) => ({ ...prev, [src]: true }));
+                                }}
+                                className={`h-full w-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+                                  isLoading ? "opacity-0" : "opacity-100"
+                                }`}
+                                loading="lazy"
+                              />
+                            )}
                           </div>
-                          <div className="p-1.5 bg-white dark:bg-zinc-800 text-[9px] font-black text-ink dark:text-zinc-200 flex items-center justify-between">
+                          <div className="p-1.5 bg-white dark:bg-zinc-800 text-[9px] font-black text-ink dark:text-zinc-200 flex items-center justify-between border-t border-ink/10 dark:border-zinc-700">
                             <span>Sample #{idx + 1}</span>
                             <Sparkles size={9} className="text-brand" />
                           </div>
@@ -416,11 +466,11 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
                     })}
                   </div>
                 ) : (
-                  <div className="border border-dashed border-ink/30 dark:border-zinc-700 bg-sand/30 dark:bg-zinc-900/50 p-4 text-center">
-                    <ImageIcon size={22} className="mx-auto text-inkmuted mb-1 opacity-70" />
-                    <p className="text-[11px] font-bold text-ink dark:text-zinc-300">No image samples uploaded directly.</p>
+                  <div className="border border-dashed border-ink/30 dark:border-zinc-700 bg-sand/30 dark:bg-zinc-900/50 p-5 text-center rounded-sm">
+                    <ImageIcon size={24} className="mx-auto text-inkmuted dark:text-zinc-400 mb-1.5 opacity-70" />
+                    <p className="text-[11px] font-bold text-ink dark:text-zinc-200">No portfolio images uploaded</p>
                     {validPortfolioLink && (
-                      <p className="text-[10px] text-brand font-medium mt-0.5">
+                      <p className="text-[10px] text-brand font-medium mt-1">
                         Projects can be viewed via the external portfolio link above.
                       </p>
                     )}
@@ -509,33 +559,73 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
       </div>
 
       {/* LIGHTBOX PREVIEW MODAL */}
-      {lightboxImage && (
+      {lightboxIndex !== null && lightboxImages[lightboxIndex] && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in"
-          onClick={() => setLightboxImage(null)}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-3 sm:p-5 backdrop-blur-md animate-in fade-in select-none"
+          onClick={() => setLightboxIndex(null)}
         >
           <div
-            className="relative max-w-3xl max-h-[90vh] w-full bg-white dark:bg-zinc-900 border-2 border-ink dark:border-zinc-700 p-3 shadow-[8px_8px_0px_#121212] flex flex-col"
+            className="relative max-w-4xl max-h-[92vh] w-full bg-white dark:bg-zinc-950 border-2 border-ink dark:border-zinc-700 p-3 sm:p-4 shadow-[8px_8px_0px_#121212] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-2 mb-2 border-b-2 border-ink dark:border-zinc-700">
+            {/* Lightbox Header */}
+            <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b-2 border-ink dark:border-zinc-700">
               <span className="text-xs font-black uppercase text-ink dark:text-white flex items-center gap-1.5">
-                <ImageIcon size={14} className="text-brand" /> Work Sample Preview
+                <ImageIcon size={14} className="text-brand" /> Work Sample {lightboxIndex + 1} of {lightboxImages.length}
               </span>
               <button
                 type="button"
-                onClick={() => setLightboxImage(null)}
-                className="flex h-7 w-7 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 hover:bg-brand hover:text-white font-black text-xs transition"
+                onClick={() => setLightboxIndex(null)}
+                className="flex h-7 w-7 items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-zinc-800 hover:bg-brand hover:text-white font-black text-xs transition cursor-pointer"
+                title="Close (Esc)"
               >
                 ✕
               </button>
             </div>
-            <div className="overflow-auto flex-1 flex items-center justify-center p-1 bg-stone-50 dark:bg-zinc-950 border border-ink/20 dark:border-zinc-800">
+
+            {/* Lightbox Main Image & Navigation */}
+            <div className="relative overflow-hidden flex-1 flex items-center justify-center p-2 bg-stone-900/40 dark:bg-zinc-900 border border-ink/20 dark:border-zinc-800 min-h-[300px]">
               <img
-                src={lightboxImage}
-                alt="Enlarged work sample"
-                className="max-h-[70vh] w-auto max-w-full object-contain"
+                src={lightboxImages[lightboxIndex]}
+                alt={`Work sample ${lightboxIndex + 1}`}
+                className="max-h-[70vh] w-auto max-w-full object-contain select-none"
               />
+
+              {/* Prev Button */}
+              {lightboxImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex((prev) => (prev > 0 ? prev - 1 : lightboxImages.length - 1));
+                  }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center border-2 border-ink dark:border-zinc-600 bg-white/95 dark:bg-zinc-800 text-ink dark:text-white hover:bg-brand hover:text-white transition shadow-[2px_2px_0px_#121212] cursor-pointer"
+                  title="Previous (Left Arrow)"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+              )}
+
+              {/* Next Button */}
+              {lightboxImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex((prev) => (prev < lightboxImages.length - 1 ? prev + 1 : 0));
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center border-2 border-ink dark:border-zinc-600 bg-white/95 dark:bg-zinc-800 text-ink dark:text-white hover:bg-brand hover:text-white transition shadow-[2px_2px_0px_#121212] cursor-pointer"
+                  title="Next (Right Arrow)"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              )}
+            </div>
+
+            {/* Lightbox Footer Bar */}
+            <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-ink/20 dark:border-zinc-800 text-[10px] text-inkmuted dark:text-zinc-400">
+              <span>Use arrow keys to navigate · Esc to close</span>
+              <span className="font-bold text-ink dark:text-zinc-200">{lightboxIndex + 1} / {lightboxImages.length}</span>
             </div>
           </div>
         </div>

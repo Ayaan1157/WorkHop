@@ -21,6 +21,36 @@ export const isSupabaseConfigured = () => {
   return Boolean(SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.length > 20);
 };
 
+export async function supabaseUploadPortfolioImage(file, userId = "anonymous") {
+  if (!isSupabaseConfigured() || !file) return null;
+  try {
+    const fileExt = file.name ? file.name.split(".").pop().toLowerCase() : "jpg";
+    const cleanExt = ["jpg", "jpeg", "png", "webp", "gif", "svg"].includes(fileExt) ? fileExt : "jpg";
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${cleanExt}`;
+    const safeUserId = String(userId || "anonymous").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const filePath = `${safeUserId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("portfolios")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.warn("Supabase storage upload error:", uploadError.message);
+      return null;
+    }
+
+    const { data } = supabase.storage.from("portfolios").getPublicUrl(filePath);
+    return data?.publicUrl || null;
+  } catch (err) {
+    console.warn("supabaseUploadPortfolioImage failed:", err.message);
+    return null;
+  }
+}
+
+
 // Initialize Supabase Client
 export const supabase = createClient(
   SUPABASE_URL,

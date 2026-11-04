@@ -17,7 +17,7 @@ import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, apiPost, getFreelancerId } from "@/lib/api";
-import { supabaseSyncCurrentUserProfile } from "@/lib/supabase";
+import { supabaseSyncCurrentUserProfile, supabaseUploadPortfolioImage } from "@/lib/supabase";
 import {
   getFreelancerProfile,
   saveFreelancerProfile,
@@ -192,12 +192,20 @@ export default function FreelancerProfile() {
           return;
         }
 
-        // 3. Optimize image for web performance (max 1000px, 0.72 quality for instant cloud sync)
+        // 3. Try uploading directly to Supabase Storage first for fast cloud CDN URL
+        let publicUrl = null;
+        try {
+          publicUrl = await supabaseUploadPortfolioImage(file, freelancerId || user?.id);
+        } catch {}
+
+        // 4. Optimize image for web performance (max 1000px, 0.72 quality for instant local preview/fallback)
         const res = await compressImage(file, { maxWidth: 1000, maxHeight: 1000, quality: 0.72 });
-        if (res?.dataUrl) {
+        const finalData = publicUrl || res?.dataUrl;
+        if (finalData) {
           newProcessed.push({
             id: uid(),
-            data: res.dataUrl,
+            data: finalData,
+            url: publicUrl || finalData,
             name: file.name,
             size: formatFileSize(file.size),
           });

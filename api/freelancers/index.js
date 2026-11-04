@@ -516,6 +516,35 @@ module.exports = async function handler(req, res) {
           persistFreelancerPortfolioToCloud(cleanEmail, portfolioList, extractedImgs).catch(() => {});
         }
 
+        // Also sync directly to Supabase profiles table
+        if (cleanEmail) {
+          const packedSupabasePortfolio = [
+            ...portfolioList,
+            {
+              _workhop_meta: true,
+              portfolio_images: extractedImgs,
+              rate_hr: resolvedRate,
+              skills: updatedEntry.skills || [],
+              category: updatedEntry.category || "",
+            },
+          ];
+          supabaseRequest(
+            "PATCH",
+            `/rest/v1/profiles?email=ilike.${encodeURIComponent(cleanEmail)}`,
+            {
+              portfolio: packedSupabasePortfolio,
+              updated_at: new Date().toISOString(),
+              ...(updatedEntry.name ? { name: updatedEntry.name } : {}),
+              ...(updatedEntry.phone ? { phone: updatedEntry.phone } : {}),
+              ...(resolvedSkill ? { skill: resolvedSkill } : {}),
+              ...(updatedEntry.category ? { category: updatedEntry.category } : {}),
+              ...(updatedEntry.area ? { area: updatedEntry.area } : {}),
+              ...(updatedEntry.bio ? { bio: updatedEntry.bio } : {}),
+            },
+            { Prefer: "return=minimal" }
+          ).catch(() => {});
+        }
+
         return res.status(200).json({
           ok: true,
           profile: updatedEntry,
