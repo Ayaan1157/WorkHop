@@ -17,6 +17,7 @@ import RecaptchaWidget from "@/components/RecaptchaWidget";
 import AdminChatsTab from "@/components/AdminChatsTab";
 import CityWaitlistTab from "@/components/CityWaitlistTab";
 import { checkRateLimit, resetRateLimit } from "@/lib/security";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import {
   calculateHopsForJob,
   getEmployerHops,
@@ -5232,6 +5233,10 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
 
 export default function Admin() {
   const nav = useNavigate();
+  usePageMeta({
+    title: "Admin Command Center · WorkHop",
+    description: "WorkHop Executive Command Center & Administration Portal",
+  });
   const { user, loading: authLoading, adminLogin, logout } = useAuth();
   const [tab, setTab] = useState("CREDITS");
   const [overview, setOverview] = useState(null);
