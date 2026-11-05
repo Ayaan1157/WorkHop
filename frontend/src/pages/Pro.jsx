@@ -64,6 +64,7 @@ export default function Pro() {
   const [coupon, setCoupon] = useState(null);
   const [activeTab, setActiveTab] = useState("overview"); // overview | reviews | skills | history
   const [lightboxImage, setLightboxImage] = useState(null);
+  const [brokenImages, setBrokenImages] = useState({});
   const { startPayment } = useRazorpay();
 
   usePageMeta({
@@ -686,28 +687,41 @@ export default function Pro() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-1">
                         {portfolioImages.map((img, i) => {
                           const src = formatImageSrc(img);
+                          const isBroken = brokenImages[src];
                           return (
                             <div
                               key={i}
-                              onClick={() => setLightboxImage(src)}
-                              className="group relative cursor-pointer border-2 border-ink bg-sand overflow-hidden shadow-[2px_2px_0px_#121212] hover:shadow-[4px_4px_0px_#121212] transition"
+                              onClick={() => !isBroken && setLightboxImage(src)}
+                              className={`group relative cursor-pointer border-2 border-ink bg-sand overflow-hidden shadow-[2px_2px_0px_#121212] hover:shadow-[4px_4px_0px_#121212] transition ${
+                                isBroken ? "cursor-not-allowed opacity-80" : ""
+                              }`}
                             >
-                              <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100 flex items-center justify-center">
-                                <img
-                                  src={src}
-                                  alt={`Work sample ${i + 1}`}
-                                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                  loading="lazy"
-                                />
+                              <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
+                                {isBroken ? (
+                                  <div className="flex flex-col items-center justify-center p-3 text-center text-inkmuted">
+                                    <ImageIcon size={24} className="mb-1 text-inkmuted opacity-60" />
+                                    <span className="text-[10px] font-black uppercase">Image Pending</span>
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={src}
+                                    alt={`Work sample ${i + 1}`}
+                                    onError={() => setBrokenImages((prev) => ({ ...prev, [src]: true }))}
+                                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    loading="lazy"
+                                  />
+                                )}
                               </div>
                               <div className="p-2 border-t border-ink bg-white flex items-center justify-between">
                                 <span className="text-[10px] font-black text-ink uppercase">
                                   Sample #{i + 1}
                                 </span>
-                                <span className="text-[9px] font-bold text-brand flex items-center gap-1">
-                                  <span>Click to enlarge</span>
-                                  <Sparkles size={10} />
-                                </span>
+                                {!isBroken && (
+                                  <span className="text-[9px] font-bold text-brand flex items-center gap-1">
+                                    <span>Click to enlarge</span>
+                                    <Sparkles size={10} />
+                                  </span>
+                                )}
                               </div>
                             </div>
                           );

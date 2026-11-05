@@ -79,10 +79,11 @@ export async function supabaseUploadPortfolioImage(file, userId = "anonymous", d
         if (data?.publicUrl) return data.publicUrl;
       }
     }
-    return null;
+    // 4. Guaranteed fallback: return base64 dataUrl so the image is never lost
+    return dataUrl || null;
   } catch (err) {
     console.warn("supabaseUploadPortfolioImage failed:", err.message);
-    return null;
+    return dataUrl || null;
   }
 }
 

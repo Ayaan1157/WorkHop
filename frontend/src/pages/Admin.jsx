@@ -2566,6 +2566,9 @@ function ProsTalentTab({ adminFetch }) {
               ...p,
               skill: cleanedSkill,
               category: cleanedCategory,
+              intro: userSavedBio || p.intro || p.bio || "",
+              bio: userSavedBio || p.bio || p.intro || "",
+              portfolio_images: userSavedImages || p.portfolio_images || [],
             };
 
         const st = localStatuses[pid] || localStatuses[p.id] || localStatuses[p.freelancer_id];
