@@ -2547,12 +2547,20 @@ function ProsTalentTab({ adminFetch }) {
           ? (p.category || "")
           : (cleanedSkill ? (p.category || "") : "");
 
+        const userSavedSkills =
+          (Array.isArray(p.skills) && p.skills.length > 0 ? p.skills : null) ||
+          (Array.isArray(p.keywords) && p.keywords.length > 0 ? p.keywords : null) ||
+          (isCurrentCobblestoneUser && Array.isArray(ownProfile.skills) && ownProfile.skills.length > 0 ? ownProfile.skills : null) ||
+          (cleanedSkill ? [cleanedSkill] : []);
+
         const normalized = isCobblestone
           ? {
               ...p,
               name: p.name || "Cobblestone Designs",
               full_name: p.full_name || "Cobblestone Designs",
               skill: cleanedSkill,
+              skills: userSavedSkills,
+              keywords: userSavedSkills,
               category: cleanedCategory,
               intro:
                 userSavedBio ||
@@ -2565,6 +2573,8 @@ function ProsTalentTab({ adminFetch }) {
           : {
               ...p,
               skill: cleanedSkill,
+              skills: userSavedSkills,
+              keywords: userSavedSkills,
               category: cleanedCategory,
               intro: userSavedBio || p.intro || p.bio || "",
               bio: userSavedBio || p.bio || p.intro || "",

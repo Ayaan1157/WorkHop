@@ -898,26 +898,55 @@ export default function Pro() {
           {activeTab === "skills" && (
             <div className="flex flex-col gap-4 animate-in fade-in duration-150">
               {/* SKILLS CHIPS */}
-              <div className="border-2 border-ink bg-white p-4">
-                <h2 className="text-[11px] font-black tracking-[0.15em] text-ink mb-3">
-                  PRIMARY SKILLS &amp; KEYWORDS
-                </h2>
-                <div className="flex flex-wrap gap-2">
-                  <span className="border-2 border-ink bg-brand px-3 py-1 text-xs font-black text-white">
-                    {pro.skill}
-                  </span>
-                  {(pro.keywords || ["Graphic Design", "Logo Creation", "Social Media", "Brand Kit", "Illustrator"]).map(
-                    (k) => (
-                      <span
-                        key={k}
-                        className="border-2 border-ink bg-sand px-2.5 py-1 text-xs font-bold text-ink"
-                      >
-                        {k}
-                      </span>
-                    ),
-                  )}
-                </div>
-              </div>
+              {(() => {
+                const targetKey = String(pro.id || id || "").toLowerCase().trim();
+                const strippedKey = targetKey.replace(/^pro-/, "");
+                const ownProfile = getFreelancerProfile();
+                const isMatchingLocalFreelancer = Boolean(
+                  user && (
+                    (user.id && (user.id === pro.id || user.id === id)) ||
+                    (user.email && pro.email && user.email.toLowerCase() === pro.email.toLowerCase()) ||
+                    (user.phone && pro.phone && user.phone.replace(/\D/g, "") === pro.phone.replace(/\D/g, ""))
+                  )
+                );
+                const matchingSubmitted = getSubmittedProfiles().find((p) => {
+                  const pId = String(p.id || p.freelancer_id || "").toLowerCase();
+                  return pId === targetKey || pId.replace(/^pro-/, "") === strippedKey || (p.email && pro.email && p.email.toLowerCase() === pro.email.toLowerCase());
+                });
+
+                const rawSkills =
+                  (Array.isArray(pro.skills) && pro.skills.length > 0 ? pro.skills : null) ||
+                  (Array.isArray(matchingSubmitted?.skills) && matchingSubmitted.skills.length > 0 ? matchingSubmitted.skills : null) ||
+                  (isMatchingLocalFreelancer && Array.isArray(ownProfile?.skills) && ownProfile.skills.length > 0 ? ownProfile.skills : null) ||
+                  (Array.isArray(pro.keywords) && pro.keywords.length > 0 ? pro.keywords : null) ||
+                  (pro.skill ? [pro.skill] : []);
+
+                const resolvedSkills = Array.from(new Set(rawSkills.filter(Boolean)));
+                return (
+                  <div className="border-2 border-ink bg-white p-4">
+                    <h2 className="text-[11px] font-black tracking-[0.15em] text-ink mb-3">
+                      PRIMARY SKILLS &amp; KEYWORDS
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                      {pro.skill && (
+                        <span className="border-2 border-ink bg-brand px-3 py-1 text-xs font-black text-white">
+                          {pro.skill}
+                        </span>
+                      )}
+                      {resolvedSkills
+                        .filter((k) => k !== pro.skill)
+                        .map((k) => (
+                          <span
+                            key={k}
+                            className="border-2 border-ink bg-sand px-2.5 py-1 text-xs font-bold text-ink"
+                          >
+                            {k}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* LANGUAGES */}
               <div className="border-2 border-ink bg-white p-4">

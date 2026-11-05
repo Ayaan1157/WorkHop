@@ -291,24 +291,34 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
           </div>
 
           {/* Core Skills & Keywords */}
-          {Array.isArray(pro.keywords) && pro.keywords.length > 0 && (
-            <div>
-              <h3 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400 mb-2">
-                <Tag size={13} className="text-brand" />
-                <span>Specialized Skills</span>
-              </h3>
-              <div className="flex flex-wrap gap-1.5">
-                {pro.keywords.map((kw, i) => (
-                  <span
-                    key={i}
-                    className="border border-ink/30 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-ink dark:text-zinc-200 capitalize shadow-[1px_1px_0px_#121212] dark:shadow-none"
-                  >
-                    {kw}
-                  </span>
-                ))}
+          {(() => {
+            const rawSkills =
+              (Array.isArray(pro.skills) && pro.skills.length > 0 ? pro.skills : null) ||
+              (Array.isArray(matchingSubmitted?.skills) && matchingSubmitted.skills.length > 0 ? matchingSubmitted.skills : null) ||
+              (isOwn && Array.isArray(ownProfile?.skills) && ownProfile.skills.length > 0 ? ownProfile.skills : null) ||
+              (Array.isArray(pro.keywords) && pro.keywords.length > 0 ? pro.keywords : null) ||
+              (pro.skill ? [pro.skill] : []);
+            const resolvedSkills = Array.from(new Set(rawSkills.filter(Boolean)));
+            if (resolvedSkills.length === 0) return null;
+            return (
+              <div>
+                <h3 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-inkmuted dark:text-zinc-400 mb-2">
+                  <Tag size={13} className="text-brand" />
+                  <span>Specialized Skills</span>
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {resolvedSkills.map((kw, i) => (
+                    <span
+                      key={i}
+                      className="border border-ink/30 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-ink dark:text-zinc-200 capitalize shadow-[1px_1px_0px_#121212] dark:shadow-none"
+                    >
+                      {kw}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Languages Spoken */}
           {languageLabels.length > 0 && (

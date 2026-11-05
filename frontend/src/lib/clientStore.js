@@ -462,7 +462,9 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
           category: own?.category || currentUser.category || prev.category,
           rate_hr: Number(own?.rate_hr) > 0 ? Number(own.rate_hr) : prev.rate_hr,
           intro: own?.description || prev.intro || prev.bio,
-          bio: own?.description || prev.bio || prev.intro,
+          skills: Array.isArray(own?.skills) ? own.skills : prev.skills,
+          keywords: Array.isArray(own?.skills) && own.skills.length > 0 ? own.skills : prev.keywords,
+          search_tags: own?.search_tags || prev.search_tags,
           languages: Array.isArray(own?.languages) && own.languages.length > 0 ? own.languages : prev.languages,
           portfolio_items: Array.isArray(own?.portfolio) && own.portfolio.length > 0 ? own.portfolio : prev.portfolio_items,
           portfolio_images: Array.isArray(own?.portfolio_images) && own.portfolio_images.length > 0 ? own.portfolio_images : prev.portfolio_images,
@@ -572,14 +574,27 @@ export function getStoredLeads({ includeDeclined = false } = {}) {
         (lead.is_dummy && resolvedSkill
           ? `${resolvedSkill} based in Bengaluru with verified experience across local projects. Fast turnarounds and reliable deliveries.`
           : ""),
+      skills: Array.isArray(lead.skills) && lead.skills.length > 0
+        ? lead.skills
+        : (Array.isArray(lead.keywords) && lead.keywords.length > 0 ? lead.keywords : (resolvedSkill ? [resolvedSkill] : [])),
       keywords: Array.from(
-        new Set([
-          ...(isCobblestone
+        new Set(
+          isCobblestone
             ? [
                 "architecture", "architect", "interior design", "floor plan", "spatial design",
                 "autocad", "3d rendering", "Graphics & Design", "design", "cobblestone", "elevation", "space planning"
               ]
-            : (lead.keywords || (resolvedSkill ? [resolvedSkill] : []))),
+            : (Array.isArray(lead.skills) && lead.skills.length > 0
+                ? lead.skills
+                : (Array.isArray(lead.keywords) && lead.keywords.length > 0
+                    ? lead.keywords
+                    : (resolvedSkill ? [resolvedSkill] : [])))
+        )
+      ),
+      search_tags: Array.from(
+        new Set([
+          ...(Array.isArray(lead.skills) ? lead.skills : []),
+          ...(Array.isArray(lead.keywords) ? lead.keywords : []),
           ...(resolvedSkill ? expandSkillKeywords(resolvedSkill, resolvedCategory) : []),
         ])
       ),
@@ -2641,7 +2656,10 @@ export function saveFreelancerProfile(profile) {
     ...(Array.isArray(cleaned.skills) ? cleaned.skills : []),
   ].filter(Boolean).join(" ");
   cleaned.search_tags = expandSkillKeywords(skillsToExpand, cleaned.category || cleaned.bucket || "Graphics & Design");
-  cleaned.keywords = cleaned.search_tags;
+  const explicitSkills = Array.isArray(cleaned.skills) && cleaned.skills.length > 0
+    ? cleaned.skills
+    : (cleaned.title || cleaned.skill ? [cleaned.title || cleaned.skill] : []);
+  cleaned.keywords = explicitSkills;
   localStorage.setItem(FREELANCER_PROFILE_KEY, JSON.stringify(cleaned));
 
   // Sync directly into submitted profiles so public / admin views pick up the updated images and portfolio immediately
@@ -2670,6 +2688,9 @@ export function saveFreelancerProfile(profile) {
       avatar_url: cleaned.avatar_url || user?.avatar_url || cleaned.picture || user?.picture || undefined,
       phone: cleaned.phone || user?.phone || undefined,
       skill: cleaned.title || cleaned.skill || user?.skill || undefined,
+      skills: explicitSkills,
+      keywords: explicitSkills,
+      search_tags: cleaned.search_tags,
       category: cleaned.category || user?.category || undefined,
       area: cleaned.area || user?.area || undefined,
       rate_hr: Number(cleaned.rate_hr) || 0,
