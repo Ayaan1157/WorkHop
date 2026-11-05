@@ -840,7 +840,7 @@ export default function Landing() {
                           Email Verification Code
                         </p>
                         <p className="text-[11px] text-inkmuted dark:text-zinc-400 font-semibold">
-                          We sent a 6-digit verification code to <strong className="text-brand underline">{cleanEmail}</strong>. Please check your inbox (and spam folder).
+                          We sent a 6-digit verification code to <strong className="text-brand underline">{cleanEmail}</strong>. Please check your inbox.
                         </p>
                       </div>
                     </div>

@@ -160,7 +160,7 @@ export default function PushSettingsModal({ isOpen, onClose }) {
       if (res && res.ok) {
         setEmailTestResult({
           ok: true,
-          message: res.message || `Test alert email dispatched to ${emailToSend}! Check your inbox and spam folder.`,
+          message: res.message || `Test alert email dispatched to ${emailToSend}! Check your inbox.`,
         });
       } else {
         setEmailTestResult({

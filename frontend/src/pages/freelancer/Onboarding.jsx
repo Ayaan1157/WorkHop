@@ -215,7 +215,7 @@ export default function Onboarding() {
       });
       const data = await res.json();
       if (data.invoice_email_sent) {
-        setBillStatus({ type: "success", msg: `✓ Tax invoice & bill sent to ${toSend}! Check your inbox (or spam folder).` });
+        setBillStatus({ type: "success", msg: `✓ Tax invoice & bill sent to ${toSend}! Check your inbox.` });
       } else {
         setBillStatus({ type: "success", msg: `✓ Tax invoice generated (${data.invoice_number}). Sent to ${toSend}.` });
       }
@@ -343,7 +343,7 @@ export default function Onboarding() {
       setOtpSent(true);
       setOtpCode("");
       if (res?.dev_otp) setDevOtp(res.dev_otp);
-      setOtpNotice(res?.message || `6-digit code dispatched to ${email}. Check your inbox and spam folder.`);
+      setOtpNotice(res?.message || `6-digit code dispatched to ${email}. Check your inbox.`);
     } catch (e) {
       setVError(e?.message || "Could not send code.");
     } finally {
