@@ -1296,140 +1296,179 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Right Column: Stylized 5 km Geofence Radar Map + 3 Floating UI Cards */}
-          <div className="lg:col-span-6 relative">
-            <div className="relative mx-auto max-w-[540px] border-2 border-ink bg-[#141417] p-5 sm:p-7 shadow-[6px_6px_0px_#121212] overflow-hidden">
-              {/* Top Radar Header Bar */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+          {/* Right Column: Clean Youngster with Laptop + Subtle Neighborhood Hop Animation (Inspired by Workhoppers) */}
+          <div className="lg:col-span-6 relative flex items-center justify-center">
+            <div className="relative w-full max-w-[540px] border-2 border-ink bg-sand/60 dark:bg-[#1a1a1e] p-6 sm:p-8 shadow-[6px_6px_0px_#121212] overflow-hidden">
+              
+              {/* Top Neighborhood Badge */}
+              <div className="flex items-center justify-between border-b-2 border-ink/15 dark:border-white/10 pb-3 mb-5">
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-ok animate-ping" />
-                  <span className="text-[11px] font-black uppercase tracking-wider text-white">
-                    LIVE 5 KM GEOFENCE · KORAMANGALA
+                  <span className="h-2.5 w-2.5 rounded-full bg-ok animate-pulse" />
+                  <span className="text-[11px] font-black uppercase tracking-wider text-ink dark:text-white">
+                    Bengaluru Hyperlocal · 5km Radius
                   </span>
                 </div>
-                <span className="bg-brand px-2 py-0.5 text-[10px] font-black uppercase text-white">
-                  18 ACTIVE NEARBY
+                <span className="border border-ink bg-[#FFF3C4] px-2 py-0.5 text-[10px] font-black uppercase text-black shadow-[1.5px_1.5px_0px_#121212]">
+                  Direct Hires · 0% Cut
                 </span>
               </div>
 
-              {/* Stylized SVG 5 km Radar Canvas */}
-              <div className="relative aspect-[4/3] w-full flex items-center justify-center rounded-sm bg-[#101114] border border-white/10 overflow-hidden">
+              {/* Youngster with Laptop SVG Composition + Animated City Hop Trail */}
+              <div className="relative aspect-[4/3] w-full flex items-center justify-center rounded-sm bg-white dark:bg-[#141417] border-2 border-ink dark:border-zinc-700 overflow-hidden shadow-inner">
+                
+                {/* Background Subtle City Skyline Line Art */}
                 <svg
-                  viewBox="0 0 400 300"
+                  viewBox="0 0 460 320"
                   className="w-full h-full"
-                  aria-label="5 km hyperlocal radar map graphic"
+                  aria-label="Young professional with laptop working locally in Bengaluru"
                 >
                   <defs>
-                    <radialGradient id="whRadarGlow" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor="#E65A1E" stopOpacity="0.28" />
-                      <stop offset="65%" stopColor="#E65A1E" stopOpacity="0.07" />
-                      <stop offset="100%" stopColor="#E65A1E" stopOpacity="0" />
-                    </radialGradient>
-                    <linearGradient id="whSweepGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#E65A1E" stopOpacity="0.38" />
-                      <stop offset="100%" stopColor="#E65A1E" stopOpacity="0" />
+                    <linearGradient id="laptopScreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FFF3E9" />
+                      <stop offset="100%" stopColor="#FFE3D3" />
+                    </linearGradient>
+                    <linearGradient id="hopperTrail" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#00A86B" />
+                      <stop offset="100%" stopColor="#E65A1E" />
                     </linearGradient>
                   </defs>
 
-                  {/* Subtle street grid lines */}
-                  <g stroke="#27272A" strokeWidth="1" opacity="0.55">
-                    <line x1="0" y1="60" x2="400" y2="60" />
-                    <line x1="0" y1="150" x2="400" y2="150" />
-                    <line x1="0" y1="240" x2="400" y2="240" />
-                    <line x1="80" y1="0" x2="80" y2="300" />
-                    <line x1="200" y1="0" x2="200" y2="300" />
-                    <line x1="320" y1="0" x2="320" y2="300" />
+                  {/* Bengaluru Startup Skyline Dotted Silhouette */}
+                  <g stroke="#D4D4D8" dark-stroke="#3F3F46" strokeWidth="1.5" fill="none" opacity="0.65">
+                    {/* Building 1 (Startup Office) */}
+                    <rect x="25" y="140" width="45" height="150" />
+                    <line x1="35" y1="160" x2="60" y2="160" />
+                    <line x1="35" y1="180" x2="60" y2="180" />
+                    <line x1="35" y1="200" x2="60" y2="200" />
+                    {/* Building 2 (Co-working Tower) */}
+                    <rect x="75" y="110" width="55" height="180" fill="#E5F8EE" fillOpacity="0.4" stroke="#00A86B" />
+                    <circle cx="102" cy="140" r="10" stroke="#00A86B" strokeWidth="1.5" />
+                    {/* Building 3 & 4 (Tech Park) */}
+                    <rect x="135" y="160" width="40" height="130" />
+                    <rect x="380" y="150" width="50" height="140" />
+                    {/* Ground line */}
+                    <line x1="10" y1="290" x2="450" y2="290" stroke="#121212" strokeWidth="2" />
                   </g>
 
-                  {/* Radar ambient glow */}
-                  <circle cx="200" cy="150" r="130" fill="url(#whRadarGlow)" />
-
-                  {/* Concentric Geofence Rings: 1 km, 3 km, 5 km */}
-                  <circle cx="200" cy="150" r="42" fill="none" stroke="#E65A1E" strokeOpacity="0.45" strokeWidth="1.5" strokeDasharray="4 4" />
-                  <circle cx="200" cy="150" r="85" fill="none" stroke="#E65A1E" strokeOpacity="0.35" strokeWidth="1.5" strokeDasharray="5 5" />
-                  <circle cx="200" cy="150" r="126" fill="none" stroke="#10B981" strokeOpacity="0.45" strokeWidth="1.5" />
-
-                  {/* Ring Distance Labels */}
-                  <text x="206" y="112" fill="#A1A1AA" fontSize="9" fontWeight="800">1 KM</text>
-                  <text x="206" y="69" fill="#A1A1AA" fontSize="9" fontWeight="800">3 KM</text>
-                  <text x="206" y="29" fill="#34D399" fontSize="9" fontWeight="800">5 KM MAX</text>
-
-                  {/* Rotating Radar Wedge */}
-                  <g className="wh-radar-sweep" style={{ transformOrigin: "200px 150px" }}>
-                    <path d="M200,150 L326,150 A126,126 0 0,0 289,61 Z" fill="url(#whSweepGrad)" />
+                  {/* Playful Dotted Hopper Arc connecting local business to youngster */}
+                  <path
+                    d="M 102 110 Q 180 30 260 135"
+                    fill="none"
+                    stroke="#E65A1E"
+                    strokeWidth="2.5"
+                    strokeDasharray="6 6"
+                    className="animate-pulse"
+                  />
+                  {/* Little Grasshopper / Hop Icon on the building top */}
+                  <g transform="translate(95, 92)">
+                    <circle cx="7" cy="7" r="9" fill="#00A86B" />
+                    <text x="3" y="11" fill="#FFFFFF" fontSize="11" fontWeight="bold">⚡</text>
                   </g>
 
-                  {/* Nearby Pin 1: UI/UX Pro (0.8 km) */}
-                  <g transform="translate(148, 114)">
-                    <circle cx="0" cy="0" r="10" fill="#10B981" fillOpacity="0.25" />
-                    <circle cx="0" cy="0" r="5" fill="#10B981" stroke="#FFFFFF" strokeWidth="1.5" />
-                  </g>
+                  {/* ── Youngster Sitting Cross-Legged with Laptop Character ── */}
+                  <g transform="translate(230, 95)">
+                    {/* Shadow underneath */}
+                    <ellipse cx="65" cy="195" rx="75" ry="12" fill="#121212" fillOpacity="0.1" />
 
-                  {/* Nearby Pin 2: Video Creator (1.6 km) */}
-                  <g transform="translate(262, 108)">
-                    <circle cx="0" cy="0" r="10" fill="#E65A1E" fillOpacity="0.25" />
-                    <circle cx="0" cy="0" r="5" fill="#E65A1E" stroke="#FFFFFF" strokeWidth="1.5" />
-                  </g>
+                    {/* Legs in cross-legged relaxed pose (blue denim) */}
+                    <path
+                      d="M 15 175 Q 35 198 65 195 Q 100 198 120 175 Q 105 160 85 168 Q 65 172 45 168 Z"
+                      fill="#3B82F6"
+                      stroke="#1E3A8A"
+                      strokeWidth="2"
+                    />
+                    {/* Sneakers */}
+                    <ellipse cx="12" cy="178" rx="10" ry="7" fill="#FFFFFF" stroke="#121212" strokeWidth="1.5" />
+                    <ellipse cx="122" cy="178" rx="10" ry="7" fill="#FFFFFF" stroke="#121212" strokeWidth="1.5" />
 
-                  {/* Nearby Pin 3: AI Automation Gig (2.4 km) */}
-                  <g transform="translate(248, 206)">
-                    <circle cx="0" cy="0" r="10" fill="#FACC15" fillOpacity="0.25" />
-                    <circle cx="0" cy="0" r="5" fill="#FACC15" stroke="#121212" strokeWidth="1.5" />
-                  </g>
+                    {/* Torso / Crisp Shirt */}
+                    <path
+                      d="M 40 100 L 90 100 L 98 165 L 32 165 Z"
+                      fill="#FFFFFF"
+                      stroke="#121212"
+                      strokeWidth="2"
+                    />
+                    {/* Open casual collar */}
+                    <path d="M 55 100 L 65 120 L 75 100" fill="none" stroke="#E65A1E" strokeWidth="2" />
 
-                  {/* Center User Pin */}
-                  <g transform="translate(200, 150)">
-                    <circle cx="0" cy="0" r="16" fill="#E65A1E" fillOpacity="0.25" />
-                    <circle cx="0" cy="0" r="7" fill="#E65A1E" stroke="#FFFFFF" strokeWidth="2.5" />
+                    {/* Arms holding laptop */}
+                    <path d="M 38 112 Q 22 140 45 152" fill="none" stroke="#FBBF24" strokeWidth="8" strokeLinecap="round" />
+                    <path d="M 92 112 Q 108 140 85 152" fill="none" stroke="#FBBF24" strokeWidth="8" strokeLinecap="round" />
+
+                    {/* Sleek Laptop base & screen */}
+                    <rect x="36" y="148" width="58" height="6" rx="2" fill="#94A3B8" stroke="#334155" strokeWidth="1.5" />
+                    <path d="M 42 148 L 48 108 L 82 108 L 88 148 Z" fill="url(#laptopScreenGrad)" stroke="#334155" strokeWidth="2" />
+                    <circle cx="65" cy="128" r="4" fill="#E65A1E" />
+
+                    {/* Neck & Head */}
+                    <rect x="60" y="85" width="10" height="18" fill="#FBBF24" />
+                    <circle cx="65" cy="70" r="20" fill="#FBBF24" stroke="#121212" strokeWidth="2" />
+                    
+                    {/* Friendly Smile & Glasses */}
+                    <path d="M 58 74 Q 65 82 72 74" fill="none" stroke="#121212" strokeWidth="2" strokeLinecap="round" />
+                    <rect x="52" y="63" width="11" height="8" rx="2" fill="none" stroke="#121212" strokeWidth="2" />
+                    <rect x="67" y="63" width="11" height="8" rx="2" fill="none" stroke="#121212" strokeWidth="2" />
+                    <line x1="63" y1="67" x2="67" y2="67" stroke="#121212" strokeWidth="2" />
+
+                    {/* Trendy curly / textured hair */}
+                    <path
+                      d="M 45 65 Q 40 45 65 42 Q 90 45 85 65 Q 88 50 78 40 Q 65 36 52 42 Q 43 52 45 65 Z"
+                      fill="#18181B"
+                      stroke="#18181B"
+                      strokeWidth="2"
+                    />
                   </g>
                 </svg>
 
-                {/* Floating UI Card 1: Job Card (Top-Left, Cream Accent) */}
-                <div className="wh-float-1 absolute top-2.5 left-2.5 sm:top-4 sm:left-4 max-w-[205px] sm:max-w-[230px] border-2 border-ink bg-[#FFF3C4] p-2.5 sm:p-3 shadow-[3px_3px_0px_#121212]">
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className="bg-ink px-1.5 py-0.5 text-[9px] font-black uppercase !text-white"
-                      style={{ color: "#FFFFFF" }}
-                    >
-                      0.8 KM AWAY
+                {/* Floating Skill Badge 1 (Figma & UI/UX) */}
+                <div className="wh-float-1 absolute top-3 left-3 max-w-[190px] border-2 border-ink bg-[#FFF3C4] p-2 sm:p-2.5 shadow-[3px_3px_0px_#121212]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-brand" />
+                    <span className="text-[10px] font-black uppercase tracking-wider text-black">
+                      UI/UX &amp; Figma Pro
                     </span>
-                    <span className="text-xs font-black text-brand">₹18,000</span>
                   </div>
-                  <p className="mt-1 text-[11px] sm:text-xs font-black leading-tight text-black">
-                    Brand &amp; Packaging UI Gig
+                  <p className="mt-0.5 text-[11px] font-bold text-black/80">
+                    Koramangala · <span className="text-brand font-black">0.8 km away</span>
                   </p>
                 </div>
 
-                {/* Floating UI Card 2: "Payment Secured" Chip (Bottom-Left, Mint Accent) */}
-                <div className="wh-float-2 absolute bottom-2.5 left-2.5 sm:bottom-4 sm:left-4 border-2 border-ink bg-[#E5F8EE] px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-[3px_3px_0px_#121212] flex items-center gap-2">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ok text-white">
-                    <ShieldCheck size={13} />
+                {/* Floating Skill Badge 2 (Live Gig Alert) */}
+                <div className="wh-float-2 absolute bottom-3 left-3 border-2 border-ink bg-[#E5F8EE] px-3 py-1.5 shadow-[3px_3px_0px_#121212] flex items-center gap-2">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ok text-white font-black text-[10px]">
+                    ✓
                   </span>
                   <div>
-                    <p className="text-[10px] sm:text-[11px] font-black uppercase leading-none text-black">
-                      Payment Secured
+                    <p className="text-[10px] font-black uppercase text-black leading-tight">
+                      ₹15,000 Gig Live
                     </p>
-                    <p className="text-[9px] sm:text-[10px] font-bold text-black/80 mt-0.5">
-                      ₹28,000 Escrow · 0% Cut
+                    <p className="text-[9px] font-bold text-black/70">
+                      Indiranagar · Apply in 1 Tap
                     </p>
                   </div>
                 </div>
 
-                {/* Floating UI Card 3: Instant Chat Bubble (Bottom-Right, Dark/Orange) */}
-                <div className="wh-float-3 hidden xs:flex absolute bottom-2.5 right-2.5 sm:bottom-4 sm:right-4 max-w-[200px] sm:max-w-[220px] border-2 border-white/80 bg-[#1C1C21] p-2.5 shadow-[3px_3px_0px_#000000] items-start gap-2">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-brand text-[10px] font-black text-white">
-                    KR
-                  </span>
-                  <div>
-                    <p className="text-[10px] font-black text-white leading-none">
-                      Karthik · <span className="text-ok">1.1 km</span>
-                    </p>
-                    <p className="mt-1 text-[10px] font-medium text-stone-300 leading-tight">
-                      &ldquo;Meet at Third Wave in 15m?&rdquo;
-                    </p>
-                  </div>
+                {/* Floating Skill Badge 3 (Direct WhatsApp & Chat) */}
+                <div className="wh-float-3 absolute bottom-3 right-3 border-2 border-ink bg-white dark:bg-zinc-800 px-3 py-1.5 shadow-[3px_3px_0px_#121212] flex items-center gap-1.5">
+                  <span className="text-xs">💬</span>
+                  <p className="text-[10px] font-black uppercase text-ink dark:text-white">
+                    Direct Chat · No Middleman
+                  </p>
                 </div>
               </div>
+
+              {/* Bottom Quick Hubs Bar */}
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] font-black text-inkmuted dark:text-zinc-400">
+                <span>POPULAR HUBS:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Koramangala", "Indiranagar", "HSR Layout", "Whitefield"].map((hub) => (
+                    <span key={hub} className="border border-ink/20 px-2 py-0.5 text-[10px] font-bold text-ink dark:text-zinc-300 bg-white/80 dark:bg-zinc-800">
+                      📍 {hub}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
             </div>
           </div>
         </div>

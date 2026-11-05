@@ -4,7 +4,7 @@ import {
   ChevronLeft, Loader2, Grid3x3, Palette, Code2, Megaphone,
   PenLine, Video, Sparkles, Music, Briefcase, Users,
   MapPin, PlusCircle, UserCircle2, LogOut, Search, Compass, Tag, HelpCircle, Coins,
-  Sun, Moon, Menu, X, Home, Shield, FileText, ArrowRight, BookOpen, Zap
+  Sun, Moon, Menu, X, Home, Shield, FileText, ArrowRight, BookOpen, Zap, RefreshCw
 } from "lucide-react";
 import { apiGet, getFreelancerId } from "@/lib/api";
 import { getCreditsWallet } from "@/lib/clientStore";
@@ -129,7 +129,7 @@ export function Logo({ size = "default", className = "" }) {
 export function GlobalNav() {
   const nav = useNavigate();
   const loc = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, switchActiveRole } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("signin");
@@ -145,59 +145,32 @@ export function GlobalNav() {
     user?.role === "admin" ||
     ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
   );
-  const userRole = user ? (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase() : null;
+  const userRole = (user?.active_role || user?.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase();
 
-  // Route context: whether current view is a freelancer page or an employer page
-  const isFreelancerRoute = Boolean(
-    loc.pathname.startsWith("/freelancer") ||
-    (loc.pathname.startsWith("/plans") && (loc.search.includes("freelancer") || (!loc.search.includes("employer") && userRole !== "employer")))
-  );
-  const isEmployerRoute = Boolean(
-    loc.pathname.startsWith("/employer") ||
-    (loc.pathname.startsWith("/plans") && loc.search.includes("employer"))
-  );
+  const isEmployerUser = Boolean(userRole.includes("employ") || userRole.includes("client"));
+  const isFreelancerUser = Boolean(!isAdmin && !isEmployerUser);
 
-  const isEmployerUser = Boolean(
-    (user && (userRole?.includes("employ") || userRole?.includes("client"))) ||
-    userRole === "employer" ||
-    (!user && isEmployerRoute)
-  );
-  const isFreelancerUser = Boolean(!isAdmin && !isEmployerUser && (userRole?.includes("freelance") || isFreelancerRoute));
-
-  const isEmployer = Boolean(
-    isEmployerUser ||
-    (!user && isEmployerRoute) ||
-    isAdmin
-  );
-
-  const isFreelancer = Boolean(
-    isFreelancerUser ||
-    (!user && isFreelancerRoute) ||
-    isAdmin
-  );
-
-  const showPostJob = Boolean(
-    isEmployerUser || (!user && !isFreelancerRoute) || isAdmin
-  );
+  const showPostJob = true;
 
   const currentFreelancerId = (isFreelancerUser ? (user?.id || user?.email) : null) || getFreelancerId?.() || "anon";
   const userWallet = getCreditsWallet(currentFreelancerId);
   const currentHops = userWallet?.balance ?? 0;
   const plansPath = isFreelancerUser ? "/plans?tab=freelancer" : "/plans?tab=employer";
 
+  const handleToggleRole = () => {
+    const next = isEmployerUser ? "freelancer" : "employer";
+    if (switchActiveRole) switchActiveRole(next);
+    if (next === "employer") nav("/employer");
+    else nav("/freelancer/jobs");
+  };
+
   const desktopLinks = [
-    { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users, forRole: "employer" },
-    { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs", icon: Briefcase, forRole: "freelancer" },
+    { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users },
+    { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs", icon: Briefcase },
     { label: "LIVE MAP", path: "/map", testId: "nav-map", icon: MapPin },
     { label: "CATEGORIES", path: "/categories", testId: "nav-categories", icon: Grid3x3 },
     { label: "PLANS", path: plansPath, testId: "nav-plans", icon: Coins },
-  ].filter((link) => {
-    if (isAdmin) return true; // Admin gets access to both sides and everything!
-    if (!user) return true; // Show both if not signed in
-    if (link.forRole === "employer") return isEmployerUser;
-    if (link.forRole === "freelancer") return isFreelancerUser;
-    return true;
-  });
+  ];
 
   const drawerLinks = [
     ...desktopLinks,
@@ -279,17 +252,33 @@ export function GlobalNav() {
               </button>
             </div>
 
-            {/* Post Job Button (Desktop/Tablet) - Hidden on Freelancer pages and for Freelancers */}
-            {showPostJob && (
+            {/* 1-Click Role Switcher */}
+            {user && (
               <button
-                data-testid="nav-post-job-btn"
-                onClick={() => nav("/employer/post-job")}
-                className="hidden sm:inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-brand px-3.5 text-xs font-black tracking-wide text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
+                type="button"
+                data-testid="nav-switch-role-btn"
+                onClick={handleToggleRole}
+                title={isEmployerUser ? "Switch to Pro / Freelancer workspace" : "Switch to Employer / Hiring workspace"}
+                className={`hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-ink px-3 text-[11px] font-black uppercase tracking-wide transition shadow-[2px_2px_0px_#121212] whitespace-nowrap shrink-0 active:translate-y-0.5 ${
+                  isEmployerUser
+                    ? "bg-[#E5F8EE] text-[#006633] dark:bg-emerald-950/60 dark:text-emerald-300 hover:bg-[#d4f3e3]"
+                    : "bg-[#FFF3C4] text-[#8a5d00] dark:bg-amber-950/60 dark:text-amber-300 hover:bg-[#ffeaa0]"
+                }`}
               >
-                <PlusCircle size={15} className="shrink-0" />
-                <span>POST JOB</span>
+                <RefreshCw size={13} className="shrink-0 animate-[spin_10s_linear_infinite]" />
+                <span>{isEmployerUser ? "HIRING MODE (SWITCH TO PRO)" : "PRO MODE (SWITCH TO HIRE)"}</span>
               </button>
             )}
+
+            {/* Post Job Button (Always accessible to all users) */}
+            <button
+              data-testid="nav-post-job-btn"
+              onClick={() => nav("/employer/post-job")}
+              className="inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-brand px-3 sm:px-3.5 text-xs font-black tracking-wide text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
+            >
+              <PlusCircle size={15} className="shrink-0" />
+              <span>POST A GIG</span>
+            </button>
 
             {/* User Account or Sign In Button */}
             {user ? (
@@ -364,30 +353,49 @@ export function GlobalNav() {
             {/* User Account / Auth Card */}
             <div className="mt-4 border-2 border-ink bg-sand dark:bg-[#1a1a1a] p-3 shadow-[2px_2px_0px_#121212]">
               {user ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-ink bg-brand text-xs font-black text-white">
-                      {(user.name || "U")[0].toUpperCase()}
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-ink bg-brand text-xs font-black text-white">
+                        {(user.name || "U")[0].toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-ink dark:text-white truncate max-w-[140px]">
+                          {user.name || user.email?.split("@")[0]}
+                        </span>
+                        <span className="text-[10px] text-inkmuted dark:text-stone-400 capitalize">
+                          {isEmployerUser ? "Employer (Hiring)" : "Freelancer (Pro)"} · BLR
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-black text-ink dark:text-white truncate max-w-[140px]">
-                        {user.name || user.email?.split("@")[0]}
-                      </span>
-                      <span className="text-[10px] text-inkmuted dark:text-stone-400 capitalize">
-                        {user.role || "Member"} · BLR
-                      </span>
-                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-1 border-2 border-ink bg-[#C62828] text-white px-2.5 py-1.5 text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#121212] hover:bg-red-700 transition shrink-0"
+                      title="Sign Out of WorkHop"
+                    >
+                      <LogOut size={13} />
+                      <span>SIGN OUT</span>
+                    </button>
                   </div>
+
+                  {/* 1-Click Mobile Role Switcher */}
                   <button
+                    type="button"
                     onClick={() => {
-                      logout();
+                      handleToggleRole();
                       setMobileMenuOpen(false);
                     }}
-                    className="flex items-center gap-1 border-2 border-ink bg-[#C62828] text-white px-2.5 py-1.5 text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#121212] hover:bg-red-700 transition shrink-0"
-                    title="Sign Out of WorkHop"
+                    className={`w-full flex items-center justify-center gap-2 border-2 border-ink py-2 text-xs font-black uppercase tracking-wider transition shadow-[2px_2px_0px_#121212] active:translate-y-0.5 ${
+                      isEmployerUser
+                        ? "bg-[#E5F8EE] text-[#006633] dark:bg-emerald-950/60 dark:text-emerald-300"
+                        : "bg-[#FFF3C4] text-[#8a5d00] dark:bg-amber-950/60 dark:text-amber-300"
+                    }`}
                   >
-                    <LogOut size={13} />
-                    <span>SIGN OUT</span>
+                    <RefreshCw size={13} className="shrink-0" />
+                    <span>{isEmployerUser ? "Switch to Pro / Work Mode" : "Switch to Employer / Hire Mode"}</span>
                   </button>
                 </div>
               ) : (

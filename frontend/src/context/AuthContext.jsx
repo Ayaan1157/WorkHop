@@ -327,22 +327,34 @@ export function AuthProvider({ children }) {
       if (next.phone) localStorage.setItem("workhop_pro_phone", next.phone);
       if (next.area) localStorage.setItem("workhop_user_area", next.area);
       if (next.role) localStorage.setItem("workhop_auth_role", next.role);
-      if (next.skill) localStorage.setItem("workhop_pro_skill", next.skill);
-      if (next.company_name) localStorage.setItem("workhop_company_name", next.company_name);
       if (next.email || next.phone || next.name) {
         try {
           saveRegisteredUser(next.email, "", next);
-        } catch (_) {}
-        try {
-          apiPost("/users", next, false).catch(() => {});
         } catch (_) {}
       }
       return next;
     });
   }, []);
 
+  const switchActiveRole = useCallback((newRole) => {
+    const targetRole = newRole === "employer" ? "employer" : "freelancer";
+    setUser((prev) => {
+      const nextRoles = Array.from(new Set([...(prev?.roles || [prev?.role || "freelancer"]), targetRole]));
+      const next = {
+        ...(prev || {}),
+        role: targetRole,
+        active_role: targetRole,
+        roles: nextRoles,
+      };
+      saveStoredUser(next);
+      localStorage.setItem("workhop_auth_role", targetRole);
+      return next;
+    });
+    return targetRole;
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, adminLogin, passwordLoginAuth, logout, deleteAccount, adoptSession, signupWithDetails, updateUserProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, adminLogin, passwordLoginAuth, logout, deleteAccount, adoptSession, signupWithDetails, updateUserProfile, switchActiveRole }}>
       {children}
     </AuthContext.Provider>
   );
