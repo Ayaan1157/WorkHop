@@ -328,8 +328,16 @@ export function saveSubmittedProfile(profile) {
 
     const finalPortfolioImages = extractedImages.length > 0 ? extractedImages : (prevEntry?.portfolio_images || []);
 
+    const incomingSkills = Array.isArray(profile.skills) && profile.skills.length > 0
+      ? profile.skills
+      : Array.isArray(profile.keywords) && profile.keywords.length > 0
+      ? profile.keywords
+      : prevEntry?.skills || prevEntry?.keywords || (profile.skill ? [profile.skill] : []);
+
     const normalized = {
       ...profile,
+      skills: incomingSkills,
+      keywords: incomingSkills,
       picture: profile.picture || profile.avatar_url || prevEntry?.picture || prevEntry?.avatar_url || undefined,
       avatar_url: profile.avatar_url || profile.picture || prevEntry?.avatar_url || prevEntry?.picture || undefined,
       portfolio_items: portfolioList,

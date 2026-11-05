@@ -325,6 +325,8 @@ export default function FreelancerProfile() {
         email: user?.email || "",
         phone: cleanPhone,
         skill: cleanSkill,
+        skills: updatedSkillsList,
+        keywords: updatedSkillsList,
         category: cleanCategory || "Design & Architecture",
         area: cleanArea || "Indiranagar",
         rate_hr: cleanRate || 0,
@@ -477,6 +479,9 @@ export default function FreelancerProfile() {
           email: user?.email || "",
           name: user?.name || undefined,
           picture: user?.picture || undefined,
+          skill: updated.title || updated.skill || user?.skill || undefined,
+          skills: Array.isArray(updated.skills) ? updated.skills : [],
+          keywords: Array.isArray(updated.skills) ? updated.skills : [],
           rate_hr: Number(updated.rate_hr) || 0,
           languages: Array.isArray(updated.languages) ? updated.languages : [],
           intro: updated.description || "",
@@ -497,7 +502,7 @@ export default function FreelancerProfile() {
         /* saved locally */
       }
     },
-    [freelancerId, user?.email, user?.id, user?.name, user?.picture, user?.phone, user?.area]
+    [freelancerId, user?.email, user?.id, user?.name, user?.picture, user?.phone, user?.area, user?.skill]
   );
 
   const openEdit = (section, data = null) => {

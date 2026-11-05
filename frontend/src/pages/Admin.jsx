@@ -2491,6 +2491,14 @@ function ProsTalentTab({ adminFetch }) {
                 Array.isArray(sp.portfolio_items) && sp.portfolio_items.length > 0
                   ? sp.portfolio_items
                   : list[existingIdx].portfolio_items,
+              skills:
+                Array.isArray(sp.skills) && sp.skills.length > 0
+                  ? sp.skills
+                  : (Array.isArray(sp.keywords) && sp.keywords.length > 0 ? sp.keywords : list[existingIdx].skills),
+              keywords:
+                Array.isArray(sp.keywords) && sp.keywords.length > 0
+                  ? sp.keywords
+                  : (Array.isArray(sp.skills) && sp.skills.length > 0 ? sp.skills : list[existingIdx].keywords),
               intro: sp.intro || sp.bio || list[existingIdx].intro || list[existingIdx].bio,
               bio: sp.bio || sp.intro || list[existingIdx].bio || list[existingIdx].intro,
             };
