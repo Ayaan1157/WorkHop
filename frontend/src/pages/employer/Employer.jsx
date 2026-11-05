@@ -534,34 +534,104 @@ export default function Employer() {
         ) : (
           <>
             {sorted.length === 0 && (
-              <div data-testid="leads-empty" className="flex flex-col items-center gap-3 border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1a1a1c] p-8 text-center">
-                <Search size={32} className="text-ink dark:text-zinc-400" />
-                <p className="text-base font-black text-ink dark:text-white">
+              <div data-testid="leads-empty" className="flex flex-col items-center border-2 border-ink dark:border-zinc-700 bg-sand dark:bg-[#1a1a1c] p-6 sm:p-10 text-center shadow-[4px_4px_0px_#121212]">
+                <div className="w-14 h-14 rounded-full border-2 border-ink dark:border-zinc-600 bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-ink dark:text-amber-400 mb-3 shadow-[2px_2px_0px_#121212]">
+                  {onlySaved ? <Heart size={26} className="text-red-500 fill-red-500" /> : <Search size={26} />}
+                </div>
+
+                <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white uppercase tracking-tight">
                   {onlySaved
                     ? "No saved pros yet"
-                    : `No pros match "${search.trim() || catFilter}"`}
-                </p>
-                <p className="text-xs text-inkmuted dark:text-zinc-400 max-w-sm">
+                    : `No verified pros match "${search.trim() || catFilter}"`}
+                </h3>
+
+                <p className="text-xs sm:text-sm text-inkmuted dark:text-zinc-400 max-w-md mt-1.5 leading-relaxed">
                   {onlySaved
-                    ? "Bookmark candidate profiles with the heart icon to save them for quick hiring."
-                    : "Try adjusting your search keyword or clearing the active filters."}
+                    ? "Bookmark candidate profiles with the heart icon while browsing to save them for quick hiring and comparisons."
+                    : "Need this done urgently? Post your requirement now — local Bengaluru pros will be alerted and apply directly within hours."}
                 </p>
+
                 {onlySaved ? (
                   <button
                     onClick={() => setOnlySaved(false)}
-                    className="mt-2 border-2 border-ink dark:border-zinc-700 bg-ink dark:bg-zinc-800 px-4 py-2 text-xs font-black text-white"
+                    className="mt-5 border-2 border-ink dark:border-zinc-700 bg-ink dark:bg-zinc-800 px-6 py-2.5 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
                   >
                     VIEW ALL PROS
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => setSuggestModalOpen(true)}
-                    className="mt-2 inline-flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-brand/90 transition active:translate-y-0.5"
-                  >
-                    <Sparkles size={14} />
-                    <span>CAN'T FIND YOUR PROFESSION? SUGGEST TAB</span>
-                  </button>
+                  <div className="mt-6 flex flex-col items-center gap-4 w-full max-w-lg">
+                    {/* Primary CTA: Post Gig */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        nav("/employer/post-job", {
+                          state: {
+                            prefillTitle: search.trim() ? `Need ${search.trim()} specialist` : "",
+                            prefillCategory: catFilter !== "ALL" ? catFilter : "Marketing",
+                          },
+                        })
+                      }
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border-2 border-ink bg-brand px-6 py-3 text-xs sm:text-sm font-black uppercase text-white shadow-[3px_3px_0px_#121212] hover:bg-brand/90 transition active:translate-y-0.5"
+                    >
+                      <Briefcase size={16} />
+                      <span>Post a Gig for {search.trim() || catFilter || "This Role"}</span>
+                      <ArrowRight size={16} />
+                    </button>
+
+                    {/* Secondary Actions */}
+                    <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-bold">
+                      {(search.trim() || catFilter !== "ALL" || minRating) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearch("");
+                            setCatFilter("ALL");
+                            setMinRating(null);
+                            setMaxDistance(null);
+                          }}
+                          className="inline-flex items-center gap-1 border-2 border-ink dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3.5 py-1.5 uppercase text-ink dark:text-white shadow-[2px_2px_0px_#121212] hover:bg-sand transition active:translate-y-0.5"
+                        >
+                          <X size={13} />
+                          <span>Clear Search & Filters</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setSuggestModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 border-2 border-ink dark:border-zinc-600 bg-amber-200 dark:bg-amber-900/50 px-3.5 py-1.5 uppercase text-ink dark:text-amber-200 shadow-[2px_2px_0px_#121212] hover:bg-amber-300 transition active:translate-y-0.5"
+                      >
+                        <Sparkles size={13} />
+                        <span>Can't find skill? Suggest Category</span>
+                      </button>
+                    </div>
+
+                    {/* Helpful Category Chips */}
+                    <div className="pt-3 border-t border-ink/15 dark:border-zinc-700 w-full flex flex-col items-center gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-inkmuted dark:text-zinc-500">
+                        Or explore active categories nearby:
+                      </span>
+                      <div className="flex flex-wrap justify-center gap-1.5">
+                        {["Marketing", "Graphics & Design", "Tech & Code", "Video & Photo"].map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => {
+                              setSearch("");
+                              setCatFilter(cat);
+                            }}
+                            className={`text-[11px] font-black px-2.5 py-1 border border-ink dark:border-zinc-600 uppercase transition ${
+                              catFilter === cat
+                                ? "bg-ink text-white dark:bg-white dark:text-ink"
+                                : "bg-white/80 dark:bg-zinc-800/80 text-ink dark:text-zinc-300 hover:bg-white"
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
