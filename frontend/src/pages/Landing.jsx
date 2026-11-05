@@ -1703,7 +1703,7 @@ export default function Landing() {
       {/* ═══════════════════════════════════════════════════════════════════════
           5. FEATURE HIGHLIGHTS — 3 Alternating Visual Mockup + Short Copy Blocks
           ═══════════════════════════════════════════════════════════════════════ */}
-      <section className="border-b-2 border-ink bg-[#FAFAF8] dark:bg-[#151518] py-12 sm:py-16 px-4 sm:px-10 lg:px-16">
+      <section className="border-b-2 border-ink bg-[#F4F1EA] dark:bg-[#18181c] py-12 sm:py-18 px-4 sm:px-10 lg:px-16 transition-colors">
         <div className="mx-auto max-w-7xl space-y-10 sm:space-y-14">
           {/* Highlight 1: 5 km Hyperlocal Map Match (Visual Left, Text Right) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
