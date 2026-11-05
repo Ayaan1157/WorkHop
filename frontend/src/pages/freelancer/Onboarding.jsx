@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ShieldCheck, Lock, CheckCircle2, ArrowRight, Image as ImageIcon, Plus, LocateFixed, Loader2, FileText, Mail, ExternalLink } from "lucide-react";
+import { ChevronLeft, ShieldCheck, Lock, CheckCircle2, ArrowRight, Image as ImageIcon, Plus, LocateFixed, Loader2, FileText, Mail, ExternalLink, MapPin, Check, X, ChevronDown } from "lucide-react";
 import CouponInput from "@/components/CouponInput";
 import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 import { useRazorpay } from "@/hooks/usePayments";
-import { useUserLocation } from "@/hooks/useUserLocation";
+import { useUserLocation, setManualLocation } from "@/hooks/useUserLocation";
 import { CATALOG_CATEGORY_NAMES } from "@/lib/catalogFilters";
+import { BENGALURU_AREAS, findNearestArea } from "@/lib/locationAreas";
 import { apiGet, apiPost, setFreelancerId, getFreelancerId } from "@/lib/api";
 import { ADMIN_EMAILS, getStoredPaymentTransactions, recordPaymentTransaction } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
@@ -69,6 +70,50 @@ export default function Onboarding() {
   const [extReviews, setExtReviews] = useState("");
   const [slots, setSlots] = useState([null, null, null]);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [locError, setLocError] = useState(null);
+  const [showManualSelector, setShowManualSelector] = useState(false);
+  const [customArea, setCustomArea] = useState("");
+
+  const handleRequestLocation = async () => {
+    if (!state.paid) return;
+    setLocError(null);
+    try {
+      const res = await requestLocation({ timeout: 10000 });
+      if (res && res.success && res.coords) {
+        setLocError(null);
+        setShowManualSelector(false);
+      } else {
+        const errorMsg = res?.error || "Could not access GPS. Please allow location in your browser or select your neighborhood below.";
+        setLocError(errorMsg);
+        setShowManualSelector(true);
+      }
+    } catch (err) {
+      setLocError("Location detection failed. You can choose your Bengaluru locality manually below.");
+      setShowManualSelector(true);
+    }
+  };
+
+  const handleSelectArea = (areaName) => {
+    if (!areaName) return;
+    const res = setManualLocation(areaName);
+    if (res) {
+      setLocError(null);
+      setShowManualSelector(false);
+      setCustomArea("");
+    }
+  };
+
+  const handleClearLocation = (e) => {
+    e.stopPropagation();
+    try {
+      sessionStorage.removeItem("workhop_user_coords");
+      localStorage.removeItem("workhop_user_coords");
+      localStorage.removeItem("workhop_user_area");
+      window.dispatchEvent(new CustomEvent("workhop:location_updated", { detail: null }));
+    } catch {}
+    setLocError(null);
+    setShowManualSelector(false);
+  };
 
   useEffect(() => {
     if (user?.email) {
@@ -749,10 +794,139 @@ export default function Onboarding() {
                 + CAN'T FIND YOUR PROFESSION?
               </button>
             </div>
-            <button data-testid="profile-location-btn" onClick={() => state.paid && requestLocation()} className={`flex items-center gap-2 border-2 border-ink px-3 py-2 text-left ${coords ? "bg-ok" : "bg-sand"}`}>
-              {locStatus === "locating" ? <Loader2 size={14} className={`animate-spin ${coords ? "text-white" : "text-ink"}`} /> : <LocateFixed size={14} className={coords ? "text-white" : "text-ink"} />}
-              <span className={`flex-1 text-[10px] font-extrabold ${coords ? "text-white" : "text-ink"}`}>{coords ? "LOCATION ADDED ✓" : "ADD MY LOCATION (optional · rank nearest to employers)"}</span>
-            </button>
+            {/* Hyperlocal Bengaluru Location Selector */}
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <button
+                  type="button"
+                  data-testid="profile-location-btn"
+                  onClick={handleRequestLocation}
+                  disabled={!state.paid || locStatus === "locating"}
+                  className={`flex-1 flex items-center justify-between gap-2 border-2 border-ink px-3.5 py-2.5 text-left transition ${
+                    coords
+                      ? "bg-ok text-white shadow-[2px_2px_0px_#121212]"
+                      : "bg-[#FFF9E6] hover:bg-amber-100 text-ink shadow-[2px_2px_0px_#121212]"
+                  } disabled:opacity-60`}
+                >
+                  <div className="flex items-center gap-2">
+                    {locStatus === "locating" ? (
+                      <Loader2 size={16} className={`animate-spin ${coords ? "text-white" : "text-brand"}`} />
+                    ) : coords ? (
+                      <CheckCircle2 size={16} className="text-white shrink-0" />
+                    ) : (
+                      <LocateFixed size={16} className="text-brand shrink-0" />
+                    )}
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-black uppercase tracking-wider">
+                        {locStatus === "locating"
+                          ? "DETECTING YOUR GPS LOCATION…"
+                          : coords
+                          ? `LOCATION SAVED: ${coords.area || findNearestArea(coords)?.name || "BENGALURU"} ✓`
+                          : "ADD MY LOCATION (AUTO-DETECT GPS)"}
+                      </span>
+                      <span className={`text-[10px] ${coords ? "text-white/80" : "text-inkmuted"}`}>
+                        {coords
+                          ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)} · Ranked nearest to local employers`
+                          : "Matches you to employers within a 5km radius"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {coords && (
+                    <button
+                      type="button"
+                      title="Clear location"
+                      onClick={handleClearLocation}
+                      className="p-1 hover:bg-black/20 rounded text-white transition ml-2"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="profile-manual-location-toggle"
+                  onClick={() => setShowManualSelector((p) => !p)}
+                  disabled={!state.paid}
+                  className="inline-flex items-center justify-center gap-1.5 border-2 border-ink bg-white hover:bg-sand px-3 py-2 text-[11px] font-black text-ink shadow-[2px_2px_0px_#121212] transition disabled:opacity-60 shrink-0"
+                >
+                  <MapPin size={13} className="text-brand" />
+                  <span>{coords?.area || "Pick Locality"}</span>
+                  <ChevronDown size={12} className={`transition-transform ${showManualSelector ? "rotate-180" : ""}`} />
+                </button>
+              </div>
+
+              {/* Informative message or error banner */}
+              {locError && (
+                <div className="border-2 border-danger bg-red-50 p-2.5 text-danger text-xs font-bold flex items-start gap-2 shadow-[2px_2px_0px_#121212]">
+                  <span className="shrink-0 text-sm">⚠️</span>
+                  <div className="flex-1">
+                    <p>{locError}</p>
+                    <p className="mt-0.5 text-[11px] text-danger/80">
+                      Browser GPS may be blocked or ungranted. You can select your Bengaluru neighborhood below:
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Manual Neighborhood Selector Drawer / Box */}
+              {showManualSelector && (
+                <div className="border-2 border-ink bg-white p-3 shadow-[3px_3px_0px_#121212] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-black uppercase text-ink">
+                      Select Your Bengaluru Locality (Optional):
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowManualSelector(false)}
+                      className="text-xs font-bold text-inkmuted hover:text-ink"
+                    >
+                      Close ✕
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-1 border border-stone-200 bg-stone-50/50">
+                    {BENGALURU_AREAS.map((a) => {
+                      const isSelected = coords?.area?.toLowerCase() === a.name.toLowerCase();
+                      return (
+                        <button
+                          key={a.name}
+                          type="button"
+                          onClick={() => handleSelectArea(a.name)}
+                          className={`px-2.5 py-1 text-[10px] font-black uppercase border transition ${
+                            isSelected
+                              ? "bg-ink text-white border-ink shadow-[1px_1px_0px_#121212]"
+                              : "bg-white text-ink border-stone-300 hover:border-ink hover:bg-sand"
+                          }`}
+                        >
+                          {a.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Custom Locality Input */}
+                  <div className="flex gap-2 pt-1 border-t border-stone-200">
+                    <input
+                      type="text"
+                      value={customArea}
+                      onChange={(e) => setCustomArea(e.target.value)}
+                      placeholder="Or type area (e.g. HSR Sector 2, Richmond Town)"
+                      className="flex-1 border-2 border-ink px-2.5 py-1.5 text-xs text-ink font-semibold placeholder:text-stone-400 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSelectArea(customArea.trim())}
+                      disabled={!customArea.trim()}
+                      className="border-2 border-ink bg-ink text-white px-3 py-1.5 text-xs font-black uppercase tracking-wider hover:bg-brand disabled:opacity-50 transition"
+                    >
+                      Set Area
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             <Labeled label="Fee per Hour (₹) — shown on your profile" testID="rate-input" value={rateHr} onChange={(v) => setRateHr(v.replace(/[^0-9]/g, "").slice(0, 5))} placeholder="e.g. 500" disabled={!state.paid} />
             <p className={fieldLabel}>TYPICAL DELIVERY TIME</p>
             <div className="flex flex-wrap gap-2">{[1, 3, 7, 14].map((d) => <button key={d} data-testid={`delivery-chip-${d}`} onClick={() => state.paid && setDeliveryDays(d)} className={chip(deliveryDays === d)}>{d} DAY{d > 1 ? "S" : ""}</button>)}</div>
