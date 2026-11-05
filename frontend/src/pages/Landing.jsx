@@ -1503,7 +1503,7 @@ export default function Landing() {
           ═══════════════════════════════════════════════════════════════════════ */}
       <section
         aria-label="WorkHop platform highlights"
-        className="wh-marquee-belt w-full border-b-2 border-ink py-3.5 sm:py-5 select-none"
+        className="wh-marquee-belt w-full border-b-2 border-ink py-2 sm:py-3 select-none"
       >
         <div className="wh-marquee-mask w-full overflow-hidden">
           <div className="wh-marquee-track items-center">
@@ -1525,14 +1525,14 @@ export default function Landing() {
                   "Keep 100% Earnings",
                 ].map((item) => (
                   <div key={`${loopIdx}-${item}`} className="flex shrink-0 items-center">
-                    <span className="wh-marquee-item px-5 sm:px-7 lg:px-9 text-lg sm:text-2xl lg:text-[28px] font-black tracking-tight whitespace-nowrap">
+                    <span className="wh-marquee-item px-3 sm:px-5 lg:px-6 text-xs sm:text-sm lg:text-[15px] font-black uppercase tracking-wider whitespace-nowrap">
                       {item}
                     </span>
                     {/* 4-Point Star / Sparkle Separator in Muted Tone */}
                     <svg
                       viewBox="0 0 24 24"
                       aria-hidden="true"
-                      className="wh-marquee-star h-4 w-4 sm:h-5 sm:w-5 shrink-0"
+                      className="wh-marquee-star h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0 opacity-70"
                       fill="currentColor"
                     >
                       <path d="M12 2L14.6 9.4L22 12L14.6 14.6L12 22L9.4 14.6L2 12L9.4 9.4L12 2Z" />
