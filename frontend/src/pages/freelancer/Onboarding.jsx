@@ -186,8 +186,8 @@ export default function Onboarding() {
     const nameParam = encodeURIComponent(user?.name || "Verified Pro");
     const amtParam = state.paidAmount || coupon?.final_amount || 149;
     const payParam = encodeURIComponent(state.paymentId || "pay_captured");
-    const url = `/api/credits/send-invoice?format=html&product=freelancer_onboarding&plan_id=verification-badge&amount=${amtParam}&payment_id=${payParam}&full_name=${nameParam}&email=${emailParam}`;
-    window.open(url, "_blank", "width=820,height=920,scrollbars=yes,resizable=yes");
+    const url = `/api/credits/send-invoice?format=pdf&download=pdf&product=freelancer_onboarding&plan_id=verification-badge&amount=${amtParam}&payment_id=${payParam}&full_name=${nameParam}&email=${emailParam}`;
+    window.open(url, "_blank");
   };
 
   const handleSendBill = async (targetEmail) => {
@@ -509,7 +509,7 @@ export default function Onboarding() {
                       onClick={handleViewBill}
                       className="inline-flex items-center gap-1.5 border-2 border-ink bg-white hover:bg-sand px-2.5 py-1 text-[11px] font-black text-ink shadow-[2px_2px_0px_#121212] transition"
                     >
-                      <span>View / Print Bill</span>
+                      <span>Download PDF Invoice</span>
                       <ExternalLink size={12} />
                     </button>
                   </div>

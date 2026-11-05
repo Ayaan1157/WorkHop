@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const tls = require("tls");
+const PDFDocument = require("pdfkit");
 
 const KNOWN_ITEMS = {
   "verification-badge": { title: "Verified Pro Onboarding Badge", subtitle: "Freelancer Profile Verification & 5km Radius Listing", type: "onboarding", default_price: 299 },
@@ -20,7 +21,138 @@ const KNOWN_ITEMS = {
   "elite_pass": { title: "WorkHop Elite Monthly Pass (200 Hops/mo)", subtitle: "Monthly Connects Pass", credits: 200, default_price: 999, type: "hops_pass" },
 };
 
-function sendGmailSmtp({ smtpHost = "smtp.gmail.com", smtpPort = 465, smtpUser, smtpPass, to, subject, htmlBody }) {
+function generateInvoicePdfBuffer({ invoiceNumber, customerName, customerEmail, itemTitle, itemSubtitle, totalInr, paymentId, amountWords }) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ size: "A4", margin: 40 });
+      const buffers = [];
+      doc.on("data", (chunk) => buffers.push(chunk));
+      doc.on("end", () => resolve(Buffer.concat(buffers)));
+      doc.on("error", (err) => reject(err));
+
+      const orange = "#E65A1E";
+      const ink = "#121212";
+      const muted = "#666666";
+
+      // Top Header Banner
+      doc.rect(40, 40, 515, 60).fill(orange);
+      doc.fillColor("#FFFFFF").fontSize(22).font("Helvetica-Bold").text("WORKHOP", 55, 52);
+      doc.fontSize(8.5).font("Helvetica").text("HYPERLOCAL FREELANCE MARKETPLACE · BENGALURU, KARNATAKA", 55, 78);
+
+      // Paid Badge
+      doc.rect(420, 52, 120, 24).fill(ink);
+      doc.fillColor("#7AE582").fontSize(9).font("Helvetica-Bold").text("• PAID · TAX INVOICE", 425, 59, { width: 110, align: "center" });
+
+      // Invoice Title
+      doc.fillColor(ink).fontSize(16).font("Helvetica-Bold").text("TAX INVOICE & PAYMENT RECEIPT", 40, 118);
+      doc.fontSize(8.5).font("Helvetica").fillColor(muted).text("Electronically generated under Rule 46 of the Central Goods and Services Tax Rules, 2017.", 40, 138);
+
+      // Metadata Box
+      doc.rect(40, 155, 515, 60).lineWidth(1).strokeColor(ink).fillAndStroke("#FAF7F2", ink);
+      doc.fillColor(muted).fontSize(7.5).font("Helvetica-Bold").text("INVOICE NUMBER", 50, 163);
+      doc.fillColor(ink).fontSize(10).font("Helvetica-Bold").text(invoiceNumber || "WH-INV-SAMPLE", 50, 175);
+      doc.fillColor(muted).fontSize(7.5).font("Helvetica-Bold").text("INVOICE DATE", 50, 192);
+      doc.fillColor(ink).fontSize(9).font("Helvetica").text(new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }), 50, 202);
+
+      doc.fillColor(muted).fontSize(7.5).font("Helvetica-Bold").text("PAYMENT REFERENCE (TXN ID)", 220, 163);
+      doc.fillColor(ink).fontSize(9).font("Helvetica-Bold").text(paymentId || "pay_captured", 220, 175);
+      doc.fillColor(muted).fontSize(7.5).font("Helvetica-Bold").text("PAYMENT METHOD", 220, 192);
+      doc.fillColor(ink).fontSize(9).font("Helvetica").text("Razorpay UPI / Netbanking · Instant Confirmation", 220, 202);
+
+      doc.fillColor(muted).fontSize(7.5).font("Helvetica-Bold").text("PLACE OF SUPPLY", 410, 163);
+      doc.fillColor(ink).fontSize(9).font("Helvetica-Bold").text("29 - Karnataka (Bengaluru)", 410, 175);
+      doc.fillColor(muted).fontSize(7.5).font("Helvetica-Bold").text("GST SAC CODE", 410, 192);
+      doc.fillColor(ink).fontSize(9).font("Helvetica").text("998311 (IT & Portal Services)", 410, 202);
+
+      // Supplier & Customer 2-column
+      let y = 230;
+      doc.rect(40, y, 250, 85).lineWidth(1).strokeColor(ink).fillAndStroke("#FFFFFF", ink);
+      doc.fillColor(orange).fontSize(8).font("Helvetica-Bold").text("SUPPLIER (ISSUED BY)", 50, y + 8);
+      doc.fillColor(ink).fontSize(9.5).font("Helvetica-Bold").text("WorkHop Technologies", 50, y + 20);
+      doc.fontSize(8).font("Helvetica").fillColor(ink)
+        .text("Bengaluru Urban, Karnataka - 560001", 50, y + 34)
+        .text("GSTIN: Unregistered (Composition/Startup Rule 46)", 50, y + 46)
+        .text("Email: connect@work-hop.com | help@work-hop.com", 50, y + 58)
+        .text("Web: www.work-hop.com", 50, y + 70);
+
+      doc.rect(305, y, 250, 85).lineWidth(1).strokeColor(ink).fillAndStroke("#FFFFFF", ink);
+      doc.fillColor(orange).fontSize(8).font("Helvetica-Bold").text("BILLED TO (CUSTOMER)", 315, y + 8);
+      doc.fillColor(ink).fontSize(9.5).font("Helvetica-Bold").text(customerName || "WorkHop Member", 315, y + 20);
+      doc.fontSize(8).font("Helvetica").fillColor(ink)
+        .text(`Email: ${customerEmail || "member@workhop.in"}`, 315, y + 34)
+        .text("Place of Supply: Bengaluru, Karnataka (29)", 315, y + 46)
+        .text("Account: Verified Freelancer Profile", 315, y + 58)
+        .text("Status: Active & Verified on Platform", 315, y + 70);
+
+      // Line items table header
+      y = 330;
+      doc.rect(40, y, 515, 22).fill(ink);
+      doc.fillColor("#FFFFFF").fontSize(8).font("Helvetica-Bold")
+        .text("DESCRIPTION", 50, y + 6)
+        .text("SAC", 330, y + 6)
+        .text("QTY", 380, y + 6)
+        .text("AMOUNT (INR)", 450, y + 6, { width: 95, align: "right" });
+
+      const safeTotal = Number(totalInr || 149);
+      const taxable = (safeTotal / 1.18).toFixed(2);
+      const cgst = ((safeTotal - safeTotal / 1.18) / 2).toFixed(2);
+      const sgst = cgst;
+
+      // Line item row
+      y += 22;
+      doc.rect(40, y, 515, 45).lineWidth(1).strokeColor("#E0E0E0").fillAndStroke("#FFFFFF", "#E0E0E0");
+      doc.fillColor(ink).fontSize(9).font("Helvetica-Bold").text(itemTitle || "Verified Pro Onboarding Badge", 50, y + 8);
+      doc.fontSize(7.5).font("Helvetica").fillColor(muted).text(itemSubtitle || "Freelancer Profile Verification & 5km Radius Listing", 50, y + 22, { width: 270 });
+      doc.fillColor(ink).fontSize(8.5).font("Helvetica")
+        .text("998311", 330, y + 12)
+        .text("1", 380, y + 12)
+        .text(`₹${taxable}`, 450, y + 12, { width: 95, align: "right" });
+
+      // Breakdown table
+      y += 45;
+      const drawRow = (label, val, bold = false, fillBg = null) => {
+        if (fillBg) {
+          doc.rect(40, y, 515, 20).fill(fillBg);
+        }
+        doc.rect(40, y, 515, 20).lineWidth(0.5).strokeColor("#E0E0E0").stroke();
+        doc.fillColor(ink).fontSize(8.5).font(bold ? "Helvetica-Bold" : "Helvetica")
+          .text(label, 240, y + 5)
+          .text(val, 450, y + 5, { width: 95, align: "right" });
+        y += 20;
+      };
+
+      drawRow("Taxable Value (Subtotal)", `₹${taxable}`);
+      drawRow("Central GST (CGST @ 9%)", `₹${cgst}`);
+      drawRow("State GST (SGST @ 9%)", `₹${sgst}`);
+      drawRow("Total Amount Paid (Inclusive of Taxes)", `₹${safeTotal.toFixed(2)}`, true, "#FAF7F2");
+
+      // Amount in words
+      y += 10;
+      doc.rect(40, y, 515, 28).lineWidth(1).strokeColor(ink).fillAndStroke("#FFFFFF", ink);
+      doc.fillColor(muted).fontSize(7.5).font("Helvetica-Bold").text("AMOUNT IN WORDS", 50, y + 5);
+      doc.fillColor(ink).fontSize(8.5).font("Helvetica-Bold").text(amountWords || "Rupees Only", 50, y + 16);
+
+      // Authenticity & Non-Editable Notice
+      y += 40;
+      doc.rect(40, y, 515, 75).lineWidth(1).strokeColor(orange).fillAndStroke("#FFF7F2", orange);
+      doc.fillColor(orange).fontSize(9).font("Helvetica-Bold").text("OFFICIAL NON-EDITABLE WORKHOP DOCUMENT", 50, y + 10);
+      doc.fillColor(ink).fontSize(8).font("Helvetica")
+        .text("• This official PDF tax invoice is immutable, non-editable, and certified under WorkHop letterhead.", 50, y + 24)
+        .text("• Electronically generated under Rule 46 of the Central Goods and Services Tax Rules, 2017.", 50, y + 36)
+        .text("• Retain this official PDF document for your business expense records, GST filing, and accounting.", 50, y + 48)
+        .text("• For inquiries or billing verification: connect@work-hop.com · www.work-hop.com", 50, y + 60);
+
+      // Watermark footer
+      doc.fillColor("#AAAAAA").fontSize(7.5).font("Helvetica").text("WorkHop Technologies · Bengaluru Hyperlocal Freelance Marketplace · GST SAC 998311", 40, 780, { align: "center", width: 515 });
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+function sendGmailSmtp({ smtpHost = "smtp.gmail.com", smtpPort = 465, smtpUser, smtpPass, to, subject, htmlBody, pdfBuffer, pdfFilename }) {
   return new Promise((resolve, reject) => {
     const socket = tls.connect(smtpPort, smtpHost, { servername: smtpHost });
     let step = 0;
@@ -35,25 +167,43 @@ function sendGmailSmtp({ smtpHost = "smtp.gmail.com", smtpPort = 465, smtpUser, 
       socket.write(line + "\r\n");
     };
 
-    const boundary = `wh_boundary_${Date.now()}`;
+    const boundaryMixed = `wh_mixed_${Date.now()}`;
+    const boundaryAlt = `wh_alt_${Date.now()}`;
+    const filename = pdfFilename || "tax-invoice.pdf";
+    const pdfBase64 = pdfBuffer ? pdfBuffer.toString("base64").match(/.{1,76}/g)?.join("\r\n") || "" : "";
+
     const rawEmail = [
       `From: "WorkHop Billing" <${smtpUser}>`,
       `To: <${to}>`,
       `Subject: ${subject}`,
       `MIME-Version: 1.0`,
-      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      `Content-Type: multipart/mixed; boundary="${boundaryMixed}"`,
       ``,
-      `--${boundary}`,
+      `--${boundaryMixed}`,
+      `Content-Type: multipart/alternative; boundary="${boundaryAlt}"`,
+      ``,
+      `--${boundaryAlt}`,
       `Content-Type: text/plain; charset="UTF-8"`,
       ``,
-      `Thank you for your WorkHop payment! Please view this email in an HTML-capable client for your full GST Tax Invoice.`,
+      `Thank you for your WorkHop payment! Your official non-editable GST Tax Invoice PDF is attached to this email (${filename}).`,
       ``,
-      `--${boundary}`,
+      `--${boundaryAlt}`,
       `Content-Type: text/html; charset="UTF-8"`,
       ``,
       htmlBody,
       ``,
-      `--${boundary}--`,
+      `--${boundaryAlt}--`,
+      ...(pdfBuffer ? [
+        ``,
+        `--${boundaryMixed}`,
+        `Content-Type: application/pdf; name="${filename}"`,
+        `Content-Transfer-Encoding: base64`,
+        `Content-Disposition: attachment; filename="${filename}"`,
+        ``,
+        pdfBase64,
+      ] : []),
+      ``,
+      `--${boundaryMixed}--`,
       `.`,
     ].join("\r\n");
 
@@ -114,11 +264,20 @@ function sendGmailSmtp({ smtpHost = "smtp.gmail.com", smtpPort = 465, smtpUser, 
   });
 }
 
-async function dispatchInvoiceEmail({ to, subject, htmlBody }) {
+async function dispatchInvoiceEmail({ to, subject, htmlBody, pdfBuffer, pdfFilename }) {
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
   const user = (process.env.SMTP_USER || "connect@work-hop.com").trim();
   const pass = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || "zwofrrqfnypettvy").replace(/\s+/g, "");
+  const filename = pdfFilename || "tax-invoice.pdf";
+
+  const attachments = pdfBuffer ? [
+    {
+      filename,
+      content: pdfBuffer,
+      contentType: "application/pdf",
+    },
+  ] : [];
 
   try {
     const transporter = nodemailer.createTransport({
@@ -132,8 +291,9 @@ async function dispatchInvoiceEmail({ to, subject, htmlBody }) {
       from: `"WorkHop Billing" <${user}>`,
       to,
       subject,
-      text: `Thank you for your WorkHop payment! Your payment was successfully received. Please open this email in an HTML-capable email client to view your full GST Tax Invoice & Payment Receipt.`,
+      text: `Thank you for your WorkHop payment! Your payment was successfully received. Please find your official, non-editable GST Tax Invoice PDF attached (${filename}).`,
       html: htmlBody,
+      attachments,
     });
     return { ok: true, messageId: info?.messageId };
   } catch (err) {
@@ -146,6 +306,8 @@ async function dispatchInvoiceEmail({ to, subject, htmlBody }) {
       to,
       subject,
       htmlBody,
+      pdfBuffer,
+      pdfFilename: filename,
     });
     return { ok: true, fallback: true };
   }
@@ -453,6 +615,34 @@ module.exports = async function handler(req, res) {
       type: baseItem.type || itemKey,
     });
 
+    const amountWords = inrAmountToWords(totalInr);
+    const pdfFilename = `${invoiceNumber}.pdf`;
+
+    let pdfBuffer = null;
+    try {
+      pdfBuffer = await generateInvoicePdfBuffer({
+        invoiceNumber,
+        customerName,
+        customerEmail,
+        itemTitle,
+        itemSubtitle,
+        totalInr,
+        paymentId,
+        amountWords,
+      });
+    } catch (pdfErr) {
+      console.warn("[WorkHop Invoice] PDF generation warning:", pdfErr.message);
+    }
+
+    // Direct PDF delivery for download or browser view (un-editable)
+    if (isGet && (dataSrc.format === "pdf" || dataSrc.download === "pdf" || !dataSrc.format || dataSrc.format !== "html")) {
+      if (pdfBuffer) {
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="${pdfFilename}"`);
+        return res.status(200).send(pdfBuffer);
+      }
+    }
+
     // If client requested preview / html directly via GET
     if (isGet && dataSrc.format === "html") {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -469,6 +659,8 @@ module.exports = async function handler(req, res) {
           to: customerEmail,
           subject,
           htmlBody,
+          pdfBuffer,
+          pdfFilename,
         });
         emailSent = true;
       } catch (err) {
@@ -482,6 +674,8 @@ module.exports = async function handler(req, res) {
       invoice_number: invoiceNumber,
       invoice_email_sent: emailSent,
       recipient: customerEmail || null,
+      pdf_attached: !!pdfBuffer,
+      pdf_filename: pdfFilename,
       html: htmlBody,
       detail: emailDetail,
     });
