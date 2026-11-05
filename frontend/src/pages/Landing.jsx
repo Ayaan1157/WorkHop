@@ -488,6 +488,8 @@ export default function Landing() {
 
   const chooseRole = (role) => {
     if (user) {
+      if (role === "employer") return nav("/employer");
+      if (role === "freelancer") return nav("/freelancer/jobs");
       if (isEmployerUser) return nav("/employer");
       return nav("/freelancer/jobs");
     }
@@ -1308,15 +1310,15 @@ export default function Landing() {
 
             {/* Secondary Role Switch Pill for Employers */}
             <div className="mt-5 flex flex-wrap items-center gap-2 pt-2">
-              <button
+              <Link
+                to="/employer"
                 data-testid="role-employer-card"
-                onClick={() => chooseRole("employer")}
                 className="group inline-flex items-center gap-2 border border-ink/30 dark:border-white/20 bg-[#E5F8EE] px-3.5 py-2 text-xs font-black text-black transition hover:border-ink"
               >
                 <Building2 size={14} className="text-ok shrink-0" />
                 <span>Hiring talent? Browse verified pros within 5 km</span>
                 <ArrowRight size={13} className="text-black transition group-hover:translate-x-0.5" />
-              </button>
+              </Link>
             </div>
           </div>
 
