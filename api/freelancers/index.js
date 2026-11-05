@@ -830,9 +830,16 @@ module.exports = async function handler(req, res) {
           ? itemExtractedImages
           : sbUnpacked.portfolioImages;
 
-      const resolvedBio = isCobblestone
-        ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
-        : (cached?.description || cached?.bio || sb?.bio || notes.bio || notes.intro || seed?.intro || "");
+      const resolvedBio =
+        cached?.description ||
+        cached?.bio ||
+        sb?.bio ||
+        notes.bio ||
+        notes.intro ||
+        seed?.intro ||
+        (isCobblestone
+          ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
+          : "");
 
       paidFreelancers.push({
         id: proId,
@@ -1004,9 +1011,15 @@ module.exports = async function handler(req, res) {
         ? "Graphics & Design"
         : (cached?.category || sb?.category || (cleanedCustSkill ? (notes.category || "") : ""));
 
-      const resolvedBio = isCobblestone
-        ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
-        : (cached?.description || cached?.bio || sb?.bio || notes.bio || notes.intro || "");
+      const resolvedBio =
+        cached?.description ||
+        cached?.bio ||
+        sb?.bio ||
+        notes.bio ||
+        notes.intro ||
+        (isCobblestone
+          ? "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design."
+          : "");
 
       const resolvedArea = cached?.area || sb?.area || notes.area || "";
 

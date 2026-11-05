@@ -1130,6 +1130,38 @@ export default function FreelancerProfile() {
                 )}
               </SidebarSection>
 
+              {/* CV / Resume Document Attachment */}
+              <SidebarSection
+                icon={<FileText size={16} />}
+                title="CV / Resume"
+                onAdd={() => openEdit("cv", {})}
+                onEdit={profile.cv_url || profile.resume_url ? () => openEdit("cv", {}) : undefined}
+              >
+                {profile.cv_url || profile.resume_url ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-[#e5e5e5] dark:border-[#222] bg-[#f9f9f9] dark:bg-[#1a1a1a]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText size={16} className="text-brand shrink-0" />
+                        <span className="text-xs font-bold text-ink dark:text-white truncate">
+                          {profile.cv_name || "Resume / CV.pdf"}
+                        </span>
+                      </div>
+                      <a
+                        href={profile.cv_url || profile.resume_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-bold text-brand hover:underline shrink-0 flex items-center gap-1"
+                      >
+                        <span>View</span>
+                        <ExternalLink size={10} />
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-inkmuted dark:text-[#555] italic">Attach your CV or resume</p>
+                )}
+              </SidebarSection>
+
               {/* DPDP ACT PRIVACY & ACCOUNT ERASURE */}
               <div className="border-2 border-ink bg-[#FFF8F5] dark:bg-[#1a1412] p-4 text-xs shadow-[2px_2px_0px_#121212]">
                 <div className="flex items-center justify-between mb-1.5">
@@ -2481,6 +2513,114 @@ export default function FreelancerProfile() {
               <option value="Not available">Not available</option>
             </select>
           </div>
+        </div>
+      </EditModal>
+
+      {/* CV / Resume Modal */}
+      <EditModal
+        isOpen={editingSection === "cv"}
+        onClose={closeEdit}
+        title="Attach CV / Resume"
+        onSave={() => {
+          updateProfile({
+            cv_url: editData?.cv_url || "",
+            cv_name: editData?.cv_name || "",
+            resume_url: editData?.cv_url || "",
+          });
+          try {
+            saveSubmittedProfile({
+              id: freelancerId || user?.id,
+              freelancer_id: freelancerId || user?.id,
+              email: user?.email || "",
+              cv_url: editData?.cv_url || "",
+              cv_name: editData?.cv_name || "",
+              resume_url: editData?.cv_url || "",
+            });
+          } catch {}
+        }}
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-xs text-inkmuted dark:text-[#888]">
+            Attach your official CV, Resume, or Portfolio PDF (Max 10MB). Verified employers can download and review it directly.
+          </p>
+
+          {profile.cv_url && (
+            <div className="flex items-center justify-between border-2 border-ink dark:border-zinc-700 bg-[#E5F8EE] dark:bg-emerald-950/40 p-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <CheckCircle2 size={16} className="text-ok shrink-0" />
+                <span className="text-xs font-black text-ink dark:text-white truncate">
+                  {profile.cv_name || "Current CV / Resume"}
+                </span>
+              </div>
+              <a
+                href={profile.cv_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-black text-brand underline ml-2"
+              >
+                View
+              </a>
+            </div>
+          )}
+
+          <div>
+            <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-ink dark:border-zinc-700 bg-sand/30 dark:bg-zinc-800/40 p-6 cursor-pointer hover:border-brand transition">
+              <Upload size={22} className="text-brand" />
+              <span className="text-xs font-black uppercase text-ink dark:text-white">
+                {editData?.cv_name ? `Selected: ${editData.cv_name}` : "Upload New CV / Resume (PDF, DOCX)"}
+              </span>
+              <span className="text-[10px] text-inkmuted dark:text-zinc-400">PDF, DOC, DOCX up to 10MB</span>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 10 * 1024 * 1024) {
+                    alert("File is too large (max 10MB).");
+                    return;
+                  }
+                  const scanRes = await scanUploadFile(file);
+                  if (scanRes?.hasViolations) {
+                    alert("File blocked: Prohibited contact details detected.");
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = async () => {
+                    const dataUrl = String(reader.result);
+                    let publicUrl = null;
+                    try {
+                      publicUrl = await supabaseUploadPortfolioImage(file, freelancerId || user?.id, dataUrl);
+                    } catch {}
+                    const finalUrl = publicUrl || dataUrl;
+                    setEditData((d) => ({
+                      ...(d || {}),
+                      cv_url: finalUrl,
+                      cv_name: file.name,
+                    }));
+                  };
+                  reader.readAsDataURL(file);
+                }}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {profile.cv_url && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditData((d) => ({
+                  ...(d || {}),
+                  cv_url: "",
+                  cv_name: "",
+                }));
+              }}
+              className="text-xs font-black text-danger hover:underline self-start"
+            >
+              Remove Attached CV
+            </button>
+          )}
         </div>
       </EditModal>
 

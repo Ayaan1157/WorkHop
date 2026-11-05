@@ -476,6 +476,50 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
                     )}
                   </div>
                 )}
+
+                {/* CV / Resume Document Display */}
+                {(() => {
+                  const resolvedCvUrl =
+                    pro.cv_url ||
+                    pro.resume_url ||
+                    matchingSubmitted?.cv_url ||
+                    matchingSubmitted?.resume_url ||
+                    (isOwn ? (ownProfile?.cv_url || ownProfile?.resume_url) : null);
+                  const resolvedCvName =
+                    pro.cv_name ||
+                    matchingSubmitted?.cv_name ||
+                    (isOwn ? ownProfile?.cv_name : null) ||
+                    "Curriculum Vitae / Resume";
+
+                  if (!resolvedCvUrl) return null;
+
+                  return (
+                    <div className="mt-3.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 p-3 shadow-[2px_2px_0px_#121212] flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-ink bg-brand text-white">
+                          <FileText size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-ink dark:text-white truncate">
+                            {resolvedCvName}
+                          </p>
+                          <p className="text-[10px] text-inkmuted dark:text-zinc-400 font-bold">
+                            Official Verified CV / Resume Attachment
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={resolvedCvUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 border-2 border-ink bg-ink text-white hover:bg-brand px-3 py-1.5 text-xs font-black uppercase tracking-wider shrink-0 transition"
+                      >
+                        <span>View CV</span>
+                        <ExternalLink size={11} />
+                      </a>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ShieldCheck, Lock, CheckCircle2, ArrowRight, Image as ImageIcon, Plus, LocateFixed, Loader2, FileText, Mail, ExternalLink, MapPin, Check, X, ChevronDown } from "lucide-react";
+import { ChevronLeft, ShieldCheck, Lock, CheckCircle2, ArrowRight, Image as ImageIcon, Plus, LocateFixed, Loader2, FileText, Mail, ExternalLink, MapPin, Check, X, ChevronDown, Paperclip, Upload } from "lucide-react";
 import CouponInput from "@/components/CouponInput";
 import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 import { useRazorpay } from "@/hooks/usePayments";
@@ -69,6 +69,9 @@ export default function Onboarding() {
   const [extRating, setExtRating] = useState("");
   const [extReviews, setExtReviews] = useState("");
   const [slots, setSlots] = useState([null, null, null]);
+  const [cvFile, setCvFile] = useState(null); // { name, size, url, data }
+  const [cvUploading, setCvUploading] = useState(false);
+  const [cvError, setCvError] = useState(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [locError, setLocError] = useState(null);
   const [showManualSelector, setShowManualSelector] = useState(false);
@@ -452,6 +455,57 @@ export default function Onboarding() {
     reader.readAsDataURL(file);
   };
 
+  const handleCvUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCvError(null);
+
+    // Max 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      setCvError(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 10MB.`);
+      return;
+    }
+
+    setCvUploading(true);
+    try {
+      const scanRes = await scanUploadFile(file);
+      if (scanRes?.hasViolations) {
+        setCvError(
+          `CV blocked: Prohibited contact details detected (${scanRes.violations.map((v) => v.label).join(", ")}). Direct personal contacts before hiring are not allowed.`
+        );
+        setCvUploading(false);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = String(reader.result);
+        let publicUrl = null;
+        try {
+          publicUrl = await supabaseUploadPortfolioImage(file, state.freelancerId || user?.id, dataUrl);
+        } catch {}
+
+        const finalUrl = publicUrl || dataUrl;
+        setCvFile({
+          name: file.name,
+          size: (file.size / 1024).toFixed(0) + " KB",
+          url: finalUrl,
+          data: dataUrl,
+        });
+        setCvUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setCvError("Could not process CV file: " + err.message);
+      setCvUploading(false);
+    }
+  };
+
+  const handleRemoveCv = () => {
+    setCvFile(null);
+    setCvError(null);
+  };
+
   const handleSubmit = async () => {
     if (!state.freelancerId || !allReady) return;
     setSubmitting(true);
@@ -461,6 +515,9 @@ export default function Onboarding() {
         linkedin_url: sanitizeInput(linkedin),
         portfolio_url: sanitizeInput(portfolio),
         portfolio_images: slots.filter(Boolean),
+        cv_url: cvFile?.url || null,
+        cv_name: cvFile?.name || null,
+        resume_url: cvFile?.url || null,
         phone: phoneDigits,
         skill: sanitizeInput(skill),
         category,
@@ -1032,8 +1089,8 @@ export default function Onboarding() {
           </Step>
 
           {/* STEP 4 */}
-          <Step n={4} title="Upload your work images (logo, landing page, 3D design, etc.)" active={state.paid} testID="step4-block">
-            <p className="text-xs text-inkmuted">Upload up to 3 high-resolution case studies (Max 5MB each • JPG, PNG, WEBP)</p>
+          <Step n={4} title="Upload work samples & CV / Resume" active={state.paid} testID="step4-block">
+            <p className="text-xs text-inkmuted font-bold">1. Portfolio Showcase (Up to 3 high-resolution project images · Max 5MB each)</p>
             <div className="flex gap-3">
               {slots.map((slot, i) => (
                 <label key={i} data-testid={`portfolio-slot-${i}`} className={`flex aspect-square flex-1 cursor-pointer flex-col items-center justify-center gap-1 border-2 border-ink ${slot ? "bg-[#FFE5D6]" : "bg-sand"}`}>
@@ -1041,6 +1098,73 @@ export default function Onboarding() {
                   <input type="file" accept="image/*" disabled={!state.paid} onChange={(e) => pickSlot(i, e)} className="hidden" />
                 </label>
               ))}
+            </div>
+
+            {/* CV / Resume Attachment Feature */}
+            <div className="mt-4 border-t-2 border-ink/15 pt-3.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[11px] font-black uppercase text-ink flex items-center gap-1.5">
+                  <FileText size={14} className="text-brand" />
+                  <span>Attach CV / Resume (Optional):</span>
+                </span>
+                <span className="text-[10px] text-inkmuted font-bold">PDF, DOC, DOCX up to 10MB</span>
+              </div>
+              <p className="text-[11px] text-inkmuted mb-2.5">
+                Upload your resume or curriculum vitae so verified employers can review your full background and qualifications.
+              </p>
+
+              {cvFile ? (
+                <div className="flex items-center justify-between border-2 border-ink bg-[#E5F8EE] p-3 shadow-[2px_2px_0px_#121212]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <CheckCircle2 size={16} className="text-ok shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-ink truncate">{cvFile.name}</p>
+                      <p className="text-[10px] text-inkmuted font-bold">{cvFile.size} · Uploaded &amp; Attached</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {cvFile.url && (
+                      <a
+                        href={cvFile.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-black text-brand underline"
+                      >
+                        View
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleRemoveCv}
+                      className="border border-ink bg-white hover:bg-red-50 p-1 text-ink hover:text-danger transition"
+                      title="Remove CV"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex items-center justify-center gap-2 border-2 border-dashed border-ink bg-white hover:bg-sand/60 p-3.5 cursor-pointer transition shadow-[1.5px_1.5px_0px_#121212]">
+                  {cvUploading ? (
+                    <><Loader2 size={16} className="animate-spin text-brand" /><span className="text-xs font-black uppercase text-ink">Uploading CV…</span></>
+                  ) : (
+                    <><Upload size={16} className="text-brand" /><span className="text-xs font-black uppercase text-ink">Choose CV / Resume File</span></>
+                  )}
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    disabled={!state.paid || cvUploading}
+                    onChange={handleCvUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
+
+              {cvError && (
+                <p className="mt-1.5 text-[11px] font-bold text-danger flex items-center gap-1">
+                  <span>⚠️</span> {cvError}
+                </p>
+              )}
             </div>
           </Step>
 

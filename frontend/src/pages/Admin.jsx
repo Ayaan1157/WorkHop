@@ -27,8 +27,9 @@ import {
   addAdminNotification,
   markAdminNotificationRead,
   markAllAdminNotificationsRead,
-  clearAdminNotifications,
   getStoredLeads,
+  getSubmittedProfiles,
+  getFreelancerProfile,
   getFreelancerStatuses,
   updateFreelancerStatus,
   cleanRealSkill,
@@ -2409,6 +2410,7 @@ function ProsTalentTab({ adminFetch }) {
       let list = Array.isArray(data) ? [...data] : [];
 
       // Also guarantee all platform leads are represented
+      // Also guarantee all platform leads are represented
       try {
         const storedLeads = getStoredLeads({ includeDeclined: true });
         const existingIds = new Set(list.map((p) => (p.freelancer_id || p.id || "").toLowerCase()));
@@ -2464,7 +2466,47 @@ function ProsTalentTab({ adminFetch }) {
             }
           }
         }
+
+        // Also merge any submitted profiles saved locally (includes user-added design images and customized descriptions)
+        const submitted = getSubmittedProfiles();
+        for (const sp of submitted) {
+          const sid = (sp.freelancer_id || sp.id || "").toLowerCase();
+          const semail = (sp.email || "").toLowerCase().trim();
+          const existingIdx = list.findIndex(
+            (p) =>
+              (p.freelancer_id && p.freelancer_id.toLowerCase() === sid) ||
+              (p.id && p.id.toLowerCase() === sid) ||
+              (semail && p.email && p.email.toLowerCase().trim() === semail)
+          );
+          if (existingIdx >= 0) {
+            list[existingIdx] = {
+              ...list[existingIdx],
+              ...sp,
+              portfolio_images:
+                Array.isArray(sp.portfolio_images) && sp.portfolio_images.length > 0
+                  ? sp.portfolio_images
+                  : list[existingIdx].portfolio_images,
+              portfolio_items:
+                Array.isArray(sp.portfolio_items) && sp.portfolio_items.length > 0
+                  ? sp.portfolio_items
+                  : list[existingIdx].portfolio_items,
+              intro: sp.intro || sp.bio || list[existingIdx].intro || list[existingIdx].bio,
+              bio: sp.bio || sp.intro || list[existingIdx].bio || list[existingIdx].intro,
+            };
+          } else if (sid || semail) {
+            list.push({
+              ...sp,
+              freelancer_id: sp.freelancer_id || sp.id || sid,
+              id: sp.id || sp.freelancer_id || sid,
+              approved: sp.approved !== undefined ? sp.approved : false,
+              status: sp.status || "pending",
+            });
+            if (sid) existingIds.add(sid);
+            if (semail) existingEmails.add(semail);
+          }
+        }
       } catch {}
+      const ownProfile = getFreelancerProfile();
 
       const merged = list.map((p) => {
         const pid = p.freelancer_id || p.id;
@@ -2475,14 +2517,31 @@ function ProsTalentTab({ adminFetch }) {
           p.payment_id === "pay_TvGwKVJe2U6Qf2" ||
           pid === "pro-cobblestonedesigns";
 
+        const isCurrentCobblestoneUser =
+          isCobblestone &&
+          ownProfile &&
+          ((ownProfile.email && ownProfile.email.toLowerCase().includes("cobblestone")) ||
+           (ownProfile.name && ownProfile.name.toLowerCase().includes("cobblestone")));
+
+        const userSavedBio =
+          p.intro ||
+          p.bio ||
+          p.description ||
+          (isCurrentCobblestoneUser ? (ownProfile.description || ownProfile.bio || ownProfile.intro) : null);
+
+        const userSavedImages =
+          (Array.isArray(p.portfolio_images) && p.portfolio_images.length > 0 ? p.portfolio_images : null) ||
+          (Array.isArray(p.portfolio) && p.portfolio.length > 0 ? p.portfolio : null) ||
+          (isCurrentCobblestoneUser && Array.isArray(ownProfile.portfolio_images) && ownProfile.portfolio_images.length > 0 ? ownProfile.portfolio_images : null);
+
         const cleanedSkill = isCobblestone
-          ? "Architecture & Interior Design"
+          ? (p.skill || "Architecture & Interior Design")
           : p.is_dummy
           ? (p.skill || "")
           : cleanRealSkill(p.skill);
 
         const cleanedCategory = isCobblestone
-          ? "Graphics & Design"
+          ? (p.category || "Graphics & Design")
           : p.is_dummy
           ? (p.category || "")
           : (cleanedSkill ? (p.category || "") : "");
@@ -2490,12 +2549,17 @@ function ProsTalentTab({ adminFetch }) {
         const normalized = isCobblestone
           ? {
               ...p,
-              name: "Cobblestone Designs",
-              full_name: "Cobblestone Designs",
-              skill: "Architecture & Interior Design",
-              category: "Graphics & Design",
+              name: p.name || "Cobblestone Designs",
+              full_name: p.full_name || "Cobblestone Designs",
+              skill: cleanedSkill,
+              category: cleanedCategory,
               intro:
+                userSavedBio ||
                 "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design.",
+              bio:
+                userSavedBio ||
+                "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design.",
+              portfolio_images: userSavedImages || p.portfolio_images || [],
             }
           : {
               ...p,
