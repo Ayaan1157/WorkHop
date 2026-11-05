@@ -247,7 +247,30 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         gst_number: isEmployer && gstNumber ? gstNumber.trim().toUpperCase() : undefined,
       };
 
-      // 2. Real-time sync to backend (/api/users) for Admin dashboard
+      // 2. Real-time sync to real Supabase auth & backend
+      try {
+        if (password) {
+          const { data: sbAuth } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password: password,
+            options: {
+              data: {
+                full_name: cleanName,
+                name: cleanName,
+                role: role,
+                area: area,
+                phone: phoneDigits,
+              },
+            },
+          });
+          if (sbAuth?.session?.access_token) {
+            setToken(sbAuth.session.access_token);
+          }
+        }
+      } catch (sbErr) {
+        console.warn("Supabase auth sync notice:", sbErr?.message);
+      }
+
       await apiPost("/users", payload).catch(() => {});
       resetRateLimit(`signup_${cleanEmail}`);
 

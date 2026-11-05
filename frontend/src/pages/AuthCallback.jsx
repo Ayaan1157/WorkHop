@@ -337,51 +337,7 @@ export default function AuthCallback() {
         clearPendingFlags();
 
         // ──────────────────────────────────────────────────────────────────
-        // CASE A: User clicked "Log In" with a NEVER-REGISTERED Google account
-        // ──────────────────────────────────────────────────────────────────
-        if (
-          storedIntent === "signin" &&
-          (serverDecision?.status === "not_registered" || !isRegistered) &&
-          !isProtectedEmail(cleanEmail) &&
-          !isUserAdmin(cleanEmail)
-        ) {
-          try {
-            await supabase.auth.signOut();
-          } catch {}
-          clearToken();
-          localStorage.removeItem("workhop_user_data");
-          localStorage.removeItem(`workhop_oauth_verified_${user.id}`);
-          if (isMounted) {
-            setStatus("not_registered");
-          }
-          return;
-        }
-
-        // ──────────────────────────────────────────────────────────────────
-        // CASE B: User clicked "Sign Up" with an ALREADY-REGISTERED Google account
-        // ──────────────────────────────────────────────────────────────────
-        if (
-          storedIntent === "signup" &&
-          (serverDecision?.status === "already_registered" ||
-            isGenuineSbProfile ||
-            isGenuineLocal ||
-            isMetaRegistered ||
-            isProtectedEmail(cleanEmail) ||
-            isUserAdmin(cleanEmail))
-        ) {
-          try {
-            await supabase.auth.signOut();
-          } catch {}
-          clearToken();
-          localStorage.removeItem("workhop_user_data");
-          localStorage.removeItem(`workhop_oauth_verified_${user.id}`);
-          if (isMounted) {
-            setStatus("already_registered");
-          }
-          return;
-        }
-
-        // Determine effective role & merged profile data (ignore trigger-default 'freelancer' on uninitialized profiles)
+        // Determine effective role & merged profile data
         const srvProfile = serverDecision?.profile || {};
         const effectiveRole =
           (srvProfile.role ||
