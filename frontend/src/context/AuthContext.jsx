@@ -112,21 +112,9 @@ export function AuthProvider({ children }) {
           }
         }
 
-        // 1. Check for real active Supabase / Google OAuth session that has ALREADY passed /auth/callback verification
+        // 1. Check for real active Supabase / Google OAuth session
         const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
         if (session?.user && isMounted) {
-          const isVerifiedSession =
-            localStorage.getItem(`workhop_oauth_verified_${session.user.id}`) === "1" ||
-            Boolean(getStoredUser()?.email && getStoredUser()?.email.toLowerCase() === (session.user.email || "").toLowerCase());
-
-          if (!isVerifiedSession) {
-            // Unverified Google OAuth session — route through /auth/callback check!
-            if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth/callback")) {
-              window.location.replace("/auth/callback");
-            }
-            return;
-          }
-
           const existingStored = getStoredUser();
           const role = existingStored?.role || localStorage.getItem("workhop_auth_role") || "freelancer";
           const linkedUser = linkOrUpdateGoogleUser(session.user, role);
