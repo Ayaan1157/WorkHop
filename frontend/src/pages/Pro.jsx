@@ -507,13 +507,13 @@ export default function Pro() {
                 <div
                   key={i}
                   onClick={s.onClick}
-                  className={`flex flex-col items-center border-2 border-ink bg-sand p-2.5 text-center ${
-                    s.onClick ? "cursor-pointer hover:bg-[#FFF3C4] transition shadow-[1.5px_1.5px_0px_#121212]" : ""
+                  className={`flex flex-col items-center border-2 border-ink bg-[#18181b] dark:bg-[#18181b] p-2.5 text-center ${
+                    s.onClick ? "cursor-pointer hover:bg-[#27272a] transition shadow-[1.5px_1.5px_0px_#121212]" : ""
                   }`}
                   title={s.onClick ? "Click to set hourly rate" : undefined}
                 >
-                  <span className="text-sm font-black text-ink">{s.n}</span>
-                  <span className="mt-0.5 text-[8px] font-extrabold tracking-wide text-inkmuted">
+                  <span className="text-sm font-black text-white">{s.n}</span>
+                  <span className="mt-0.5 text-[8px] font-extrabold tracking-wide text-white/90">
                     {s.l}
                   </span>
                 </div>
