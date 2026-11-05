@@ -78,7 +78,6 @@ export default function Onboarding() {
   const [customArea, setCustomArea] = useState("");
 
   const handleRequestLocation = async () => {
-    if (!state.paid) return;
     setLocError(null);
     try {
       const res = await requestLocation({ timeout: 10000 });
@@ -858,12 +857,12 @@ export default function Onboarding() {
                   type="button"
                   data-testid="profile-location-btn"
                   onClick={handleRequestLocation}
-                  disabled={!state.paid || locStatus === "locating"}
+                  disabled={locStatus === "locating"}
                   className={`flex-1 flex items-center justify-between gap-2 border-2 border-ink px-3.5 py-2.5 text-left transition ${
                     coords
                       ? "bg-ok text-white shadow-[2px_2px_0px_#121212]"
                       : "bg-[#FFF9E6] hover:bg-amber-100 text-ink shadow-[2px_2px_0px_#121212]"
-                  } disabled:opacity-60`}
+                  }`}
                 >
                   <div className="flex items-center gap-2">
                     {locStatus === "locating" ? (
@@ -905,8 +904,7 @@ export default function Onboarding() {
                   type="button"
                   data-testid="profile-manual-location-toggle"
                   onClick={() => setShowManualSelector((p) => !p)}
-                  disabled={!state.paid}
-                  className="inline-flex items-center justify-center gap-1.5 border-2 border-ink bg-white hover:bg-sand px-3 py-2 text-[11px] font-black text-ink shadow-[2px_2px_0px_#121212] transition disabled:opacity-60 shrink-0"
+                  className="inline-flex items-center justify-center gap-1.5 border-2 border-ink bg-white hover:bg-sand px-3 py-2 text-[11px] font-black text-ink shadow-[2px_2px_0px_#121212] transition shrink-0"
                 >
                   <MapPin size={13} className="text-brand" />
                   <span>{coords?.area || "Pick Locality"}</span>
