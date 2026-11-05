@@ -259,14 +259,14 @@ export function GlobalNav() {
                 data-testid="nav-switch-role-btn"
                 onClick={handleToggleRole}
                 title={isEmployerUser ? "Switch to Pro / Freelancer workspace" : "Switch to Employer / Hiring workspace"}
-                className={`hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-ink px-3 text-[11px] font-black uppercase tracking-wide transition shadow-[2px_2px_0px_#121212] whitespace-nowrap shrink-0 active:translate-y-0.5 ${
+                className={`hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-ink dark:border-white px-3 text-[11px] font-black uppercase tracking-wide transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#ffffff] whitespace-nowrap shrink-0 active:translate-y-0.5 ${
                   isEmployerUser
-                    ? "bg-[#E5F8EE] text-[#006633] dark:bg-emerald-950/60 dark:text-emerald-300 hover:bg-[#d4f3e3]"
-                    : "bg-[#FFF3C4] text-[#8a5d00] dark:bg-amber-950/60 dark:text-amber-300 hover:bg-[#ffeaa0]"
+                    ? "bg-[#008744] dark:bg-[#007038] text-white !text-white hover:bg-[#007038]"
+                    : "bg-[#D97706] dark:bg-[#B45309] text-white !text-white hover:bg-[#B45309]"
                 }`}
               >
-                <RefreshCw size={13} className="shrink-0 animate-[spin_10s_linear_infinite]" />
-                <span>{isEmployerUser ? "HIRING MODE (SWITCH TO PRO)" : "PRO MODE (SWITCH TO HIRE)"}</span>
+                <RefreshCw size={13} className="shrink-0 text-white animate-[spin_10s_linear_infinite]" />
+                <span className="text-white !text-white font-black">{isEmployerUser ? "HIRING MODE (SWITCH TO PRO)" : "PRO MODE (SWITCH TO HIRE)"}</span>
               </button>
             )}
 
@@ -388,14 +388,14 @@ export function GlobalNav() {
                       handleToggleRole();
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full flex items-center justify-center gap-2 border-2 border-ink py-2 text-xs font-black uppercase tracking-wider transition shadow-[2px_2px_0px_#121212] active:translate-y-0.5 ${
+                    className={`w-full flex items-center justify-center gap-2 border-2 border-ink dark:border-white py-2 text-xs font-black uppercase tracking-wider transition shadow-[2px_2px_0px_#121212] active:translate-y-0.5 text-white !text-white ${
                       isEmployerUser
-                        ? "bg-[#E5F8EE] text-[#006633] dark:bg-emerald-950/60 dark:text-emerald-300"
-                        : "bg-[#FFF3C4] text-[#8a5d00] dark:bg-amber-950/60 dark:text-amber-300"
+                        ? "bg-[#008744] dark:bg-[#007038]"
+                        : "bg-[#D97706] dark:bg-[#B45309]"
                     }`}
                   >
-                    <RefreshCw size={13} className="shrink-0" />
-                    <span>{isEmployerUser ? "Switch to Pro / Work Mode" : "Switch to Employer / Hire Mode"}</span>
+                    <RefreshCw size={13} className="shrink-0 text-white" />
+                    <span className="text-white !text-white font-black">{isEmployerUser ? "Switch to Pro / Work Mode" : "Switch to Employer / Hire Mode"}</span>
                   </button>
                 </div>
               ) : (
