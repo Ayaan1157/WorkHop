@@ -1523,74 +1523,101 @@ export default function Landing() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
             {/* Step 1 */}
-            <div className="border-2 border-ink bg-white dark:bg-[#1C1C20] p-6 shadow-[4px_4px_0px_#121212] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-[#FFF3C4] text-black">
-                    <MapPin size={22} className="text-black" />
-                  </div>
-                  <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
-                    STEP 01
-                  </span>
-                </div>
-                <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
-                  Post or find a job
-                </h3>
-                <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300 line-clamp-2">
-                  Drop a pin or browse live gigs within 5 km of your block.
-                </p>
+            <div className="group border-2 border-ink bg-white dark:bg-[#1C1C20] overflow-hidden shadow-[4px_4px_0px_#121212] flex flex-col justify-between transition hover:-translate-y-1 hover:shadow-[6px_6px_0px_#121212]">
+              {/* Graphic Art */}
+              <div className="w-full bg-[#FAF7F2] dark:bg-[#151518] border-b-2 border-ink overflow-hidden aspect-[4/3] flex items-center justify-center p-2">
+                <img
+                  src="/steps/step1_art.png"
+                  alt="Step 1: Post or find a job within 5km"
+                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
               </div>
-              <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-brand">
-                <LocateFixed size={13} />
-                <span>KORAMANGALA · HSR · INDIRANAGAR + MORE</span>
+              <div className="p-5 flex flex-col justify-between flex-1">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
+                      STEP 01
+                    </span>
+                    <span className="text-[10px] font-bold text-inkmuted dark:text-stone-400">HYPERLOCAL 5KM</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
+                    Post or find a job
+                  </h3>
+                  <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300">
+                    Drop your pin or browse verified local gigs within 5 km of your block.
+                  </p>
+                </div>
+                <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-brand">
+                  <LocateFixed size={13} />
+                  <span>KORAMANGALA · HSR · INDIRANAGAR + MORE</span>
+                </div>
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="border-2 border-ink bg-white dark:bg-[#1C1C20] p-6 shadow-[4px_4px_0px_#121212] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-[#E5F8EE] text-black">
-                    <MessageSquare size={22} className="text-black" />
-                  </div>
-                  <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
-                    STEP 02
-                  </span>
-                </div>
-                <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
-                  Chat and agree
-                </h3>
-                <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300 line-clamp-2">
-                  Unlock direct phone &amp; WhatsApp to align on scope in minutes.
-                </p>
+            <div className="group border-2 border-ink bg-white dark:bg-[#1C1C20] overflow-hidden shadow-[4px_4px_0px_#121212] flex flex-col justify-between transition hover:-translate-y-1 hover:shadow-[6px_6px_0px_#121212]">
+              {/* Graphic Art */}
+              <div className="w-full bg-[#FAF7F2] dark:bg-[#151518] border-b-2 border-ink overflow-hidden aspect-[4/3] flex items-center justify-center p-2">
+                <img
+                  src="/steps/step2_art.png"
+                  alt="Step 2: Chat and agree via instant WhatsApp & call"
+                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
               </div>
-              <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-ok">
-                <PhoneCall size={13} />
-                <span>INSTANT CALL · DIRECT WHATSAPP</span>
+              <div className="p-5 flex flex-col justify-between flex-1">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
+                      STEP 02
+                    </span>
+                    <span className="text-[10px] font-bold text-inkmuted dark:text-stone-400">DIRECT CONNECT</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
+                    Chat &amp; agree
+                  </h3>
+                  <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300">
+                    Unlock direct phone &amp; WhatsApp to align on project scope in minutes.
+                  </p>
+                </div>
+                <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-ok">
+                  <PhoneCall size={13} />
+                  <span>INSTANT CALL · DIRECT WHATSAPP</span>
+                </div>
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="border-2 border-ink bg-white dark:bg-[#1C1C20] p-6 shadow-[4px_4px_0px_#121212] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex h-12 w-12 items-center justify-center border-2 border-ink bg-[#FFEAA0] text-black">
-                    <ShieldCheck size={22} className="text-black" />
-                  </div>
-                  <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
-                    STEP 03
-                  </span>
-                </div>
-                <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
-                  Get paid securely
-                </h3>
-                <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300 line-clamp-2">
-                  Settle via milestone escrow or direct UPI with 0% commission.
-                </p>
+            <div className="group border-2 border-ink bg-white dark:bg-[#1C1C20] overflow-hidden shadow-[4px_4px_0px_#121212] flex flex-col justify-between transition hover:-translate-y-1 hover:shadow-[6px_6px_0px_#121212]">
+              {/* Graphic Art */}
+              <div className="w-full bg-[#FAF7F2] dark:bg-[#151518] border-b-2 border-ink overflow-hidden aspect-[4/3] flex items-center justify-center p-2">
+                <img
+                  src="/steps/step3_art.png"
+                  alt="Step 3: Get paid securely with 0% commission"
+                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
               </div>
-              <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-brand">
-                <Lock size={13} />
-                <span>KEEP 100% OF YOUR EARNINGS</span>
+              <div className="p-5 flex flex-col justify-between flex-1">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
+                      STEP 03
+                    </span>
+                    <span className="text-[10px] font-bold text-brand">0% COMMISSION</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
+                    Get paid securely
+                  </h3>
+                  <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300">
+                    Settle via milestone escrow or direct UPI with zero commission deductions.
+                  </p>
+                </div>
+                <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-brand">
+                  <Lock size={13} />
+                  <span>KEEP 100% OF YOUR EARNINGS</span>
+                </div>
               </div>
             </div>
           </div>
