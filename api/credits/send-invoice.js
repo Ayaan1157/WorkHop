@@ -2,6 +2,17 @@ const nodemailer = require("nodemailer");
 const tls = require("tls");
 const PDFDocument = require("pdfkit");
 
+// Global in-memory cache to prevent sending duplicate invoices for the same payment reference
+const SENT_INVOICES = new Map();
+function cleanOldSentInvoices() {
+  const now = Date.now();
+  if (SENT_INVOICES.size > 500) {
+    for (const [k, v] of SENT_INVOICES.entries()) {
+      if (now - v.time > 24 * 3600 * 1000) SENT_INVOICES.delete(k);
+    }
+  }
+}
+
 const KNOWN_ITEMS = {
   "verification-badge": { title: "Verified Pro Onboarding Badge", subtitle: "Freelancer Profile Verification & 5km Radius Listing", type: "onboarding", default_price: 299 },
   "freelancer_onboarding": { title: "Verified Pro Onboarding Badge", subtitle: "Freelancer Profile Verification & 5km Radius Listing", type: "onboarding", default_price: 299 },
@@ -652,6 +663,28 @@ module.exports = async function handler(req, res) {
     let emailSent = false;
     let emailDetail = null;
 
+    // Check if an invoice was already emailed for this payment/order/invoiceNumber
+    const dedupKey = (dataSrc.payment_id && dataSrc.payment_id !== "pay_captured")
+      ? `pay_${dataSrc.payment_id}`
+      : (dataSrc.order_id ? `order_${dataSrc.order_id}` : null);
+
+    cleanOldSentInvoices();
+    const alreadySent = dedupKey && SENT_INVOICES.has(dedupKey);
+
+    if (alreadySent) {
+      const prior = SENT_INVOICES.get(dedupKey);
+      return res.status(200).json({
+        ok: true,
+        invoice_number: prior.invoice_number || invoiceNumber,
+        invoice_email_sent: true,
+        already_dispatched: true,
+        recipient: customerEmail || null,
+        pdf_attached: !!pdfBuffer,
+        pdf_filename: pdfFilename,
+        html: htmlBody,
+      });
+    }
+
     if (customerEmail && customerEmail.includes("@")) {
       const subject = `Tax Invoice #${invoiceNumber} · ${itemTitle} [WorkHop]`;
       try {
@@ -663,6 +696,13 @@ module.exports = async function handler(req, res) {
           pdfFilename,
         });
         emailSent = true;
+        if (dedupKey) {
+          SENT_INVOICES.set(dedupKey, {
+            invoice_number: invoiceNumber,
+            time: Date.now(),
+            email: customerEmail,
+          });
+        }
       } catch (err) {
         console.error("[WorkHop Invoice Email Dispatch Error]:", err.message);
         emailDetail = err.message;

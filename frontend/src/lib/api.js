@@ -282,28 +282,14 @@ async function mockRouter(path, method = "GET", body = null) {
     };
   }
   if (cleanPath === "/credits/purchase-pack" && method === "POST") {
-    const invNo = `WH-INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-    fetch("/api/credits/send-invoice", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...body, invoice_number: invNo }),
-    }).catch(() => {});
     return {
       ...purchaseCreditPack(body?.user_id || getFreelancerId(), body?.pack_id),
-      invoice_number: invNo,
       invoice_email_sent: true,
     };
   }
   if (cleanPath === "/credits/subscribe" && method === "POST") {
-    const invNo = `WH-INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-    fetch("/api/credits/send-invoice", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...body, invoice_number: invNo }),
-    }).catch(() => {});
     return {
       ...subscribeToCredits(body?.user_id || getFreelancerId(), body?.plan_id),
-      invoice_number: invNo,
       invoice_email_sent: true,
     };
   }

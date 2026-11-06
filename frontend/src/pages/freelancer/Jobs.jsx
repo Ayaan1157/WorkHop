@@ -447,6 +447,7 @@ export default function Jobs() {
 
     // Requirement 1: Block application if balance is insufficient
     if (currentWallet.balance < totalCost) {
+      setWallet(currentWallet);
       setApplyError(`Insufficient Hops. This application requires ${totalCost} Hops, but you only have ${currentWallet.balance} Hops.`);
       setCreditsModalOpen(true);
       return;
@@ -473,6 +474,7 @@ export default function Jobs() {
       setWallet(getCreditsWallet(fid));
       load();
     } catch (e) {
+      setWallet(getCreditsWallet(fid));
       if (e?.status === 402 || e?.code === "INSUFFICIENT_CREDITS") {
         setApplyError(e?.message || "Insufficient Hops — top up or subscribe to apply.");
         setCreditsModalOpen(true);
