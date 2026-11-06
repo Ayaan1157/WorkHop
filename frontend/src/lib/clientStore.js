@@ -2425,6 +2425,7 @@ export function applyToJob(
   localStorage.setItem(APPLICATIONS_KEY, JSON.stringify([app, ...apps]));
 
   // Record application boost if extra credits paid
+  const boost = Number(boostCredits) || 0;
   if (boost > 0) {
     const appBoosts = JSON.parse(localStorage.getItem(APPLICATION_BOOSTS_KEY) || "[]");
     appBoosts.push({
