@@ -1339,20 +1339,16 @@ export default function Landing() {
                 </span>
               </div>
 
-              {/* Youngster with Laptop SVG Composition + Animated City Hop Trail */}
-              <div className="relative aspect-[4/3] w-full flex items-center justify-center rounded-sm bg-white dark:bg-[#141417] border-2 border-ink dark:border-zinc-700 overflow-hidden shadow-inner">
+              {/* Youngster with Laptop Real Photo Composition + Animated City Hop Trail */}
+              <div className="relative aspect-[4/3] w-full flex items-center justify-center rounded-sm bg-gradient-to-b from-[#FFFDF9] to-[#F5EFE6] dark:from-[#18181C] dark:to-[#101012] border-2 border-ink dark:border-zinc-700 overflow-hidden shadow-inner">
                 
                 {/* Background Subtle City Skyline Line Art */}
                 <svg
                   viewBox="0 0 460 320"
-                  className="w-full h-full"
-                  aria-label="Young professional with laptop working locally in Bengaluru"
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  aria-label="Neighborhood skyline with hop trail"
                 >
                   <defs>
-                    <linearGradient id="laptopScreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#FFF3E9" />
-                      <stop offset="100%" stopColor="#FFE3D3" />
-                    </linearGradient>
                     <linearGradient id="hopperTrail" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#00A86B" />
                       <stop offset="100%" stopColor="#E65A1E" />
@@ -1360,25 +1356,25 @@ export default function Landing() {
                   </defs>
 
                   {/* Bengaluru Startup Skyline Dotted Silhouette */}
-                  <g stroke="#D4D4D8" dark-stroke="#3F3F46" strokeWidth="1.5" fill="none" opacity="0.65">
+                  <g stroke="#D4D4D8" dark-stroke="#3F3F46" strokeWidth="1.5" fill="none" opacity="0.6">
                     {/* Building 1 (Startup Office) */}
-                    <rect x="25" y="140" width="45" height="150" />
-                    <line x1="35" y1="160" x2="60" y2="160" />
-                    <line x1="35" y1="180" x2="60" y2="180" />
-                    <line x1="35" y1="200" x2="60" y2="200" />
+                    <rect x="20" y="145" width="45" height="145" />
+                    <line x1="30" y1="165" x2="55" y2="165" />
+                    <line x1="30" y1="185" x2="55" y2="185" />
+                    <line x1="30" y1="205" x2="55" y2="205" />
                     {/* Building 2 (Co-working Tower) */}
-                    <rect x="75" y="110" width="55" height="180" fill="#E5F8EE" fillOpacity="0.4" stroke="#00A86B" />
-                    <circle cx="102" cy="140" r="10" stroke="#00A86B" strokeWidth="1.5" />
+                    <rect x="75" y="115" width="55" height="175" fill="#E5F8EE" fillOpacity="0.45" stroke="#00A86B" />
+                    <circle cx="102" cy="142" r="9" stroke="#00A86B" strokeWidth="1.5" />
                     {/* Building 3 & 4 (Tech Park) */}
-                    <rect x="135" y="160" width="40" height="130" />
-                    <rect x="380" y="150" width="50" height="140" />
+                    <rect x="140" y="165" width="40" height="125" />
+                    <rect x="190" y="195" width="45" height="95" />
                     {/* Ground line */}
                     <line x1="10" y1="290" x2="450" y2="290" stroke="#121212" strokeWidth="2" />
                   </g>
 
-                  {/* Playful Dotted Hopper Arc connecting local business to youngster */}
+                  {/* Playful Animated Hop Arc connecting local business to youngster */}
                   <path
-                    d="M 102 110 Q 180 30 260 135"
+                    d="M 102 115 Q 185 35 285 130"
                     fill="none"
                     stroke="#E65A1E"
                     strokeWidth="2.5"
@@ -1386,68 +1382,24 @@ export default function Landing() {
                     className="animate-pulse"
                   />
                   {/* Little Grasshopper / Hop Icon on the building top */}
-                  <g transform="translate(95, 92)">
+                  <g transform="translate(95, 96)">
                     <circle cx="7" cy="7" r="9" fill="#00A86B" />
                     <text x="3" y="11" fill="#FFFFFF" fontSize="11" fontWeight="bold">⚡</text>
                   </g>
-
-                  {/* ── Youngster Sitting Cross-Legged with Laptop Character ── */}
-                  <g transform="translate(230, 95)">
-                    {/* Shadow underneath */}
-                    <ellipse cx="65" cy="195" rx="75" ry="12" fill="#121212" fillOpacity="0.1" />
-
-                    {/* Legs in cross-legged relaxed pose (blue denim) */}
-                    <path
-                      d="M 15 175 Q 35 198 65 195 Q 100 198 120 175 Q 105 160 85 168 Q 65 172 45 168 Z"
-                      fill="#3B82F6"
-                      stroke="#1E3A8A"
-                      strokeWidth="2"
-                    />
-                    {/* Sneakers */}
-                    <ellipse cx="12" cy="178" rx="10" ry="7" fill="#FFFFFF" stroke="#121212" strokeWidth="1.5" />
-                    <ellipse cx="122" cy="178" rx="10" ry="7" fill="#FFFFFF" stroke="#121212" strokeWidth="1.5" />
-
-                    {/* Torso / Crisp Shirt */}
-                    <path
-                      d="M 40 100 L 90 100 L 98 165 L 32 165 Z"
-                      fill="#FFFFFF"
-                      stroke="#121212"
-                      strokeWidth="2"
-                    />
-                    {/* Open casual collar */}
-                    <path d="M 55 100 L 65 120 L 75 100" fill="none" stroke="#E65A1E" strokeWidth="2" />
-
-                    {/* Arms holding laptop */}
-                    <path d="M 38 112 Q 22 140 45 152" fill="none" stroke="#FBBF24" strokeWidth="8" strokeLinecap="round" />
-                    <path d="M 92 112 Q 108 140 85 152" fill="none" stroke="#FBBF24" strokeWidth="8" strokeLinecap="round" />
-
-                    {/* Sleek Laptop base & screen */}
-                    <rect x="36" y="148" width="58" height="6" rx="2" fill="#94A3B8" stroke="#334155" strokeWidth="1.5" />
-                    <path d="M 42 148 L 48 108 L 82 108 L 88 148 Z" fill="url(#laptopScreenGrad)" stroke="#334155" strokeWidth="2" />
-                    <circle cx="65" cy="128" r="4" fill="#E65A1E" />
-
-                    {/* Neck & Head */}
-                    <rect x="60" y="85" width="10" height="18" fill="#FBBF24" />
-                    <circle cx="65" cy="70" r="20" fill="#FBBF24" stroke="#121212" strokeWidth="2" />
-                    
-                    {/* Friendly Smile & Glasses */}
-                    <path d="M 58 74 Q 65 82 72 74" fill="none" stroke="#121212" strokeWidth="2" strokeLinecap="round" />
-                    <rect x="52" y="63" width="11" height="8" rx="2" fill="none" stroke="#121212" strokeWidth="2" />
-                    <rect x="67" y="63" width="11" height="8" rx="2" fill="none" stroke="#121212" strokeWidth="2" />
-                    <line x1="63" y1="67" x2="67" y2="67" stroke="#121212" strokeWidth="2" />
-
-                    {/* Trendy curly / textured hair */}
-                    <path
-                      d="M 45 65 Q 40 45 65 42 Q 90 45 85 65 Q 88 50 78 40 Q 65 36 52 42 Q 43 52 45 65 Z"
-                      fill="#18181B"
-                      stroke="#18181B"
-                      strokeWidth="2"
-                    />
-                  </g>
                 </svg>
 
+                {/* Actual Person with Laptop (Warm Youngster with Laptop) + Subtle Breathing Float Animation */}
+                <div className="absolute right-3 sm:right-6 bottom-0 z-10 flex items-end justify-center pointer-events-none select-none">
+                  <img
+                    src="/hero/youngster_laptop.png"
+                    alt="Young freelance pro working on a laptop in Bengaluru"
+                    className="wh-breathe-subtle h-[225px] sm:h-[265px] w-auto object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.18)]"
+                    loading="eager"
+                  />
+                </div>
+
                 {/* Floating Skill Badge 1 (Figma & UI/UX) */}
-                <div className="wh-float-1 absolute top-3 left-3 max-w-[190px] border-2 border-ink bg-[#FFF3C4] p-2 sm:p-2.5 shadow-[3px_3px_0px_#121212]">
+                <div className="wh-float-1 absolute top-3 left-3 z-20 max-w-[190px] border-2 border-ink bg-[#FFF3C4] p-2 sm:p-2.5 shadow-[3px_3px_0px_#121212]">
                   <div className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-brand" />
                     <span className="text-[10px] font-black uppercase tracking-wider text-black">
@@ -1460,7 +1412,7 @@ export default function Landing() {
                 </div>
 
                 {/* Floating Skill Badge 2 (Live Gig Alert) */}
-                <div className="wh-float-2 absolute bottom-3 left-3 border-2 border-ink bg-[#E5F8EE] px-3 py-1.5 shadow-[3px_3px_0px_#121212] flex items-center gap-2">
+                <div className="wh-float-2 absolute bottom-3 left-3 z-20 border-2 border-ink bg-[#E5F8EE] px-3 py-1.5 shadow-[3px_3px_0px_#121212] flex items-center gap-2">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ok text-white font-black text-[10px]">
                     ✓
                   </span>
@@ -1475,10 +1427,10 @@ export default function Landing() {
                 </div>
 
                 {/* Floating Skill Badge 3 (Direct WhatsApp & Chat) */}
-                <div className="wh-float-3 absolute bottom-3 right-3 border-2 border-ink bg-white dark:bg-zinc-800 px-3 py-1.5 shadow-[3px_3px_0px_#121212] flex items-center gap-1.5">
+                <div className="wh-float-3 absolute top-3 right-3 z-20 border-2 border-ink bg-white dark:bg-zinc-800 px-3 py-1.5 shadow-[3px_3px_0px_#121212] flex items-center gap-1.5">
                   <span className="text-xs">💬</span>
                   <p className="text-[10px] font-black uppercase text-ink dark:text-white">
-                    Direct Chat · No Middleman
+                    Direct Chat · 0% Fee
                   </p>
                 </div>
               </div>
