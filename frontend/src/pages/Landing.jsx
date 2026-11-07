@@ -1625,56 +1625,56 @@ export default function Landing() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          4. CATEGORIES — 9 Verticals Visual Icon Grid (Label Only, No Paragraphs)
+          4. CATEGORIES — Compact Pill Chips (Inspired by Browse by Category)
           ═══════════════════════════════════════════════════════════════════════ */}
-      <section className="border-b-2 border-ink bg-white dark:bg-[#121212] py-10 sm:py-16 px-4 sm:px-10 lg:px-16">
+      <section className="border-b-2 border-ink bg-white dark:bg-[#121212] py-6 sm:py-8 px-4 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+          {/* Header Row with Sparkle */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
-              <span className="text-xs font-black uppercase tracking-widest text-brand">
-                9 SPECIALIZED VERTICALS
-              </span>
-              <h2 className="mt-1 text-2xl sm:text-4xl font-black text-ink dark:text-white tracking-tight">
-                Explore by category.
-              </h2>
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-brand shrink-0" />
+                <h2 className="text-lg sm:text-2xl font-black text-ink dark:text-white tracking-tight">
+                  Browse by category
+                </h2>
+              </div>
+              <p className="mt-0.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-400">
+                Find the exact kind of local talent your business needs within 5 km
+              </p>
             </div>
             <Link
               to="/categories"
-              className="inline-flex items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#1E1E22] px-4 py-2 text-xs font-black uppercase text-ink dark:text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5"
+              className="inline-flex items-center gap-1.5 text-xs font-black uppercase text-brand hover:underline decoration-2 underline-offset-4"
             >
-              <span>All 45+ Sub-Categories</span>
-              <ArrowRight size={14} className="text-brand" />
+              <span>View all 45+ specializations</span>
+              <ArrowRight size={13} />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3 sm:gap-4">
+          {/* Compact Category Pills (Horizontal scroll on mobile, flex wrap on desktop) */}
+          <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto pb-2 pt-1 no-scrollbar flex-nowrap sm:flex-wrap">
             {[
-              { label: "Design & Architecture", slug: "graphics-design", Icon: Palette, bg: "#FFF3C4" },
-              { label: "Tech & Code", slug: "programming-tech", Icon: Code2, bg: "#E5F8EE" },
-              { label: "Digital Marketing", slug: "digital-marketing", Icon: Megaphone, bg: "#FCE4EC" },
-              { label: "Video & Motion", slug: "video-animation", Icon: Video, bg: "#E0F7FA" },
-              { label: "AI & Automations", slug: "ai-smart-automations", Icon: Cpu, bg: "#FFEAA0" },
-              { label: "Writing & Copy", slug: "writing-translation", Icon: PenTool, bg: "#F3E5F5" },
-              { label: "Music & Audio", slug: "music-audio", Icon: Music, bg: "#FFF8E7" },
-              { label: "Business & Ops", slug: "business", Icon: Briefcase, bg: "#E8F5E9" },
-              { label: "Hyperlocal Field", slug: "hyperlocal-specialized", Icon: Compass, bg: "#D8F3DC" },
-            ].map(({ label, slug, Icon, bg }) => (
+              { label: "Design & Architecture", slug: "graphics-design", Icon: Palette, emoji: "🎨", color: "bg-[#FFF3C4]" },
+              { label: "Tech & Code", slug: "programming-tech", Icon: Code2, emoji: "💻", color: "bg-[#E5F8EE]" },
+              { label: "Digital Marketing", slug: "digital-marketing", Icon: Megaphone, emoji: "📣", color: "bg-[#FCE4EC]" },
+              { label: "Video & Motion", slug: "video-animation", Icon: Video, emoji: "🎬", color: "bg-[#E0F7FA]" },
+              { label: "AI & Automations", slug: "ai-smart-automations", Icon: Cpu, emoji: "⚡", color: "bg-[#FFEAA0]" },
+              { label: "Writing & Copy", slug: "writing-translation", Icon: PenTool, emoji: "✍️", color: "bg-[#F3E5F5]" },
+              { label: "Music & Audio", slug: "music-audio", Icon: Music, emoji: "🎵", color: "bg-[#FFF8E7]" },
+              { label: "Business & Ops", slug: "business", Icon: Briefcase, emoji: "💼", color: "bg-[#E8F5E9]" },
+              { label: "Hyperlocal Field", slug: "hyperlocal-specialized", Icon: Compass, emoji: "📍", color: "bg-[#D8F3DC]" },
+            ].map(({ label, slug, Icon, color }) => (
               <button
                 key={slug}
                 type="button"
                 data-testid={`cat-tile-${slug}`}
                 onClick={() => nav(`/categories?discipline=${encodeURIComponent(slug)}`)}
-                className="group border-2 border-ink bg-[#FAFAF8] dark:bg-[#1B1B1F] p-4 flex flex-col items-center justify-center text-center shadow-[3px_3px_0px_#121212] transition hover:-translate-y-1 hover:border-brand cursor-pointer"
+                className="group inline-flex items-center gap-2 border-2 border-ink/80 dark:border-zinc-700 bg-white dark:bg-[#1A1A1E] px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs font-black text-ink dark:text-white rounded-full shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none hover:border-brand hover:text-brand whitespace-nowrap shrink-0 cursor-pointer"
               >
-                <span
-                  style={{ backgroundColor: bg }}
-                  className="flex h-12 w-12 items-center justify-center border-2 border-ink shadow-[2px_2px_0px_#121212] transition group-hover:scale-105"
-                >
-                  <Icon size={21} className="cat-icon text-black" />
+                <span className={`flex h-6 w-6 items-center justify-center rounded-full border border-ink ${color} text-black shrink-0 transition group-hover:scale-110`}>
+                  <Icon size={13} className="text-black" />
                 </span>
-                <span className="mt-3 text-xs font-black leading-snug text-ink dark:text-white group-hover:text-brand">
-                  {label}
-                </span>
+                <span>{label}</span>
               </button>
             ))}
           </div>
