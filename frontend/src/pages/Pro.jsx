@@ -651,6 +651,10 @@ export default function Pro() {
                   ? pro.samples.filter((s) => s?.image).map((s) => s.image)
                   : [];
 
+                const portfolioImages = Array.from(
+                  new Set([...itemImages, ...rawPortfolioImages, ...submittedImages, ...ownImages, ...sampleImages].filter(Boolean))
+                );
+
                 const initialList = [
                   ...portfolioList,
                   ...portfolioImages,
