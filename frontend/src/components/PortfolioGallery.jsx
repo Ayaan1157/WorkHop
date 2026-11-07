@@ -62,48 +62,101 @@ export default function PortfolioGallery({
       setLoading(true);
       let resolved = [];
 
-      // 1. Fetch live from Supabase portfolio_items if freelancerId is UUID
+      // Helper to unpack portfolio items & images from any source
+      const extractValidImages = (list) => {
+        if (!Array.isArray(list)) return [];
+        return list.flatMap((it, idx) => {
+          if (!it) return [];
+          if (typeof it === "string") {
+            const trimmed = it.trim();
+            if (!trimmed || (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("data:") && !trimmed.startsWith("/") && !trimmed.includes("."))) {
+              return [];
+            }
+            return [{
+              id: `init_${idx}`,
+              title: `Work Sample ${idx + 1}`,
+              storage_path: trimmed,
+              public_url: formatSrc(trimmed),
+            }];
+          }
+          if (typeof it === "object" && !it._workhop_meta) {
+            const imagesList = Array.isArray(it.images) && it.images.length > 0
+              ? it.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || img?.src || "")).filter(Boolean)
+              : [];
+            const src = it.public_url || it.url || it.image_data || it.src || imagesList[0] || null;
+            if (!src) return [];
+            return [{
+              id: it.id || `init_${idx}`,
+              title: it.title || it.name || `Work Sample ${idx + 1}`,
+              description: it.description || "",
+              storage_path: it.storage_path || src,
+              public_url: formatSrc(src),
+              external_url: it.external_url || it.link || null,
+            }];
+          }
+          return [];
+        });
+      };
+
+      // 1. Check initialItems (handles both Array and serialized JSON string)
+      let parsedInitial = [];
+      if (typeof initialItems === "string" && initialItems.trim().startsWith("[")) {
+        try {
+          parsedInitial = JSON.parse(initialItems.trim());
+        } catch {}
+      } else if (Array.isArray(initialItems)) {
+        parsedInitial = initialItems;
+      }
+
+      if (parsedInitial.length > 0) {
+        resolved = extractValidImages(parsedInitial);
+      }
+
+      // 2. Fetch live from Supabase portfolio_items or profiles if not resolved or to get freshest
       const isUuid =
         typeof freelancerId === "string" &&
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(freelancerId);
 
-      if (isUuid) {
+      if (supabase) {
         try {
-          const dbItems = await fetchFreelancerPortfolioItems(freelancerId);
-          if (Array.isArray(dbItems) && dbItems.length > 0) {
-            resolved = dbItems;
+          if (isUuid) {
+            const dbItems = await fetchFreelancerPortfolioItems(freelancerId);
+            if (Array.isArray(dbItems) && dbItems.length > 0) {
+              resolved = dbItems;
+            }
           }
-        } catch {}
-      }
 
-      // 2. If no DB items yet, parse initialItems
-      if (resolved.length === 0 && Array.isArray(initialItems) && initialItems.length > 0) {
-        resolved = initialItems
-          .map((it, idx) => {
-            if (!it) return null;
-            if (typeof it === "string") {
-              return {
-                id: `init_${idx}`,
-                title: `Work Sample ${idx + 1}`,
-                storage_path: it,
-                public_url: formatSrc(it),
-              };
+          // If still no items, check Supabase profiles table for portfolio JSON column
+          if (resolved.length === 0) {
+            let profileQuery = supabase.from("profiles").select("id, portfolio, email");
+            if (isUuid) {
+              profileQuery = profileQuery.eq("id", freelancerId);
+            } else if (freelancerEmail) {
+              profileQuery = profileQuery.ilike("email", freelancerEmail.trim());
+            } else if (freelancerId) {
+              profileQuery = profileQuery.ilike("email", `%${freelancerId.replace(/^pro-/, "")}%`);
             }
-            if (typeof it === "object") {
-              const src = it.public_url || it.url || it.image_data || it.src || (Array.isArray(it.images) ? it.images[0] : null);
-              if (!src) return null;
-              return {
-                id: it.id || `init_${idx}`,
-                title: it.title || it.name || `Work Sample ${idx + 1}`,
-                description: it.description || "",
-                storage_path: it.storage_path || src,
-                public_url: formatSrc(src),
-                external_url: it.external_url || it.link || null,
-              };
+
+            const { data: prof } = await profileQuery.maybeSingle();
+            if (prof?.portfolio) {
+              try {
+                const parsed = typeof prof.portfolio === "string" ? JSON.parse(prof.portfolio) : prof.portfolio;
+                if (Array.isArray(parsed)) {
+                  const metaObj = parsed.find((p) => p && p._workhop_meta) || {};
+                  const itemsList = parsed.filter((p) => p && !p._workhop_meta);
+                  const metaImages = Array.isArray(metaObj.portfolio_images) ? metaObj.portfolio_images : [];
+                  const combined = [...itemsList, ...metaImages];
+                  const fromProf = extractValidImages(combined);
+                  if (fromProf.length > 0) {
+                    resolved = fromProf;
+                  }
+                }
+              } catch {}
             }
-            return null;
-          })
-          .filter(Boolean);
+          }
+        } catch (err) {
+          console.warn("PortfolioGallery load error:", err);
+        }
       }
 
       if (isMounted) {
@@ -114,29 +167,38 @@ export default function PortfolioGallery({
 
     loadItems();
 
-    // 3. Realtime Subscription to portfolio_items
+    // 3. Realtime Subscription to portfolio_items and profiles
     let channel = null;
     const isUuid =
       typeof freelancerId === "string" &&
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(freelancerId);
 
-    if (isUuid && supabase) {
+    if (supabase) {
+      const channelName = `portfolio_sync_${freelancerId || freelancerEmail || "guest"}_${Date.now()}`;
       channel = supabase
-        .channel(`portfolio_items_${freelancerId}`)
+        .channel(channelName)
         .on(
           "postgres_changes",
           {
             event: "*",
             schema: "public",
             table: "portfolio_items",
-            filter: `freelancer_id=eq.${freelancerId}`,
+            ...(isUuid ? { filter: `freelancer_id=eq.${freelancerId}` } : {}),
           },
-          async () => {
-            // Re-fetch fresh list upon any INSERT / UPDATE / DELETE
-            const fresh = await fetchFreelancerPortfolioItems(freelancerId);
-            if (isMounted) {
-              setItems(fresh);
-            }
+          () => {
+            loadItems();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "profiles",
+            ...(isUuid ? { filter: `id=eq.${freelancerId}` } : {}),
+          },
+          () => {
+            loadItems();
           }
         )
         .subscribe();
@@ -144,11 +206,11 @@ export default function PortfolioGallery({
 
     return () => {
       isMounted = false;
-      if (channel) {
+      if (channel && supabase) {
         supabase.removeChannel(channel);
       }
     };
-  }, [freelancerId, initialItems]);
+  }, [freelancerId, freelancerEmail, initialItems]);
 
   // Clean external link URL
   const validExternalLink = (() => {

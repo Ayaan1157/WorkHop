@@ -620,15 +620,36 @@ export default function Pro() {
                   return pId === targetKey || pId.replace(/^pro-/, "") === strippedKey || (p.email && pro.email && p.email.toLowerCase() === pro.email.toLowerCase());
                 });
 
-                const portfolioList = (Array.isArray(pro.portfolio_items) && pro.portfolio_items.length > 0)
-                  ? pro.portfolio_items
-                  : (Array.isArray(pro.portfolio) && pro.portfolio.length > 0)
-                  ? pro.portfolio
-                  : (matchingSubmitted?.portfolio_items && matchingSubmitted.portfolio_items.length > 0)
-                  ? matchingSubmitted.portfolio_items
-                  : (isMatchingLocalFreelancer && Array.isArray(ownProfile?.portfolio) && ownProfile.portfolio.length > 0)
-                  ? ownProfile.portfolio
+                const unpackSafely = (val) => {
+                  if (!val) return [];
+                  if (Array.isArray(val)) return val;
+                  if (typeof val === "string" && val.trim().startsWith("[")) {
+                    try {
+                      return JSON.parse(val.trim());
+                    } catch {}
+                  }
+                  return [];
+                };
+
+                const parsedProPortfolio = unpackSafely(pro.portfolio);
+                const parsedProPortfolioItems = unpackSafely(pro.portfolio_items);
+                const parsedMatchingItems = unpackSafely(matchingSubmitted?.portfolio_items || matchingSubmitted?.portfolio);
+                const parsedOwnItems = isMatchingLocalFreelancer ? unpackSafely(ownProfile?.portfolio) : [];
+
+                const metaFromPro = parsedProPortfolio.find((it) => it && it._workhop_meta) || {};
+                const metaImages = Array.isArray(metaFromPro.portfolio_images) ? metaFromPro.portfolio_images : [];
+
+                const rawPortfolioList = parsedProPortfolioItems.length > 0
+                  ? parsedProPortfolioItems
+                  : parsedProPortfolio.length > 0
+                  ? parsedProPortfolio
+                  : parsedMatchingItems.length > 0
+                  ? parsedMatchingItems
+                  : parsedOwnItems.length > 0
+                  ? parsedOwnItems
                   : [];
+
+                const portfolioList = rawPortfolioList.filter((it) => it && !it._workhop_meta);
 
                 const itemImages = portfolioList.flatMap((item) => {
                   if (!item) return [];
@@ -652,7 +673,7 @@ export default function Pro() {
                   : [];
 
                 const portfolioImages = Array.from(
-                  new Set([...itemImages, ...rawPortfolioImages, ...submittedImages, ...ownImages, ...sampleImages].filter(Boolean))
+                  new Set([...itemImages, ...metaImages, ...rawPortfolioImages, ...submittedImages, ...ownImages, ...sampleImages].filter(Boolean))
                 );
 
                 const initialList = [
@@ -660,13 +681,22 @@ export default function Pro() {
                   ...portfolioImages,
                 ];
 
+                const isUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                const resolvedTargetId = isUuidRegex.test(pro.user_id)
+                  ? pro.user_id
+                  : isUuidRegex.test(pro.id)
+                  ? pro.id
+                  : isUuidRegex.test(id)
+                  ? id
+                  : (pro.id || id);
+
                 return (
                   <div className="flex flex-col gap-3 border-2 border-ink bg-white p-4">
                     <PortfolioGallery
-                      freelancerId={pro.id || id}
+                      freelancerId={resolvedTargetId}
                       freelancerEmail={pro.email}
                       initialItems={initialList}
-                      externalPortfolioUrl={validPortfolioLink || pro.portfolio_url || (typeof pro.portfolio === "string" ? pro.portfolio : "")}
+                      externalPortfolioUrl={validPortfolioLink || pro.portfolio_url || (typeof pro.portfolio === "string" && !pro.portfolio.startsWith("[") ? pro.portfolio : "")}
                     />
                   </div>
                 );
