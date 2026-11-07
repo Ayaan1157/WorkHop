@@ -1017,6 +1017,15 @@ async function mockRouter(path, method = "GET", body = null) {
         }
       }
     } catch {}
+    try {
+      const sRes = await fetch("/api/site-settings");
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        if (Array.isArray(sData?.coupons) && sData.coupons.length > 0) {
+          return syncStoredCoupons(sData.coupons);
+        }
+      }
+    } catch {}
     return getStoredCoupons();
   }
   if ((cleanPath === "/admin/coupons" || cleanPath === "/coupons") && method === "POST") {

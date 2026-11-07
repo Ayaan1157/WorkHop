@@ -26,6 +26,21 @@ let inMemorySettings = {
   grievance_resolution_days: 30,
 };
 
+let inMemoryCoupons = [
+  {
+    code: "LAUNCH50",
+    discount_type: "percent",
+    value: 50,
+    applies_to: "all",
+    active: true,
+    max_uses: 0,
+    used_count: 2,
+    description: "50% Launch Discount across all WorkHop plans & unlocks",
+    created_at: "2026-10-25T00:00:00.000Z",
+    expires_at: null,
+  },
+];
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -40,16 +55,22 @@ module.exports = async function handler(req, res) {
     }
     try {
       const body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}");
+      if (Array.isArray(body?.coupons)) {
+        inMemoryCoupons = body.coupons;
+      }
       inMemorySettings = {
         ...inMemorySettings,
         ...body,
         broadcast_banner_active: Boolean(body?.broadcast_banner_active),
       };
-      return res.status(200).json({ ok: true, settings: inMemorySettings });
+      return res.status(200).json({ ok: true, settings: inMemorySettings, coupons: inMemoryCoupons });
     } catch (err) {
       return res.status(400).json({ detail: err?.message || "Invalid payload" });
     }
   }
 
-  return res.status(200).json(inMemorySettings);
+  return res.status(200).json({
+    ...inMemorySettings,
+    coupons: inMemoryCoupons,
+  });
 };

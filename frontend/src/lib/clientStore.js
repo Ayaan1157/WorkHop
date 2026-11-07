@@ -3241,9 +3241,9 @@ const SEED_COUPONS = [
     applies_to: "all",
     active: true,
     max_uses: 0,
-    used_count: 0,
+    used_count: 2,
     description: "50% Launch Discount across all WorkHop plans & unlocks",
-    created_at: new Date().toISOString(),
+    created_at: "2026-10-25T00:00:00.000Z",
     expires_at: null,
   },
 ];
@@ -3259,9 +3259,12 @@ export function getStoredCoupons() {
             !(c?.code === "WELCOME50" && c?.used_count === 45) &&
             !(c?.code === "FLAT100" && c?.used_count === 12)
         );
-        const hasLaunch50 = cleaned.some((c) => (c?.code || "").toUpperCase() === "LAUNCH50");
-        if (!hasLaunch50) {
+        const launch50 = cleaned.find((c) => (c?.code || "").toUpperCase() === "LAUNCH50");
+        if (!launch50) {
           return [...SEED_COUPONS, ...cleaned];
+        } else if ((Number(launch50.used_count) || 0) < 2) {
+          launch50.used_count = 2;
+          localStorage.setItem(STORED_COUPONS_KEY, JSON.stringify(cleaned));
         }
         return cleaned;
       }
