@@ -451,101 +451,82 @@ export default function Chat() {
         </div>
       )}
 
-      {/* STATUS & ACTIONS BAR */}
+      {/* STATUS & ACTIONS BAR - Clean, streamlined and responsive */}
       <div
-        className="flex items-center gap-2 border-b-2 border-ink dark:border-zinc-800 bg-sand dark:bg-zinc-900 px-4 py-2 flex-wrap"
+        className="flex items-center justify-between gap-2 border-b border-ink/20 dark:border-zinc-800 bg-[#FAF7F2] dark:bg-zinc-900 px-3 sm:px-4 py-1.5 flex-wrap"
         data-testid="chat-status-bar"
       >
-        <span
-          className={`border border-ink px-3 py-1 text-[10px] font-black tracking-wider text-white ${
-            status === "completed" ? "bg-ok" : isHired ? "bg-brand" : "bg-ink"
-          }`}
-        >
-          {status === "completed" ? "COMPLETED" : isHired ? "HIRED" : "APPLIED"}
-        </span>
-
-        {/* Contact Protection Indicator */}
-        {!isHired ? (
-          <div className="flex items-center gap-1.5 border border-amber-500/60 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 text-[10px] font-bold text-amber-800 dark:text-amber-200">
-            <Lock size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
-            <span>Phone numbers locked until hired</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 border border-ok/60 bg-[#E5F8EE] dark:bg-[#153424] px-2.5 py-1 text-[10px] font-black text-ok">
-            <CheckCircle2 size={11} className="shrink-0" />
-            <span>Phone &amp; contact sharing unlocked</span>
-          </div>
-        )}
-
-        {/* Hyperlocal distance badge */}
-        <div className="flex items-center gap-1.5 border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1 text-[10px] font-black text-ink dark:text-zinc-100">
-          <MapPin size={11} className="text-brand" />
-          <span>
-            {myRole === "employer"
-              ? `Applicant from ${conv?.applicant_area || "Indiranagar"} (${conv?.distance_km ?? 1.4} km from job)`
-              : `Job in ${conv?.job_area || "Koramangala"} (${conv?.distance_km ?? 1.4} km away)`}
-          </span>
-          {(() => {
-            const d = conv?.distance_km ?? 1.4;
-            const suit = getDistanceSuitability(d);
-            return (
-              <span
-                className="ml-1 px-1.5 py-0.2 text-[8px] font-black text-white"
-                style={{ backgroundColor: suit.color }}
-              >
-                {suit.badge}
-              </span>
-            );
-          })()}
-        </div>
-
-        <div className="flex-1" />
-
-        {/* Escrow Agreement quick button in status bar */}
-        <button
-          type="button"
-          data-testid="chat-status-agreement-btn"
-          onClick={() => setAgreementModalOpen(true)}
-          className="flex items-center gap-1 border border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1 text-[10px] font-black uppercase text-ink dark:text-white hover:bg-[#FFE8DC] dark:hover:bg-zinc-700 transition shadow-[1px_1px_0px_#121212]"
-        >
-          <FileText size={11} className="text-brand" />
-          <span>
-            {deal?.employer_agreed && deal?.freelancer_agreed
-              ? "Escrow Agreement (2/2 Signed)"
-              : deal?.employer_agreed || deal?.freelancer_agreed
-              ? "Escrow Agreement (1/2 Signed)"
-              : "Escrow Agreement"}
-          </span>
-        </button>
-
-        {/* Status bar Hire button when employer and not yet hired */}
-        {myRole === "employer" && !isHired && (
-          <button
-            data-testid="chat-status-hire-btn"
-            onClick={() => setHireModalOpen(true)}
-            className="border-2 border-ink bg-brand px-3 py-1 text-[10px] font-black uppercase text-white hover:bg-black transition shadow-[1.5px_1.5px_0px_#121212]"
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <span
+            className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white rounded-sm shrink-0 ${
+              status === "completed" ? "bg-ok" : isHired ? "bg-brand" : "bg-ink"
+            }`}
           >
-            ⚡ HIRE PRO (₹{hirePay.toLocaleString("en-IN")})
-          </button>
-        )}
+            {status === "completed" ? "COMPLETED" : isHired ? "HIRED" : "APPLIED"}
+          </span>
 
-        {status === "completed" &&
-          (myReviewDone ? (
-            <span
-              data-testid="chat-reviewed-pill"
-              className="flex items-center gap-1 border border-ink bg-ok px-3 py-1.5 text-[10px] font-black text-white"
-            >
-              <Star size={11} /> REVIEWED
+          {/* Hyperlocal distance badge */}
+          <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 border border-ink/20 dark:border-zinc-700 px-2 py-0.5 text-[10px] font-bold text-ink dark:text-zinc-200 rounded-sm">
+            <MapPin size={11} className="text-brand shrink-0" />
+            <span className="truncate max-w-[180px] sm:max-w-none">
+              {myRole === "employer"
+                ? `${conv?.applicant_area || "Indiranagar"} (${conv?.distance_km ?? 1.4} km away)`
+                : `${conv?.job_area || "Koramangala"} (${conv?.distance_km ?? 1.4} km away)`}
+            </span>
+          </div>
+
+          {/* Phone lock/unlock indicator */}
+          {!isHired ? (
+            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 border border-amber-300/80 rounded-sm">
+              <Lock size={10} className="text-amber-600 shrink-0" />
+              <span>Numbers locked until hire</span>
             </span>
           ) : (
-            <button
-              data-testid="chat-review-btn"
-              onClick={() => setReviewOpen(true)}
-              className="border-2 border-ink bg-brand px-3 py-1.5 text-[10px] font-black text-white hover:bg-brand/90 transition"
-            >
-              ★ RATE {myRole === "employer" ? "PRO" : "EMPLOYER"}
-            </button>
-          ))}
+            <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 border border-emerald-300/80 rounded-sm">
+              <CheckCircle2 size={11} className="text-ok shrink-0" />
+              <span>Contact unlocked</span>
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+          {/* Quick Agreement button */}
+          <button
+            type="button"
+            data-testid="chat-status-agreement-btn"
+            onClick={() => setAgreementModalOpen(true)}
+            className="flex items-center gap-1 border border-ink/40 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-black uppercase text-ink dark:text-white hover:bg-sand dark:hover:bg-zinc-700 transition rounded-sm"
+          >
+            <FileText size={11} className="text-brand" />
+            <span className="hidden sm:inline">
+              {deal?.employer_agreed && deal?.freelancer_agreed
+                ? "Agreement (2/2 Signed)"
+                : deal?.employer_agreed || deal?.freelancer_agreed
+                ? "Agreement (1/2 Signed)"
+                : "Escrow Agreement"}
+            </span>
+            <span className="sm:hidden">Agreement</span>
+          </button>
+
+          {/* Review button if completed */}
+          {status === "completed" &&
+            (myReviewDone ? (
+              <span
+                data-testid="chat-reviewed-pill"
+                className="flex items-center gap-1 bg-ok text-white px-2.5 py-0.5 text-[10px] font-black rounded-sm"
+              >
+                <Star size={11} /> REVIEWED
+              </span>
+            ) : (
+              <button
+                data-testid="chat-review-btn"
+                onClick={() => setReviewOpen(true)}
+                className="border-2 border-ink bg-brand px-2.5 py-0.5 text-[10px] font-black text-white hover:bg-brand/90 transition shadow-sm rounded-sm"
+              >
+                ★ RATE {myRole === "employer" ? "PRO" : "EMPLOYER"}
+              </button>
+            ))}
+        </div>
       </div>
 
       {/* PINNED WORKHOP DEAL TRACKER & 5-STEP PROCESS */}
@@ -569,35 +550,35 @@ export default function Chat() {
 
       {/* MESSAGES THREAD */}
       <div ref={scrollRef} className="wh-scroll flex-1 overflow-y-auto p-4 sm:p-6 bg-sand/30 dark:bg-[#121212]">
-        {/* PRIVACY / HIRING NOTICE */}
+        {/* PRIVACY / HIRING NOTICE - Compact strip */}
         {!isHired ? (
           <div
-            className="mb-4 flex items-center justify-between gap-3 border-2 border-ink dark:border-amber-700/80 bg-[#FFF3C4] dark:bg-amber-950/50 p-3"
+            className="mb-3 flex items-center justify-between gap-2 border border-amber-600/60 dark:border-amber-700/80 bg-[#FFF3C4]/90 dark:bg-amber-950/40 px-2.5 py-1.5 sm:p-2.5"
             data-testid="chat-privacy-notice"
           >
-            <div className="flex items-center gap-2">
-              <Lock size={16} className="text-amber-700 dark:text-amber-300 shrink-0" />
-              <span className="text-xs font-bold text-amber-950 dark:text-amber-200">
-                Direct phone number sharing is locked until hiring is completed.
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Lock size={13} className="text-amber-700 dark:text-amber-300 shrink-0" />
+              <span className="text-[11px] font-bold text-amber-950 dark:text-amber-200 truncate sm:whitespace-normal">
+                Direct phone number sharing is locked until hired.
               </span>
             </div>
             {myRole === "employer" && (
               <button
                 onClick={() => setHireModalOpen(true)}
-                className="border-2 border-ink bg-brand px-2.5 py-1 text-[10px] font-black uppercase text-white hover:bg-black transition shadow-[1px_1px_0px_#121212] shrink-0"
+                className="hidden sm:inline-block border border-ink bg-brand px-2 py-0.5 text-[10px] font-black uppercase text-white hover:bg-black transition shadow-sm shrink-0"
               >
-                Hire Pro Now
+                Hire Pro
               </button>
             )}
           </div>
         ) : (
           <div
-            className="mb-4 flex items-center gap-2 border-2 border-ink dark:border-emerald-700/80 bg-[#E5F8EE] dark:bg-emerald-950/50 p-3"
+            className="mb-3 flex items-center gap-1.5 border border-emerald-600/60 dark:border-emerald-700/80 bg-[#E5F8EE] dark:bg-emerald-950/40 px-2.5 py-1.5 sm:p-2.5"
             data-testid="chat-hired-notice"
           >
-            <CheckCircle2 size={16} className="text-ok shrink-0" />
-            <span className="text-xs font-bold text-emerald-950 dark:text-emerald-200">
-              🎉 Gig Hired! Phone numbers, WhatsApp, and direct contact details can now be shared freely.
+            <CheckCircle2 size={13} className="text-ok shrink-0" />
+            <span className="text-[11px] font-bold text-emerald-950 dark:text-emerald-200">
+              Gig Hired! Phone numbers, WhatsApp, and contacts unlocked.
             </span>
           </div>
         )}

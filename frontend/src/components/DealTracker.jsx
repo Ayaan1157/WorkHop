@@ -27,6 +27,7 @@ export default function DealTracker({
   jobTitle = "Bengaluru Gig",
 }) {
   const [expandedLog, setExpandedLog] = useState(false);
+  const [showDetailsMobile, setShowDetailsMobile] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState(null);
 
@@ -211,34 +212,44 @@ export default function DealTracker({
         data-testid="deal-tracker"
         className="border-b-2 border-ink bg-white dark:bg-zinc-900 transition-all font-sans"
       >
-        {/* 1. TOP HEADER BAR: Pre-Hire Badge, Status, Budget & Hire Button */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 bg-[#FAF7F2] dark:bg-zinc-950 border-b border-ink/10 dark:border-white/10">
-          <div className="flex flex-wrap items-center gap-2">
+        {/* 1. TOP HEADER BAR: Streamlined, clean, single-line on mobile */}
+        <div className="flex items-center justify-between gap-2 px-3 py-2 sm:px-6 bg-[#FAF7F2] dark:bg-zinc-950 border-b border-ink/10 dark:border-white/10">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span
               data-testid="deal-mode-badge"
-              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider bg-ink text-white rounded shadow-sm"
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] sm:text-[11px] font-black uppercase tracking-wider bg-ink text-white rounded-sm shrink-0"
             >
-              <Clock size={13} className="text-brand" /> Step 1: Pre-Hire Scoping
+              <Clock size={11} className="text-brand shrink-0" />
+              <span className="hidden sm:inline">Step 1: Pre-Hire Scoping</span>
+              <span className="sm:hidden">Scoping</span>
             </span>
 
             <span
               data-testid="deal-status-badge"
-              className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border rounded bg-white text-ink border-ink/30 dark:bg-zinc-800 dark:text-zinc-200"
+              className="hidden sm:inline-block px-1.5 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider border rounded-sm bg-white text-ink border-ink/30 dark:bg-zinc-800 dark:text-zinc-200"
             >
-              Applied / Scoping
+              Applied
             </span>
 
-            <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 border border-amber-300 rounded">
-              <Lock size={10} /> Phone numbers locked until hired
-            </span>
+            <button
+              type="button"
+              onClick={() => setShowDetailsMobile(!showDetailsMobile)}
+              className="sm:hidden flex items-center gap-0.5 text-[10px] font-bold text-inkmuted hover:text-ink dark:text-zinc-400 px-1 py-0.5"
+            >
+              <span>{showDetailsMobile ? "Hide steps" : "View steps"}</span>
+              <ChevronDown size={11} className={`transition-transform duration-200 ${showDetailsMobile ? "rotate-180" : ""}`} />
+            </button>
           </div>
 
-          <div className="flex items-center gap-2.5 text-xs">
-            <div>
-              <span className="text-[10px] text-inkmuted dark:text-zinc-400 block uppercase font-bold">
-                Agreed / Proposed Pay
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="text-right">
+              <span className="text-[9px] text-inkmuted dark:text-zinc-400 block uppercase font-bold sm:hidden">
+                Proposed
               </span>
-              <span className="font-black text-ink dark:text-white text-sm">
+              <span className="text-[10px] text-inkmuted dark:text-zinc-400 hidden sm:block uppercase font-bold">
+                Agreed Pay
+              </span>
+              <span className="font-black text-ink dark:text-white text-xs sm:text-sm">
                 ₹{Number(defaultPay || 15000).toLocaleString("en-IN")}
               </span>
             </div>
@@ -248,12 +259,11 @@ export default function DealTracker({
                 type="button"
                 data-testid="prehire-preview-agreement-btn"
                 onClick={onOpenAgreement}
-                className="flex items-center gap-1.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1.5 text-[11px] font-black uppercase text-ink dark:text-white shadow-[1.5px_1.5px_0px_#121212] hover:bg-sand dark:hover:bg-zinc-700 transition"
+                className="hidden sm:flex items-center gap-1.5 border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1 text-[11px] font-black uppercase text-ink dark:text-white shadow-[1.5px_1.5px_0px_#121212] hover:bg-sand dark:hover:bg-zinc-700 transition"
                 title="Preview the auto-filled WorkHop Freelance Services & Escrow Agreement"
               >
-                <FileText size={13} className="text-brand" />
-                <span className="hidden sm:inline">Escrow Agreement</span>
-                <span className="sm:hidden">Contract</span>
+                <FileText size={12} className="text-brand" />
+                <span>Agreement</span>
               </button>
             )}
 
@@ -262,18 +272,18 @@ export default function DealTracker({
                 type="button"
                 data-testid="prehire-header-hire-btn"
                 onClick={onOpenHire}
-                className="flex items-center gap-1.5 border-2 border-ink bg-brand px-3 py-1.5 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
+                className="flex items-center gap-1 border-2 border-ink bg-brand px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-black uppercase text-white shadow-[1.5px_1.5px_0px_#121212] hover:bg-black transition active:translate-y-0.5 shrink-0"
                 title="Hire pro to lock terms and unlock direct phone numbers"
               >
-                <Sparkles size={13} />
+                <Sparkles size={12} />
                 <span>HIRE PRO</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* 2. RESPONSIVE 5-STEP STEPPER */}
-        <div className="px-2 py-3 sm:px-6 overflow-x-auto">
+        {/* 2. RESPONSIVE 5-STEP STEPPER - Collapsible on mobile, always visible on tablet/desktop */}
+        <div className={`px-2 py-2 sm:py-3 sm:px-6 overflow-x-auto ${showDetailsMobile ? "block" : "hidden sm:block"}`}>
           <div className="flex items-center justify-between w-full min-w-0">
             {preHireSteps.map((s, idx) => {
               const isCurrent = idx === 0;
@@ -282,7 +292,7 @@ export default function DealTracker({
                 <React.Fragment key={idx}>
                   <div className="flex flex-col items-center text-center px-0.5 sm:px-1 flex-1 min-w-0">
                     <div
-                      className={`flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full text-[10px] sm:text-xs font-black transition-all border-2 shrink-0 ${
+                      className={`flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-full text-[9px] sm:text-xs font-black transition-all border-2 shrink-0 ${
                         isCurrent
                           ? "bg-[#E65A1E] text-white border-[#E65A1E] ring-2 ring-[#E65A1E]/30"
                           : "bg-sand text-inkmuted border-ink/20 dark:bg-zinc-800 dark:text-zinc-500"
@@ -291,7 +301,7 @@ export default function DealTracker({
                       {idx + 1}
                     </div>
                     <span
-                      className={`mt-1 sm:mt-1.5 text-[8.5px] sm:text-[11px] font-black uppercase tracking-tight max-w-[56px] sm:max-w-none truncate sm:whitespace-normal ${
+                      className={`mt-1 text-[8px] sm:text-[11px] font-black uppercase tracking-tight max-w-[50px] sm:max-w-none truncate sm:whitespace-normal ${
                         isCurrent
                           ? "text-[#E65A1E]"
                           : "text-inkmuted dark:text-zinc-500"
@@ -306,7 +316,7 @@ export default function DealTracker({
                   </div>
                   {idx < preHireSteps.length - 1 && (
                     <div
-                      className="h-[2px] sm:h-[3px] flex-1 -mt-3.5 sm:-mt-4 transition-all min-w-[6px] sm:min-w-[12px] bg-ink/15 dark:bg-white/10"
+                      className="h-[2px] sm:h-[3px] flex-1 -mt-3 sm:-mt-4 transition-all min-w-[6px] sm:min-w-[12px] bg-ink/15 dark:bg-white/10"
                     />
                   )}
                 </React.Fragment>
@@ -315,31 +325,19 @@ export default function DealTracker({
           </div>
         </div>
 
-        {/* 3. CONTEXTUAL "WHAT HAPPENS NOW?" + DYNAMIC ACTIONS */}
-        <div className="px-4 py-2.5 sm:px-6 bg-sand/40 dark:bg-zinc-900 border-t border-ink/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-start gap-2 flex-1">
-            <Clock size={16} className="text-[#E65A1E] shrink-0 mt-0.5" />
+        {/* 3. CONTEXTUAL GUIDANCE - Clean single banner on desktop, expanded on mobile if toggled */}
+        <div className={`px-3 py-2 sm:px-6 bg-sand/30 dark:bg-zinc-900/60 border-t border-ink/10 dark:border-white/10 ${showDetailsMobile ? "flex" : "hidden sm:flex"} flex-col sm:flex-row sm:items-center justify-between gap-2`}>
+          <div className="flex items-start gap-1.5 flex-1">
+            <Clock size={13} className="text-[#E65A1E] shrink-0 mt-0.5" />
             <p
               data-testid="deal-guidance-text"
-              className="text-xs text-ink dark:text-zinc-200 font-semibold leading-relaxed"
+              className="text-[11px] text-ink dark:text-zinc-200 font-semibold leading-relaxed"
             >
               {myRole === "employer"
-                ? `👉 Step 1 of 5 (Scope & Chat): Phone numbers are locked. Discuss deliverables and budget with ${otherName}. When ready, click 'HIRE PRO' above to initiate the contract and instantly unlock direct phone number & WhatsApp exchange.`
-                : `👉 Step 1 of 5 (Scope & Chat): Phone numbers are locked before hiring. Clarify deliverables with the client. Phone numbers and WhatsApp will unlock automatically as soon as the employer clicks 'HIRE PRO'.`}
+                ? `Discuss deliverables and budget with ${otherName}. Phone numbers will unlock as soon as you click 'HIRE PRO'.`
+                : `Discuss scope and budget with the client. Direct phone numbers & WhatsApp unlock once hired.`}
             </p>
           </div>
-
-          {myRole === "employer" && (
-            <button
-              type="button"
-              data-testid="prehire-guidance-hire-btn"
-              onClick={onOpenHire}
-              className="flex items-center justify-center gap-1.5 border-2 border-ink bg-brand px-3.5 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition shrink-0 active:translate-y-0.5"
-            >
-              <Sparkles size={14} />
-              <span>HIRE PRO NOW (₹{Number(defaultPay || 15000).toLocaleString("en-IN")})</span>
-            </button>
-          )}
         </div>
       </div>
     );
@@ -351,28 +349,28 @@ export default function DealTracker({
       className="border-b-2 border-ink bg-white dark:bg-zinc-900 transition-all font-sans"
     >
       {/* 1. TOP HEADER BAR: Mode Badge, Status Pill, Financial Breakdown */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 bg-[#FAF7F2] dark:bg-zinc-950 border-b border-ink/10 dark:border-white/10">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 sm:px-6 bg-[#FAF7F2] dark:bg-zinc-950 border-b border-ink/10 dark:border-white/10">
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
           {mode === "escrow" ? (
             <span
               data-testid="deal-mode-badge"
-              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider bg-[#E65A1E] text-white rounded shadow-sm"
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] sm:text-[11px] font-black uppercase tracking-wider bg-[#E65A1E] text-white rounded-sm shrink-0"
             >
-              <ShieldCheck size={14} /> Escrow Protected
+              <ShieldCheck size={12} /> Escrow
             </span>
           ) : (
             <span
               data-testid="deal-mode-badge"
-              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider bg-amber-500 text-white rounded shadow-sm"
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] sm:text-[11px] font-black uppercase tracking-wider bg-amber-500 text-white rounded-sm shrink-0"
             >
-              <AlertTriangle size={14} /> Direct Settlement (At Your Own Risk)
+              <AlertTriangle size={12} /> Direct (0%)
             </span>
           )}
 
           {/* Status Badge */}
           <span
             data-testid="deal-status-badge"
-            className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border rounded ${
+            className={`px-1.5 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider border rounded-sm ${
               status === "completed"
                 ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300"
                 : status === "disputed" || status === "reported"
@@ -383,113 +381,81 @@ export default function DealTracker({
             {status.replace("_", " ")}
           </span>
 
-          {/* Agreement Dual-Signature Pill */}
-          {onOpenAgreement && (
-            <button
-              type="button"
-              data-testid="deal-header-agreement-pill"
-              onClick={onOpenAgreement}
-              className={`flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border rounded transition ${
-                bothSigned
-                  ? "bg-emerald-50 text-emerald-800 border-emerald-400 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300"
-                  : "bg-[#FFF3C4] text-amber-900 border-amber-500 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-200"
-              }`}
-              title="Open WorkHop Freelance Services & Escrow Agreement"
-            >
-              <FileText size={11} />
-              <span>
-                {bothSigned
-                  ? "Agreement: 2/2 Signed ✓"
-                  : `Agreement: ${signedCount}/2 Signed`}
-              </span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setShowDetailsMobile(!showDetailsMobile)}
+            className="sm:hidden flex items-center gap-0.5 text-[10px] font-bold text-inkmuted hover:text-ink dark:text-zinc-400 px-1 py-0.5"
+          >
+            <span>{showDetailsMobile ? "Hide steps" : "View steps"}</span>
+            <ChevronDown size={11} className={`transition-transform duration-200 ${showDetailsMobile ? "rotate-180" : ""}`} />
+          </button>
         </div>
 
         {/* Amount Breakdown */}
-        <div className="flex items-center gap-4 text-xs">
+        <div className="flex items-center gap-3 text-xs shrink-0">
           <div>
-            <span className="text-[10px] text-inkmuted dark:text-zinc-400 block uppercase font-bold">
-              Agreed Amount
+            <span className="text-[9px] sm:text-[10px] text-inkmuted dark:text-zinc-400 block uppercase font-bold text-right sm:text-left">
+              Agreed
             </span>
-            <span className="font-black text-ink dark:text-white text-sm">
+            <span className="font-black text-ink dark:text-white text-xs sm:text-sm">
               ₹{agreedRupees.toLocaleString("en-IN")}
             </span>
           </div>
 
           {mode === "escrow" && (
-            <>
-              <div className="hidden sm:block border-l border-ink/15 dark:border-white/15 pl-3">
-                <span className="text-[10px] text-inkmuted dark:text-zinc-400 block uppercase font-bold">
-                  Fee (5%)
-                </span>
-                <span className="font-bold text-[#E65A1E] text-xs">
-                  -₹{commissionRupees.toLocaleString("en-IN")}
-                </span>
-              </div>
-              <div className="border-l border-ink/15 dark:border-white/15 pl-3">
-                <span className="text-[10px] text-inkmuted dark:text-zinc-400 block uppercase font-bold">
-                  Net Payout
-                </span>
-                <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm">
-                  ₹{netRupees.toLocaleString("en-IN")}
-                </span>
-              </div>
-            </>
-          )}
-
-          {mode === "direct" && (
-            <div className="border-l border-ink/15 dark:border-white/15 pl-3">
-              <span className="text-[10px] text-inkmuted dark:text-zinc-400 block uppercase font-bold">
-                Platform Fee
+            <div className="border-l border-ink/15 dark:border-white/15 pl-2 sm:pl-3">
+              <span className="text-[9px] sm:text-[10px] text-inkmuted dark:text-zinc-400 block uppercase font-bold">
+                Net Payout
               </span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
-                ₹0 (0%)
+              <span className="font-black text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">
+                ₹{netRupees.toLocaleString("en-IN")}
               </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* 1B. ESCROW AGREEMENT & DUAL SIGNATURE STATUS STRIP */}
+      {/* 1B. ESCROW AGREEMENT & DUAL SIGNATURE STATUS STRIP (Desktop only or when details expanded) */}
       {onOpenAgreement && (
         <div
           data-testid="deal-agreement-status-bar"
-          className={`flex flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-6 border-b border-ink/10 dark:border-white/10 text-xs ${
+          className={`flex-wrap items-center justify-between gap-2 px-3 py-1.5 sm:px-6 border-b border-ink/10 dark:border-white/10 text-xs ${
+            showDetailsMobile ? "flex" : "hidden sm:flex"
+          } ${
             bothSigned
               ? "bg-[#E5F8EE]/60 dark:bg-emerald-950/25"
               : "bg-[#FFF8EB] dark:bg-amber-950/20"
           }`}
         >
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <span className="flex items-center gap-1.5 font-black uppercase text-[11px] text-ink dark:text-white">
-              <FileText size={13} className="text-brand shrink-0" />
-              <span>Escrow Agreement</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="flex items-center gap-1 font-black uppercase text-[10px] sm:text-[11px] text-ink dark:text-white">
+              <FileText size={12} className="text-brand shrink-0" />
+              <span>Agreement</span>
               {deal?.contract_id && (
-                <span className="font-mono text-[10px] text-inkmuted dark:text-zinc-400 font-bold">
+                <span className="font-mono text-[9px] text-inkmuted dark:text-zinc-400 font-bold hidden sm:inline">
                   ({deal.contract_id})
                 </span>
               )}
             </span>
 
             <span
-              className={`px-2 py-0.5 text-[10px] font-black uppercase border ${
+              className={`px-1.5 py-0.5 text-[9px] font-black uppercase border rounded-sm ${
                 employerSigned
                   ? "bg-emerald-100/80 text-emerald-800 border-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-300"
                   : "bg-amber-100/80 text-amber-800 border-amber-400 dark:bg-amber-950/60 dark:text-amber-300"
               }`}
             >
-              Employer: {employerSigned ? `✓ Signed (${deal.employer_signature})` : "⏳ Pending Signature"}
+              Employer: {employerSigned ? "✓ Signed" : "⏳ Pending"}
             </span>
 
             <span
-              className={`px-2 py-0.5 text-[10px] font-black uppercase border ${
+              className={`px-1.5 py-0.5 text-[9px] font-black uppercase border rounded-sm ${
                 freelancerSigned
                   ? "bg-emerald-100/80 text-emerald-800 border-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-300"
                   : "bg-amber-100/80 text-amber-800 border-amber-400 dark:bg-amber-950/60 dark:text-amber-300"
               }`}
             >
-              Freelancer: {freelancerSigned ? `✓ Signed (${deal.freelancer_signature})` : "⏳ Pending Signature"}
+              Freelancer: {freelancerSigned ? "✓ Signed" : "⏳ Pending"}
             </span>
           </div>
 
@@ -497,7 +463,7 @@ export default function DealTracker({
             type="button"
             data-testid="open-escrow-agreement-btn"
             onClick={onOpenAgreement}
-            className={`flex items-center gap-1.5 border-2 border-ink px-3 py-1 text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#121212] transition ${
+            className={`flex items-center gap-1 border border-ink/40 px-2 py-0.5 text-[10px] font-black uppercase rounded-sm transition ${
               !iHaveSigned
                 ? "bg-brand text-white hover:bg-black"
                 : bothSigned
@@ -505,20 +471,20 @@ export default function DealTracker({
                 : "bg-white dark:bg-zinc-800 text-ink dark:text-white hover:bg-sand"
             }`}
           >
-            <PenTool size={12} />
+            <PenTool size={11} />
             <span>
               {!iHaveSigned
-                ? "Review & Sign Agreement (I Agree)"
+                ? "Sign Agreement"
                 : bothSigned
-                ? "View Executed Agreement (2/2)"
-                : `View & Sign Agreement (${signedCount}/2)`}
+                ? "View Agreement (2/2)"
+                : `View Agreement (${signedCount}/2)`}
             </span>
           </button>
         </div>
       )}
 
-      {/* 2. RESPONSIVE 5-STEP STEPPER */}
-      <div className="px-2 py-3 sm:px-6 overflow-x-auto">
+      {/* 2. RESPONSIVE 5-STEP STEPPER - Collapsible on mobile, always visible on tablet/desktop */}
+      <div className={`px-2 py-2 sm:py-3 sm:px-6 overflow-x-auto ${showDetailsMobile ? "block" : "hidden sm:block"}`}>
         <div className="flex items-center justify-between w-full min-w-0">
           {currentSteps.map((s, idx) => {
             const isCompleted = idx < stepIndex || (idx === 4 && status === "completed");
@@ -574,19 +540,19 @@ export default function DealTracker({
       </div>
 
       {/* 3. CONTEXTUAL "WHAT HAPPENS NOW?" + DYNAMIC ACTIONS */}
-      <div className="px-4 py-2.5 sm:px-6 bg-sand/40 dark:bg-zinc-900 border-t border-ink/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex items-start gap-2 flex-1">
-          <Clock size={16} className="text-[#E65A1E] shrink-0 mt-0.5" />
+      <div className="px-3 py-2 sm:px-6 bg-sand/30 dark:bg-zinc-900 border-t border-ink/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-2">
+        <div className={`items-start gap-1.5 flex-1 ${showDetailsMobile ? "flex" : "hidden sm:flex"}`}>
+          <Clock size={13} className="text-[#E65A1E] shrink-0 mt-0.5" />
           <p
             data-testid="deal-guidance-text"
-            className="text-xs text-ink dark:text-zinc-200 font-semibold leading-relaxed"
+            className="text-[11px] text-ink dark:text-zinc-200 font-semibold leading-relaxed"
           >
             {guidance}
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
           {actionError && (
             <span className="text-[11px] text-danger font-bold flex items-center gap-1">
               <AlertCircle size={13} /> {actionError}
