@@ -789,9 +789,6 @@ export function CategoryTiles({
         {/* Sub-Skill Quick Filter Strip (Shows Architecture & Interior Design under Design on Main Window View) */}
         {subPills.length > 0 && (
           <div className="wh-scroll mx-auto flex w-full max-w-[1600px] items-center gap-2 overflow-x-auto border-t border-ink/10 dark:border-white/10 px-4 py-2 sm:px-8">
-            <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-brand">
-              {selected === "ALL" ? "Design & Architecture:" : `${CATEGORY_SHORT_LABELS[activeDiscipline.category] || activeDiscipline.category}:`}
-            </span>
             {subPills.map((sub) => {
               const isSubActive = selected === sub;
               return (
