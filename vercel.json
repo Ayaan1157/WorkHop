@@ -126,26 +126,6 @@
       "destination": "/api/site-settings/index"
     },
     {
-      "source": "/api/coupons/validate",
-      "destination": "/api/coupons"
-    },
-    {
-      "source": "/api/coupons/redeem",
-      "destination": "/api/coupons"
-    },
-    {
-      "source": "/api/coupons",
-      "destination": "/api/coupons"
-    },
-    {
-      "source": "/api/admin/coupons",
-      "destination": "/api/coupons"
-    },
-    {
-      "source": "/api/admin/coupons/:path*",
-      "destination": "/api/coupons"
-    },
-    {
       "source": "/api/jobs",
       "destination": "/api/employers/index"
     },
