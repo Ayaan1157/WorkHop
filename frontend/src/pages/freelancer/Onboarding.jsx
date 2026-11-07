@@ -12,7 +12,7 @@ import { ADMIN_EMAILS, getStoredPaymentTransactions, recordPaymentTransaction } 
 import { useAuth } from "@/context/AuthContext";
 import { sanitizeInput } from "@/lib/security";
 import { scanUploadFile } from "@/lib/contactScanner";
-import { supabaseUploadPortfolioImage } from "@/lib/supabase";
+import { supabaseUploadPortfolioImage, uploadPortfolioItem } from "@/lib/supabase";
 
 const TOTAL = 4;
 
@@ -436,22 +436,24 @@ export default function Onboarding() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = String(reader.result);
-      let publicUrl = null;
-      try {
-        publicUrl = await supabaseUploadPortfolioImage(file, state.freelancerId || user?.id, dataUrl);
-      } catch {}
+    try {
+      const targetUserId = state.freelancerId || user?.id;
+      const uploaded = await uploadPortfolioItem({
+        file,
+        freelancerId: targetUserId,
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        sortOrder: i,
+      });
 
-      const val = publicUrl || dataUrl;
+      const val = uploaded.public_url || uploaded.storage_path;
       setSlots((prev) => {
         const n = [...prev];
         n[i] = val;
         return n;
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (uploadErr) {
+      alert(`Could not upload image "${file.name}": ${uploadErr.message}`);
+    }
   };
 
   const handleCvUpload = async (e) => {

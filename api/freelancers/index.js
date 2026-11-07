@@ -374,6 +374,76 @@ module.exports = async function handler(req, res) {
         });
       } catch {}
 
+      // Persist directly to Supabase cloud database
+      if (cleanEmail || fId) {
+        const rawPortfolioList = Array.isArray(portfolio)
+          ? portfolio.filter((item) => item && !item._workhop_meta)
+          : [];
+        const imgsList = Array.isArray(portfolio_images)
+          ? portfolio_images.filter(Boolean)
+          : [];
+
+        const packedSupabasePortfolio = [
+          ...rawPortfolioList,
+          {
+            _workhop_meta: true,
+            portfolio_images: imgsList,
+            rate_hr: rate_hr !== undefined ? Number(rate_hr) || 0 : undefined,
+            skills: [skill].filter(Boolean),
+            category: category || "",
+            portfolio_url: portfolio_url || "",
+          },
+        ];
+
+        try {
+          const profilePatch = {
+            name: name || undefined,
+            phone: contactPhone || undefined,
+            skill: cleanFreelancerSkill(skill) || undefined,
+            category: category || undefined,
+            area: area || undefined,
+            bio: intro || undefined,
+            portfolio: packedSupabasePortfolio,
+            updated_at: new Date().toISOString(),
+          };
+          if (cleanEmail) {
+            await supabaseRequest(
+              "PATCH",
+              `/rest/v1/profiles?email=ilike.${encodeURIComponent(cleanEmail)}`,
+              profilePatch
+            );
+          }
+          const isUuid = (val) =>
+            typeof val === "string" &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+          if (isUuid(fId)) {
+            await supabaseRequest(
+              "PATCH",
+              `/rest/v1/profiles?id=eq.${encodeURIComponent(fId)}`,
+              profilePatch
+            );
+
+            // Also insert each image into portfolio_items
+            for (let idx = 0; idx < imgsList.length; idx++) {
+              const imgPath = imgsList[idx];
+              if (typeof imgPath === "string" && imgPath.includes("/")) {
+                const storagePath = imgPath.includes("/portfolios/")
+                  ? imgPath.split("/portfolios/")[1]
+                  : imgPath;
+                await supabaseRequest("POST", "/rest/v1/portfolio_items", {
+                  freelancer_id: fId,
+                  title: `Portfolio Sample ${idx + 1}`,
+                  storage_path: storagePath,
+                  sort_order: idx,
+                }).catch(() => {});
+              }
+            }
+          }
+        } catch (sbSyncErr) {
+          console.warn("Supabase onboarding submit sync:", sbSyncErr.message);
+        }
+      }
+
       return res.status(200).json({
         ok: true,
         status: "pending",
@@ -1376,6 +1446,11 @@ module.exports = async function handler(req, res) {
         email: "alia.m@cobblestonedesigns.in",
         phone: "+91 97394 63546",
         portfolio: "",
+        portfolio_images: [
+          "https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1793859016861_op763p2.avif",
+          "https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1793859012266_o9y5g22.avif",
+          "https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1793859006797_oq4acxp.avif",
+        ],
         intro: "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design.",
         keywords: [
           "architecture", "architect", "interior design", "floor plan", "spatial design", "autocad", "3d rendering", "Graphics & Design", "design", "cobblestone", "elevation", "space planning"

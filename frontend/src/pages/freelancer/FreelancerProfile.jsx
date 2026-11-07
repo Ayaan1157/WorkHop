@@ -17,7 +17,7 @@ import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPut, apiPost, getFreelancerId } from "@/lib/api";
-import { supabaseSyncCurrentUserProfile, supabaseUploadPortfolioImage } from "@/lib/supabase";
+import { supabaseSyncCurrentUserProfile, supabaseUploadPortfolioImage, uploadPortfolioItem, deletePortfolioItem } from "@/lib/supabase";
 import {
   getFreelancerProfile,
   saveFreelancerProfile,
@@ -195,18 +195,27 @@ export default function FreelancerProfile() {
         // 3. Optimize image for web performance (max 1000px, 0.72 quality for instant local preview/fallback)
         const res = await compressImage(file, { maxWidth: 1000, maxHeight: 1000, quality: 0.72 });
 
-        // 4. Upload to Supabase Storage via backend proxy with compressed dataUrl fallback
-        let publicUrl = null;
+        // 4. Upload to Supabase Storage via atomic uploadPortfolioItem
+        let uploadedItem = null;
         try {
-          publicUrl = await supabaseUploadPortfolioImage(file, freelancerId || user?.id, res?.dataUrl);
-        } catch {}
+          uploadedItem = await uploadPortfolioItem({
+            file,
+            freelancerId: freelancerId || user?.id,
+            title: editData?.title || file.name,
+            description: editData?.description || "",
+            externalUrl: editData?.link || null,
+          });
+        } catch (upErr) {
+          console.warn("Atomic portfolio upload note:", upErr);
+        }
 
-        const finalData = publicUrl || res?.dataUrl;
-        if (finalData) {
+        const finalUrl = uploadedItem?.public_url || uploadedItem?.storage_path || res?.dataUrl;
+        if (finalUrl) {
           newProcessed.push({
-            id: uid(),
-            data: finalData,
-            url: publicUrl || finalData,
+            id: uploadedItem?.id || uid(),
+            data: finalUrl,
+            url: finalUrl,
+            storage_path: uploadedItem?.storage_path || null,
             name: file.name,
             size: formatFileSize(file.size),
           });

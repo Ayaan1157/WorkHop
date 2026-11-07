@@ -23,6 +23,7 @@ import {
   updateProHourlyRate,
   getOrCreateChatWithCandidate,
 } from "@/lib/clientStore";
+import PortfolioGallery from "@/components/PortfolioGallery";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -650,116 +651,19 @@ export default function Pro() {
                   ? pro.samples.filter((s) => s?.image).map((s) => s.image)
                   : [];
 
-                const portfolioImages = Array.from(
-                  new Set([...itemImages, ...rawPortfolioImages, ...submittedImages, ...ownImages, ...sampleImages].filter(Boolean))
-                );
-
-
-
-                const isOwnProfile = Boolean(
-                  user && (
-                    user.id === pro.id ||
-                    user.email === pro.email ||
-                    (user.phone && pro.phone && user.phone.replace(/\D/g, "") === pro.phone.replace(/\D/g, ""))
-                  )
-                );
+                const initialList = [
+                  ...portfolioList,
+                  ...portfolioImages,
+                ];
 
                 return (
                   <div className="flex flex-col gap-3 border-2 border-ink bg-white p-4">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div>
-                        <h2 className="text-[11px] font-black tracking-[0.15em] text-ink uppercase">
-                          PORTFOLIO &amp; WORK SAMPLES
-                        </h2>
-                        <p className="text-[10px] font-bold text-inkmuted mt-0.5">
-                          {portfolioImages.length > 0
-                            ? `${portfolioImages.length} Verified Case Study Image${portfolioImages.length > 1 ? "s" : ""}`
-                            : "Freelancer Work & Case Studies"}
-                        </p>
-                      </div>
-                      {validPortfolioLink ? (
-                        <a
-                          href={validPortfolioLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 border-2 border-ink bg-sand hover:bg-brand hover:text-white px-3 py-1.5 text-xs font-black text-ink shadow-[1.5px_1.5px_0px_#121212] transition"
-                        >
-                          <Globe size={13} />
-                          <span>OPEN EXTERNAL PORTFOLIO</span>
-                          <ExternalLink size={12} />
-                        </a>
-                      ) : isOwnProfile ? (
-                        <button
-                          type="button"
-                          onClick={() => nav("/freelancer/profile?edit=portfolio")}
-                          className="inline-flex items-center gap-1.5 border-2 border-dashed border-brand bg-brand/10 hover:bg-brand hover:text-white px-3 py-1.5 text-xs font-black text-brand transition shadow-[1px_1px_0px_#121212]"
-                        >
-                          <Globe size={13} />
-                          <span>+ ADD YOUR REAL PORTFOLIO LINK</span>
-                        </button>
-                      ) : null}
-                    </div>
-
-                    {/* IMAGE GALLERY */}
-                    {portfolioImages.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-1">
-                        {portfolioImages.map((img, i) => {
-                          const src = formatImageSrc(img);
-                          const isBroken = brokenImages[src];
-                          return (
-                            <div
-                              key={i}
-                              onClick={() => !isBroken && setLightboxImage(src)}
-                              className={`group relative cursor-pointer border-2 border-ink bg-sand overflow-hidden shadow-[2px_2px_0px_#121212] hover:shadow-[4px_4px_0px_#121212] transition ${
-                                isBroken ? "cursor-not-allowed opacity-80" : ""
-                              }`}
-                            >
-                              <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
-                                {isBroken ? (
-                                  <div className="flex flex-col items-center justify-center p-3 text-center text-inkmuted">
-                                    <ImageIcon size={24} className="mb-1 text-inkmuted opacity-60" />
-                                    <span className="text-[10px] font-black uppercase">Image Pending</span>
-                                  </div>
-                                ) : (
-                                  <img
-                                    src={src}
-                                    alt={`Work sample ${i + 1}`}
-                                    onError={() => setBrokenImages((prev) => ({ ...prev, [src]: true }))}
-                                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                    loading="lazy"
-                                  />
-                                )}
-                              </div>
-                              <div className="p-2 border-t border-ink bg-white flex items-center justify-between">
-                                <span className="text-[10px] font-black text-ink uppercase">
-                                  Sample #{i + 1}
-                                </span>
-                                {!isBroken && (
-                                  <span className="text-[9px] font-bold text-brand flex items-center gap-1">
-                                    <span>Click to enlarge</span>
-                                    <Sparkles size={10} />
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed border-ink/30 bg-sand/40 p-6 text-center">
-                        <ImageIcon size={32} className="mx-auto text-inkmuted mb-2" />
-                        <p className="text-xs font-black text-ink">No image samples uploaded directly.</p>
-                        {validPortfolioLink ? (
-                          <p className="text-[11px] font-semibold text-inkmuted mt-1">
-                            View their projects and case studies directly via the external portfolio link above.
-                          </p>
-                        ) : (
-                          <p className="text-[11px] font-semibold text-inkmuted mt-1">
-                            This freelancer has not uploaded work sample screenshots yet.
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    <PortfolioGallery
+                      freelancerId={pro.id || id}
+                      freelancerEmail={pro.email}
+                      initialItems={initialList}
+                      externalPortfolioUrl={validPortfolioLink || pro.portfolio_url || (typeof pro.portfolio === "string" ? pro.portfolio : "")}
+                    />
                   </div>
                 );
               })()}

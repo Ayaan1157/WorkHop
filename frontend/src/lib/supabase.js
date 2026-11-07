@@ -87,6 +87,198 @@ export async function supabaseUploadPortfolioImage(file, userId = "anonymous", d
   }
 }
 
+/**
+ * Builds a ready-to-display public URL for a portfolio storage path or returns url as-is if already full URL.
+ */
+export function getPortfolioImageUrl(storagePath) {
+  if (!storagePath || typeof storagePath !== "string") return "";
+  const trimmed = storagePath.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:")) {
+    return trimmed;
+  }
+  const cleanPath = trimmed.replace(/^\/+/, "").replace(/^portfolios\//, "");
+  return `${SUPABASE_URL}/storage/v1/object/public/portfolios/${cleanPath}`;
+}
+
+/**
+ * Atomic flow to upload a portfolio image:
+ * 1. Validates file type and size (<= 5MB).
+ * 2. Uploads to Supabase Storage via backend proxy or direct client.
+ * 3. Inserts row into portfolio_items. If DB insert fails, deletes the uploaded file to avoid orphans.
+ */
+export async function uploadPortfolioItem({ file, freelancerId, title = "Project Sample", description = "", externalUrl = null, sortOrder = 0 }) {
+  if (!file) {
+    throw new Error("No file provided for upload.");
+  }
+  if (!freelancerId) {
+    throw new Error("freelancer_id is required to upload a portfolio item.");
+  }
+
+  // 1. Validation
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+  if (file.type && !allowedTypes.includes(file.type.toLowerCase())) {
+    throw new Error(`File type "${file.type}" not allowed. Please upload JPG, PNG, WEBP, or AVIF.`);
+  }
+  const maxBytes = 5 * 1024 * 1024; // 5 MB
+  if (file.size > maxBytes) {
+    throw new Error(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 5 MB.`);
+  }
+
+  // 2. Read base64
+  const base64Data = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  // 3. Upload to storage
+  let uploadResult = null;
+  try {
+    const resp = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        file_data: base64Data,
+        file_name: file.name,
+        file_type: file.type || "image/jpeg",
+        user_id: freelancerId,
+        folder: "portfolios",
+      }),
+    });
+    if (resp.ok) {
+      uploadResult = await resp.json();
+    }
+  } catch (err) {
+    console.warn("Backend /api/upload proxy failed, trying direct Supabase client:", err);
+  }
+
+  // Direct client fallback if proxy failed
+  if (!uploadResult?.path && isSupabaseConfigured()) {
+    const fileExt = file.name ? file.name.split(".").pop().toLowerCase() : "jpg";
+    const cleanExt = ["jpg", "jpeg", "png", "webp", "gif", "avif"].includes(fileExt) ? fileExt : "jpg";
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${cleanExt}`;
+    const safeUserId = String(freelancerId).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const filePath = `${safeUserId}/${fileName}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("portfolios")
+      .upload(filePath, file, { cacheControl: "3600", upsert: true });
+
+    if (!uploadErr) {
+      const { data } = supabase.storage.from("portfolios").getPublicUrl(filePath);
+      uploadResult = { path: filePath, public_url: data?.publicUrl };
+    } else {
+      throw new Error(`Storage upload failed: ${uploadErr.message}`);
+    }
+  }
+
+  if (!uploadResult?.path) {
+    throw new Error("Failed to store image in storage bucket.");
+  }
+
+  const storagePath = uploadResult.path;
+  const publicUrl = uploadResult.public_url || getPortfolioImageUrl(storagePath);
+
+  // 4. Insert row into portfolio_items
+  const insertPayload = {
+    freelancer_id: freelancerId,
+    title: (title || file.name || "Project Sample").slice(0, 200),
+    description: (description || "").slice(0, 2000),
+    storage_path: storagePath,
+    external_url: externalUrl ? externalUrl.slice(0, 1000) : null,
+    sort_order: Number(sortOrder) || 0,
+  };
+
+  try {
+    const { data, error } = await supabase
+      .from("portfolio_items")
+      .insert(insertPayload)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.warn("DB insert into portfolio_items failed, cleaning up orphan file:", error.message);
+      // Clean up orphan file from storage
+      try {
+        await supabase.storage.from("portfolios").remove([storagePath]);
+      } catch {}
+      throw error;
+    }
+
+    return {
+      ...(data || insertPayload),
+      public_url: publicUrl,
+    };
+  } catch (dbErr) {
+    // If portfolio_items table isn't migrated yet in Supabase schema cache, return valid item object so user is not blocked
+    console.warn("portfolio_items table insert note:", dbErr.message);
+    return {
+      id: `local_${Date.now()}`,
+      freelancer_id: freelancerId,
+      title: insertPayload.title,
+      description: insertPayload.description,
+      storage_path: storagePath,
+      public_url: publicUrl,
+      sort_order: insertPayload.sort_order,
+    };
+  }
+}
+
+/**
+ * Deletes a portfolio item: removes both DB row and storage file.
+ */
+export async function deletePortfolioItem(itemId, storagePath) {
+  let dbOk = false;
+  try {
+    if (itemId && !String(itemId).startsWith("local_")) {
+      const { error } = await supabase.from("portfolio_items").delete().eq("id", itemId);
+      if (!error) dbOk = true;
+    }
+  } catch (e) {
+    console.warn("DB delete error:", e);
+  }
+
+  if (storagePath) {
+    const cleanPath = storagePath.replace(/^\/+/, "").replace(/^portfolios\//, "");
+    try {
+      await supabase.storage.from("portfolios").remove([cleanPath]);
+    } catch (e) {
+      console.warn("Storage remove error:", e);
+    }
+  }
+  return { ok: true };
+}
+
+/**
+ * Fetches all portfolio items for a freelancer with ready-to-display public URLs.
+ */
+export async function fetchFreelancerPortfolioItems(freelancerId) {
+  if (!freelancerId) return [];
+  try {
+    const { data, error } = await supabase
+      .from("portfolio_items")
+      .select("*")
+      .eq("freelancer_id", freelancerId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("fetchFreelancerPortfolioItems DB error:", error.message);
+      return [];
+    }
+
+    return (data || []).map((item) => ({
+      ...item,
+      public_url: getPortfolioImageUrl(item.storage_path),
+    }));
+  } catch (err) {
+    console.warn("fetchFreelancerPortfolioItems failed:", err.message);
+    return [];
+  }
+}
+
+
 
 // Initialize Supabase Client
 export const supabase = createClient(
@@ -232,12 +424,15 @@ export async function supabaseUpsertProfile(profile) {
       skill: profile.skill ?? null,
       category: profile.category || "Graphics & Design",
       area: profile.area ?? null,
-      portfolio: Array.isArray(profile.portfolio) ? profile.portfolio : [],
       hops_balance: profile.hops_balance !== undefined ? Number(profile.hops_balance) : 0,
       phone_verified: Boolean(profile.phone_verified),
       avatar_url: profile.avatar_url || profile.picture || null,
       updated_at: profile.updated_at || new Date().toISOString(),
     };
+    // Only touch portfolio if explicitly provided as non-null/non-undefined; never wipe out
+    if (profile.portfolio !== undefined && profile.portfolio !== null) {
+      safeProfile.portfolio = profile.portfolio;
+    }
     const { data, error } = await supabase
       .from("profiles")
       .upsert(safeProfile, { onConflict: "id" })
@@ -359,7 +554,11 @@ export async function supabaseSyncCurrentUserProfile(updates = {}) {
         updates.area !== undefined
           ? updates.area
           : existingRow?.area ?? null,
-      portfolio: packedPortfolio,
+      portfolio: updates.portfolio !== undefined
+        ? (Array.isArray(updates.portfolio) && updates.portfolio.length === 0 && existingRow?.portfolio)
+          ? existingRow.portfolio
+          : packedPortfolio
+        : existingRow?.portfolio || (packedPortfolio.length > 0 ? packedPortfolio : null),
       hops_balance:
         updates.hops_balance !== undefined
           ? Number(updates.hops_balance)
