@@ -21,6 +21,7 @@ import {
   saveRemoteFreelancers,
   getStoredReviews,
   updateProHourlyRate,
+  getOrCreateChatWithCandidate,
 } from "@/lib/clientStore";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
@@ -306,6 +307,43 @@ export default function Pro() {
       setSavingRate(false);
     }
   };
+
+  const handleOpenDirectChat = () => {
+    if (!pro) return;
+    const convId = getOrCreateChatWithCandidate(pro);
+    nav(`/chat/${convId}?role=employer`);
+  };
+
+  const rawPortfolioUrl = (pro?.portfolio_url || (typeof pro?.portfolio === "string" ? pro.portfolio : "") || "").trim();
+  const isDummyDomain = (url) => {
+    if (!url) return true;
+    const lower = url.toLowerCase();
+    return (
+      lower.includes("shamanthnmurthy.design") ||
+      lower.includes("rohanverma.design") ||
+      lower.includes("arjunmehta.dev") ||
+      lower.includes("nikhilai.studio") ||
+      lower.includes("ananyagrowth.in") ||
+      lower.includes("deepareels.co") ||
+      lower.includes("workhop.in/pro/") ||
+      lower.includes("example.com") ||
+      lower.includes("test.com")
+    );
+  };
+
+  const hasValidExternalLink = Boolean(
+    rawPortfolioUrl &&
+    !isDummyDomain(rawPortfolioUrl) &&
+    (rawPortfolioUrl.startsWith("http://") ||
+     rawPortfolioUrl.startsWith("https://") ||
+     rawPortfolioUrl.includes("."))
+  );
+
+  const validPortfolioLink = hasValidExternalLink
+    ? rawPortfolioUrl.startsWith("http://") || rawPortfolioUrl.startsWith("https://")
+      ? rawPortfolioUrl
+      : `https://${rawPortfolioUrl}`
+    : null;
 
   return (
     <Shell>
@@ -616,36 +654,7 @@ export default function Pro() {
                   new Set([...itemImages, ...rawPortfolioImages, ...submittedImages, ...ownImages, ...sampleImages].filter(Boolean))
                 );
 
-                const portfolioUrl = (pro.portfolio_url || (typeof pro.portfolio === "string" ? pro.portfolio : "") || "").trim();
-                const isDummyDomain = (url) => {
-                  if (!url) return true;
-                  const lower = url.toLowerCase();
-                  return (
-                    lower.includes("shamanthnmurthy.design") ||
-                    lower.includes("rohanverma.design") ||
-                    lower.includes("arjunmehta.dev") ||
-                    lower.includes("nikhilai.studio") ||
-                    lower.includes("ananyagrowth.in") ||
-                    lower.includes("deepareels.co") ||
-                    lower.includes("workhop.in/pro/") ||
-                    lower.includes("example.com") ||
-                    lower.includes("test.com")
-                  );
-                };
 
-                const hasValidExternalLink = Boolean(
-                  portfolioUrl &&
-                  !isDummyDomain(portfolioUrl) &&
-                  (portfolioUrl.startsWith("http://") ||
-                   portfolioUrl.startsWith("https://") ||
-                   portfolioUrl.includes("."))
-                );
-
-                const validPortfolioLink = hasValidExternalLink
-                  ? portfolioUrl.startsWith("http://") || portfolioUrl.startsWith("https://")
-                    ? portfolioUrl
-                    : `https://${portfolioUrl}`
-                  : null;
 
                 const isOwnProfile = Boolean(
                   user && (
