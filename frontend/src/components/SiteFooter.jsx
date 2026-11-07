@@ -285,7 +285,7 @@ export default function SiteFooter() {
           <p>© 2026 WorkHop Technologies Pvt. Ltd. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-stone-400">
             <Link to="/reviews" className="hover:text-white transition underline underline-offset-2 font-bold text-stone-300">
-              ★ 1,400+ Verified Reviews
+              ★ 10+ Verified Reviews
             </Link>
             <span className="hidden xs:inline">·</span>
             <Link to="/grievance" className="hover:text-white transition underline underline-offset-2 font-bold text-brand">

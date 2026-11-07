@@ -1848,8 +1848,8 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
             { value: "5 km", label: "Hyperlocal Match Radius", highlight: false },
-            { value: "1,400+", label: "Local Gigs Completed", highlight: false }, /* PLACEHOLDER STAT */
-            { value: "4.9 ★", label: "Verified Client Rating", highlight: true },  /* PLACEHOLDER STAT */
+            { value: "50+", label: "Local Gigs Completed", highlight: false },
+            { value: "4.9 ★", label: "Verified Client Rating", highlight: true },
             { value: "0%", label: "Platform Commission", highlight: false },
           ].map((stat) => (
             <div key={stat.label} className="flex flex-col items-center justify-center">
