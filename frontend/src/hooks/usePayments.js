@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { API, apiPost } from "@/lib/api";
 import { trackPixelPurchase } from "@/lib/metaPixel";
-import { recordPaymentTransaction } from "@/lib/clientStore";
+import { recordPaymentTransaction, recordCouponRedemption } from "@/lib/clientStore";
 
 const LIVE_RAZORPAY_KEY_ID =
   process.env.REACT_APP_RAZORPAY_KEY_ID || "rzp_live_Tran4lUkI8SdOr";
@@ -162,6 +162,16 @@ export function useRazorpay() {
         description: description || "WorkHop Payment",
         status: "captured",
       });
+
+      // Track coupon redemption in real time if a promo code was applied
+      if (payload?.coupon_code) {
+        recordCouponRedemption(payload.coupon_code, {
+          email: payload?.email || "",
+          amount,
+          product: payload?.product || "payment",
+        });
+      }
+
       trackPixelPurchase(amount, { product: payload?.product || description || "payment" });
 
       // Automatically dispatch official GST Tax Invoice bill to buyer's email

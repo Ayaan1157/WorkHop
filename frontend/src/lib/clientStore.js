@@ -3436,6 +3436,90 @@ export function updateStoredCoupon(code, updates) {
   return updated.find((c) => c.code.toUpperCase() === targetCode);
 }
 
+export function syncStoredCoupons(remoteList) {
+  if (!Array.isArray(remoteList) || remoteList.length === 0) return getStoredCoupons();
+  try {
+    const local = getStoredCoupons();
+    const map = new Map();
+    // Prioritize remote items while preserving local fields
+    for (const loc of local) {
+      if (loc?.code) map.set(loc.code.toUpperCase(), loc);
+    }
+    for (const rem of remoteList) {
+      if (rem?.code) {
+        const k = rem.code.toUpperCase();
+        const existing = map.get(k) || {};
+        map.set(k, {
+          ...existing,
+          ...rem,
+          code: k,
+          used_count: Math.max(Number(existing.used_count) || 0, Number(rem.used_count) || 0),
+        });
+      }
+    }
+    const merged = Array.from(map.values());
+    localStorage.setItem(STORED_COUPONS_KEY, JSON.stringify(merged));
+    return merged;
+  } catch {
+    return getStoredCoupons();
+  }
+}
+
+export function recordCouponRedemption(code, details = {}) {
+  const targetCode = String(code || "").trim().toUpperCase();
+  if (!targetCode) return null;
+
+  // 1. Immediately increment locally in localStorage
+  let updatedCoupon = null;
+  try {
+    const coupons = getStoredCoupons();
+    let found = false;
+    const updated = coupons.map((c) => {
+      if ((c.code || "").toUpperCase() === targetCode) {
+        found = true;
+        const newCount = (Number(c.used_count) || 0) + 1;
+        updatedCoupon = { ...c, used_count: newCount, last_used_at: new Date().toISOString() };
+        return updatedCoupon;
+      }
+      return c;
+    });
+    if (!found) {
+      updatedCoupon = {
+        code: targetCode,
+        discount_type: "percent",
+        value: 50,
+        applies_to: "all",
+        active: true,
+        max_uses: 0,
+        used_count: 1,
+        description: `${targetCode} Promo Code`,
+        created_at: new Date().toISOString(),
+        last_used_at: new Date().toISOString(),
+      };
+      updated.unshift(updatedCoupon);
+    }
+    localStorage.setItem(STORED_COUPONS_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.warn("Local coupon redemption update error:", e);
+  }
+
+  // 2. Dispatch to backend API /api/coupons/redeem to update persistent cloud master
+  try {
+    fetch("/api/coupons/redeem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: targetCode,
+        customer_email: details.email || details.customer_email || "",
+        amount: details.amount || 0,
+        product: details.product || "checkout",
+      }),
+    }).catch(() => {});
+  } catch {}
+
+  return updatedCoupon;
+}
+
 export function deleteStoredCoupon(code) {
   const targetCode = (code || "").trim().toUpperCase();
   const coupons = getStoredCoupons();

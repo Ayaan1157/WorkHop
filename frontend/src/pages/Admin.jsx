@@ -1699,7 +1699,17 @@ function CouponsTab({ adminFetch }) {
 
   useEffect(() => {
     loadCoupons();
-  }, [loadCoupons]);
+    const interval = setInterval(() => {
+      adminFetch("/coupons", "GET")
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setCoupons(data);
+          }
+        })
+        .catch(() => {});
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [loadCoupons, adminFetch]);
 
   const handleToggleActive = async (c) => {
     try {

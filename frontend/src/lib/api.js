@@ -33,10 +33,12 @@ import {
   getCreditsConfig,
   saveCreditsConfig,
   getStoredCoupons,
+  syncStoredCoupons,
   validateStoredCoupon,
   saveStoredCoupon,
   updateStoredCoupon,
   deleteStoredCoupon,
+  recordCouponRedemption,
   addEmployerReview,
   getStoredReviews,
   markJobCompletedAndReview,
@@ -990,20 +992,66 @@ async function mockRouter(path, method = "GET", body = null) {
     return [];
   }
   if (cleanPath === "/coupons/validate" && method === "POST") {
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {}
     return validateStoredCoupon(body || {});
   }
-  if (cleanPath === "/admin/coupons" && method === "GET") {
+  if (cleanPath === "/coupons/redeem" && method === "POST") {
+    return recordCouponRedemption(body?.code, body || {});
+  }
+  if ((cleanPath === "/admin/coupons" || cleanPath === "/coupons") && method === "GET") {
+    try {
+      const res = await fetch("/api/coupons");
+      if (res.ok) {
+        const remote = await res.json();
+        if (Array.isArray(remote) && remote.length > 0) {
+          return syncStoredCoupons(remote);
+        }
+      }
+    } catch {}
     return getStoredCoupons();
   }
-  if (cleanPath === "/admin/coupons" && method === "POST") {
+  if ((cleanPath === "/admin/coupons" || cleanPath === "/coupons") && method === "POST") {
+    try {
+      const res = await fetch("/api/admin/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      });
+      if (res.ok) {
+        const remote = await res.json();
+        saveStoredCoupon(remote || body);
+        return remote;
+      }
+    } catch {}
     return saveStoredCoupon(body);
   }
   if (cleanPath.startsWith("/admin/coupons/") && method === "PATCH") {
     const code = cleanPath.split("/")[3];
+    try {
+      await fetch(`/api/admin/coupons/${code}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      });
+    } catch {}
     return updateStoredCoupon(code, body);
   }
   if (cleanPath.startsWith("/admin/coupons/") && method === "DELETE") {
     const code = cleanPath.split("/")[3];
+    try {
+      await fetch(`/api/admin/coupons/${code}`, {
+        method: "DELETE",
+      });
+    } catch {}
     return deleteStoredCoupon(code);
   }
   if (cleanPath === "/admin/chats" && method === "GET") {
