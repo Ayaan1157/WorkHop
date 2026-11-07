@@ -127,23 +127,23 @@
     },
     {
       "source": "/api/coupons/validate",
-      "destination": "/api/coupons/index"
+      "destination": "/api/coupons"
     },
     {
       "source": "/api/coupons/redeem",
-      "destination": "/api/coupons/index"
+      "destination": "/api/coupons"
     },
     {
       "source": "/api/coupons",
-      "destination": "/api/coupons/index"
+      "destination": "/api/coupons"
     },
     {
       "source": "/api/admin/coupons",
-      "destination": "/api/coupons/index"
+      "destination": "/api/coupons"
     },
     {
       "source": "/api/admin/coupons/:path*",
-      "destination": "/api/coupons/index"
+      "destination": "/api/coupons"
     },
     {
       "source": "/api/jobs",
