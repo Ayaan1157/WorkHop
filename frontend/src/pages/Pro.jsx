@@ -448,21 +448,30 @@ export default function Pro() {
                   </button>
                 ) : (
                   <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-                    <a
-                      href={`tel:${pro.phone || ""}`}
-                      className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 border-2 border-ink bg-ok px-4 py-2.5 text-xs font-black tracking-wider text-white hover:bg-ok/90 transition shadow-[2px_2px_0px_#121212]"
-                    >
-                      <Phone size={14} /> CALL {pro.phone || "PRO"} {isAdmin ? "(ADMIN)" : ""}
-                    </a>
-                    {pro.phone && (
-                      <a
-                        href={formatWhatsAppUrl(pro.phone, `Hi ${pro.name?.split(" ")?.[0] || ""}, connecting with you on WorkHop!`)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 border-2 border-ink bg-[#25D366] px-4 py-2.5 text-xs font-black tracking-wider text-white hover:bg-[#20ba59] transition shadow-[2px_2px_0px_#121212]"
+                    {pro.phone ? (
+                      <>
+                        <a
+                          href={`tel:${pro.phone}`}
+                          className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 border-2 border-ink bg-ok px-4 py-2.5 text-xs font-black tracking-wider text-white hover:bg-ok/90 transition shadow-[2px_2px_0px_#121212]"
+                        >
+                          <Phone size={14} /> CALL {pro.phone} {isAdmin ? "(ADMIN)" : ""}
+                        </a>
+                        <a
+                          href={formatWhatsAppUrl(pro.phone, `Hi ${pro.name?.split(" ")?.[0] || ""}, connecting with you on WorkHop!`)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 border-2 border-ink bg-[#25D366] px-4 py-2.5 text-xs font-black tracking-wider text-white hover:bg-[#20ba59] transition shadow-[2px_2px_0px_#121212]"
+                        >
+                          <MessageSquare size={14} /> WHATSAPP
+                        </a>
+                      </>
+                    ) : (
+                      <button
+                        onClick={handleOpenDirectChat}
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 border-2 border-ink bg-ink text-white px-4 py-2.5 text-xs font-black tracking-wider hover:bg-brand transition shadow-[2px_2px_0px_#121212]"
                       >
-                        <MessageSquare size={14} /> WHATSAPP
-                      </a>
+                        <MessageSquare size={14} /> MESSAGE PRO ON CHAT
+                      </button>
                     )}
                   </div>
                 )}
@@ -758,7 +767,17 @@ export default function Pro() {
                       <p className="text-[9px] font-bold text-inkmuted">DIRECT PHONE / WHATSAPP</p>
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-black text-ink">
-                          {unlocked ? pro.phone || "+91 98450 12345" : "+91 ••••• •••••"}
+                          {unlocked ? (
+                            pro.phone ? (
+                              pro.phone
+                            ) : (
+                              <span className="text-inkmuted font-semibold text-xs italic">
+                                Not provided by freelancer
+                              </span>
+                            )
+                          ) : (
+                            "+91 ••••• •••••"
+                          )}
                         </p>
                         {unlocked && pro.phone && (
                           <a
@@ -782,7 +801,24 @@ export default function Pro() {
                     <div className="relative flex-1 overflow-hidden">
                       <p className="text-[9px] font-bold text-inkmuted">WEBSITE / PORTFOLIO</p>
                       <p className="text-sm font-black text-ink">
-                        {unlocked ? pro.portfolio || "https://workhop.in/pro" : "████████████.in"}
+                        {unlocked ? (
+                          validPortfolioLink ? (
+                            <a
+                              href={validPortfolioLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-brand underline hover:text-black transition"
+                            >
+                              {pro.portfolio || pro.portfolio_url}
+                            </a>
+                          ) : (
+                            <span className="text-inkmuted font-semibold text-xs italic">
+                              Not provided by freelancer
+                            </span>
+                          )
+                        ) : (
+                          "████████████.in"
+                        )}
                       </p>
                       {!unlocked && <Blur />}
                     </div>
@@ -818,9 +854,15 @@ export default function Pro() {
                       data-testid="pro-unlocked-badge"
                       className="mt-2 flex items-center gap-2 bg-[#E5F8EE] border border-ok p-2"
                     >
-                      <CheckCircle2 size={16} className="text-ok" />
+                      <CheckCircle2 size={16} className="text-ok shrink-0" />
                       <span className="text-xs font-extrabold text-ink">
-                        Contact unlocked — phone and website are visible
+                        {pro.phone && validPortfolioLink
+                          ? "Contact unlocked — phone and website are visible"
+                          : pro.phone
+                          ? "Contact unlocked — direct phone & WhatsApp are visible"
+                          : validPortfolioLink
+                          ? "Contact unlocked — portfolio website is visible"
+                          : "Contact unlocked — you can now initiate direct chat with this freelancer"}
                       </span>
                     </div>
                   )}
