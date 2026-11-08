@@ -5,36 +5,70 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Sparkles,
   Loader2,
   Trash2,
+  AlertCircle,
 } from "lucide-react";
 import { supabase, getPortfolioImageUrl, fetchFreelancerPortfolioItems } from "@/lib/supabase";
 
-// Category-specific placeholder samples if an uploaded image data URL is corrupted / truncated
-const FALLBACK_CATEGORY_IMAGES = [
-  "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1000&q=80",
-  "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80",
-  "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80",
-  "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1000&q=80",
-];
+/**
+ * Validation Guard:
+ * Strictly verifies that an image source points to the authorized Supabase `portfolios` storage bucket.
+ * Blocks any stock photos (Unsplash, Picsum, placeholder services), external untracked images, or mock URLs.
+ */
+export function isValidPortfolioStorageUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
 
-function formatSrc(img, fallbackIndex = 0) {
+  // 1. Direct storage path inside portfolios bucket: e.g. "<uuid>/<filename>.png"
+  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("data:")) {
+    // Relative path must not contain protocol or directory traversal
+    return !trimmed.startsWith("/") && trimmed.includes("/") && !trimmed.includes("..");
+  }
+
+  // 2. Full HTTP(S) URL: MUST be from the project's Supabase storage domain and under /storage/v1/object/public/portfolios/
+  try {
+    const parsed = new URL(trimmed);
+    const isSupabaseHost =
+      parsed.hostname.endsWith(".supabase.co") ||
+      parsed.hostname.endsWith(".supabase.in") ||
+      parsed.hostname === "localhost" ||
+      parsed.hostname === "127.0.0.1";
+
+    const isPortfoliosPath = parsed.pathname.includes("/storage/v1/object/public/portfolios/");
+
+    return isSupabaseHost && isPortfoliosPath;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Resolves the ready-to-display public URL for an authenticated portfolio storage reference.
+ * If the URL is not a valid Supabase portfolios bucket reference, returns empty string.
+ */
+export function resolveRealStorageUrl(img) {
   if (!img) return "";
-  if (typeof img !== "string") {
-    return img.public_url || img.data || img.url || img.src || "";
-  }
-  const trimmed = img.trim();
-
-  // If corrupted / truncated base64 string (e.g. earlier test uploads that were only 10-20 bytes), return quality sample
-  if (trimmed.startsWith("data:image/") && trimmed.length < 150) {
-    return FALLBACK_CATEGORY_IMAGES[fallbackIndex % FALLBACK_CATEGORY_IMAGES.length];
+  let raw = "";
+  if (typeof img === "string") {
+    raw = img.trim();
+  } else if (typeof img === "object") {
+    raw = (img.storage_path || img.public_url || img.url || "").trim();
   }
 
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("/")) {
-    return trimmed;
+  if (!raw) return "";
+
+  // If already full URL, verify domain guard
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    return isValidPortfolioStorageUrl(raw) ? raw : "";
   }
-  return getPortfolioImageUrl(trimmed);
+
+  // If relative path, build public URL via Supabase helper
+  if (isValidPortfolioStorageUrl(raw)) {
+    return getPortfolioImageUrl(raw);
+  }
+
+  return "";
 }
 
 /**
@@ -76,46 +110,44 @@ export default function PortfolioGallery({
       setLoading(true);
       let resolved = [];
 
-      // Helper to unpack portfolio items & images from any source
-      const extractValidImages = (list) => {
+      // Helper to unpack portfolio items & images strictly from genuine storage references
+      const extractRealImages = (list) => {
         if (!Array.isArray(list)) return [];
         const seenUrls = new Set();
         const result = [];
 
-        list.forEach((it, idx) => {
+        list.forEach((it) => {
           if (!it) return;
+
+          // Case A: string storage reference
           if (typeof it === "string") {
-            const trimmed = it.trim();
-            if (!trimmed || (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("data:") && !trimmed.startsWith("/") && !trimmed.includes("."))) {
-              return;
-            }
-            const publicUrl = formatSrc(trimmed, result.length);
+            const publicUrl = resolveRealStorageUrl(it);
             if (!publicUrl || seenUrls.has(publicUrl)) return;
             seenUrls.add(publicUrl);
             result.push({
-              id: `init_str_${idx}_${result.length}`,
-              title: `Work Sample ${result.length + 1}`,
-              storage_path: trimmed,
+              id: `item_${result.length}`,
+              title: "",
+              storage_path: it,
               public_url: publicUrl,
             });
             return;
           }
 
+          // Case B: project or portfolio item object
           if (typeof it === "object" && !it._workhop_meta) {
             const imagesList = Array.isArray(it.images) && it.images.length > 0
-              ? it.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || img?.src || "")).filter(Boolean)
+              ? it.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || img?.storage_path || "")).filter(Boolean)
               : [];
-            
-            // If project has multiple images in it.images, create a sample for each unique image
+
             if (imagesList.length > 0) {
-              imagesList.forEach((imgSrc, imgIdx) => {
-                const publicUrl = formatSrc(imgSrc, result.length);
+              imagesList.forEach((imgSrc) => {
+                const publicUrl = resolveRealStorageUrl(imgSrc);
                 if (!publicUrl || seenUrls.has(publicUrl)) return;
                 seenUrls.add(publicUrl);
                 result.push({
-                  id: `${it.id || "proj"}_${imgIdx}`,
-                  title: imagesList.length > 1 ? `${it.title || it.name || "Work Sample"} (${imgIdx + 1})` : (it.title || it.name || `Work Sample ${result.length + 1}`),
-                  description: it.description || "",
+                  id: `${it.id || "proj"}_${result.length}`,
+                  title: (it.title || it.name || "").trim(),
+                  description: (it.description || "").trim(),
                   storage_path: imgSrc,
                   public_url: publicUrl,
                   external_url: it.external_url || it.link || null,
@@ -124,16 +156,16 @@ export default function PortfolioGallery({
               return;
             }
 
-            const src = it.public_url || it.url || it.image_data || it.src || null;
-            if (!src) return;
-            const publicUrl = formatSrc(src, result.length);
+            const rawSrc = it.storage_path || it.public_url || it.url || it.image_data || null;
+            if (!rawSrc) return;
+            const publicUrl = resolveRealStorageUrl(rawSrc);
             if (!publicUrl || seenUrls.has(publicUrl)) return;
             seenUrls.add(publicUrl);
             result.push({
-              id: it.id || `init_obj_${idx}`,
-              title: it.title || it.name || `Work Sample ${result.length + 1}`,
-              description: it.description || "",
-              storage_path: it.storage_path || src,
+              id: it.id || `item_${result.length}`,
+              title: (it.title || it.name || "").trim(),
+              description: (it.description || "").trim(),
+              storage_path: it.storage_path || rawSrc,
               public_url: publicUrl,
               external_url: it.external_url || it.link || null,
             });
@@ -143,7 +175,7 @@ export default function PortfolioGallery({
         return result;
       };
 
-      // 1. Check initialItems (handles both Array and serialized JSON string)
+      // 1. Check initialItems prop
       let parsedInitial = [];
       if (typeof initialItems === "string" && initialItems.trim().startsWith("[")) {
         try {
@@ -154,10 +186,10 @@ export default function PortfolioGallery({
       }
 
       if (parsedInitial.length > 0) {
-        resolved = extractValidImages(parsedInitial);
+        resolved = extractRealImages(parsedInitial);
       }
 
-      // 2. Fetch live from Supabase portfolio_items or profiles if not resolved or to get freshest
+      // 2. Fetch live from Supabase portfolio_items or profiles if not resolved
       const isUuid =
         typeof freelancerId === "string" &&
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(freelancerId);
@@ -167,11 +199,10 @@ export default function PortfolioGallery({
           if (isUuid) {
             const dbItems = await fetchFreelancerPortfolioItems(freelancerId);
             if (Array.isArray(dbItems) && dbItems.length > 0) {
-              resolved = extractValidImages(dbItems);
+              resolved = extractRealImages(dbItems);
             }
           }
 
-          // If still no items, check Supabase profiles table for portfolio JSON column
           if (resolved.length === 0) {
             let profileQuery = supabase.from("profiles").select("id, portfolio, email");
             if (isUuid) {
@@ -191,7 +222,7 @@ export default function PortfolioGallery({
                   const itemsList = parsed.filter((p) => p && !p._workhop_meta);
                   const metaImages = Array.isArray(metaObj.portfolio_images) ? metaObj.portfolio_images : [];
                   const combined = [...itemsList, ...metaImages];
-                  const fromProf = extractValidImages(combined);
+                  const fromProf = extractRealImages(combined);
                   if (fromProf.length > 0) {
                     resolved = fromProf;
                   }
@@ -204,11 +235,11 @@ export default function PortfolioGallery({
         }
       }
 
-      // Final deduplication safety pass on resolved items
+      // Strict Deduplication Pass
       const finalUnique = [];
       const seenFinal = new Set();
       resolved.forEach((item) => {
-        const key = item.public_url || item.storage_path || item.id;
+        const key = item.public_url || item.storage_path;
         if (key && !seenFinal.has(key)) {
           seenFinal.add(key);
           finalUnique.push(item);
@@ -307,19 +338,22 @@ export default function PortfolioGallery({
         )}
       </div>
 
-      {/* Grid or Empty State */}
+      {/* Grid of uploaded samples or honest empty state */}
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-          {[1, 2, 3].map((n) => (
-            <div key={n} className="aspect-[4/3] bg-stone-100 dark:bg-zinc-800 border-2 border-ink/20 animate-pulse flex items-center justify-center">
-              <Loader2 size={18} className="animate-spin text-inkmuted" />
+          {[1, 2].map((n) => (
+            <div
+              key={n}
+              className="aspect-[4/3] w-full border-2 border-ink dark:border-zinc-700 bg-stone-100 dark:bg-zinc-800 animate-pulse flex items-center justify-center"
+            >
+              <Loader2 size={16} className="animate-spin text-inkmuted" />
             </div>
           ))}
         </div>
       ) : items.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
           {items.map((item, idx) => {
-            const src = formatSrc(item.public_url || item.storage_path);
+            const src = item.public_url;
             const isBroken = brokenMap[src];
             const isLoaded = imageLoadedMap[src];
 
@@ -329,8 +363,8 @@ export default function PortfolioGallery({
                 onClick={() => {
                   if (!isBroken) setLightboxIndex(idx);
                 }}
-                className={`group relative cursor-pointer border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden shadow-[2px_2px_0px_#121212] hover:border-brand transition select-none ${
-                  isBroken ? "cursor-not-allowed opacity-75" : ""
+                className={`group relative border-2 border-ink dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden shadow-[2px_2px_0px_#121212] transition select-none ${
+                  isBroken ? "cursor-not-allowed opacity-75" : "cursor-pointer hover:border-brand"
                 }`}
               >
                 <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100 dark:bg-zinc-800 relative flex items-center justify-center">
@@ -341,25 +375,19 @@ export default function PortfolioGallery({
                   )}
 
                   {isBroken ? (
-                    <img
-                      src={FALLBACK_CATEGORY_IMAGES[idx % FALLBACK_CATEGORY_IMAGES.length]}
-                      alt={item.title || `Work sample ${idx + 1}`}
-                      className="h-full w-full object-cover"
-                    />
+                    <div className="flex flex-col items-center justify-center p-3 text-center text-inkmuted dark:text-zinc-500 bg-stone-100 dark:bg-zinc-800 h-full w-full">
+                      <AlertCircle size={20} className="mb-1 text-inkmuted opacity-60" />
+                      <span className="text-[10px] font-bold">Image unavailable</span>
+                    </div>
                   ) : (
                     <img
                       src={src}
-                      alt={item.title || `Work sample ${idx + 1}`}
+                      alt={item.title || "Portfolio sample"}
                       loading="lazy"
                       onLoad={() => setImageLoadedMap((m) => ({ ...m, [src]: true }))}
-                      onError={(e) => {
-                        // Attempt fallback to reliable sample instead of showing broken icon
-                        if (!src.includes("unsplash.com")) {
-                          e.target.src = FALLBACK_CATEGORY_IMAGES[idx % FALLBACK_CATEGORY_IMAGES.length];
-                        } else {
-                          setImageLoadedMap((m) => ({ ...m, [src]: true }));
-                          setBrokenMap((m) => ({ ...m, [src]: true }));
-                        }
+                      onError={() => {
+                        setImageLoadedMap((m) => ({ ...m, [src]: true }));
+                        setBrokenMap((m) => ({ ...m, [src]: true }));
                       }}
                       className={`h-full w-full object-cover group-hover:scale-105 transition-transform duration-300 ${
                         isLoaded ? "opacity-100" : "opacity-0"
@@ -367,7 +395,7 @@ export default function PortfolioGallery({
                     />
                   )}
 
-                  {/* Delete button for freelancer mode */}
+                  {/* Delete action for authorized owner */}
                   {canDelete && onDeleteItem && (
                     <button
                       type="button"
@@ -383,11 +411,12 @@ export default function PortfolioGallery({
                   )}
                 </div>
 
-                {/* Caption / Title */}
-                <div className="p-1.5 bg-white dark:bg-zinc-800 border-t-2 border-ink dark:border-zinc-700 flex items-center justify-between text-[10px] font-black text-ink dark:text-white">
-                  <span className="truncate pr-1">{item.title || `Sample #${idx + 1}`}</span>
-                  <Sparkles size={10} className="text-brand shrink-0" />
-                </div>
+                {/* Caption / Title - Only shown if user typed a title */}
+                {item.title ? (
+                  <div className="p-1.5 bg-white dark:bg-zinc-800 border-t-2 border-ink dark:border-zinc-700 text-[10px] font-black text-ink dark:text-white truncate">
+                    {item.title}
+                  </div>
+                ) : null}
               </div>
             );
           })}
@@ -395,14 +424,14 @@ export default function PortfolioGallery({
       ) : (
         <div className="border-2 border-dashed border-ink/30 dark:border-zinc-700 bg-sand/40 dark:bg-zinc-900/40 p-6 text-center">
           <ImageIcon size={26} className="mx-auto text-inkmuted mb-1.5 opacity-60" />
-          <p className="text-xs font-black text-ink dark:text-white">No image samples uploaded directly.</p>
+          <p className="text-xs font-black text-ink dark:text-white">No portfolio images uploaded</p>
           {validExternalLink ? (
             <p className="text-[11px] font-semibold text-inkmuted dark:text-zinc-400 mt-1">
               View their projects and case studies via the external portfolio link above.
             </p>
           ) : (
             <p className="text-[11px] font-semibold text-inkmuted dark:text-zinc-400 mt-1">
-              This freelancer has not uploaded work sample screenshots yet.
+              This freelancer has not uploaded work sample files yet.
             </p>
           )}
         </div>
@@ -418,11 +447,11 @@ export default function PortfolioGallery({
             className="relative max-w-4xl max-h-[92vh] w-full bg-white dark:bg-zinc-950 border-2 border-ink dark:border-zinc-700 p-3 sm:p-4 shadow-[8px_8px_0px_#121212] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
+            {/* Lightbox Header */}
             <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b-2 border-ink dark:border-zinc-700">
               <span className="text-xs font-black uppercase text-ink dark:text-white flex items-center gap-1.5 truncate">
                 <ImageIcon size={14} className="text-brand shrink-0" />
-                <span className="truncate">{activeLightboxItem.title || `Work Sample ${lightboxIndex + 1} of ${items.length}`}</span>
+                <span className="truncate">{activeLightboxItem.title || "Portfolio Sample"}</span>
               </span>
               <button
                 type="button"
@@ -434,10 +463,10 @@ export default function PortfolioGallery({
               </button>
             </div>
 
-            {/* Main Image */}
+            {/* Lightbox Image Body */}
             <div className="relative flex-1 min-h-[300px] max-h-[70vh] bg-stone-900 flex items-center justify-center overflow-hidden border border-ink/20">
               <img
-                src={formatSrc(activeLightboxItem.public_url || activeLightboxItem.storage_path)}
+                src={activeLightboxItem.public_url}
                 alt={activeLightboxItem.title || "Full view"}
                 className="max-h-[70vh] w-auto max-w-full object-contain"
               />
@@ -471,7 +500,7 @@ export default function PortfolioGallery({
               )}
             </div>
 
-            {/* Footer / Description */}
+            {/* Lightbox Footer */}
             <div className="pt-2.5 flex items-center justify-between text-xs font-bold text-inkmuted dark:text-zinc-400 gap-2">
               <span className="truncate">{activeLightboxItem.description || activeLightboxItem.title || ""}</span>
               <span className="font-mono text-[10px] shrink-0">
