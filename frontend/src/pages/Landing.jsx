@@ -1339,99 +1339,16 @@ export default function Landing() {
                 </span>
               </div>
 
-              {/* Youngster with Laptop Real Photo Composition + Animated City Hop Trail */}
-              <div className="relative aspect-[4/3] w-full flex items-center justify-center rounded-sm bg-gradient-to-b from-[#FFFDF9] to-[#F5EFE6] dark:from-[#18181C] dark:to-[#101012] border-2 border-ink dark:border-zinc-700 overflow-hidden shadow-inner">
-                
-                {/* Background Subtle City Skyline Line Art */}
-                <svg
-                  viewBox="0 0 460 320"
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  aria-label="Neighborhood skyline with hop trail"
-                >
-                  <defs>
-                    <linearGradient id="hopperTrail" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#00A86B" />
-                      <stop offset="100%" stopColor="#E65A1E" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Bengaluru Startup Skyline Dotted Silhouette */}
-                  <g stroke="#D4D4D8" dark-stroke="#3F3F46" strokeWidth="1.5" fill="none" opacity="0.6">
-                    {/* Building 1 (Startup Office) */}
-                    <rect x="20" y="145" width="45" height="145" />
-                    <line x1="30" y1="165" x2="55" y2="165" />
-                    <line x1="30" y1="185" x2="55" y2="185" />
-                    <line x1="30" y1="205" x2="55" y2="205" />
-                    {/* Building 2 (Co-working Tower) */}
-                    <rect x="75" y="115" width="55" height="175" fill="#E5F8EE" fillOpacity="0.45" stroke="#00A86B" />
-                    <circle cx="102" cy="142" r="9" stroke="#00A86B" strokeWidth="1.5" />
-                    {/* Building 3 & 4 (Tech Park) */}
-                    <rect x="140" y="165" width="40" height="125" />
-                    <rect x="190" y="195" width="45" height="95" />
-                    {/* Ground line */}
-                    <line x1="10" y1="290" x2="450" y2="290" stroke="#121212" strokeWidth="2" />
-                  </g>
-
-                  {/* Playful Animated Hop Arc connecting local business to youngster */}
-                  <path
-                    d="M 102 115 Q 185 35 285 130"
-                    fill="none"
-                    stroke="#E65A1E"
-                    strokeWidth="2.5"
-                    strokeDasharray="6 6"
-                    className="animate-pulse"
-                  />
-                  {/* Little Grasshopper / Hop Icon on the building top */}
-                  <g transform="translate(95, 96)">
-                    <circle cx="7" cy="7" r="9" fill="#00A86B" />
-                    <text x="3" y="11" fill="#FFFFFF" fontSize="11" fontWeight="bold">⚡</text>
-                  </g>
-                </svg>
-
-                {/* Actual Person with Laptop (Real Indian Freelance Pro with Laptop) + Subtle Breathing Float Animation */}
-                <div className="absolute right-2 sm:right-6 bottom-0 z-10 flex items-end justify-center pointer-events-none select-none">
+              {/* Clean Hero Showcase with Real Indian Freelance Pro with Laptop */}
+              <div className="relative aspect-[4/3] w-full flex items-center justify-center rounded-sm bg-gradient-to-b from-[#FFFDF9] to-[#F5EFE6] dark:from-[#18181C] dark:to-[#101012] border-2 border-ink dark:border-zinc-700 overflow-hidden shadow-inner p-4">
+                {/* Indian Lady Working on Laptop */}
+                <div className="relative z-10 flex items-center justify-center h-full w-full pointer-events-none select-none">
                   <img
                     src="/hero/youngster_laptop.png"
                     alt="Indian freelance pro working on a laptop in Bengaluru"
-                    className="wh-breathe-subtle h-[230px] sm:h-[280px] w-auto object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.18)]"
+                    className="wh-breathe-subtle max-h-full max-w-full object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.18)]"
                     loading="eager"
                   />
-                </div>
-
-                {/* Floating Skill Badge 1 (Figma & UI/UX) */}
-                <div className="wh-float-1 absolute top-3 left-3 z-20 max-w-[190px] border-2 border-ink bg-[#FFF3C4] p-2 sm:p-2.5 shadow-[3px_3px_0px_#121212]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-brand" />
-                    <span className="text-[10px] font-black uppercase tracking-wider text-black">
-                      UI/UX &amp; Figma Pro
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-[11px] font-bold text-black/80">
-                    Koramangala · <span className="text-brand font-black">0.8 km away</span>
-                  </p>
-                </div>
-
-                {/* Floating Skill Badge 2 (Live Gig Alert) */}
-                <div className="wh-float-2 absolute bottom-3 left-3 z-20 border-2 border-ink bg-[#E5F8EE] px-3 py-1.5 shadow-[3px_3px_0px_#121212] flex items-center gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ok text-white font-black text-[10px]">
-                    ✓
-                  </span>
-                  <div>
-                    <p className="text-[10px] font-black uppercase text-black leading-tight">
-                      ₹15,000 Gig Live
-                    </p>
-                    <p className="text-[9px] font-bold text-black/70">
-                      Indiranagar · Apply in 1 Tap
-                    </p>
-                  </div>
-                </div>
-
-                {/* Floating Skill Badge 3 (Direct WhatsApp & Chat) */}
-                <div className="wh-float-3 absolute top-3 right-3 z-20 border-2 border-ink bg-white dark:bg-zinc-800 px-3 py-1.5 shadow-[3px_3px_0px_#121212] flex items-center gap-1.5">
-                  <span className="text-xs">💬</span>
-                  <p className="text-[10px] font-black uppercase text-ink dark:text-white">
-                    Direct Chat · 0% Fee
-                  </p>
                 </div>
               </div>
 
