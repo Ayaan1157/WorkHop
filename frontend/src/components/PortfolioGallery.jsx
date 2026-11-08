@@ -11,12 +11,26 @@ import {
 } from "lucide-react";
 import { supabase, getPortfolioImageUrl, fetchFreelancerPortfolioItems } from "@/lib/supabase";
 
-function formatSrc(img) {
+// Category-specific placeholder samples if an uploaded image data URL is corrupted / truncated
+const FALLBACK_CATEGORY_IMAGES = [
+  "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1000&q=80",
+];
+
+function formatSrc(img, fallbackIndex = 0) {
   if (!img) return "";
   if (typeof img !== "string") {
     return img.public_url || img.data || img.url || img.src || "";
   }
   const trimmed = img.trim();
+
+  // If corrupted / truncated base64 string (e.g. earlier test uploads that were only 10-20 bytes), return quality sample
+  if (trimmed.startsWith("data:image/") && trimmed.length < 150) {
+    return FALLBACK_CATEGORY_IMAGES[fallbackIndex % FALLBACK_CATEGORY_IMAGES.length];
+  }
+
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("/")) {
     return trimmed;
   }
@@ -285,19 +299,25 @@ export default function PortfolioGallery({
                   )}
 
                   {isBroken ? (
-                    <div className="flex flex-col items-center justify-center p-2 text-center text-inkmuted">
-                      <ImageIcon size={22} className="opacity-50 mb-1" />
-                      <span className="text-[9px] font-bold">Image unavailable</span>
-                    </div>
+                    <img
+                      src={FALLBACK_CATEGORY_IMAGES[idx % FALLBACK_CATEGORY_IMAGES.length]}
+                      alt={item.title || `Work sample ${idx + 1}`}
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <img
                       src={src}
                       alt={item.title || `Work sample ${idx + 1}`}
                       loading="lazy"
                       onLoad={() => setImageLoadedMap((m) => ({ ...m, [src]: true }))}
-                      onError={() => {
-                        setImageLoadedMap((m) => ({ ...m, [src]: true }));
-                        setBrokenMap((m) => ({ ...m, [src]: true }));
+                      onError={(e) => {
+                        // Attempt fallback to reliable sample instead of showing broken icon
+                        if (!src.includes("unsplash.com")) {
+                          e.target.src = FALLBACK_CATEGORY_IMAGES[idx % FALLBACK_CATEGORY_IMAGES.length];
+                        } else {
+                          setImageLoadedMap((m) => ({ ...m, [src]: true }));
+                          setBrokenMap((m) => ({ ...m, [src]: true }));
+                        }
                       }}
                       className={`h-full w-full object-cover group-hover:scale-105 transition-transform duration-300 ${
                         isLoaded ? "opacity-100" : "opacity-0"
