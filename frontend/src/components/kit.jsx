@@ -213,25 +213,25 @@ export function GlobalNav() {
             {isAdmin ? (
               <Link
                 to="/admin"
-                className="hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-black dark:border-white bg-black px-3.5 text-xs font-black tracking-wide text-white hover:bg-neutral-900 transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#ffffff] whitespace-nowrap shrink-0"
+                className="hidden xl:inline-flex h-10 items-center gap-1.5 border-2 border-black dark:border-white bg-black px-3 text-xs font-black tracking-wide text-white hover:bg-neutral-900 transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#ffffff] whitespace-nowrap shrink-0"
                 title="Admin Command Center (Full Platform Unlocked)"
               >
                 <Shield size={14} className="text-white shrink-0 fill-white/20" />
-                <span className="text-white font-black">ADMIN FULL ACCESS</span>
+                <span className="text-white font-black">ADMIN ACCESS</span>
               </Link>
             ) : isEmployerUser ? (
               <Link
                 to="/plans?tab=employer"
-                className="hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#222] px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-stone dark:hover:bg-[#2c2c2c] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
+                className="hidden xl:inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#222] px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-stone dark:hover:bg-[#2c2c2c] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
                 title="Employer Hiring & Promotion Plans"
               >
                 <Zap size={14} className="text-brand shrink-0 fill-brand" />
-                <span>EMPLOYER PLANS</span>
+                <span>PLANS</span>
               </Link>
             ) : (
               <Link
                 to={plansPath}
-                className="hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#222] px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-stone dark:hover:bg-[#2c2c2c] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
+                className="hidden xl:inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-sand dark:bg-[#222] px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-stone dark:hover:bg-[#2c2c2c] transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#333] whitespace-nowrap shrink-0"
                 title="Your active Bidding Hops (1 Hop = ₹15)"
               >
                 <Coins size={14} className="text-brand shrink-0" />
@@ -246,7 +246,7 @@ export function GlobalNav() {
                 data-testid="theme-toggle-btn"
                 onClick={toggleTheme}
                 title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-                className="flex h-full w-10 items-center justify-center text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
+                className="flex h-full w-9 sm:w-10 items-center justify-center text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
               >
                 {isDark ? <Sun size={15} className="text-brand" /> : <Moon size={15} className="text-ink dark:text-white" />}
               </button>
@@ -259,14 +259,14 @@ export function GlobalNav() {
                 data-testid="nav-switch-role-btn"
                 onClick={handleToggleRole}
                 title={isEmployerUser ? "Switch to Pro / Freelancer workspace" : "Switch to Employer / Hiring workspace"}
-                className={`hidden md:inline-flex h-10 items-center gap-1.5 border-2 border-ink dark:border-white px-3 text-[11px] font-black uppercase tracking-wide transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#ffffff] whitespace-nowrap shrink-0 active:translate-y-0.5 ${
+                className={`hidden lg:inline-flex h-10 items-center gap-1.5 border-2 border-ink dark:border-white px-2.5 text-[11px] font-black uppercase tracking-wide transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#ffffff] whitespace-nowrap shrink-0 active:translate-y-0.5 ${
                   isEmployerUser
                     ? "bg-[#008744] dark:bg-[#007038] text-white !text-white hover:bg-[#007038]"
                     : "bg-[#D97706] dark:bg-[#B45309] text-white !text-white hover:bg-[#B45309]"
                 }`}
               >
-                <RefreshCw size={13} className="shrink-0 text-white animate-[spin_10s_linear_infinite]" />
-                <span className="text-white !text-white font-black">{isEmployerUser ? "HIRING MODE (SWITCH TO PRO)" : "PRO MODE (SWITCH TO HIRE)"}</span>
+                <RefreshCw size={12} className="shrink-0 text-white animate-[spin_10s_linear_infinite]" />
+                <span className="text-white !text-white font-black">{isEmployerUser ? "HIRING MODE" : "PRO MODE"}</span>
               </button>
             )}
 
@@ -274,7 +274,7 @@ export function GlobalNav() {
             <button
               data-testid="nav-post-job-btn"
               onClick={() => nav("/employer/post-job")}
-              className="inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-brand px-3 sm:px-3.5 text-xs font-black tracking-wide text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
+              className="inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-brand px-2.5 sm:px-3.5 text-xs font-black tracking-wide text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
             >
               <PlusCircle size={15} className="shrink-0" />
               <span>POST A GIG</span>
@@ -287,19 +287,19 @@ export function GlobalNav() {
                   data-testid="nav-profile-btn"
                   onClick={() => nav("/profile")}
                   title={user.name || user.email}
-                  className="hidden sm:flex h-full items-center gap-1.5 px-3 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
+                  className="flex h-full items-center gap-1.5 px-2 sm:px-2.5 text-xs font-black tracking-wide text-ink dark:text-white hover:bg-sand dark:hover:bg-[#252525] transition"
                 >
                   <UserCircle2 size={15} className="text-brand shrink-0" />
-                  <span className="max-w-[105px] xl:max-w-[130px] truncate block">{user.name || user.email?.split("@")[0]}</span>
+                  <span className="max-w-[70px] sm:max-w-[100px] xl:max-w-[120px] truncate block">{user.name || user.email?.split("@")[0]}</span>
                 </button>
                 <button
                   data-testid="nav-logout-btn"
                   onClick={logout}
                   title="Sign Out of WorkHop"
-                  className="flex h-full items-center gap-1 px-2.5 bg-[#C62828] text-white hover:bg-red-700 transition text-[10px] sm:text-[11px] font-black uppercase whitespace-nowrap"
+                  className="flex h-full items-center gap-1 px-2 sm:px-2.5 bg-[#C62828] text-white hover:bg-red-700 transition text-[10px] sm:text-[11px] font-black uppercase whitespace-nowrap"
                 >
                   <LogOut size={13} />
-                  <span>SIGN OUT</span>
+                  <span className="hidden xs:inline">SIGN OUT</span>
                 </button>
               </div>
             ) : (
