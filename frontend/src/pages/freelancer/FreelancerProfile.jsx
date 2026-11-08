@@ -480,6 +480,9 @@ export default function FreelancerProfile() {
         portfolio: portfolioList,
         picture: user?.picture || undefined,
         github_url: updated.github_url || undefined,
+        cv_url: updated.cv_url || undefined,
+        cv_name: updated.cv_name || undefined,
+        resume_url: updated.cv_url || updated.resume_url || undefined,
       }).catch(() => {});
       try {
         saveSubmittedProfile({
@@ -497,6 +500,9 @@ export default function FreelancerProfile() {
           bio: updated.description || "",
           portfolio_items: portfolioList,
           portfolio_images: allPortfolioImages,
+          cv_url: updated.cv_url || undefined,
+          cv_name: updated.cv_name || undefined,
+          resume_url: updated.cv_url || updated.resume_url || undefined,
         });
       } catch {}
       try {
@@ -2536,21 +2542,16 @@ export default function FreelancerProfile() {
         onClose={closeEdit}
         title="Attach CV / Resume"
         onSave={() => {
-          updateProfile({
+          const nextCv = {
             cv_url: editData?.cv_url || "",
             cv_name: editData?.cv_name || "",
             resume_url: editData?.cv_url || "",
-          });
-          try {
-            saveSubmittedProfile({
-              id: freelancerId || user?.id,
-              freelancer_id: freelancerId || user?.id,
-              email: user?.email || "",
-              cv_url: editData?.cv_url || "",
-              cv_name: editData?.cv_name || "",
-              resume_url: editData?.cv_url || "",
-            });
-          } catch {}
+          };
+          persist({ ...profile, ...nextCv });
+          if (updateUserProfile) {
+            updateUserProfile(nextCv);
+          }
+          closeEdit();
         }}
       >
         <div className="flex flex-col gap-4">
@@ -2667,6 +2668,21 @@ export default function FreelancerProfile() {
                 `Project description contains prohibited contact info (${descScan.violations.map((v) => v.label).join(", ")}). Sharing phone numbers, emails, or personal contacts is not allowed.`
               );
               return;
+            }
+          }
+
+          // Screen each individual image caption/description
+          const imagesToScreen = getItemImages(editData);
+          for (let i = 0; i < imagesToScreen.length; i++) {
+            const imgDesc = imagesToScreen[i]?.description;
+            if (imgDesc && imgDesc.trim()) {
+              const imgScan = scanText(imgDesc);
+              if (imgScan.hasViolations) {
+                setPortfolioImageError(
+                  `Image #${i + 1} caption contains prohibited contact info (${imgScan.violations.map((v) => v.label).join(", ")}). Sharing phone numbers, emails, or personal contacts is not allowed.`
+                );
+                return;
+              }
             }
           }
 
@@ -2829,6 +2845,27 @@ export default function FreelancerProfile() {
                               </button>
                             </div>
                           </div>
+                          {/* Image Description Input */}
+                          <div className="p-3 bg-white dark:bg-[#1a1a1a] border-t border-[#eee] dark:border-[#2d2d2d]">
+                            <label className="text-[10px] font-black uppercase text-inkmuted dark:text-zinc-400 block mb-1">
+                              Image Caption / Description
+                            </label>
+                            <input
+                              type="text"
+                              value={img.description || ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setEditData((d) => {
+                                  const list = getItemImages(d);
+                                  const next = [...list];
+                                  next[idx] = { ...next[idx], description: val };
+                                  return { ...d, images: next };
+                                });
+                              }}
+                              placeholder="e.g. Master bedroom render, Final branding mockups, Dashboard wireframe..."
+                              className="w-full bg-[#fcfcfc] dark:bg-[#141414] border border-[#ddd] dark:border-[#333] rounded px-2.5 py-1.5 text-xs text-ink dark:text-white placeholder:text-[#999] focus:outline-none focus:border-[#E65A1E] transition"
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -2906,16 +2943,21 @@ export default function FreelancerProfile() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#262626]">
-              <div>
-                <h3 className="text-sm font-bold text-white">{activeGallery.title}</h3>
-                <p className="text-xs text-[#888]">
+              <div className="min-w-0 pr-4">
+                <h3 className="text-sm font-bold text-white truncate">{activeGallery.title}</h3>
+                {activeGallery.images[activeGallery.index]?.description && (
+                  <p className="text-xs text-[#E65A1E] font-medium mt-0.5 line-clamp-2">
+                    {activeGallery.images[activeGallery.index].description}
+                  </p>
+                )}
+                <p className="text-[11px] text-[#888] mt-0.5">
                   Image {activeGallery.index + 1} of {activeGallery.images.length}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveGallery(null)}
-                className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition"
+                className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition shrink-0"
               >
                 <X size={16} />
               </button>

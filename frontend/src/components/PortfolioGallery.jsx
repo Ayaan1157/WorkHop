@@ -136,18 +136,26 @@ export default function PortfolioGallery({
           // Case B: project or portfolio item object
           if (typeof it === "object" && !it._workhop_meta) {
             const imagesList = Array.isArray(it.images) && it.images.length > 0
-              ? it.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || img?.storage_path || "")).filter(Boolean)
+              ? it.images.filter(Boolean)
               : [];
 
             if (imagesList.length > 0) {
-              imagesList.forEach((imgSrc) => {
+              imagesList.forEach((rawImg) => {
+                const imgSrc = typeof rawImg === "string" ? rawImg : rawImg?.data || rawImg?.url || rawImg?.storage_path || "";
                 const publicUrl = resolveRealStorageUrl(imgSrc);
                 if (!publicUrl || seenUrls.has(publicUrl)) return;
                 seenUrls.add(publicUrl);
+                const imgDesc = (typeof rawImg === "object" && rawImg?.description)
+                  ? String(rawImg.description).trim()
+                  : (it.description || "").trim();
+                const imgTitle = (typeof rawImg === "object" && (rawImg?.title || rawImg?.name))
+                  ? String(rawImg.title || rawImg.name).trim()
+                  : (it.title || it.name || "").trim();
+
                 result.push({
                   id: `${it.id || "proj"}_${result.length}`,
-                  title: (it.title || it.name || "").trim(),
-                  description: (it.description || "").trim(),
+                  title: imgTitle,
+                  description: imgDesc,
                   storage_path: imgSrc,
                   public_url: publicUrl,
                   external_url: it.external_url || it.link || null,
@@ -411,10 +419,19 @@ export default function PortfolioGallery({
                   )}
                 </div>
 
-                {/* Caption / Title - Only shown if user typed a title */}
-                {item.title ? (
-                  <div className="p-1.5 bg-white dark:bg-zinc-800 border-t-2 border-ink dark:border-zinc-700 text-[10px] font-black text-ink dark:text-white truncate">
-                    {item.title}
+                {/* Caption / Title / Description - Only shown if user provided one */}
+                {(item.title || item.description) ? (
+                  <div className="p-1.5 bg-white dark:bg-zinc-800 border-t-2 border-ink dark:border-zinc-700 flex flex-col gap-0.5">
+                    {item.title ? (
+                      <div className="text-[10px] font-black text-ink dark:text-white truncate">
+                        {item.title}
+                      </div>
+                    ) : null}
+                    {item.description ? (
+                      <div className="text-[9px] font-semibold text-inkmuted dark:text-zinc-400 line-clamp-1">
+                        {item.description}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -501,9 +518,20 @@ export default function PortfolioGallery({
             </div>
 
             {/* Lightbox Footer */}
-            <div className="pt-2.5 flex items-center justify-between text-xs font-bold text-inkmuted dark:text-zinc-400 gap-2">
-              <span className="truncate">{activeLightboxItem.description || activeLightboxItem.title || ""}</span>
-              <span className="font-mono text-[10px] shrink-0">
+            <div className="pt-2.5 flex items-start justify-between text-xs font-bold text-inkmuted dark:text-zinc-400 gap-3">
+              <div className="min-w-0 flex-1">
+                {activeLightboxItem.title && (
+                  <p className="text-xs font-black text-ink dark:text-white truncate">
+                    {activeLightboxItem.title}
+                  </p>
+                )}
+                {activeLightboxItem.description && (
+                  <p className="text-[11px] font-medium text-inkmuted dark:text-zinc-300 mt-0.5 line-clamp-3">
+                    {activeLightboxItem.description}
+                  </p>
+                )}
+              </div>
+              <span className="font-mono text-[10px] shrink-0 bg-sand dark:bg-zinc-800 px-2 py-0.5 border border-ink/20">
                 {lightboxIndex + 1} / {items.length}
               </span>
             </div>

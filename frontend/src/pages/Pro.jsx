@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Phone, Globe, Lock, LockOpen, ShieldCheck, MapPin, ArrowLeftRight,
   MessageSquare, CheckCircle2, Loader2, Star, Clock, IndianRupee,
-  CheckCheck, Briefcase, Award, Sparkles, ExternalLink, Image as ImageIcon, X, Pencil
+  CheckCheck, Briefcase, Award, Sparkles, ExternalLink, Image as ImageIcon, X, Pencil, FileText
 } from "lucide-react";
 import { Shell, TopBar } from "@/components/kit";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -698,6 +698,82 @@ export default function Pro() {
                       initialItems={initialList}
                       externalPortfolioUrl={validPortfolioLink || pro.portfolio_url || (typeof pro.portfolio === "string" && !pro.portfolio.startsWith("[") ? pro.portfolio : "")}
                     />
+                  </div>
+                );
+              })()}
+
+              {/* CURRICULUM VITAE / RESUME ATTACHMENT */}
+              {(() => {
+                const targetKey = String(pro.id || id || "").toLowerCase().trim();
+                const strippedKey = targetKey.replace(/^pro-/, "");
+                const ownProfile = getFreelancerProfile();
+                const isMatchingLocalFreelancer = Boolean(
+                  user && (
+                    (user.id && (user.id === pro.id || user.id === id)) ||
+                    (user.email && pro.email && user.email.toLowerCase() === pro.email.toLowerCase()) ||
+                    (user.phone && pro.phone && user.phone.replace(/\D/g, "") === pro.phone.replace(/\D/g, ""))
+                  )
+                );
+                const matchingSubmitted = getSubmittedProfiles().find((p) => {
+                  const pId = String(p.id || p.freelancer_id || "").toLowerCase();
+                  return pId === targetKey || pId.replace(/^pro-/, "") === strippedKey || (p.email && pro.email && p.email.toLowerCase() === pro.email.toLowerCase());
+                });
+
+                let metaFromPro = {};
+                if (typeof pro.portfolio === "string" && pro.portfolio.trim().startsWith("[")) {
+                  try {
+                    const parsed = JSON.parse(pro.portfolio.trim());
+                    metaFromPro = parsed.find((it) => it && it._workhop_meta) || {};
+                  } catch {}
+                }
+
+                const resolvedCvUrl =
+                  pro.cv_url ||
+                  pro.resume_url ||
+                  metaFromPro.cv_url ||
+                  metaFromPro.resume_url ||
+                  matchingSubmitted?.cv_url ||
+                  matchingSubmitted?.resume_url ||
+                  (isMatchingLocalFreelancer ? ownProfile?.cv_url : null);
+
+                const resolvedCvName =
+                  pro.cv_name ||
+                  metaFromPro.cv_name ||
+                  matchingSubmitted?.cv_name ||
+                  (isMatchingLocalFreelancer ? ownProfile?.cv_name : null) ||
+                  "Curriculum Vitae / Resume";
+
+                if (!resolvedCvUrl) return null;
+
+                return (
+                  <div className="flex flex-col gap-2 border-2 border-ink bg-white p-4" data-testid="pro-cv-card">
+                    <h2 className="text-[11px] font-black tracking-[0.15em] text-ink uppercase">
+                      Curriculum Vitae / Resume
+                    </h2>
+                    <div className="flex items-center justify-between border-2 border-ink bg-sand/40 p-3.5 shadow-[2px_2px_0px_#121212] gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-brand text-white">
+                          <FileText size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-ink truncate">
+                            {resolvedCvName}
+                          </p>
+                          <p className="text-[10px] text-inkmuted font-bold">
+                            Official Verified CV / Resume Attachment
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={resolvedCvUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 border-2 border-ink bg-ink text-white hover:bg-brand px-3.5 py-2 text-xs font-black uppercase tracking-wider shrink-0 shadow-[1.5px_1.5px_0px_#121212] transition"
+                      >
+                        <span>View CV</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    </div>
                   </div>
                 );
               })()}

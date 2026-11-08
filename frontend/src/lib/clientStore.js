@@ -2708,6 +2708,9 @@ export function saveFreelancerProfile(profile) {
       languages: Array.isArray(cleaned.languages) ? cleaned.languages : [],
       portfolio_items: portfolioList,
       portfolio_images: allImgs,
+      cv_url: cleaned.cv_url || undefined,
+      cv_name: cleaned.cv_name || undefined,
+      resume_url: cleaned.cv_url || cleaned.resume_url || undefined,
     });
   } catch {}
 

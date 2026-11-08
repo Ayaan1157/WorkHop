@@ -517,6 +517,9 @@ export async function supabaseSyncCurrentUserProfile(updates = {}) {
       ...(updates.employment_history !== undefined ? { employment_history: updates.employment_history } : {}),
       ...(updates.education !== undefined ? { education: updates.education } : {}),
       ...(updates.certifications !== undefined ? { certifications: updates.certifications } : {}),
+      ...(updates.cv_url !== undefined ? { cv_url: updates.cv_url } : {}),
+      ...(updates.cv_name !== undefined ? { cv_name: updates.cv_name } : {}),
+      ...(updates.resume_url !== undefined ? { resume_url: updates.resume_url } : {}),
     };
 
     const packedPortfolio = packProfilePortfolioJson(nextPortfolioItems, nextMeta);
