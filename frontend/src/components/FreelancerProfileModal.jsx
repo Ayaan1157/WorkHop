@@ -343,19 +343,10 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
 
           {/* Work Samples / Portfolio Preview via Universal PortfolioGallery */}
           {(() => {
-            const projectImages = portfolioProjects.flatMap((p) => {
-              if (Array.isArray(p.images) && p.images.length > 0) {
-                return p.images
-                  .map((img) => (typeof img === "string" ? img : img?.data || img?.url || ""))
-                  .filter(Boolean);
-              }
-              return p.image_data ? [p.image_data] : [];
-            });
             const submittedImages = Array.isArray(matchingSubmitted?.portfolio_images) ? matchingSubmitted.portfolio_images : [];
             const ownImages = isOwn && Array.isArray(ownProfile?.portfolio_images) ? ownProfile.portfolio_images : [];
             const initialList = [
               ...portfolioProjects,
-              ...projectImages,
               ...(Array.isArray(pro.portfolio_images) ? pro.portfolio_images : []),
               ...submittedImages,
               ...ownImages,

@@ -79,37 +79,68 @@ export default function PortfolioGallery({
       // Helper to unpack portfolio items & images from any source
       const extractValidImages = (list) => {
         if (!Array.isArray(list)) return [];
-        return list.flatMap((it, idx) => {
-          if (!it) return [];
+        const seenUrls = new Set();
+        const result = [];
+
+        list.forEach((it, idx) => {
+          if (!it) return;
           if (typeof it === "string") {
             const trimmed = it.trim();
             if (!trimmed || (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("data:") && !trimmed.startsWith("/") && !trimmed.includes("."))) {
-              return [];
+              return;
             }
-            return [{
-              id: `init_${idx}`,
-              title: `Work Sample ${idx + 1}`,
+            const publicUrl = formatSrc(trimmed, result.length);
+            if (!publicUrl || seenUrls.has(publicUrl)) return;
+            seenUrls.add(publicUrl);
+            result.push({
+              id: `init_str_${idx}_${result.length}`,
+              title: `Work Sample ${result.length + 1}`,
               storage_path: trimmed,
-              public_url: formatSrc(trimmed),
-            }];
+              public_url: publicUrl,
+            });
+            return;
           }
+
           if (typeof it === "object" && !it._workhop_meta) {
             const imagesList = Array.isArray(it.images) && it.images.length > 0
               ? it.images.map((img) => (typeof img === "string" ? img : img?.data || img?.url || img?.src || "")).filter(Boolean)
               : [];
-            const src = it.public_url || it.url || it.image_data || it.src || imagesList[0] || null;
-            if (!src) return [];
-            return [{
-              id: it.id || `init_${idx}`,
-              title: it.title || it.name || `Work Sample ${idx + 1}`,
+            
+            // If project has multiple images in it.images, create a sample for each unique image
+            if (imagesList.length > 0) {
+              imagesList.forEach((imgSrc, imgIdx) => {
+                const publicUrl = formatSrc(imgSrc, result.length);
+                if (!publicUrl || seenUrls.has(publicUrl)) return;
+                seenUrls.add(publicUrl);
+                result.push({
+                  id: `${it.id || "proj"}_${imgIdx}`,
+                  title: imagesList.length > 1 ? `${it.title || it.name || "Work Sample"} (${imgIdx + 1})` : (it.title || it.name || `Work Sample ${result.length + 1}`),
+                  description: it.description || "",
+                  storage_path: imgSrc,
+                  public_url: publicUrl,
+                  external_url: it.external_url || it.link || null,
+                });
+              });
+              return;
+            }
+
+            const src = it.public_url || it.url || it.image_data || it.src || null;
+            if (!src) return;
+            const publicUrl = formatSrc(src, result.length);
+            if (!publicUrl || seenUrls.has(publicUrl)) return;
+            seenUrls.add(publicUrl);
+            result.push({
+              id: it.id || `init_obj_${idx}`,
+              title: it.title || it.name || `Work Sample ${result.length + 1}`,
               description: it.description || "",
               storage_path: it.storage_path || src,
-              public_url: formatSrc(src),
+              public_url: publicUrl,
               external_url: it.external_url || it.link || null,
-            }];
+            });
           }
-          return [];
         });
+
+        return result;
       };
 
       // 1. Check initialItems (handles both Array and serialized JSON string)
@@ -136,7 +167,7 @@ export default function PortfolioGallery({
           if (isUuid) {
             const dbItems = await fetchFreelancerPortfolioItems(freelancerId);
             if (Array.isArray(dbItems) && dbItems.length > 0) {
-              resolved = dbItems;
+              resolved = extractValidImages(dbItems);
             }
           }
 
@@ -173,8 +204,19 @@ export default function PortfolioGallery({
         }
       }
 
+      // Final deduplication safety pass on resolved items
+      const finalUnique = [];
+      const seenFinal = new Set();
+      resolved.forEach((item) => {
+        const key = item.public_url || item.storage_path || item.id;
+        if (key && !seenFinal.has(key)) {
+          seenFinal.add(key);
+          finalUnique.push(item);
+        }
+      });
+
       if (isMounted) {
-        setItems(resolved);
+        setItems(finalUnique);
         setLoading(false);
       }
     }
