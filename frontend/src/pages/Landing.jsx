@@ -1388,12 +1388,12 @@ export default function Landing() {
                   </g>
                 </svg>
 
-                {/* Actual Person with Laptop (Warm Youngster with Laptop) + Subtle Breathing Float Animation */}
-                <div className="absolute right-3 sm:right-6 bottom-0 z-10 flex items-end justify-center pointer-events-none select-none">
+                {/* Actual Person with Laptop (Real Indian Freelance Pro with Laptop) + Subtle Breathing Float Animation */}
+                <div className="absolute right-2 sm:right-6 bottom-0 z-10 flex items-end justify-center pointer-events-none select-none">
                   <img
                     src="/hero/youngster_laptop.png"
-                    alt="Young freelance pro working on a laptop in Bengaluru"
-                    className="wh-breathe-subtle h-[225px] sm:h-[265px] w-auto object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.18)]"
+                    alt="Indian freelance pro working on a laptop in Bengaluru"
+                    className="wh-breathe-subtle h-[230px] sm:h-[280px] w-auto object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.18)]"
                     loading="eager"
                   />
                 </div>
