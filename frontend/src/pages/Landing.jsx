@@ -19,6 +19,7 @@ import { supabase, supabaseSignInWithGoogle } from "@/lib/supabase";
 import SiteFooter from "@/components/SiteFooter";
 import { Logo, MobileBottomNav } from "@/components/kit";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import HoppingKangaroo from "@/components/HoppingKangaroo";
 
 export default function Landing() {
   usePageMeta({
@@ -1339,8 +1340,31 @@ export default function Landing() {
                 </span>
               </div>
 
-              {/* Clean Hero Showcase with Real Indian Freelance Pro with Laptop */}
+              {/* Clean Hero Showcase with Real Indian Freelance Pro with Laptop & Hopping Mascot */}
               <div className="relative aspect-[4/3] w-full flex items-center justify-center rounded-sm bg-gradient-to-b from-[#FFFDF9] to-[#F5EFE6] dark:from-[#18181C] dark:to-[#101012] border-2 border-ink dark:border-zinc-700 overflow-hidden shadow-inner p-4">
+                
+                {/* Background City Skyline Silhouette with Hop Trajectory (Workhoppers style) */}
+                <div className="absolute inset-x-0 bottom-0 h-28 pointer-events-none opacity-30 dark:opacity-20 flex items-end justify-between px-2">
+                  <svg viewBox="0 0 400 100" className="w-full h-full text-ink dark:text-zinc-400" preserveAspectRatio="none" fill="currentColor">
+                    {/* Simplified Skyline Buildings */}
+                    <rect x="10" y="45" width="30" height="55" />
+                    <rect x="45" y="30" width="35" height="70" />
+                    <rect x="85" y="55" width="25" height="45" />
+                    <rect x="115" y="20" width="40" height="80" />
+                    <rect x="160" y="40" width="30" height="60" />
+                    <rect x="195" y="60" width="28" height="40" />
+                    <rect x="228" y="25" width="38" height="75" />
+                    <rect x="270" y="50" width="32" height="50" />
+                    <rect x="306" y="35" width="36" height="65" />
+                    <rect x="346" y="55" width="44" height="45" />
+                  </svg>
+                </div>
+
+                {/* Hopping Kangaroo Mascot perched on the skyline with hop animation */}
+                <div className="absolute top-3 right-4 z-20">
+                  <HoppingKangaroo />
+                </div>
+
                 {/* Indian Lady Working on Laptop */}
                 <div className="relative z-10 flex items-center justify-center h-full w-full pointer-events-none select-none">
                   <img
