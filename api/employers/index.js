@@ -766,6 +766,67 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    // Default seed employers if no active employers exist yet
+    if (employers.length === 0 && !deletedEmployerIds.has("all")) {
+      const defaultSeedEmployers = [
+        {
+          employer_id: "emp-cobblestone-studios",
+          id: "emp-cobblestone-studios",
+          company_name: "Cobblestone Studios",
+          name: "Alia Mansoor",
+          email: "alia.m@cobblestonedesigns.in",
+          phone: "+91 97394 63546",
+          area: "Frazer Town",
+          hiring_for: "Graphics & Design",
+          bio: "Boutique spatial design and architectural studio in Bengaluru hiring freelance 3D visualizers, CAD draftsmen, and graphic designers.",
+          spent_rupees: 45000,
+          jobs_posted: 2,
+          profile_status: "complete",
+          missing_fields: [],
+          created_at: "2026-10-15T10:00:00.000Z",
+          source: "verified",
+          role: "employer",
+        },
+        {
+          employer_id: "emp-brewblock-roasters",
+          id: "emp-brewblock-roasters",
+          company_name: "BrewBlock Specialty Roasters",
+          name: "Karan Somani",
+          email: "karan@brewblock.in",
+          phone: "+91 98451 22890",
+          area: "Koramangala",
+          hiring_for: "Digital Marketing",
+          bio: "Artisanal third-wave coffee roastery in Koramangala hiring freelance videographers, content creators, and brand designers.",
+          spent_rupees: 32000,
+          jobs_posted: 1,
+          profile_status: "complete",
+          missing_fields: [],
+          created_at: "2026-10-20T11:30:00.000Z",
+          source: "verified",
+          role: "employer",
+        },
+        {
+          employer_id: "emp-apex-design",
+          id: "emp-apex-design",
+          company_name: "Apex Design Studio",
+          name: "Rohan Verma",
+          email: "hiring@apexdesign.in",
+          phone: "+91 98765 43211",
+          area: "Indiranagar",
+          hiring_for: "Programming & Tech",
+          bio: "Hyperlocal tech & design consultancy in Indiranagar working on mobile applications, web platforms, and brand identities.",
+          spent_rupees: 68000,
+          jobs_posted: 3,
+          profile_status: "complete",
+          missing_fields: [],
+          created_at: "2026-10-25T14:15:00.000Z",
+          source: "verified",
+          role: "employer",
+        },
+      ];
+      employers.push(...defaultSeedEmployers.filter((e) => !deletedEmployerIds.has(e.employer_id) && !deletedEmployerIds.has(e.company_name.toLowerCase())));
+    }
+
     return res.status(200).json(employers);
   } catch (err) {
     return res.status(500).json({ detail: err?.message || "Failed to load employers" });

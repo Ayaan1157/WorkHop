@@ -63,6 +63,8 @@ import {
   addStoredEmployer,
   deleteStoredEmployer,
   deleteAllStoredEmployers,
+  SEED_EMPLOYERS,
+  restoreDefaultEmployers,
   getSubmittedProfiles,
   saveSubmittedProfile,
   saveRemoteFreelancers,
@@ -788,10 +790,13 @@ async function mockRouter(path, method = "GET", body = null) {
     } catch {}
     return deleteStoredEmployer(empId);
   }
-  if (cleanPath === "/admin/employers") {
+  if (cleanPath === "/admin/employers" || cleanPath === "/employers") {
     let cloudEmps = [];
     try {
-      const res = await fetch("/api/admin/employers");
+      let res = await fetch("/api/admin/employers");
+      if (!res.ok) {
+        res = await fetch("/api/employers");
+      }
       if (res.ok) {
         const d = await res.json();
         if (Array.isArray(d)) {
@@ -928,7 +933,7 @@ async function mockRouter(path, method = "GET", body = null) {
       }
     }
 
-    return merged.length > 0 ? merged : (cloudEmps.length > 0 ? cloudEmps : stored);
+    return merged.length > 0 ? merged : (cloudEmps.length > 0 ? cloudEmps : (stored.length > 0 ? stored : SEED_EMPLOYERS));
   }
   if (cleanPath === "/admin/freelancers") {
     try {

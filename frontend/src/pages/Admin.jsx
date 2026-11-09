@@ -35,6 +35,8 @@ import {
   updateFreelancerStatus,
   cleanRealSkill,
   sendProfileCompletionReminder,
+  SEED_EMPLOYERS,
+  restoreDefaultEmployers,
 } from "@/lib/clientStore";
 import FreelancerProfileModal from "@/components/FreelancerProfileModal";
 import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
@@ -4663,6 +4665,10 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
         }
       } catch {}
 
+      if (list.length === 0) {
+        list = [...SEED_EMPLOYERS];
+      }
+
       const gigsList = Array.isArray(gigsData) ? gigsData : [];
       setAllGigs(gigsList);
       const gigsCount = {};
@@ -4917,8 +4923,19 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <div className="border border-dashed border-red-300 bg-white p-3 text-xs font-bold text-ink">
-                ℹ️ There are currently no employers listed in the database.
+              <div className="flex flex-wrap items-center justify-between gap-2 border border-dashed border-red-300 bg-white p-3 text-xs font-bold text-ink">
+                <span>ℹ️ There are currently no employers listed in the database.</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    restoreDefaultEmployers();
+                    refresh(true);
+                    onChanged?.();
+                  }}
+                  className="flex items-center gap-1.5 border-2 border-ink bg-emerald-600 px-3 py-1.5 text-xs font-black uppercase text-white shadow-[1px_1px_0px_#121212] transition hover:bg-emerald-700"
+                >
+                  <RotateCcw size={12} /> RESTORE DEFAULT EMPLOYERS
+                </button>
               </div>
               <div>
                 <label className={labelCls}>Remove by Company Name or Employer ID manually:</label>
@@ -5015,11 +5032,22 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
       {loading ? (
         <div className="flex justify-center p-8"><Spinner /></div>
       ) : employers.length === 0 ? (
-        <div className="border-2 border-dashed border-ink bg-white p-8 text-center">
+        <div className="border-2 border-dashed border-ink bg-white p-8 text-center flex flex-col items-center justify-center">
           <p className="text-sm font-black text-ink">No employers on the website yet.</p>
-          <p className="mt-1 text-xs font-semibold text-inkmuted">
-            Click "+ ADD EMPLOYER TO WEBSITE" above to add one.
+          <p className="mt-1 text-xs font-semibold text-inkmuted max-w-md">
+            Click "+ ADD EMPLOYER TO WEBSITE" above to add one, or click below to restore the verified Bengaluru employers.
           </p>
+          <button
+            type="button"
+            onClick={() => {
+              restoreDefaultEmployers();
+              refresh(true);
+              onChanged?.();
+            }}
+            className="mt-4 flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
+          >
+            <RotateCcw size={13} /> RESTORE DEFAULT VERIFIED EMPLOYERS
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
