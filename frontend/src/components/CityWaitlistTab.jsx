@@ -17,6 +17,8 @@ import {
   Filter,
 } from "lucide-react";
 
+import { getStoredCityWaitlist, deleteCityWaitlistEntry } from "@/lib/clientStore";
+
 export default function CityWaitlistTab({ adminFetch }) {
   const [data, setData] = useState({ total: 0, by_city: [], entries: [] });
   const [loading, setLoading] = useState(true);
@@ -31,14 +33,49 @@ export default function CityWaitlistTab({ adminFetch }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await adminFetch("/admin/city-waitlist");
-      if (res) {
-        setData({
-          total: res.total || (res.entries ? res.entries.length : 0),
-          by_city: res.by_city || [],
-          entries: res.entries || [],
-        });
+      // 1. Fetch from backend/adminFetch (both /city-waitlist and /admin/city-waitlist are accepted)
+      let backendEntries = [];
+      try {
+        const res = await adminFetch("/city-waitlist");
+        if (res && Array.isArray(res.entries)) {
+          backendEntries = res.entries;
+        } else if (res && Array.isArray(res)) {
+          backendEntries = res;
+        }
+      } catch (err) {
+        console.warn("Backend waitlist fetch failed or offline, falling back to local:", err);
       }
+
+      // 2. Also read locally captured waitlist entries from clientStore (e.g. Calicut submission)
+      const localEntries = getStoredCityWaitlist() || [];
+
+      // 3. Merge entries by id/email+city ensuring no duplicates
+      const seen = new Set();
+      const merged = [];
+
+      for (const entry of [...backendEntries, ...localEntries]) {
+        const key = (entry.waitlist_id || entry.id || `${entry.email}_${entry.city}`).toLowerCase().trim();
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(entry);
+        }
+      }
+
+      // 4. Compute city aggregations
+      const cityCounts = {};
+      for (const item of merged) {
+        const c = item.city || "Unknown";
+        cityCounts[c] = (cityCounts[c] || 0) + 1;
+      }
+      const byCity = Object.entries(cityCounts)
+        .map(([city, count]) => ({ city, count }))
+        .sort((a, b) => b.count - a.count);
+
+      setData({
+        total: merged.length,
+        by_city: byCity,
+        entries: merged,
+      });
     } catch (err) {
       setError(err?.message || "Failed to load city waitlist");
     } finally {
@@ -56,12 +93,34 @@ export default function CityWaitlistTab({ adminFetch }) {
       return;
     }
     try {
-      await adminFetch(`/admin/city-waitlist/${entryId}`, "DELETE");
-      setData((prev) => ({
-        ...prev,
-        entries: prev.entries.filter((e) => e.waitlist_id !== entryId && e.id !== entryId),
-        total: Math.max(0, prev.total - 1),
-      }));
+      try {
+        await adminFetch(`/city-waitlist/${entryId}`, "DELETE");
+      } catch {
+        /* ignore backend delete failure if offline */
+      }
+      try {
+        deleteCityWaitlistEntry(entryId);
+      } catch {
+        /* ignore */
+      }
+      setData((prev) => {
+        const nextEntries = prev.entries.filter((e) => e.waitlist_id !== entryId && e.id !== entryId);
+        const cityCounts = {};
+        for (const item of nextEntries) {
+          const c = item.city || "Unknown";
+          cityCounts[c] = (cityCounts[c] || 0) + 1;
+        }
+        const byCity = Object.entries(cityCounts)
+          .map(([city, count]) => ({ city, count }))
+          .sort((a, b) => b.count - a.count);
+
+        return {
+          ...prev,
+          entries: nextEntries,
+          total: nextEntries.length,
+          by_city: byCity,
+        };
+      });
     } catch (err) {
       alert(err?.message || "Failed to delete entry");
     }

@@ -621,10 +621,10 @@ async function mockRouter(path, method = "GET", body = null) {
       bengaluru_center: { lat: 12.9716, lng: 77.5946 },
     };
   }
-  if (cleanPath === "/city-waitlist" && method === "POST") {
+  if ((cleanPath === "/city-waitlist" || cleanPath === "/admin/city-waitlist" || cleanPath === "/admin/admin/city-waitlist") && method === "POST") {
     return saveCityWaitlistEntry(body || {});
   }
-  if (cleanPath === "/admin/city-waitlist" && method === "GET") {
+  if ((cleanPath === "/admin/city-waitlist" || cleanPath === "/admin/admin/city-waitlist" || cleanPath === "/city-waitlist") && method === "GET") {
     const list = getStoredCityWaitlist();
     const cityCounts = {};
     for (const item of list) {
@@ -640,7 +640,7 @@ async function mockRouter(path, method = "GET", body = null) {
       entries: list,
     };
   }
-  if (cleanPath.startsWith("/admin/city-waitlist/") && method === "DELETE") {
+  if ((cleanPath.startsWith("/admin/city-waitlist/") || cleanPath.startsWith("/admin/admin/city-waitlist/") || cleanPath.startsWith("/city-waitlist/")) && method === "DELETE") {
     const id = cleanPath.split("/").pop();
     return deleteCityWaitlistEntry(id);
   }
