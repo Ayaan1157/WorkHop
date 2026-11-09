@@ -126,10 +126,10 @@ export default function PinnedHowItWorks() {
       id="how-it-works"
       ref={containerRef}
       className="relative w-full bg-[#0A0A0C] text-white border-b-2 border-zinc-800"
-      style={{ height: "300vh" }}
+      style={{ height: "240vh" }}
     >
       {/* Pinned Sticky Stage Viewport - 100svh fit for all devices */}
-      <div className="sticky top-0 h-[100svh] max-h-screen w-full flex flex-col justify-between overflow-hidden px-4 sm:px-8 lg:px-12 py-3 sm:py-5">
+      <div className="sticky top-0 h-[100svh] w-full flex flex-col justify-between overflow-hidden px-4 sm:px-8 lg:px-12 pt-4 sm:pt-6 pb-4 sm:pb-6">
         
         {/* 1. Header Row (Eyebrow + Accent Italic Headline + Average Match Note) */}
         <div className="mx-auto w-full max-w-5xl flex flex-col sm:flex-row sm:items-end justify-between gap-2 sm:gap-4 shrink-0 z-20">
@@ -157,8 +157,8 @@ export default function PinnedHowItWorks() {
           </div>
         </div>
 
-        {/* 2. Middle Center Stage: 3D-Tilted Device Frame Mockup (Flexibly bounded to prevent clipping) */}
-        <div className="mx-auto w-full max-w-5xl flex-1 min-h-0 flex items-center justify-center my-1 sm:my-2 [perspective:1200px] z-10">
+        {/* 2. Middle Center Stage: 3D-Tilted Device Frame Mockup */}
+        <div className="mx-auto w-full max-w-5xl flex-1 min-h-0 flex items-center justify-center my-auto py-2 [perspective:1200px] z-10">
           <motion.div
             style={{
               rotateX,
@@ -167,32 +167,32 @@ export default function PinnedHowItWorks() {
               opacity: frameOpacity,
               transformStyle: "preserve-3d",
             }}
-            className="relative w-full max-w-4xl max-h-[min(52vh,440px)] aspect-[16/10] sm:aspect-[16/9.2] rounded-xl sm:rounded-2xl border-2 border-zinc-700/80 bg-[#141418] p-2 sm:p-3.5 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.9),0_0_30px_rgba(230,90,30,0.1)] transition-shadow duration-300 flex flex-col"
+            className="relative w-full max-w-4xl max-h-[60vh] sm:max-h-[500px] aspect-[16/10] sm:aspect-[16/9] rounded-xl sm:rounded-2xl border-2 border-zinc-700/80 bg-[#141418] p-2.5 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_35px_rgba(230,90,30,0.12)] transition-shadow duration-300 flex flex-col"
           >
             {/* Top Bezel Bar */}
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-1.5 mb-1.5 sm:mb-2 px-1 shrink-0">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2 mb-2 px-1 shrink-0">
               <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-rose-500/80" />
-                <span className="h-2 w-2 rounded-full bg-amber-500/80" />
-                <span className="h-2 w-2 rounded-full bg-emerald-500/80" />
-                <span className="ml-2 hidden sm:inline text-[10px] font-mono text-zinc-500 font-bold">
+                <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
+                <span className="ml-2 hidden sm:inline text-[11px] font-mono text-zinc-500 font-bold">
                   workhop.in / how-it-works / step-{STEPS_DATA[activeStep].num}
                 </span>
               </div>
 
               {/* Tag in header */}
               <div className="flex items-center gap-2">
-                <span className="border border-zinc-700 bg-zinc-900 px-2 py-0.5 text-[9px] font-mono font-bold text-zinc-300">
+                <span className="border border-zinc-700 bg-zinc-900 px-2 py-0.5 text-[9px] sm:text-[10px] font-mono font-bold text-zinc-300">
                   {STEPS_DATA[activeStep].tag}
                 </span>
-                <span className="border border-[#E65A1E]/40 bg-[#E65A1E]/15 px-2 py-0.5 text-[9px] font-black uppercase text-[#E65A1E]">
+                <span className="border border-[#E65A1E]/40 bg-[#E65A1E]/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase text-[#E65A1E]">
                   STEP {STEPS_DATA[activeStep].num}
                 </span>
               </div>
             </div>
 
             {/* Inner High-Resolution Canvas Screen with Cross-Fading Steps */}
-            <div className="relative w-full flex-1 min-h-0 rounded-lg bg-[#0D0D10] border border-zinc-800/80 overflow-hidden shadow-inner">
+            <div className="relative w-full flex-1 min-h-0 rounded-lg sm:rounded-xl bg-[#0D0D10] border border-zinc-800/80 overflow-hidden shadow-inner">
               
               {/* ───────── STEP 01: Post or find a job (Pin Drop & 5km Radius) ───────── */}
               <motion.div
@@ -201,17 +201,17 @@ export default function PinnedHowItWorks() {
                   scale: step1Scale,
                   pointerEvents: activeStep === 0 ? "auto" : "none",
                 }}
-                className="absolute inset-0 flex flex-col md:flex-row items-center justify-between p-3 sm:p-6 gap-3 sm:gap-6 bg-gradient-to-br from-[#121216] to-[#0A0A0C]"
+                className="absolute inset-0 flex flex-col md:flex-row items-center justify-between p-4 sm:p-7 gap-4 sm:gap-6 bg-gradient-to-br from-[#121216] to-[#0A0A0C]"
               >
                 {/* Left Side: Artwork Visual with Expanding Radar Circle */}
                 <div className="relative w-full md:w-1/2 h-full flex items-center justify-center min-h-0">
-                  <div className="relative h-full max-h-[190px] sm:max-h-[220px] aspect-square rounded-xl bg-[#FAF7F2] border-2 border-zinc-900 p-1.5 overflow-hidden flex items-center justify-center shadow-md">
+                  <div className="relative h-full max-h-[220px] sm:max-h-[260px] aspect-square rounded-xl bg-[#FAF7F2] border-2 border-zinc-900 p-2 overflow-hidden flex items-center justify-center shadow-md">
                     <motion.div
                       style={{
                         scale: step1CircleScale,
                         opacity: step1CircleOpacity,
                       }}
-                      className="absolute w-36 h-36 rounded-full border-2 border-dashed border-[#E65A1E] bg-[#E65A1E]/10 pointer-events-none"
+                      className="absolute w-40 h-40 rounded-full border-2 border-dashed border-[#E65A1E] bg-[#E65A1E]/10 pointer-events-none"
                     />
 
                     <img
@@ -224,21 +224,21 @@ export default function PinnedHowItWorks() {
 
                 {/* Right Side: Step Description & Feature Chips */}
                 <div className="w-full md:w-1/2 flex flex-col justify-center text-left">
-                  <div className="inline-flex items-center gap-1.5 border border-[#E65A1E]/40 bg-[#E65A1E]/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-[#E65A1E] w-max">
-                    <LocateFixed size={11} />
+                  <div className="inline-flex items-center gap-1.5 border border-[#E65A1E]/40 bg-[#E65A1E]/15 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#E65A1E] w-max">
+                    <LocateFixed size={12} />
                     <span>STEP 01 · HYPERLOCAL 5KM</span>
                   </div>
 
-                  <h3 className="mt-1.5 sm:mt-2 text-lg sm:text-2xl font-black text-white tracking-tight">
+                  <h3 className="mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
                     Post or find a job
                   </h3>
 
-                  <p className="mt-1 text-xs sm:text-sm text-zinc-300 leading-snug sm:leading-relaxed font-medium">
+                  <p className="mt-1.5 text-xs sm:text-sm text-zinc-300 leading-relaxed font-medium">
                     Drop your pin or browse verified local gigs within 5 km of your block.
                   </p>
 
-                  <div className="mt-2 sm:mt-3 pt-2 border-t border-zinc-800 flex items-center gap-2 text-[10px] sm:text-[11px] font-black text-[#E65A1E]">
-                    <LocateFixed size={13} className="shrink-0" />
+                  <div className="mt-3 pt-2.5 border-t border-zinc-800 flex items-center gap-2 text-[11px] font-black text-[#E65A1E]">
+                    <LocateFixed size={14} className="shrink-0" />
                     <span>KORAMANGALA · HSR · INDIRANAGAR + MORE</span>
                   </div>
                 </div>
@@ -251,21 +251,22 @@ export default function PinnedHowItWorks() {
                   scale: step2Scale,
                   pointerEvents: activeStep === 1 ? "auto" : "none",
                 }}
-                className="absolute inset-0 flex flex-col md:flex-row items-center justify-between p-3 sm:p-6 gap-3 sm:gap-6 bg-gradient-to-br from-[#121216] to-[#0A0A0C]"
+                className="absolute inset-0 flex flex-col md:flex-row items-center justify-between p-4 sm:p-7 gap-4 sm:gap-6 bg-gradient-to-br from-[#121216] to-[#0A0A0C]"
               >
                 {/* Left Side: Artwork Visual with Sliding Chat Bubbles */}
                 <div className="relative w-full md:w-1/2 h-full flex items-center justify-center min-h-0">
-                  <div className="relative h-full max-h-[190px] sm:max-h-[220px] aspect-square rounded-xl bg-[#FAF7F2] border-2 border-zinc-900 p-1.5 overflow-hidden flex items-center justify-center shadow-md">
+                  <div className="relative h-full max-h-[220px] sm:max-h-[260px] aspect-square rounded-xl bg-[#FAF7F2] border-2 border-zinc-900 p-2 overflow-hidden flex items-center justify-center shadow-md">
+                    {/* Floating simulated chat bubbles */}
                     <motion.div
                       style={{ y: step2Bubble1Y, opacity: step2Bubble1Opacity }}
-                      className="absolute top-2 left-2 z-20 border border-zinc-900 bg-white px-2 py-0.5 text-[9px] font-black text-zinc-900 shadow-[1.5px_1.5px_0px_#121212] rounded"
+                      className="absolute top-2 left-2 z-20 border border-zinc-900 bg-white px-2.5 py-1 text-[9.5px] font-black text-zinc-900 shadow-[1.5px_1.5px_0px_#121212] rounded"
                     >
                       💬 "Are you available in Koramangala today?"
                     </motion.div>
 
                     <motion.div
                       style={{ y: step2Bubble2Y, opacity: step2Bubble2Opacity }}
-                      className="absolute bottom-2 right-2 z-20 border border-zinc-900 bg-emerald-100 px-2 py-0.5 text-[9px] font-black text-emerald-950 shadow-[1.5px_1.5px_0px_#121212] rounded"
+                      className="absolute bottom-2 right-2 z-20 border border-zinc-900 bg-emerald-100 px-2.5 py-1 text-[9.5px] font-black text-emerald-950 shadow-[1.5px_1.5px_0px_#121212] rounded"
                     >
                       ✓ "Yes! Unlocking phone & WhatsApp now."
                     </motion.div>
@@ -280,21 +281,21 @@ export default function PinnedHowItWorks() {
 
                 {/* Right Side: Step Description & Feature Chips */}
                 <div className="w-full md:w-1/2 flex flex-col justify-center text-left">
-                  <div className="inline-flex items-center gap-1.5 border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-400 w-max">
-                    <PhoneCall size={11} />
+                  <div className="inline-flex items-center gap-1.5 border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-400 w-max">
+                    <PhoneCall size={12} />
                     <span>STEP 02 · DIRECT CONNECT</span>
                   </div>
 
-                  <h3 className="mt-1.5 sm:mt-2 text-lg sm:text-2xl font-black text-white tracking-tight">
+                  <h3 className="mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
                     Chat &amp; agree
                   </h3>
 
-                  <p className="mt-1 text-xs sm:text-sm text-zinc-300 leading-snug sm:leading-relaxed font-medium">
+                  <p className="mt-1.5 text-xs sm:text-sm text-zinc-300 leading-relaxed font-medium">
                     Unlock direct phone &amp; WhatsApp to align on project scope in minutes.
                   </p>
 
-                  <div className="mt-2 sm:mt-3 pt-2 border-t border-zinc-800 flex items-center gap-2 text-[10px] sm:text-[11px] font-black text-emerald-400">
-                    <PhoneCall size={13} className="shrink-0" />
+                  <div className="mt-3 pt-2.5 border-t border-zinc-800 flex items-center gap-2 text-[11px] font-black text-emerald-400">
+                    <PhoneCall size={14} className="shrink-0" />
                     <span>INSTANT CALL · DIRECT WHATSAPP</span>
                   </div>
                 </div>
@@ -307,21 +308,23 @@ export default function PinnedHowItWorks() {
                   scale: step3Scale,
                   pointerEvents: activeStep === 2 ? "auto" : "none",
                 }}
-                className="absolute inset-0 flex flex-col md:flex-row items-center justify-between p-3 sm:p-6 gap-3 sm:gap-6 bg-gradient-to-br from-[#121216] to-[#0A0A0C]"
+                className="absolute inset-0 flex flex-col md:flex-row items-center justify-between p-4 sm:p-7 gap-4 sm:gap-6 bg-gradient-to-br from-[#121216] to-[#0A0A0C]"
               >
                 {/* Left Side: Artwork Visual with Escrow Shield & 0% Banner */}
                 <div className="relative w-full md:w-1/2 h-full flex items-center justify-center min-h-0">
-                  <div className="relative h-full max-h-[190px] sm:max-h-[220px] aspect-square rounded-xl bg-[#FAF7F2] border-2 border-zinc-900 p-1.5 overflow-hidden flex items-center justify-center shadow-md">
+                  <div className="relative h-full max-h-[220px] sm:max-h-[260px] aspect-square rounded-xl bg-[#FAF7F2] border-2 border-zinc-900 p-2 overflow-hidden flex items-center justify-center shadow-md">
+                    {/* Shield pulse */}
                     <motion.div
                       style={{ scale: step3ShieldScale }}
-                      className="absolute top-2 right-2 z-20 border border-zinc-900 bg-amber-200 px-1.5 py-0.5 text-[8.5px] font-black uppercase text-black shadow-[1.5px_1.5px_0px_#121212]"
+                      className="absolute top-2 right-2 z-20 border border-zinc-900 bg-amber-200 px-2 py-0.5 text-[9px] font-black uppercase text-black shadow-[1.5px_1.5px_0px_#121212]"
                     >
                       🛡️ MILESTONE ESCROW
                     </motion.div>
 
+                    {/* Animated 0% Commission Banner */}
                     <motion.div
                       style={{ y: step3BannerY, opacity: step3BannerOpacity }}
-                      className="absolute bottom-2 inset-x-2 z-20 border border-zinc-900 bg-[#E65A1E] text-white py-0.5 px-1.5 text-[9px] font-black uppercase text-center shadow-[1.5px_1.5px_0px_#121212]"
+                      className="absolute bottom-2 inset-x-2 z-20 border border-zinc-900 bg-[#E65A1E] text-white py-1 px-2 text-[10px] font-black uppercase text-center shadow-[1.5px_1.5px_0px_#121212]"
                     >
                       0% COMMISSION · KEEP 100%
                     </motion.div>
@@ -336,21 +339,21 @@ export default function PinnedHowItWorks() {
 
                 {/* Right Side: Step Description & Feature Chips */}
                 <div className="w-full md:w-1/2 flex flex-col justify-center text-left">
-                  <div className="inline-flex items-center gap-1.5 border border-[#E65A1E]/40 bg-[#E65A1E]/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-[#E65A1E] w-max">
-                    <Lock size={11} />
+                  <div className="inline-flex items-center gap-1.5 border border-[#E65A1E]/40 bg-[#E65A1E]/15 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#E65A1E] w-max">
+                    <Lock size={12} />
                     <span>STEP 03 · 0% COMMISSION</span>
                   </div>
 
-                  <h3 className="mt-1.5 sm:mt-2 text-lg sm:text-2xl font-black text-white tracking-tight">
+                  <h3 className="mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
                     Get paid securely
                   </h3>
 
-                  <p className="mt-1 text-xs sm:text-sm text-zinc-300 leading-snug sm:leading-relaxed font-medium">
+                  <p className="mt-1.5 text-xs sm:text-sm text-zinc-300 leading-relaxed font-medium">
                     Settle via milestone escrow or direct UPI with zero commission deductions.
                   </p>
 
-                  <div className="mt-2 sm:mt-3 pt-2 border-t border-zinc-800 flex items-center gap-2 text-[10px] sm:text-[11px] font-black text-[#E65A1E]">
-                    <Lock size={13} className="shrink-0" />
+                  <div className="mt-3 pt-2.5 border-t border-zinc-800 flex items-center gap-2 text-[11px] font-black text-[#E65A1E]">
+                    <Lock size={14} className="shrink-0" />
                     <span>KEEP 100% OF YOUR EARNINGS</span>
                   </div>
                 </div>
