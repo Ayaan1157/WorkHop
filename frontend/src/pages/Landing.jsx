@@ -21,6 +21,7 @@ import { Logo, MobileBottomNav } from "@/components/kit";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import HoppingKangaroo from "@/components/HoppingKangaroo";
 import LiveNeighborhoodRadar from "@/components/LiveNeighborhoodRadar";
+import PinnedHowItWorks from "@/components/PinnedHowItWorks";
 
 export default function Landing() {
   usePageMeta({
@@ -1392,129 +1393,9 @@ export default function Landing() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          3. HOW IT WORKS — 3 Visual Step Cards in a Row (Max 1 Short Line Each)
+          3. HOW IT WORKS — Scroll-Driven Pinned 3D Device Frame Experience
           ═══════════════════════════════════════════════════════════════════════ */}
-      <section
-        id="how-it-works"
-        className="border-b-2 border-ink bg-[#FAFAF8] dark:bg-[#141416] py-10 sm:py-16 px-4 sm:px-10 lg:px-16"
-      >
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
-            <div>
-              <span className="text-xs font-black uppercase tracking-widest text-brand">
-                HOW IT WORKS
-              </span>
-              <h2 className="mt-1 text-2xl sm:text-4xl font-black text-ink dark:text-white tracking-tight">
-                From pin drop to payout in 3 steps.
-              </h2>
-            </div>
-            <span className="text-xs font-black uppercase tracking-wider text-inkmuted dark:text-stone-400">
-              AVERAGE MATCH TIME: &lt; 5 MINS
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
-            {/* Step 1 */}
-            <div className="group border-2 border-ink bg-white dark:bg-[#1C1C20] overflow-hidden shadow-[4px_4px_0px_#121212] flex flex-col justify-between transition hover:-translate-y-1 hover:shadow-[6px_6px_0px_#121212]">
-              {/* Graphic Art */}
-              <div className="w-full bg-[#FAF7F2] dark:bg-[#151518] border-b-2 border-ink overflow-hidden aspect-[4/3] flex items-center justify-center p-2">
-                <img
-                  src="/steps/step1_art.png"
-                  alt="Step 1: Post or find a job within 5km"
-                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-5 flex flex-col justify-between flex-1">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
-                      STEP 01
-                    </span>
-                    <span className="text-[10px] font-bold text-inkmuted dark:text-stone-400">HYPERLOCAL 5KM</span>
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
-                    Post or find a job
-                  </h3>
-                  <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300">
-                    Drop your pin or browse verified local gigs within 5 km of your block.
-                  </p>
-                </div>
-                <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-brand">
-                  <LocateFixed size={13} />
-                  <span>KORAMANGALA · HSR · INDIRANAGAR + MORE</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="group border-2 border-ink bg-white dark:bg-[#1C1C20] overflow-hidden shadow-[4px_4px_0px_#121212] flex flex-col justify-between transition hover:-translate-y-1 hover:shadow-[6px_6px_0px_#121212]">
-              {/* Graphic Art */}
-              <div className="w-full bg-[#FAF7F2] dark:bg-[#151518] border-b-2 border-ink overflow-hidden aspect-[4/3] flex items-center justify-center p-2">
-                <img
-                  src="/steps/step2_art.png"
-                  alt="Step 2: Chat and agree via instant WhatsApp & call"
-                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-5 flex flex-col justify-between flex-1">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
-                      STEP 02
-                    </span>
-                    <span className="text-[10px] font-bold text-inkmuted dark:text-stone-400">DIRECT CONNECT</span>
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
-                    Chat &amp; agree
-                  </h3>
-                  <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300">
-                    Unlock direct phone &amp; WhatsApp to align on project scope in minutes.
-                  </p>
-                </div>
-                <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-ok">
-                  <PhoneCall size={13} />
-                  <span>INSTANT CALL · DIRECT WHATSAPP</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="group border-2 border-ink bg-white dark:bg-[#1C1C20] overflow-hidden shadow-[4px_4px_0px_#121212] flex flex-col justify-between transition hover:-translate-y-1 hover:shadow-[6px_6px_0px_#121212]">
-              {/* Graphic Art */}
-              <div className="w-full bg-[#FAF7F2] dark:bg-[#151518] border-b-2 border-ink overflow-hidden aspect-[4/3] flex items-center justify-center p-2">
-                <img
-                  src="/steps/step3_art.png"
-                  alt="Step 3: Get paid securely with 0% commission"
-                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-5 flex flex-col justify-between flex-1">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="bg-brand/10 border border-brand/30 px-2.5 py-0.5 text-[11px] font-black text-brand">
-                      STEP 03
-                    </span>
-                    <span className="text-[10px] font-bold text-brand">0% COMMISSION</span>
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-black text-ink dark:text-white">
-                    Get paid securely
-                  </h3>
-                  <p className="mt-1.5 text-xs sm:text-sm font-medium text-inkmuted dark:text-stone-300">
-                    Settle via milestone escrow or direct UPI with zero commission deductions.
-                  </p>
-                </div>
-                <div className="mt-5 pt-3 border-t border-ink/10 dark:border-white/10 flex items-center gap-2 text-[11px] font-black text-brand">
-                  <Lock size={13} />
-                  <span>KEEP 100% OF YOUR EARNINGS</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PinnedHowItWorks />
 
       {/* ═══════════════════════════════════════════════════════════════════════
           4. CATEGORIES — Compact Pill Chips (Inspired by Browse by Category)
