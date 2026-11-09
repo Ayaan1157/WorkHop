@@ -794,7 +794,50 @@ async function mockRouter(path, method = "GET", body = null) {
       const res = await fetch("/api/admin/employers");
       if (res.ok) {
         const d = await res.json();
-        if (Array.isArray(d)) cloudEmps = d;
+        if (Array.isArray(d)) {
+          cloudEmps = d;
+        } else if (d && (Array.isArray(d.accounts) || Array.isArray(d.devices))) {
+          const rawAccounts = (d.accounts || []).map((a) => {
+            const email = a.email || "";
+            const comp = a.company_name || a.name || (email ? email.split("@")[0] : "Employer Account");
+            const empId = a.employer_id || a.id || `emp-${(email || comp || Math.random().toString(36).slice(2)).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+            return {
+              employer_id: empId,
+              id: empId,
+              company_name: comp,
+              name: a.name || comp,
+              email: email,
+              phone: a.phone || "",
+              area: a.area || "Bengaluru",
+              spent_rupees: Number(a.spent_rupees || 0),
+              jobs_posted: Number(a.jobs_posted || 0),
+              created_at: a.created_at || new Date().toISOString(),
+              source: "cloud_account",
+              role: "employer",
+            };
+          });
+
+          const rawDevices = (d.devices || []).map((dev) => {
+            const empId = dev.employer_id || `emp-${Math.random().toString(36).slice(2)}`;
+            const comp = dev.company_name || dev.name || dev.employer_id || "Active Employer";
+            return {
+              employer_id: empId,
+              id: empId,
+              company_name: comp,
+              name: dev.name || comp,
+              email: dev.email || "",
+              phone: dev.phone || "",
+              area: dev.area || "Bengaluru",
+              spent_rupees: Number(dev.spent_rupees || 0),
+              jobs_posted: Number(dev.jobs_posted || dev.unlocks || 0),
+              created_at: dev.last_active || dev.created_at || new Date().toISOString(),
+              source: "cloud_device",
+              role: "employer",
+            };
+          });
+
+          cloudEmps = [...rawAccounts, ...rawDevices];
+        }
       }
     } catch {}
 
@@ -804,30 +847,50 @@ async function mockRouter(path, method = "GET", body = null) {
     const merged = [];
 
     for (const e of cloudEmps) {
-      const key = (e.email || e.company_name || e.id || e.employer_id || "").toLowerCase().trim();
+      const email = e.email || "";
+      const comp = e.company_name || e.name || (email ? email.split("@")[0] : "Employer Account");
+      const empId = e.employer_id || e.id || `emp-${(email || comp || Math.random().toString(36).slice(2)).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+      const key = (email || comp || empId).toLowerCase().trim();
       if (key && !seen.has(key)) {
-        merged.push(e);
+        merged.push({
+          ...e,
+          employer_id: empId,
+          id: empId,
+          company_name: comp,
+          name: e.name || comp,
+        });
         seen.add(key);
       }
     }
 
     for (const s of stored) {
-      const key = (s.email || s.company_name || s.id || s.employer_id || "").toLowerCase().trim();
+      const email = s.email || "";
+      const comp = s.company_name || s.name || (email ? email.split("@")[0] : "Employer Account");
+      const empId = s.employer_id || s.id || `emp-${(email || comp || Math.random().toString(36).slice(2)).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+      const key = (email || comp || empId).toLowerCase().trim();
       if (key && !seen.has(key)) {
-        merged.push(s);
+        merged.push({
+          ...s,
+          employer_id: empId,
+          id: empId,
+          company_name: comp,
+          name: s.name || comp,
+        });
         seen.add(key);
       }
     }
 
     for (const [em, u] of Object.entries(regUsers)) {
       if (u.role === "employer") {
-        const key = (em || u.company_name).toLowerCase().trim();
+        const key = (em || u.company_name || "").toLowerCase().trim();
         if (key && !seen.has(key)) {
+          const comp = u.company_name || u.name || em.split("@")[0];
+          const empId = u.id || `emp-${(em || comp).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
           merged.push({
-            employer_id: u.id || `emp-${key}`,
-            id: u.id || `emp-${key}`,
-            company_name: u.company_name || u.name || em.split("@")[0],
-            name: u.name || em.split("@")[0],
+            employer_id: empId,
+            id: empId,
+            company_name: comp,
+            name: u.name || comp,
             email: em,
             phone: u.phone || "",
             area: u.area || "Bengaluru",
@@ -865,7 +928,7 @@ async function mockRouter(path, method = "GET", body = null) {
       }
     }
 
-    return merged.length > 0 ? merged : stored;
+    return merged.length > 0 ? merged : (cloudEmps.length > 0 ? cloudEmps : stored);
   }
   if (cleanPath === "/admin/freelancers") {
     try {

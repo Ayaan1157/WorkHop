@@ -6,7 +6,12 @@ import {
   ArrowRight, User, CheckCircle2, Lock, Phone, Image as ImageIcon, Sparkles,
   ChevronLeft, ChevronRight, Loader2
 } from "lucide-react";
-import { getOrCreateChatWithCandidate, getSubmittedProfiles, getFreelancerProfile } from "@/lib/clientStore";
+import {
+  getOrCreateChatWithCandidate,
+  getSubmittedProfiles,
+  getFreelancerProfile,
+  sendProfileCompletionReminder,
+} from "@/lib/clientStore";
 import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
 import PortfolioGallery from "@/components/PortfolioGallery";
 
@@ -35,6 +40,7 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
   const [avatarFailed, setAvatarFailed] = useState(false);
   const [brokenImages, setBrokenImages] = useState({});
   const [loadingImages, setLoadingImages] = useState({});
+  const [reminderSent, setReminderSent] = useState(false);
 
   // Keyboard navigation for lightbox
   React.useEffect(() => {
@@ -118,6 +124,20 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
     onClose?.();
     const convId = getOrCreateChatWithCandidate(pro);
     nav(`/chat/${convId}?role=employer`);
+  };
+
+  const handleSendReminder = (e) => {
+    e?.stopPropagation?.();
+    try {
+      const res = sendProfileCompletionReminder(pro);
+      setReminderSent(true);
+      setTimeout(() => {
+        onClose?.();
+        nav(`/chat/${res.convId}?role=employer`);
+      }, 750);
+    } catch (err) {
+      console.error("Failed to send reminder", err);
+    }
   };
 
   const handleViewFullProfile = () => {
@@ -235,6 +255,42 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
         {/* Scrollable Body Details */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           
+          {/* Incomplete Details / Profile Reminder Banner */}
+          {(!pro.approved || pro.status === "pending" || !pro.bio || pro.bio.includes("No bio") || portfolioProjects.length === 0) && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/40 p-3 shadow-[2px_2px_0px_#121212]">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <span className="text-base select-none mt-0.5">⚠️</span>
+                <div>
+                  <p className="text-xs font-black uppercase text-amber-950 dark:text-amber-200">
+                    Incomplete Freelancer Profile
+                  </p>
+                  <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+                    Bio details or portfolio work samples are missing.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                data-testid="modal-incomplete-remind-btn"
+                onClick={handleSendReminder}
+                disabled={reminderSent}
+                className="shrink-0 flex items-center justify-center gap-1.5 border-2 border-ink bg-amber-400 dark:bg-amber-500 px-3 py-1.5 text-xs font-black uppercase text-ink shadow-[2px_2px_0px_#121212] hover:bg-amber-300 transition active:translate-y-0.5 disabled:bg-emerald-600 disabled:text-white"
+              >
+                {reminderSent ? (
+                  <>
+                    <CheckCircle2 size={13} />
+                    <span>Reminder Sent!</span>
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare size={13} />
+                    <span>Ask to Complete Profile</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
           {/* 3-Metric Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div className="flex flex-col items-center justify-center border-2 border-ink dark:border-zinc-700 bg-sand/60 dark:bg-zinc-800/80 p-2 text-center">
@@ -457,6 +513,27 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
 
         {/* Sticky Action Footer */}
         <div className="flex flex-col gap-2 border-t-2 border-ink dark:border-zinc-700 bg-white dark:bg-[#1a1a1c] p-3.5 sm:p-4">
+          {/* Ask to Complete Profile CTA Button */}
+          <button
+            type="button"
+            onClick={handleSendReminder}
+            disabled={reminderSent}
+            data-testid="modal-remind-profile-btn"
+            className="flex w-full items-center justify-center gap-2 border-2 border-ink dark:border-zinc-700 bg-amber-400 dark:bg-amber-500 py-2.5 text-xs font-black tracking-wide text-ink shadow-[2px_2px_0px_#121212] hover:bg-amber-300 transition active:translate-y-0.5 disabled:bg-emerald-600 disabled:text-white uppercase"
+          >
+            {reminderSent ? (
+              <>
+                <CheckCircle2 size={14} className="text-white" />
+                <span>Message Sent! Opening Chat...</span>
+              </>
+            ) : (
+              <>
+                <MessageSquare size={14} className="text-ink" />
+                <span>Ask Freelancer to Complete Profile</span>
+              </>
+            )}
+          </button>
+
           {/* Main Hire CTA */}
           <button
             onClick={handlePostGig}

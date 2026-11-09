@@ -7,7 +7,7 @@ import {
   ArrowUpRight, Phone, Mail, Award, Clock, FileText, ChevronRight,
   ShieldCheck, HelpCircle, Download, Zap, Coins, RotateCcw,
   Tag, Percent, Edit3, Copy, Calendar, UserCheck, UserX, Scale, KeyRound,
-  Bell, UserPlus
+  Bell, UserPlus, MessageSquare
 } from "lucide-react";
 import { TopBar, Spinner } from "@/components/kit";
 import { useAuth } from "@/context/AuthContext";
@@ -34,6 +34,7 @@ import {
   getFreelancerStatuses,
   updateFreelancerStatus,
   cleanRealSkill,
+  sendProfileCompletionReminder,
 } from "@/lib/clientStore";
 import FreelancerProfileModal from "@/components/FreelancerProfileModal";
 import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
@@ -3036,6 +3037,28 @@ function ProsTalentTab({ adminFetch }) {
                         <span>DECLINE</span>
                       </button>
                     )}
+
+                    {/* Ask to Complete Profile Button */}
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => {
+                        try {
+                          const res = sendProfileCompletionReminder(f);
+                          setFeedback({
+                            type: "success",
+                            text: `Profile reminder message sent to ${f.name || f.full_name || "freelancer"}!`,
+                          });
+                        } catch (err) {
+                          setFeedback({ type: "error", text: "Failed to send profile reminder." });
+                        }
+                      }}
+                      className="flex items-center gap-1 border-2 border-ink bg-amber-50 px-2.5 py-1.5 text-xs font-black text-amber-900 hover:bg-amber-100 shadow-[1px_1px_0px_#121212] transition disabled:opacity-50"
+                      title="Send a message to freelancer asking them to complete their profile"
+                    >
+                      <MessageSquare size={12} className="text-amber-700" />
+                      <span>REMIND</span>
+                    </button>
                   </div>
 
                   {/* WhatsApp contact link */}
@@ -4651,19 +4674,23 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
         if (empId) gigsCount[empId] = (gigsCount[empId] || 0) + 1;
       }
 
-      const enriched = list.map((emp) => {
-        const comp = (emp.company_name || emp.name || "").toLowerCase().trim();
-        const empId = (emp.employer_id || emp.id || "").toLowerCase().trim();
-        const live = gigsCount[comp] || gigsCount[empId] || Number(emp.jobs_posted || 0);
+      const enriched = list.map((emp, idx) => {
+        const email = emp.email || "";
+        const rawComp = (emp.company_name || emp.name || (email ? email.split("@")[0] : `Employer Account`)).trim();
+        const empId = emp.employer_id || emp.id || `emp-${(email || rawComp || idx).toString().toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+        const comp = rawComp;
+        const live = gigsCount[comp.toLowerCase()] || gigsCount[empId.toLowerCase()] || Number(emp.jobs_posted || 0);
         return {
           ...emp,
+          employer_id: empId,
+          id: empId,
+          company_name: comp,
+          name: emp.name || comp,
           jobs_posted: live,
         };
       });
 
-      if (enriched.length > 0) {
-        setEmployers(enriched);
-      }
+      setEmployers(enriched);
     } catch {
       /* Keep existing employers intact on transient network error */
     } finally {
@@ -4996,8 +5023,8 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {employers.map((e) => {
-            const empId = e.employer_id;
+          {employers.map((e, idx) => {
+            const empId = e.employer_id || e.id || `emp-${(e.email || idx).toString().replace(/[^a-z0-9]/g, "")}`;
             const empHops = getEmployerHops(empId);
             const isIncomplete =
               e.profile_status === "incomplete" ||

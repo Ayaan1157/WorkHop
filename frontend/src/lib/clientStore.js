@@ -2616,6 +2616,92 @@ export function getOrCreateChatWithCandidate(candidate) {
   }
 }
 
+export function sendProfileCompletionReminder(candidate, customNote) {
+  if (!candidate) return { ok: false, error: "No candidate provided" };
+  const convId = getOrCreateChatWithCandidate(candidate);
+  const fullName = candidate.name || candidate.full_name || "there";
+  const firstName = fullName.split(" ")[0] || "there";
+  const reminderText =
+    customNote ||
+    `Hi ${firstName}, please complete your profile details (your bio, primary skills, and portfolio work samples) on WorkHop so we can approve your profile and start connecting you with clients!`;
+
+  const nowIso = new Date().toISOString();
+  const user = getStoredUser();
+  const reminderMsg = {
+    id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    conversation_id: convId,
+    sender_role: user?.is_admin ? "admin" : (user?.role || "employer"),
+    sender_name: user?.name || "WorkHop Admin",
+    text: reminderText,
+    created_at: nowIso,
+    timestamp: nowIso,
+    is_reminder: true,
+  };
+
+  try {
+    const storageKey = `workhop_chat_messages_${convId}`;
+    const legacyKey = `workhop_messages_${convId}`;
+    let existing = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem(legacyKey) || "[]");
+      if (Array.isArray(parsed)) existing = parsed;
+    } catch {}
+
+    const updatedMsgs = [...existing, reminderMsg];
+    localStorage.setItem(storageKey, JSON.stringify(updatedMsgs));
+    localStorage.setItem(legacyKey, JSON.stringify(updatedMsgs));
+
+    // Update conversation in chats list
+    try {
+      const rawChats = localStorage.getItem(CHATS_KEY) || "[]";
+      const chats = JSON.parse(rawChats);
+      if (Array.isArray(chats)) {
+        const idx = chats.findIndex((c) => (c.id || c.conversation_id) === convId);
+        if (idx !== -1) {
+          chats[idx].last_message = reminderText;
+          chats[idx].updated_at = nowIso;
+          localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+        }
+      }
+    } catch {}
+
+    // Add freelancer notification so candidate gets alerted
+    try {
+      const notifsRaw = localStorage.getItem(NOTIFICATIONS_KEY) || "[]";
+      const currentNotifs = JSON.parse(notifsRaw) || [];
+      const newNotif = {
+        id: `notif-reminder-${Date.now()}`,
+        type: "profile_reminder",
+        title: "Please Complete Your Profile Details 📝",
+        description: reminderText,
+        time: "Just now",
+        read: false,
+        to: "/freelancer/profile",
+        target_user_id: candidate.id || candidate.freelancer_id,
+        created_at: nowIso,
+      };
+      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify([newNotif, ...currentNotifs].slice(0, 50)));
+    } catch {}
+
+    // Add admin notification audit record
+    try {
+      addAdminNotification({
+        type: "profile_reminder",
+        title: "Profile Completion Reminder Sent",
+        message: `Reminder sent to ${fullName}: "Please complete your profile details."`,
+        name: fullName,
+        email: candidate.email || "",
+        role: "freelancer",
+        details: { candidate_id: candidate.id || candidate.freelancer_id, message: reminderText },
+      });
+    } catch {}
+
+    return { ok: true, convId, message: reminderText };
+  } catch (err) {
+    return { ok: false, convId, error: err?.message };
+  }
+}
+
 // 11. Full Freelancer Profile (Upwork-style)
 export function getDefaultFreelancerProfile() {
   const currentUser = getStoredUser();
@@ -3004,7 +3090,11 @@ function readAdminEmployers() {
 function getDeletedEmployerIds() {
   try {
     const parsed = JSON.parse(localStorage.getItem(DELETED_EMPLOYERS_KEY) || "[]");
-    return new Set(Array.isArray(parsed) ? parsed.map((x) => String(x).toLowerCase().trim()) : []);
+    return new Set(
+      Array.isArray(parsed)
+        ? parsed.map((x) => String(x || "").toLowerCase().trim()).filter(Boolean)
+        : []
+    );
   } catch {
     return new Set();
   }
