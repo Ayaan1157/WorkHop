@@ -67,7 +67,12 @@ export default function CityRestrictionModal({
   const [showWaitlist, setShowWaitlist] = useState(false);
 
   // Waitlist form states
-  const [cityInput, setCityInput] = useState(detectedCity || "your area");
+  const [cityInput, setCityInput] = useState(() => {
+    if (detectedCity && !["Bengaluru", "Indiranagar", "Koramangala", "HSR Layout", "Whitefield", "your area"].includes(detectedCity)) {
+      return detectedCity;
+    }
+    return "";
+  });
   const [contactInput, setContactInput] = useState("");
   const [roleInput, setRoleInput] = useState("employer"); // "employer" | "freelancer"
   const [submitting, setSubmitting] = useState(false);
@@ -88,9 +93,13 @@ export default function CityRestrictionModal({
     } catch {}
   }, [contactInput]);
 
-  // Sync cityInput when detectedCity updates
+  // Sync cityInput when genuine outside detectedCity updates
   React.useEffect(() => {
-    if (detectedCity && (!cityInput || cityInput === "your area" || cityInput === "Mysore")) {
+    if (
+      detectedCity &&
+      !["Bengaluru", "Indiranagar", "Koramangala", "HSR Layout", "Whitefield", "your area"].includes(detectedCity) &&
+      !cityInput
+    ) {
       setCityInput(detectedCity);
     }
   }, [detectedCity, cityInput]);
@@ -360,7 +369,7 @@ export default function CityRestrictionModal({
                 >
                   <div className="flex items-center gap-1.5">
                     <Sparkles size={13} className="text-brand fill-brand" />
-                    <span>Live outside Bengaluru? Vote to launch in {cityInput || "your city"}</span>
+                    <span>Live outside Bengaluru?</span>
                   </div>
                   {showWaitlist ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                 </button>
