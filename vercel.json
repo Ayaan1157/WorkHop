@@ -63,11 +63,11 @@
     },
     {
       "source": "/api/payments/create-order",
-      "destination": "/api/payments/create-order"
+      "destination": "/api/payments/index"
     },
     {
       "source": "/api/payments/verify",
-      "destination": "/api/payments/verify"
+      "destination": "/api/payments/index"
     },
     {
       "source": "/api/credits/send-invoice",
@@ -111,11 +111,19 @@
     },
     {
       "source": "/api/payments/list",
-      "destination": "/api/payments/list"
+      "destination": "/api/payments/index"
+    },
+    {
+      "source": "/api/payments",
+      "destination": "/api/payments/index"
+    },
+    {
+      "source": "/api/payments/:path*",
+      "destination": "/api/payments/index"
     },
     {
       "source": "/api/admin/payments",
-      "destination": "/api/payments/list"
+      "destination": "/api/payments/index"
     },
     {
       "source": "/api/site-settings",
