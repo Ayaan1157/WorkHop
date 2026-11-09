@@ -17,8 +17,8 @@ const STEPS_DATA = [
     chipText: "KORAMANGALA · HSR · INDIRANAGAR + MORE",
     art: "/steps/step1_art.png",
     artAlt: "Step 1: Hyperlocal pin drop radar map",
-    accentBorder: "border-[#E65A1E]/80",
-    glowColor: "rgba(230,90,30,0.14)",
+    accentBorder: "border-[#E65A1E]",
+    glowColor: "rgba(230,90,30,0.18)",
   },
   {
     num: "02",
@@ -30,8 +30,8 @@ const STEPS_DATA = [
     chipText: "INSTANT CALL · DIRECT WHATSAPP",
     art: "/steps/step2_art.png",
     artAlt: "Step 2: Instant phone call and direct WhatsApp connect",
-    accentBorder: "border-emerald-500/80",
-    glowColor: "rgba(16,185,129,0.14)",
+    accentBorder: "border-emerald-500",
+    glowColor: "rgba(16,185,129,0.18)",
   },
   {
     num: "03",
@@ -43,32 +43,33 @@ const STEPS_DATA = [
     chipText: "KEEP 100% OF YOUR EARNINGS",
     art: "/steps/step3_art.png",
     artAlt: "Step 3: Milestone escrow protection and direct UPI payout",
-    accentBorder: "border-[#E65A1E]/80",
-    glowColor: "rgba(230,90,30,0.14)",
+    accentBorder: "border-[#E65A1E]",
+    glowColor: "rgba(230,90,30,0.18)",
   },
 ];
 
 /**
  * Reusable WindowFrame Component
- * Shared browser-style chrome, bezel, left art, and right copy.
+ * 100% Solid Opaque panel background (#141418 and #0D0D10) - zero see-through ghosting.
  */
-function WindowFrame({ step, stepIndex, innerAnimations = {} }) {
+function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity }) {
   const ChipIcon = step.chipIcon;
 
   return (
     <div
-      className={`relative w-full max-w-4xl max-h-[58vh] sm:max-h-[490px] aspect-[16/10] sm:aspect-[16/9.2] rounded-xl sm:rounded-2xl border-2 ${step.accentBorder} bg-[#141418] p-2.5 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] flex flex-col`}
+      className={`relative w-full max-w-4xl h-full max-h-[460px] aspect-[16/9.5] rounded-xl sm:rounded-2xl border-2 ${step.accentBorder} bg-[#141418] p-2.5 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] flex flex-col overflow-hidden select-none`}
       style={{
         boxShadow: `0 25px 60px -15px rgba(0,0,0,0.95), 0 0 40px ${step.glowColor}`,
+        backgroundColor: "#141418", // 100% solid, fully opaque
       }}
     >
       {/* 1. Browser-style Window Chrome */}
-      <div className="flex items-center justify-between border-b border-zinc-800 pb-2 mb-2 px-1 shrink-0">
+      <div className="flex items-center justify-between border-b border-zinc-800 pb-2 mb-2 px-1 shrink-0 bg-[#141418]">
         <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
-          <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
-          <span className="ml-2 hidden sm:inline text-[11px] font-mono text-zinc-500 font-bold tracking-tight">
+          <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+          <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+          <span className="ml-2 hidden sm:inline text-[11px] font-mono text-zinc-400 font-bold tracking-tight">
             {step.breadcrumb}
           </span>
         </div>
@@ -77,15 +78,17 @@ function WindowFrame({ step, stepIndex, innerAnimations = {} }) {
           <span className="border border-zinc-700 bg-zinc-900 px-2 py-0.5 text-[9px] sm:text-[10px] font-mono font-bold text-zinc-300">
             {step.tag}
           </span>
-          <span className="border border-[#E65A1E]/40 bg-[#E65A1E]/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase text-[#E65A1E]">
+          <span className="border border-[#E65A1E]/40 bg-[#E65A1E]/20 px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase text-[#E65A1E]">
             STEP {step.num}
           </span>
         </div>
       </div>
 
-      {/* 2. Inner Canvas Screen */}
-      <div className="relative w-full flex-1 min-h-0 rounded-lg sm:rounded-xl bg-[#0D0D10] border border-zinc-800/80 overflow-hidden shadow-inner flex flex-col md:flex-row items-center justify-between p-4 sm:p-7 gap-4 sm:gap-6 bg-gradient-to-br from-[#121216] to-[#0A0A0C]">
-        
+      {/* 2. Inner Canvas Screen - 100% Solid Dark Background */}
+      <div
+        className="relative w-full flex-1 min-h-0 rounded-lg sm:rounded-xl border border-zinc-800/80 overflow-hidden shadow-inner flex flex-col md:flex-row items-center justify-between p-4 sm:p-7 gap-4 sm:gap-6"
+        style={{ backgroundColor: "#0D0D10" }} // 100% solid, fully opaque
+      >
         {/* Left Side: Artwork Visual with scrubbed micro-animations */}
         <div className="relative w-full md:w-1/2 h-full flex items-center justify-center min-h-0">
           <motion.div
@@ -96,7 +99,7 @@ function WindowFrame({ step, stepIndex, innerAnimations = {} }) {
             {stepIndex === 0 && (
               <motion.div
                 style={innerAnimations.radarStyle || {}}
-                className="absolute w-40 h-40 rounded-full border-2 border-dashed border-[#E65A1E] bg-[#E65A1E]/10 pointer-events-none"
+                className="absolute w-40 h-40 rounded-full border-2 border-dashed border-[#E65A1E] bg-[#E65A1E]/15 pointer-events-none"
               />
             )}
 
@@ -141,7 +144,7 @@ function WindowFrame({ step, stepIndex, innerAnimations = {} }) {
               alt={step.artAlt}
               loading={stepIndex === 0 ? "eager" : "lazy"}
               decoding="async"
-              className="relative z-10 w-full h-full object-contain"
+              className="relative z-10 w-full h-full object-contain pointer-events-none"
             />
           </motion.div>
         </div>
@@ -154,8 +157,8 @@ function WindowFrame({ step, stepIndex, innerAnimations = {} }) {
           <div
             className={`inline-flex items-center gap-1.5 border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider w-max ${
               stepIndex === 1
-                ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-400"
-                : "border-[#E65A1E]/40 bg-[#E65A1E]/15 text-[#E65A1E]"
+                ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-400"
+                : "border-[#E65A1E]/40 bg-[#E65A1E]/20 text-[#E65A1E]"
             }`}
           >
             <ChipIcon size={12} />
@@ -181,6 +184,14 @@ function WindowFrame({ step, stepIndex, innerAnimations = {} }) {
         </motion.div>
 
       </div>
+
+      {/* 3. Dark Depth Overlay - dims background window when covered by the next card */}
+      {dimOverlayOpacity && (
+        <motion.div
+          style={{ opacity: dimOverlayOpacity }}
+          className="absolute inset-0 bg-black/60 pointer-events-none rounded-xl sm:rounded-2xl z-30"
+        />
+      )}
     </div>
   );
 }
@@ -209,13 +220,13 @@ export default function PinnedHowItWorks() {
     offset: ["start start", "end end"],
   });
 
-  // Track active step tab (switches at overlap midpoints: 0.35 and 0.67)
+  // Track active step tab (switches at 0.35 and 0.68)
   const [activeStep, setActiveStep] = useState(0);
 
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
     if (latest < 0.35) {
       setActiveStep(0);
-    } else if (latest < 0.67) {
+    } else if (latest < 0.68) {
       setActiveStep(1);
     } else {
       setActiveStep(2);
@@ -226,58 +237,63 @@ export default function PinnedHowItWorks() {
   const overallProgressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
   // ══════════════════════════════════════════════════════════════════
-  // WINDOW 1 TRANSFORM CHOREOGRAPHY (Dominates 0% -> 38%)
-  // Enter: 0% -> 12% | Hold: 12% -> 26% | Exit: 26% -> 38%
+  // STACKED-CARD CHOREOGRAPHY (SOLID OPAQUE, NEVER CROSS-FADED)
   // ══════════════════════════════════════════════════════════════════
-  const w1RotateX = useTransform(scrollYProgress, [0, 0.12, 0.26, 0.38], [22, 0, 0, -12]);
-  const w1RotateY = useTransform(scrollYProgress, [0, 0.12, 0.26, 0.38], [-4, 0, 0, 3]);
-  const w1Scale = useTransform(scrollYProgress, [0, 0.12, 0.26, 0.38], [0.88, 1, 1, 0.92]);
-  const w1TranslateY = useTransform(scrollYProgress, [0, 0.12, 0.26, 0.38], ["14vh", "0vh", "0vh", "-10vh"]);
-  const w1Opacity = useTransform(scrollYProgress, [0, 0.08, 0.26, 0.38], [0.3, 1, 1, 0]);
 
-  // Window 1 inner micro-animations (during HOLD 0.12 -> 0.26)
-  const w1RadarScale = useTransform(scrollYProgress, [0.08, 0.22], [0.7, 1.1]);
-  const w1RadarOpacity = useTransform(scrollYProgress, [0.06, 0.16], [0.2, 1]);
-  const w1ArtScale = useTransform(scrollYProgress, [0.04, 0.16], [0.92, 1]);
+  // ─── WINDOW 1 (Step 01 - Bottom of stack, z-index 10) ───
+  // Enters: 0% -> 12% (tilt 22deg to 0deg, translateY 25% -> 0%)
+  // Holds flat: 12% -> 30%
+  // Gets covered by Window 2 starting at 30%: scales down to 0.95 and dims
+  const w1RotateX = useTransform(scrollYProgress, [0, 0.12], [22, 0]);
+  const w1RotateY = useTransform(scrollYProgress, [0, 0.12], [-4, 0]);
+  const w1TranslateY = useTransform(scrollYProgress, [0, 0.12], ["25%", "0%"]);
+  const w1Scale = useTransform(scrollYProgress, [0, 0.12, 0.30, 0.44], [0.92, 1, 1, 0.95]);
+  const w1DimOpacity = useTransform(scrollYProgress, [0.30, 0.44], [0, 0.65]);
+  // Visibility: hidden once Window 2 completely covers it (> 0.46) to conserve GPU
+  const w1Visibility = useTransform(scrollYProgress, (v) => (v > 0.46 ? "hidden" : "visible"));
+
+  // Window 1 inner micro-animations
+  const w1RadarScale = useTransform(scrollYProgress, [0.06, 0.22], [0.7, 1.1]);
+  const w1RadarOpacity = useTransform(scrollYProgress, [0.04, 0.16], [0.2, 1]);
   const w1CopyX = useTransform(scrollYProgress, [0.06, 0.18], [20, 0]);
   const w1CopyOpacity = useTransform(scrollYProgress, [0.06, 0.16], [0.5, 1]);
 
-  // ══════════════════════════════════════════════════════════════════
-  // WINDOW 2 TRANSFORM CHOREOGRAPHY (Dominates 26% -> 70%)
-  // Enter: 26% -> 38% | Hold: 38% -> 58% | Exit: 58% -> 70%
-  // ══════════════════════════════════════════════════════════════════
-  const w2RotateX = useTransform(scrollYProgress, [0.26, 0.38, 0.58, 0.70], [22, 0, 0, -12]);
-  const w2RotateY = useTransform(scrollYProgress, [0.26, 0.38, 0.58, 0.70], [-4, 0, 0, 3]);
-  const w2Scale = useTransform(scrollYProgress, [0.26, 0.38, 0.58, 0.70], [0.88, 1, 1, 0.92]);
-  const w2TranslateY = useTransform(scrollYProgress, [0.26, 0.38, 0.58, 0.70], ["14vh", "0vh", "0vh", "-10vh"]);
-  const w2Opacity = useTransform(scrollYProgress, [0.26, 0.34, 0.58, 0.70], [0.2, 1, 1, 0]);
+  // ─── WINDOW 2 (Step 02 - Sits over Window 1, z-index 20) ───
+  // Hidden before 0.28: visibility hidden, translateY 100%
+  // Enters: 0.28 -> 0.44 (Rises from 100% below to 0%, tilt 22deg -> 0deg)
+  // Holds flat: 0.44 -> 0.64
+  // Gets covered by Window 3 starting at 0.64: scales down to 0.95 and dims
+  const w2Visibility = useTransform(scrollYProgress, (v) => (v < 0.27 || v > 0.80 ? "hidden" : "visible"));
+  const w2RotateX = useTransform(scrollYProgress, [0.28, 0.44], [22, 0]);
+  const w2RotateY = useTransform(scrollYProgress, [0.28, 0.44], [-4, 0]);
+  const w2TranslateY = useTransform(scrollYProgress, [0.28, 0.44], ["100%", "0%"]);
+  const w2Scale = useTransform(scrollYProgress, [0.28, 0.44, 0.64, 0.78], [0.92, 1, 1, 0.95]);
+  const w2DimOpacity = useTransform(scrollYProgress, [0.64, 0.78], [0, 0.65]);
 
-  // Window 2 inner micro-animations (during HOLD 0.38 -> 0.58)
-  const w2Bubble1Y = useTransform(scrollYProgress, [0.36, 0.46], [16, 0]);
-  const w2Bubble1Opacity = useTransform(scrollYProgress, [0.36, 0.44], [0, 1]);
-  const w2Bubble2Y = useTransform(scrollYProgress, [0.42, 0.52], [16, 0]);
-  const w2Bubble2Opacity = useTransform(scrollYProgress, [0.42, 0.50], [0, 1]);
-  const w2ArtScale = useTransform(scrollYProgress, [0.32, 0.44], [0.92, 1]);
-  const w2CopyX = useTransform(scrollYProgress, [0.34, 0.46], [20, 0]);
-  const w2CopyOpacity = useTransform(scrollYProgress, [0.34, 0.44], [0.5, 1]);
+  // Window 2 inner micro-animations
+  const w2Bubble1Y = useTransform(scrollYProgress, [0.42, 0.52], [16, 0]);
+  const w2Bubble1Opacity = useTransform(scrollYProgress, [0.42, 0.50], [0, 1]);
+  const w2Bubble2Y = useTransform(scrollYProgress, [0.48, 0.58], [16, 0]);
+  const w2Bubble2Opacity = useTransform(scrollYProgress, [0.48, 0.56], [0, 1]);
+  const w2CopyX = useTransform(scrollYProgress, [0.42, 0.52], [20, 0]);
+  const w2CopyOpacity = useTransform(scrollYProgress, [0.42, 0.50], [0.5, 1]);
 
-  // ══════════════════════════════════════════════════════════════════
-  // WINDOW 3 TRANSFORM CHOREOGRAPHY (Dominates 58% -> 100%)
-  // Enter: 58% -> 70% | Hold: 70% -> 92% | Flat release: 92% -> 100%
-  // ══════════════════════════════════════════════════════════════════
-  const w3RotateX = useTransform(scrollYProgress, [0.58, 0.70, 1], [22, 0, 0]);
-  const w3RotateY = useTransform(scrollYProgress, [0.58, 0.70, 1], [-4, 0, 0]);
-  const w3Scale = useTransform(scrollYProgress, [0.58, 0.70, 1], [0.88, 1, 1]);
-  const w3TranslateY = useTransform(scrollYProgress, [0.58, 0.70, 1], ["14vh", "0vh", "0vh"]);
-  const w3Opacity = useTransform(scrollYProgress, [0.58, 0.66, 1], [0.2, 1, 1]);
+  // ─── WINDOW 3 (Step 03 - Sits over Window 2, z-index 30) ───
+  // Hidden before 0.62: visibility hidden, translateY 100%
+  // Enters: 0.62 -> 0.78 (Rises from 100% below to 0%, tilt 22deg -> 0deg)
+  // Holds flat until end: 0.78 -> 1.00
+  const w3Visibility = useTransform(scrollYProgress, (v) => (v < 0.61 ? "hidden" : "visible"));
+  const w3RotateX = useTransform(scrollYProgress, [0.62, 0.78], [22, 0]);
+  const w3RotateY = useTransform(scrollYProgress, [0.62, 0.78], [-4, 0]);
+  const w3TranslateY = useTransform(scrollYProgress, [0.62, 0.78], ["100%", "0%"]);
+  const w3Scale = useTransform(scrollYProgress, [0.62, 0.78, 1], [0.92, 1, 1]);
 
-  // Window 3 inner micro-animations (during HOLD 0.70 -> 0.92)
-  const w3ShieldScale = useTransform(scrollYProgress, [0.68, 0.78], [0.82, 1]);
-  const w3BannerY = useTransform(scrollYProgress, [0.72, 0.82], [16, 0]);
-  const w3BannerOpacity = useTransform(scrollYProgress, [0.72, 0.80], [0, 1]);
-  const w3ArtScale = useTransform(scrollYProgress, [0.64, 0.76], [0.92, 1]);
-  const w3CopyX = useTransform(scrollYProgress, [0.66, 0.78], [20, 0]);
-  const w3CopyOpacity = useTransform(scrollYProgress, [0.66, 0.76], [0.5, 1]);
+  // Window 3 inner micro-animations
+  const w3ShieldScale = useTransform(scrollYProgress, [0.76, 0.86], [0.82, 1]);
+  const w3BannerY = useTransform(scrollYProgress, [0.78, 0.88], [16, 0]);
+  const w3BannerOpacity = useTransform(scrollYProgress, [0.78, 0.86], [0, 1]);
+  const w3CopyX = useTransform(scrollYProgress, [0.76, 0.86], [20, 0]);
+  const w3CopyOpacity = useTransform(scrollYProgress, [0.76, 0.84], [0.5, 1]);
 
   // Tab click smooth-scroll to exact HOLD points
   const scrollToStep = (idx) => {
@@ -287,8 +303,8 @@ export default function PinnedHowItWorks() {
     const containerTop = rect.top + scrollTop;
     const scrollDistance = containerRef.current.offsetHeight - window.innerHeight;
 
-    // HOLD centers: Step 1 -> 19%, Step 2 -> 48%, Step 3 -> 81%
-    const targetPercentages = [0.19, 0.48, 0.81];
+    // HOLD centers: Step 1 -> 18%, Step 2 -> 52%, Step 3 -> 85%
+    const targetPercentages = [0.18, 0.52, 0.85];
     const targetScroll = containerTop + scrollDistance * targetPercentages[idx];
 
     window.scrollTo({
@@ -297,7 +313,6 @@ export default function PinnedHowItWorks() {
     });
   };
 
-  // Keyboard accessibility for tabs
   const handleTabKeyDown = (e, idx) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -359,7 +374,7 @@ export default function PinnedHowItWorks() {
   }
 
   // ══════════════════════════════════════════════════════════════════
-  // FULL DESKTOP 3D SCROLL-DRIVEN EXPERIENCE
+  // FULL DESKTOP 3D SCROLL-DRIVEN PINNED EXPERIENCE
   // ══════════════════════════════════════════════════════════════════
   return (
     <section
@@ -368,10 +383,16 @@ export default function PinnedHowItWorks() {
       className="relative w-full bg-[#0A0A0C] text-white border-b-2 border-zinc-800"
       style={{ height: "400vh" }}
     >
-      {/* Sticky Stage Viewport - 100svh fit with visible overflow around tilted 3D edges */}
-      <div className="sticky top-0 h-[100svh] w-full flex flex-col justify-between overflow-visible px-4 sm:px-8 lg:px-14 pt-4 sm:pt-6 pb-4 sm:pb-6">
+      {/* 
+        Sticky Stage Viewport (Pinned at top: 0 with exact 100svh height)
+        Structured as a clean flex-col:
+        1. Top header row
+        2. Window stage (flex-1, min-h-0, overflow-hidden) - Windows NEVER leak outside!
+        3. Bottom progress bar & tabs
+      */}
+      <div className="sticky top-0 h-[100svh] max-h-screen w-full flex flex-col justify-between overflow-hidden px-4 sm:px-8 lg:px-14 pt-4 sm:pt-6 pb-4 sm:pb-6 z-20">
         
-        {/* 1. Header Row (Eyebrow + Accent Headline + Note) */}
+        {/* 1. Top Header Row */}
         <div className="mx-auto w-full max-w-5xl flex flex-col sm:flex-row sm:items-end justify-between gap-2 sm:gap-4 shrink-0 z-40">
           <div>
             <div className="inline-flex items-center gap-2">
@@ -397,82 +418,85 @@ export default function PinnedHowItWorks() {
           </div>
         </div>
 
-        {/* 2. Middle Center Stage: Perspective Container for Stacked Windows */}
-        <div className="mx-auto w-full max-w-5xl flex-1 min-h-0 flex items-center justify-center my-auto py-2 [perspective:1200px] relative overflow-visible">
+        {/* 
+          2. Middle Center Stage:
+          flex-1, min-h-0, relative, overflow-hidden with perspective.
+          Windows are stacked inside with ascending z-index and stage-clipped boundaries.
+        */}
+        <div className="mx-auto w-full max-w-5xl flex-1 min-h-0 relative flex items-center justify-center overflow-hidden my-auto py-2 [perspective:1200px]">
           
-          {/* ═══════════ WINDOW 1 (Z-INDEX 10) ═══════════ */}
+          {/* ═══════════ WINDOW 1 (Z-INDEX 10, Bottom of Stack) ═══════════ */}
           <motion.div
             style={{
               rotateX: w1RotateX,
               rotateY: w1RotateY,
               scale: w1Scale,
               y: w1TranslateY,
-              opacity: w1Opacity,
+              visibility: w1Visibility,
               transformStyle: "preserve-3d",
-              willChange: "transform, opacity",
+              willChange: "transform",
               pointerEvents: activeStep === 0 ? "auto" : "none",
             }}
-            className="absolute inset-x-0 mx-auto w-full flex items-center justify-center z-10"
+            className="absolute inset-0 m-auto w-full h-full flex items-center justify-center z-10"
           >
             <WindowFrame
               step={STEPS_DATA[0]}
               stepIndex={0}
+              dimOverlayOpacity={w1DimOpacity}
               innerAnimations={{
-                artStyle: { scale: w1ArtScale },
-                copyStyle: { x: w1CopyX, opacity: w1CopyOpacity },
                 radarStyle: { scale: w1RadarScale, opacity: w1RadarOpacity },
+                copyStyle: { x: w1CopyX, opacity: w1CopyOpacity },
               }}
             />
           </motion.div>
 
-          {/* ═══════════ WINDOW 2 (Z-INDEX 20, Sits on top of W1) ═══════════ */}
+          {/* ═══════════ WINDOW 2 (Z-INDEX 20, Rises over Window 1) ═══════════ */}
           <motion.div
             style={{
               rotateX: w2RotateX,
               rotateY: w2RotateY,
               scale: w2Scale,
               y: w2TranslateY,
-              opacity: w2Opacity,
+              visibility: w2Visibility,
               transformStyle: "preserve-3d",
-              willChange: "transform, opacity",
+              willChange: "transform",
               pointerEvents: activeStep === 1 ? "auto" : "none",
             }}
-            className="absolute inset-x-0 mx-auto w-full flex items-center justify-center z-20"
+            className="absolute inset-0 m-auto w-full h-full flex items-center justify-center z-20"
           >
             <WindowFrame
               step={STEPS_DATA[1]}
               stepIndex={1}
+              dimOverlayOpacity={w2DimOpacity}
               innerAnimations={{
-                artStyle: { scale: w2ArtScale },
-                copyStyle: { x: w2CopyX, opacity: w2CopyOpacity },
                 bubble1Style: { y: w2Bubble1Y, opacity: w2Bubble1Opacity },
                 bubble2Style: { y: w2Bubble2Y, opacity: w2Bubble2Opacity },
+                copyStyle: { x: w2CopyX, opacity: w2CopyOpacity },
               }}
             />
           </motion.div>
 
-          {/* ═══════════ WINDOW 3 (Z-INDEX 30, Sits on top of W2) ═══════════ */}
+          {/* ═══════════ WINDOW 3 (Z-INDEX 30, Rises over Window 2) ═══════════ */}
           <motion.div
             style={{
               rotateX: w3RotateX,
               rotateY: w3RotateY,
               scale: w3Scale,
               y: w3TranslateY,
-              opacity: w3Opacity,
+              visibility: w3Visibility,
               transformStyle: "preserve-3d",
-              willChange: "transform, opacity",
+              willChange: "transform",
               pointerEvents: activeStep === 2 ? "auto" : "none",
             }}
-            className="absolute inset-x-0 mx-auto w-full flex items-center justify-center z-30"
+            className="absolute inset-0 m-auto w-full h-full flex items-center justify-center z-30"
           >
             <WindowFrame
               step={STEPS_DATA[2]}
               stepIndex={2}
               innerAnimations={{
-                artStyle: { scale: w3ArtScale },
-                copyStyle: { x: w3CopyX, opacity: w3CopyOpacity },
                 shieldStyle: { scale: w3ShieldScale },
                 bannerStyle: { y: w3BannerY, opacity: w3BannerOpacity },
+                copyStyle: { x: w3CopyX, opacity: w3CopyOpacity },
               }}
             />
           </motion.div>
