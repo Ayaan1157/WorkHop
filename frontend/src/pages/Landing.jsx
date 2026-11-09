@@ -1030,7 +1030,7 @@ export default function Landing() {
 
   // ---- Main Public Landing View (Default) ----
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-sand/30 font-sans text-ink">
+    <div className="min-h-screen w-full overflow-x-clip bg-sand/30 font-sans text-ink">
       <BroadcastBanner />
       
       {/* Top Navbar */}

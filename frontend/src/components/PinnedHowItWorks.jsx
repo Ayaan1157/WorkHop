@@ -380,17 +380,14 @@ export default function PinnedHowItWorks() {
     <section
       id="how-it-works"
       ref={containerRef}
-      className="relative w-full bg-[#0A0A0C] text-white border-b-2 border-zinc-800"
-      style={{ height: "400vh" }}
+      className="hiw-track relative w-full bg-[#0A0A0C] text-white border-b-2 border-zinc-800"
+      style={{ height: "var(--hiw-length, 500vh)" }}
     >
       {/* 
         Sticky Stage Viewport (Pinned at top: 0 with exact 100svh height)
-        Structured as a clean flex-col:
-        1. Top header row
-        2. Window stage (flex-1, min-h-0, overflow-hidden) - Windows NEVER leak outside!
-        3. Bottom progress bar & tabs
+        Holds strictly in place via CSS position: sticky while the 500vh track scrolls.
       */}
-      <div className="sticky top-0 h-[100svh] max-h-screen w-full flex flex-col justify-between overflow-hidden px-4 sm:px-8 lg:px-14 pt-4 sm:pt-6 pb-4 sm:pb-6 z-20">
+      <div className="hiw-stage sticky top-0 h-[100svh] max-h-screen w-full flex flex-col justify-between overflow-hidden px-4 sm:px-8 lg:px-14 pt-4 sm:pt-6 pb-4 sm:pb-6 z-20">
         
         {/* 1. Top Header Row */}
         <div className="mx-auto w-full max-w-5xl flex flex-col sm:flex-row sm:items-end justify-between gap-2 sm:gap-4 shrink-0 z-40">
@@ -420,10 +417,10 @@ export default function PinnedHowItWorks() {
 
         {/* 
           2. Middle Center Stage:
-          flex-1, min-h-0, relative, overflow-hidden with perspective.
+          flex-1, min-h-0, relative, overflow-hidden with perspective: 1600px.
           Windows are stacked inside with ascending z-index and stage-clipped boundaries.
         */}
-        <div className="mx-auto w-full max-w-5xl flex-1 min-h-0 relative flex items-center justify-center overflow-hidden my-auto py-2 [perspective:1200px]">
+        <div className="hiw-window-area mx-auto w-full max-w-5xl flex-1 min-h-0 relative flex items-center justify-center overflow-hidden my-auto py-2 [perspective:1600px]">
           
           {/* ═══════════ WINDOW 1 (Z-INDEX 10, Bottom of Stack) ═══════════ */}
           <motion.div
