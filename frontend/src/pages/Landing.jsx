@@ -20,6 +20,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { Logo, MobileBottomNav } from "@/components/kit";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import HoppingKangaroo from "@/components/HoppingKangaroo";
+import LiveNeighborhoodRadar from "@/components/LiveNeighborhoodRadar";
 
 export default function Landing() {
   usePageMeta({
@@ -1323,72 +1324,14 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Right Column: Clean Youngster with Laptop + Subtle Neighborhood Hop Animation (Inspired by Workhoppers) */}
+          {/* Right Column: Option 1 — The "Live Neighborhood Radar" Hero (Bengaluru 5km Geofence + Hotspots + Live Connection Cards) */}
           <div className="lg:col-span-6 relative flex items-center justify-center">
-            <div className="relative w-full max-w-[540px] border-2 border-ink bg-sand/60 dark:bg-[#1a1a1e] p-6 sm:p-8 shadow-[6px_6px_0px_#121212] overflow-hidden">
-              
-              {/* Top Neighborhood Badge */}
-              <div className="flex items-center justify-between border-b-2 border-ink/15 dark:border-white/10 pb-3 mb-5">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-ok animate-pulse" />
-                  <span className="text-[11px] font-black uppercase tracking-wider text-ink dark:text-white">
-                    Bengaluru Hyperlocal · 5km Radius
-                  </span>
-                </div>
-                <span className="border border-ink bg-[#FFF3C4] px-2 py-0.5 text-[10px] font-black uppercase text-black shadow-[1.5px_1.5px_0px_#121212]">
-                  Direct Hires · 0% Cut
-                </span>
-              </div>
-
-              {/* Clean Hero Showcase with Real Indian Freelance Pro with Laptop & Hopping Mascot */}
-              <div className="relative aspect-[4/3] w-full flex items-center justify-center rounded-sm bg-gradient-to-b from-[#FFFDF9] to-[#F5EFE6] dark:from-[#18181C] dark:to-[#101012] border-2 border-ink dark:border-zinc-700 overflow-hidden shadow-inner p-4">
-                
-                {/* Background City Skyline Silhouette with Hop Trajectory (Workhoppers style) */}
-                <div className="absolute inset-x-0 bottom-0 h-28 pointer-events-none opacity-30 dark:opacity-20 flex items-end justify-between px-2">
-                  <svg viewBox="0 0 400 100" className="w-full h-full text-ink dark:text-zinc-400" preserveAspectRatio="none" fill="currentColor">
-                    {/* Simplified Skyline Buildings */}
-                    <rect x="10" y="45" width="30" height="55" />
-                    <rect x="45" y="30" width="35" height="70" />
-                    <rect x="85" y="55" width="25" height="45" />
-                    <rect x="115" y="20" width="40" height="80" />
-                    <rect x="160" y="40" width="30" height="60" />
-                    <rect x="195" y="60" width="28" height="40" />
-                    <rect x="228" y="25" width="38" height="75" />
-                    <rect x="270" y="50" width="32" height="50" />
-                    <rect x="306" y="35" width="36" height="65" />
-                    <rect x="346" y="55" width="44" height="45" />
-                  </svg>
-                </div>
-
-                {/* Hopping Kangaroo Mascot perched on the skyline with hop animation */}
-                <div className="absolute top-3 right-4 z-20">
-                  <HoppingKangaroo />
-                </div>
-
-                {/* Indian Lady Working on Laptop */}
-                <div className="relative z-10 flex items-center justify-center h-full w-full pointer-events-none select-none">
-                  <img
-                    src="/hero/youngster_laptop.png"
-                    alt="Indian freelance pro working on a laptop in Bengaluru"
-                    className="wh-breathe-subtle max-h-full max-w-full object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.18)]"
-                    loading="eager"
-                  />
-                </div>
-              </div>
-
-              {/* Bottom Quick Hubs Bar */}
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] font-black text-inkmuted dark:text-zinc-400">
-                <span>POPULAR HUBS:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {["Koramangala", "Indiranagar", "HSR Layout", "Whitefield"].map((hub) => (
-                    <span key={hub} className="border border-ink/20 px-2 py-0.5 text-[10px] font-bold text-ink dark:text-zinc-300 bg-white/80 dark:bg-zinc-800">
-                      📍 {hub}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-            </div>
+            <LiveNeighborhoodRadar
+              onSelectArea={(areaName) => {
+                setAreaInput(areaName);
+                setSavedArea(areaName);
+              }}
+            />
           </div>
         </div>
       </section>
