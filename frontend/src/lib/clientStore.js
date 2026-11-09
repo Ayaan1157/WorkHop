@@ -1898,12 +1898,54 @@ export function getProfileCompletion(user) {
 
 // 8. Notifications (In-App Bell & Dropdown)
 export function getStoredNotifications() {
+  const currentUser = getStoredUser();
+  const currentUid = currentUser?.id || currentUser?.freelancer_id;
+  const currentEmail = (currentUser?.email || "").toLowerCase().trim();
+  const currentName = (currentUser?.name || "").toLowerCase().trim();
+  const isAdmin = !!currentUser?.is_admin || currentUser?.role === "admin";
+
+  const isNotificationForUser = (n) => {
+    // If notification has a targeted recipient
+    const hasTarget = n?.target_user_id || n?.target_email || n?.target_name;
+    if (!hasTarget) {
+      // General notification. If it's a profile reminder without explicit targets, only freelancers should see it.
+      if (n?.type === "profile_reminder" && (isAdmin || currentUser?.role === "employer")) return false;
+      return true;
+    }
+
+    // If sender is current user/admin, do NOT show the recipient's reminder in sender's bell
+    if (n.sender_id && currentUid && String(n.sender_id) === String(currentUid)) {
+      return false;
+    }
+    if (isAdmin && n?.type === "profile_reminder") {
+      // Admins already have audit records in Admin Notifications; don't clutter personal bell with reminders sent to candidates
+      return false;
+    }
+
+    // Match candidate by ID
+    if (n.target_user_id && currentUid && String(n.target_user_id) === String(currentUid)) {
+      return true;
+    }
+    // Match candidate by email
+    if (n.target_email && currentEmail && String(n.target_email).toLowerCase().trim() === currentEmail) {
+      return true;
+    }
+    // Match candidate by name
+    if (n.target_name && currentName && String(n.target_name).toLowerCase().trim() === currentName) {
+      return true;
+    }
+
+    return false;
+  };
+
   const raw = localStorage.getItem(NOTIFICATIONS_KEY);
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        const cleaned = parsed.filter((n) => !["notif-1", "notif-2", "notif-3"].includes(n?.id));
+        const cleaned = parsed
+          .filter((n) => !["notif-1", "notif-2", "notif-3"].includes(n?.id))
+          .filter(isNotificationForUser);
         if (cleaned.length > 0) return cleaned;
       }
     } catch { /* ignore */ }
@@ -1919,20 +1961,33 @@ export function getStoredNotifications() {
       to: "/freelancer/jobs",
     },
   ];
-  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(defaults));
   return defaults;
 }
 
 export function markNotificationRead(id) {
-  const notifs = getStoredNotifications().map((n) => (n.id === id ? { ...n, read: true } : n));
-  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifs));
-  return notifs;
+  try {
+    const raw = localStorage.getItem(NOTIFICATIONS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed)) {
+      const updated = parsed.map((n) => (n.id === id ? { ...n, read: true } : n));
+      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+    }
+  } catch {}
+  return getStoredNotifications();
 }
 
 export function markAllNotificationsRead() {
-  const notifs = getStoredNotifications().map((n) => ({ ...n, read: true }));
-  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifs));
-  return notifs;
+  const visible = getStoredNotifications();
+  const visibleIds = new Set(visible.map((n) => n.id));
+  try {
+    const raw = localStorage.getItem(NOTIFICATIONS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed)) {
+      const updated = parsed.map((n) => (visibleIds.has(n.id) ? { ...n, read: true } : n));
+      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+    }
+  } catch {}
+  return getStoredNotifications();
 }
 
 // 8.5 Blast Featured Job Notifications to Registered Freelancers (Within 5km)
@@ -2678,6 +2733,9 @@ export function sendProfileCompletionReminder(candidate, customNote) {
         read: false,
         to: "/freelancer/profile",
         target_user_id: candidate.id || candidate.freelancer_id,
+        target_email: candidate.email || candidate.contact || "",
+        target_name: fullName,
+        sender_id: user?.id || user?.email || "admin",
         created_at: nowIso,
       };
       localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify([newNotif, ...currentNotifs].slice(0, 50)));
