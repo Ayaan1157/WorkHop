@@ -78,10 +78,10 @@ export default function LiveNeighborhoodRadar({ onSelectArea }) {
   const currentMatch = MATCHES[activeMatchIndex];
 
   return (
-    <div className="relative w-full max-w-[560px] border-2 border-ink bg-[#FFFDF9] dark:bg-[#161619] pt-8 sm:pt-9 px-4 sm:px-6 pb-4 sm:pb-6 shadow-[8px_8px_0px_#121212] select-none">
+    <div className="relative w-full max-w-[560px] border-2 border-ink bg-[#FFFDF9] dark:bg-[#161619] p-4 sm:p-6 shadow-[8px_8px_0px_#121212] select-none">
       
-      {/* Top Header Bar: 5km Geofence Indicator + Live Counter Badge + Hopping Kangaroo on Top Right */}
-      <div className="relative flex items-center justify-between border-b-2 border-ink/15 dark:border-white/10 pb-3 mb-4">
+      {/* Top Header Bar: 5km Geofence Indicator + Live Counter Badge */}
+      <div className="flex items-center justify-between border-b-2 border-ink/15 dark:border-white/10 pb-3 mb-4">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ok opacity-75" />
@@ -93,18 +93,10 @@ export default function LiveNeighborhoodRadar({ onSelectArea }) {
           </span>
         </div>
 
-        {/* Right side: Live Counter Pill with Hopping Kangaroo perched right on top */}
-        <div className="relative flex items-center">
-          {/* Kangaroo perched right on top of the text badge */}
-          <div className="absolute -top-12 sm:-top-14 right-1 z-30 pointer-events-auto">
-            <HoppingKangaroo />
-          </div>
-
-          {/* Live Active Counter Pill */}
-          <div className="flex items-center gap-1.5 border border-ink bg-[#FFF3C4] px-2.5 py-1 text-[10px] font-black uppercase text-black shadow-[1.5px_1.5px_0px_#121212]">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
-            <span>147 Pros Active</span>
-          </div>
+        {/* Live Active Counter Pill */}
+        <div className="flex items-center gap-1.5 border border-ink bg-[#FFF3C4] px-2.5 py-1 text-[10px] font-black uppercase text-black shadow-[1.5px_1.5px_0px_#121212]">
+          <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
+          <span>147 Pros Active</span>
         </div>
       </div>
 

@@ -1278,9 +1278,17 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           {/* Left Column: Short Headline + 1-Line Subtext + 2 CTAs */}
           <div className="lg:col-span-6 text-left">
-            <div className="inline-flex items-center gap-2 border-2 border-ink bg-[#FFF3C4] px-3 py-1 text-[10px] sm:text-xs font-black uppercase tracking-wider text-black shadow-[2px_2px_0px_#121212]">
-              <span className="h-2 w-2 rounded-full bg-ok animate-pulse shrink-0" />
-              <span>5 KM GEOFENCED MARKETPLACE · BENGALURU</span>
+            {/* Geofence Badge with Hopping Kangaroo bouncing right on top of it */}
+            <div className="relative inline-block pt-8 sm:pt-10">
+              {/* Kangaroo perched right on top of this text badge, hopping with dust puffs */}
+              <div className="absolute -top-2 left-6 xs:left-10 sm:left-12 z-20 pointer-events-auto">
+                <HoppingKangaroo />
+              </div>
+
+              <div className="inline-flex items-center gap-2 border-2 border-ink bg-[#FFF3C4] px-3 py-1 text-[10px] sm:text-xs font-black uppercase tracking-wider text-black shadow-[2px_2px_0px_#121212]">
+                <span className="h-2 w-2 rounded-full bg-ok animate-pulse shrink-0" />
+                <span>5 KM GEOFENCED MARKETPLACE · BENGALURU</span>
+              </div>
             </div>
 
             <h1 className="mt-4 text-4xl xs:text-5xl sm:text-6xl xl:text-[64px] font-black leading-[1.04] tracking-tight text-ink dark:text-white">
