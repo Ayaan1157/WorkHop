@@ -199,8 +199,9 @@ export function useCityGate() {
     const finalEmail = (email || contact || "").trim();
     const finalCity = (city || detectedCity || "Mysore").trim();
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
-      const res = await fetch(`${backendUrl}/api/city-waitlist`, {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || "";
+      const endpoint = backendUrl ? `${backendUrl}/api/city-waitlist` : "/api/city-waitlist";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -213,7 +214,19 @@ export function useCityGate() {
         }),
       });
       if (res.ok) {
-        return await res.json();
+        const json = await res.json();
+        // Also cache locally for immediate offline/client-side access
+        try {
+          const { saveCityWaitlistEntry } = await import("@/lib/clientStore");
+          saveCityWaitlistEntry({
+            city: finalCity,
+            email: finalEmail,
+            contact: finalEmail,
+            role,
+            note,
+          });
+        } catch { /* ignore */ }
+        return json;
       }
       throw new Error("Backend unavailable");
     } catch {

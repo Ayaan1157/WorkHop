@@ -202,6 +202,22 @@
       "destination": "/api/auth/send-otp"
     },
     {
+      "source": "/api/city-waitlist",
+      "destination": "/api/city-waitlist/index"
+    },
+    {
+      "source": "/api/city-waitlist/:path*",
+      "destination": "/api/city-waitlist/index"
+    },
+    {
+      "source": "/api/admin/city-waitlist",
+      "destination": "/api/city-waitlist/index"
+    },
+    {
+      "source": "/api/admin/city-waitlist/:path*",
+      "destination": "/api/city-waitlist/index"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
