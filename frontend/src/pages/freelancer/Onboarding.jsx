@@ -212,12 +212,14 @@ export default function Onboarding() {
 
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneValid = phoneDigits.length === 10;
-  const portfolioValid = !!portfolio.trim() || (hasExternal && !!extUrl.trim());
-  const step3Done = portfolioValid && phoneValid && !!skill.trim() && Number(rateHr) > 0 && !!intro.trim() && langs.length > 0;
-  const slotsDone = slots.every(Boolean);
-  const completed = (state.paid ? 1 : 0) + (state.verified ? 1 : 0) + (step3Done ? 1 : 0) + (slotsDone ? 1 : 0) + (termsAccepted ? 1 : 0);
+  const emailVerified = Boolean(state.verified || user?.email);
+  const skillValid = Boolean(skill.trim());
+  const cvDone = Boolean(cvFile?.url || cvFile?.data);
+  const slotsDone = slots.some(Boolean); // At least 1 portfolio image uploaded
+  const step3Done = phoneValid && skillValid;
+  const completed = (state.paid ? 1 : 0) + (emailVerified ? 1 : 0) + (step3Done ? 1 : 0) + (slotsDone && cvDone ? 1 : 0) + (termsAccepted ? 1 : 0);
   const progressPct = Math.min((completed / (TOTAL + 1)) * 100, 100);
-  const allReady = state.paid && state.verified && step3Done && slotsDone && termsAccepted;
+  const allReady = state.paid && emailVerified && phoneValid && skillValid && cvDone && slotsDone && termsAccepted;
 
   const scrollToStep2 = () => {
     setTimeout(() => {
@@ -724,7 +726,10 @@ export default function Onboarding() {
                   </div>
                 )}
 
-                <p className="text-[11px] text-inkmuted">Or enter any email below to receive a 6-digit confirmation code:</p>
+                <p className="text-[11px] text-inkmuted font-bold flex items-center gap-1">
+                  <span>Or enter any email below to receive a 6-digit confirmation code:</span>
+                  <span className="text-[#FF5A1F] font-black text-sm leading-none" title="Required field">*</span>
+                </p>
                 <div className="flex gap-2">
                   <input
                     data-testid="verify-email-input"
@@ -829,9 +834,9 @@ export default function Onboarding() {
 
           {/* STEP 3 */}
           <Step n={3} title="Contact & Professional Links" active={state.paid} testID="step3-block">
-            <Labeled label="Phone Number (shown to employers after unlock)" testID="phone-input" value={phone} onChange={(v) => setPhone(v.replace(/[^0-9]/g, "").slice(0, 10))} placeholder="10-digit mobile number" disabled={!state.paid} />
+            <Labeled label="Phone Number (shown to employers after unlock)" required testID="phone-input" value={phone} onChange={(v) => setPhone(v.replace(/[^0-9]/g, "").slice(0, 10))} placeholder="10-digit mobile number" disabled={!state.paid} />
             {phone.length > 0 && !phoneValid && <p data-testid="phone-error" className="text-xs font-bold text-danger">Phone must be exactly 10 digits.</p>}
-            <Labeled label="Primary Skill" testID="skill-input" value={skill} onChange={setSkill} placeholder="e.g. Logo Designer, Video Editor" disabled={!state.paid} />
+            <Labeled label="Primary Skill" required testID="skill-input" value={skill} onChange={setSkill} placeholder="e.g. Logo Designer, Video Editor" disabled={!state.paid} />
             <p className={fieldLabel}>CATEGORY</p>
             <div className="flex flex-wrap items-center gap-2">
               {CATALOG_CATEGORY_NAMES.map((c) => (
@@ -1090,7 +1095,10 @@ export default function Onboarding() {
 
           {/* STEP 4 */}
           <Step n={4} title="Upload work samples & CV / Resume" active={state.paid} testID="step4-block">
-            <p className="text-xs text-inkmuted font-bold">1. Portfolio Showcase (Up to 3 high-resolution project images · Max 5MB each)</p>
+            <p className="text-xs text-inkmuted font-bold flex items-center gap-1">
+              <span>1. Portfolio Showcase (At least 1 project image required · Max 5MB each)</span>
+              <span className="text-[#FF5A1F] font-black text-sm leading-none" title="Required field">*</span>
+            </p>
             <div className="flex gap-3">
               {slots.map((slot, i) => (
                 <label key={i} data-testid={`portfolio-slot-${i}`} className={`flex aspect-square flex-1 cursor-pointer flex-col items-center justify-center gap-1 border-2 border-ink ${slot ? "bg-[#FFE5D6]" : "bg-sand"}`}>
@@ -1105,7 +1113,8 @@ export default function Onboarding() {
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[11px] font-black uppercase text-ink flex items-center gap-1.5">
                   <FileText size={14} className="text-brand" />
-                  <span>Attach CV / Resume (Optional):</span>
+                  <span>Attach CV / Resume</span>
+                  <span className="text-[#FF5A1F] font-black text-sm leading-none" title="Required field">*</span>
                 </span>
                 <span className="text-[10px] text-inkmuted font-bold">PDF, DOC, DOCX up to 10MB</span>
               </div>
@@ -1197,7 +1206,25 @@ export default function Onboarding() {
             </span>
           </label>
 
-          <button data-testid="submit-btn" disabled={!allReady || submitting} onClick={handleSubmit} className={`flex items-center justify-center gap-2 border-2 border-ink bg-ink py-4 text-[15px] font-black text-white ${!allReady ? "opacity-35" : ""}`}>
+          {/* Missing mandatory requirements banner if user is wondering why submit is not ready */}
+          {!allReady && (
+            <div className="border-2 border-amber-400 bg-[#FFFBEB] p-3 text-xs text-ink shadow-[2px_2px_0px_#121212]">
+              <p className="font-black uppercase tracking-wide text-amber-900 mb-1 flex items-center gap-1.5">
+                <span>⚠️ Required details to complete before submitting:</span>
+              </p>
+              <ul className="list-disc list-inside space-y-0.5 text-[11px] font-bold text-stone-700">
+                {!state.paid && <li>Step 1: Complete the one-time onboarding payment</li>}
+                {!emailVerified && <li>Step 2: Verify your email address *</li>}
+                {!phoneValid && <li>Step 3: Enter your 10-digit mobile number *</li>}
+                {!skillValid && <li>Step 3: Enter your primary skill *</li>}
+                {!slotsDone && <li>Step 4: Upload at least 1 portfolio work sample image *</li>}
+                {!cvDone && <li>Step 4: Attach your CV / Resume file *</li>}
+                {!termsAccepted && <li>Check the Terms and Conditions agreement box</li>}
+              </ul>
+            </div>
+          )}
+
+          <button data-testid="submit-btn" disabled={!allReady || submitting} onClick={handleSubmit} className={`flex items-center justify-center gap-2 border-2 border-ink bg-ink py-4 text-[15px] font-black text-white ${!allReady ? "opacity-35 cursor-not-allowed" : "hover:bg-brand cursor-pointer transition shadow-[2px_2px_0px_#121212]"}`}>
             {submitting ? <Loader2 size={18} className="animate-spin" /> : <>Submit for Verification <ArrowRight size={18} /></>}
           </button>
         </div>
@@ -1240,10 +1267,13 @@ function Step({ n, title, active, children, testID, id }) {
   );
 }
 
-function Labeled({ label, value, onChange, placeholder, disabled, testID, multiline }) {
+function Labeled({ label, value, onChange, placeholder, disabled, testID, multiline, required }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-[11px] font-black uppercase tracking-wider text-inkmuted">{label}</p>
+      <p className="text-[11px] font-black uppercase tracking-wider text-inkmuted flex items-center gap-1">
+        <span>{label}</span>
+        {required && <span className="text-[#FF5A1F] font-black text-sm leading-none" title="Required field">*</span>}
+      </p>
       {multiline ? (
         <textarea data-testid={testID} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} disabled={disabled} className="wh-input h-[88px] w-full border-2 border-ink bg-white p-3 text-sm text-ink placeholder:text-[#9A9A9A]" />
       ) : (
