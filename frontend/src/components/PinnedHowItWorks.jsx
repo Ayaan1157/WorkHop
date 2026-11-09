@@ -70,6 +70,16 @@ export default function PinnedHowItWorks() {
   const step3BannerY = useTransform(scrollYProgress, [0.76, 0.86], [20, 0]);
   const step3BannerOpacity = useTransform(scrollYProgress, [0.76, 0.84], [0, 1]);
 
+  // Per-step progress fills (0 to 1 for each card as you scroll through that step's range)
+  // Step 1 range: 0.00 to 0.38
+  const step1Fill = useTransform(scrollYProgress, [0.05, 0.38], ["0%", "100%"]);
+  // Step 2 range: 0.38 to 0.70
+  const step2Fill = useTransform(scrollYProgress, [0.38, 0.70], ["0%", "100%"]);
+  // Step 3 range: 0.70 to 0.98
+  const step3Fill = useTransform(scrollYProgress, [0.70, 0.98], ["0%", "100%"]);
+
+  const stepFills = [step1Fill, step2Fill, step3Fill];
+
   // Smooth scroll to step on click
   const scrollToStep = (idx) => {
     if (!containerRef.current) return;
@@ -79,10 +89,7 @@ export default function PinnedHowItWorks() {
     const scrollDistance = containerRef.current.offsetHeight - window.innerHeight;
 
     // Direct scroll target percentages positioned in center of active step window:
-    // Step 0: 0.20 (frame flattened and step 1 focused)
-    // Step 1: 0.54 (step 2 centered)
-    // Step 2: 0.84 (step 3 centered and fully locked in)
-    const targetPercentages = [0.20, 0.54, 0.84];
+    const targetPercentages = [0.18, 0.52, 0.84];
     const targetScroll = containerTop + scrollDistance * targetPercentages[idx];
 
     window.scrollTo({
@@ -365,44 +372,68 @@ export default function PinnedHowItWorks() {
 
         {/* 3. Bottom Step Navigation & Interactive Progress Tracker */}
         <div className="mx-auto w-full max-w-4xl shrink-0 z-20 pt-1 pb-1">
-          {/* Progress bar line */}
-          <div className="w-full h-1 bg-zinc-800/80 rounded-full overflow-hidden mb-2">
-            <motion.div
-              style={{ width: scrollBarHeight }}
-              className="h-full bg-gradient-to-r from-[#E65A1E] via-amber-500 to-[#E65A1E]"
-            />
-          </div>
-
-          {/* 3 Clickable Step Markers (01 / 02 / 03) */}
+          {/* Segmented Step Cards with Scroll-Driven Active Progress Bars */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {STEPS_DATA.map((s, idx) => {
               const isActive = activeStep === idx;
+              const isPassed = activeStep > idx;
               return (
                 <button
                   key={s.num}
                   type="button"
                   onClick={() => scrollToStep(idx)}
-                  className={`text-left p-2 sm:p-2.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+                  className={`group relative text-left p-2.5 sm:p-3 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden ${
                     isActive
-                      ? "border-[#E65A1E] bg-[#1A1A20] shadow-[2px_2px_0px_#E65A1E]"
-                      : "border-zinc-800 bg-[#101014] hover:border-zinc-700 opacity-70 hover:opacity-100"
+                      ? "border-[#E65A1E] bg-[#1A1A20] shadow-[0_8px_20px_-4px_rgba(230,90,30,0.35)] scale-[1.02]"
+                      : isPassed
+                      ? "border-zinc-700/80 bg-[#121216] opacity-90 hover:opacity-100"
+                      : "border-zinc-800 bg-[#0E0E12] opacity-50 hover:opacity-80"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  {/* Top Live Progress Bar for THIS Step that scrubs with scroll */}
+                  <div className="absolute top-0 inset-x-0 h-1 bg-zinc-800/80">
+                    <motion.div
+                      style={{
+                        width: isPassed ? "100%" : isActive ? stepFills[idx] : "0%",
+                      }}
+                      className="h-full bg-gradient-to-r from-[#E65A1E] to-amber-400"
+                    />
+                  </div>
+
+                  {/* Header Row of the Tab */}
+                  <div className="flex items-center justify-between mt-1">
                     <span
-                      className={`text-xs font-mono font-black ${
-                        isActive ? "text-[#E65A1E]" : "text-zinc-500"
+                      className={`text-xs sm:text-sm font-mono font-black transition-colors ${
+                        isActive
+                          ? "text-[#E65A1E]"
+                          : isPassed
+                          ? "text-zinc-300"
+                          : "text-zinc-600 group-hover:text-zinc-400"
                       }`}
                     >
                       {s.num}
                     </span>
-                    <span className="text-[9px] font-bold text-zinc-500 hidden sm:inline">
+                    <span
+                      className={`text-[9px] font-bold tracking-wider hidden sm:inline px-1.5 py-0.5 rounded transition-colors ${
+                        isActive
+                          ? "bg-[#E65A1E]/20 text-[#E65A1E] border border-[#E65A1E]/30"
+                          : isPassed
+                          ? "text-zinc-400"
+                          : "text-zinc-600"
+                      }`}
+                    >
                       {s.tag}
                     </span>
                   </div>
+
+                  {/* Title */}
                   <p
-                    className={`mt-0.5 text-xs sm:text-sm font-black truncate leading-tight ${
-                      isActive ? "text-white" : "text-zinc-400"
+                    className={`mt-1 text-xs sm:text-sm font-black truncate leading-tight transition-colors ${
+                      isActive
+                        ? "text-white"
+                        : isPassed
+                        ? "text-zinc-300"
+                        : "text-zinc-500 group-hover:text-zinc-400"
                     }`}
                   >
                     {s.title}
