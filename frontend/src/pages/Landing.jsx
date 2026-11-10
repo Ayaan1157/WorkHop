@@ -19,7 +19,6 @@ import { supabase, supabaseSignInWithGoogle } from "@/lib/supabase";
 import SiteFooter from "@/components/SiteFooter";
 import { Logo, MobileBottomNav } from "@/components/kit";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import HoppingKangaroo from "@/components/HoppingKangaroo";
 import LiveNeighborhoodRadar from "@/components/LiveNeighborhoodRadar";
 import PinnedHowItWorks from "@/components/PinnedHowItWorks";
 
@@ -1279,13 +1278,8 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           {/* Left Column: Short Headline + 1-Line Subtext + 2 CTAs */}
           <div className="lg:col-span-6 text-left">
-            {/* Geofence Badge with Hopping Kangaroo bouncing right on top of it */}
-            <div className="relative inline-block pt-8 sm:pt-10">
-              {/* Kangaroo perched right on top of this text badge, hopping with dust puffs */}
-              <div className="absolute -top-2 left-6 xs:left-10 sm:left-12 z-20 pointer-events-auto">
-                <HoppingKangaroo />
-              </div>
-
+            {/* Geofence Badge */}
+            <div className="inline-block">
               <div className="inline-flex items-center gap-2 border-2 border-ink bg-[#FFF3C4] px-3 py-1 text-[10px] sm:text-xs font-black uppercase tracking-wider text-black shadow-[2px_2px_0px_#121212]">
                 <span className="h-2 w-2 rounded-full bg-ok animate-pulse shrink-0" />
                 <span>5 KM GEOFENCED MARKETPLACE · BENGALURU</span>

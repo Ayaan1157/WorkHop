@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Navigation, Sparkles, CheckCircle2, ArrowRight, Zap, Users, Compass } from "lucide-react";
-import HoppingKangaroo from "@/components/HoppingKangaroo";
 
 /**
  * LiveNeighborhoodRadar - Interactive "Live Neighborhood Radar" hero visual
