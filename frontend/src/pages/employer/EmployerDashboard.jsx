@@ -92,23 +92,46 @@ export default function EmployerDashboard() {
         allJobs = getStoredJobs();
       }
 
-      // Filter to this employer's jobs or show all available jobs if admin/new
+      // Filter to this employer's jobs
       const myCompany = (companyName || user?.company_name || "").toLowerCase().trim();
+      const myEmployerName = (employerName || user?.name || (user?.email ? user.email.split("@")[0] : "")).toLowerCase().trim();
+      const myEmployerId = user?.id || user?.employer_id || employerId;
+      const myEmail = (user?.email || "").toLowerCase().trim();
+
       const myJobs = allJobs.filter((j) => {
+        if (!j) return false;
         if (isAdmin) return true;
-        if (!myCompany) return true;
+        const jId = j.employer_id ? String(j.employer_id) : "";
+        const jEmail = (j.employer_email || "").toLowerCase().trim();
         const jComp = (j.company_name || "").toLowerCase().trim();
         const jEmp = (j.employer_name || "").toLowerCase().trim();
-        return jComp === myCompany || jEmp === myCompany || (j.employer_id && j.employer_id === user?.id);
-      });
-      setJobs(myJobs.length > 0 ? myJobs : allJobs);
 
-      // 2. Applicant chats / proposals
+        if (myEmployerId && jId && (jId === String(myEmployerId) || jId === String(user?.id))) return true;
+        if (myEmail && jEmail && jEmail === myEmail) return true;
+        if (myCompany && jComp && jComp === myCompany) return true;
+        if (myEmployerName && jEmp && jEmp === myEmployerName) return true;
+        return false;
+      });
+      setJobs(myJobs);
+
+      // 2. Applicant chats / proposals for this employer's jobs
+      const myJobIds = new Set(myJobs.map((j) => String(j.id)));
       try {
         const chatsData = await apiGet("/chats");
-        setChats(Array.isArray(chatsData) ? chatsData : getStoredChats());
+        const rawChats = Array.isArray(chatsData) ? chatsData : getStoredChats();
+        const relevantChats = rawChats.filter((c) => {
+          if (isAdmin) return true;
+          if (c.job_id && myJobIds.has(String(c.job_id))) return true;
+          const empMatch = (c.employer_name || "").toLowerCase().trim();
+          if (myCompany && empMatch === myCompany) return true;
+          if (myEmployerName && empMatch === myEmployerName) return true;
+          return false;
+        });
+        setChats(relevantChats);
       } catch {
-        setChats(getStoredChats());
+        const rawChats = getStoredChats();
+        const relevantChats = rawChats.filter((c) => c.job_id && myJobIds.has(String(c.job_id)));
+        setChats(relevantChats);
       }
 
       // 3. Saved Pros
@@ -119,7 +142,7 @@ export default function EmployerDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [companyName, isAdmin, user]);
+  }, [companyName, employerName, employerId, isAdmin, user]);
 
   const handleJobCardClick = (j) => {
     const nextCompleted = !j.is_completed;

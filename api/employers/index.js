@@ -320,38 +320,6 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      // Default sample featured gig if list is empty
-      if (jobs.length === 0 && !deletedJobIds.has("job-sample-1")) {
-        jobs.unshift({
-          id: "job-sample-1",
-          title: "UI/UX Designer for Mobile App",
-          pay: 25000,
-          pay_label: "₹25,000",
-          credits_to_apply: 8,
-          is_boosted: true,
-          boost_expires_at: new Date(Date.now() + 48 * 3600000).toISOString(),
-          company_name: "Cobblestone Studios",
-          employer_name: "Design Lead",
-          employer_id: "emp-sample-1",
-          description: "Looking for an experienced UI/UX designer to design clean mobile app screens and interactive Figma prototypes.",
-          category: "Graphics & Design",
-          bucket: "Creative",
-          area: "Frazer Town",
-          distance_km: 1.2,
-          posted_minutes_ago: 15,
-          applicants_count: 1,
-          employer_rating: "5.0",
-          employer_reviews: 3,
-          verified_employer: true,
-          created_at: new Date().toISOString(),
-          lat: 12.9982,
-          lng: 77.6158,
-          keywords: ["UI/UX", "Mobile App", "Figma", "Design", "Frazer Town"],
-          status: "open",
-          is_completed: false,
-        });
-      }
-
       // Sort: Boosted gigs first, then newest
       jobs.sort((a, b) => {
         if (b.is_boosted !== a.is_boosted) return (b.is_boosted ? 1 : 0) - (a.is_boosted ? 1 : 0);

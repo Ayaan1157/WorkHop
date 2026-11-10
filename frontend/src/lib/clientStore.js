@@ -207,6 +207,32 @@ try {
   }
 } catch { /* ignore */ }
 
+// One-time clean slate v8: purge stale demo gigs (e.g. Flutter Mobile App Developer, UI/UX Designer for Food App) from local custom jobs
+const CLEAN_SLATE_FLAG_V8 = "workhop_clean_slate_v8_purge_demo_gigs";
+try {
+  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V8)) {
+    const rawJobs = localStorage.getItem("workhop_custom_jobs");
+    if (rawJobs) {
+      try {
+        const list = JSON.parse(rawJobs);
+        if (Array.isArray(list)) {
+          // Keep only jobs that have a genuine user employer id or email attached, and exclude demo items
+          const cleaned = list.filter((j) => {
+            if (!j) return false;
+            const t = (j.title || "").toLowerCase();
+            const id = String(j.id || "");
+            if (id.startsWith("item_Tu5") || id === "job-sample-1") return false;
+            if (t.includes("flutter mobile app developer") || t.includes("ui/ux designer for food app")) return false;
+            return true;
+          });
+          localStorage.setItem("workhop_custom_jobs", JSON.stringify(cleaned));
+        }
+      } catch {}
+    }
+    localStorage.setItem(CLEAN_SLATE_FLAG_V8, "1");
+  }
+} catch { /* ignore */ }
+
 // ═══════════ CONNECTS & CREDITS SYSTEM KEYS ═══════════
 const CREDITS_WALLET_KEY = "workhop_credits_wallet";
 const CREDITS_TRANSACTIONS_KEY = "workhop_credits_transactions";
@@ -1330,6 +1356,8 @@ export function postCustomJob(jobData) {
     boost_expires_at: boostExpiresAt,
     company_name: jobData.company_name,
     employer_name: jobData.employer_name || `${jobData.company_name} Lead`,
+    employer_id: jobData.employer_id || null,
+    employer_email: jobData.employer_email || null,
     description: jobData.description,
     bucket: jobData.bucket || "Creative",
     category: jobData.bucket || "Graphics & Design",

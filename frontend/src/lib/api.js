@@ -153,10 +153,8 @@ async function mockRouter(path, method = "GET", body = null) {
         seenIds.add(String(c.id));
       }
     }
-    if (merged.length > 0) return merged;
-
-    const stored = getStoredJobs();
-    return stored.slice(0, 3);
+    // Return only genuine cloud and custom jobs created by employers (no fake demo gigs)
+    return merged;
   }
   if (cleanPath.startsWith("/employer/jobs/") && cleanPath.endsWith("/complete") && method === "POST") {
     const parts = cleanPath.split("/");

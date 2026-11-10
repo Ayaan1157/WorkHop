@@ -7930,10 +7930,6 @@ async def list_employer_jobs(request: Request, employer_id: Optional[str] = None
             if sess and sess.get("user_id"):
                 query["employer_id"] = sess["user_id"]
     docs = await db.custom_jobs.find(query, {"_id": 0}).to_list(200)
-    if not docs:
-        # For dummy employer profile: return 2-3 sample jobs
-        sample_jobs = SEED_JOBS[:3]
-        return [Job(**{k: v for k, v in j.items() if k in Job.model_fields}) for j in sample_jobs]
     docs.sort(key=lambda j: j.get("created_at", ""), reverse=True)
     return [Job(**{k: v for k, v in d.items() if k in Job.model_fields}) for d in docs]
 
