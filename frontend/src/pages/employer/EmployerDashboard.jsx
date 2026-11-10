@@ -114,21 +114,29 @@ export default function EmployerDashboard() {
       });
       setJobs(myJobs);
 
-      // 2. Applicant chats / proposals for this employer's jobs
+      // 2. Applicant chats / proposals: ONLY count actual applications from freelancers for gigs posted by this employer
       const myJobIds = new Set(myJobs.map((j) => String(j.id)));
       try {
         const chatsData = await apiGet("/chats");
         const rawChats = Array.isArray(chatsData) ? chatsData : getStoredChats();
         const relevantChats = rawChats.filter((c) => {
-          if (c.job_id && myJobIds.has(String(c.job_id))) return true;
-          const empMatch = (c.employer_name || "").toLowerCase().trim();
-          if (myCompany && empMatch === myCompany && myCompany !== "hyperlocal co.") return true;
-          return false;
+          if (!c || !c.job_id) return false;
+          // Must belong to one of this employer's own gigs
+          if (!myJobIds.has(String(c.job_id))) return false;
+          // Exclude direct lead inquiries or admin profile completion reminders
+          if (String(c.job_id).startsWith("lead-inquiry-")) return false;
+          if (c.is_reminder || c.id?.startsWith("notif-reminder-")) return false;
+          return true;
         });
         setChats(relevantChats);
       } catch {
         const rawChats = getStoredChats();
-        const relevantChats = rawChats.filter((c) => c.job_id && myJobIds.has(String(c.job_id)));
+        const relevantChats = rawChats.filter((c) => {
+          if (!c || !c.job_id) return false;
+          if (!myJobIds.has(String(c.job_id))) return false;
+          if (String(c.job_id).startsWith("lead-inquiry-")) return false;
+          return true;
+        });
         setChats(relevantChats);
       }
 
