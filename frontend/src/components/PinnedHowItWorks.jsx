@@ -57,7 +57,7 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
 
   return (
     <div
-      className={`relative w-full max-w-4xl h-full max-h-[460px] aspect-[16/9.5] rounded-xl sm:rounded-2xl border-2 ${step.accentBorder} bg-[#141418] p-2.5 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] flex flex-col overflow-hidden select-none`}
+      className={`relative w-full max-w-5xl h-full max-h-[500px] aspect-[16/9.5] rounded-xl sm:rounded-2xl border-2 ${step.accentBorder} bg-[#141418] p-2.5 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] flex flex-col overflow-hidden select-none`}
       style={{
         boxShadow: `0 25px 60px -15px rgba(0,0,0,0.95), 0 0 40px ${step.glowColor}`,
         backgroundColor: "#141418", // 100% solid, fully opaque
@@ -86,20 +86,20 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
 
       {/* 2. Inner Canvas Screen - 100% Solid Dark Background */}
       <div
-        className="relative w-full flex-1 min-h-0 rounded-lg sm:rounded-xl border border-zinc-800/80 overflow-hidden shadow-inner flex flex-col md:flex-row items-center justify-between p-4 sm:p-7 gap-4 sm:gap-6"
+        className="relative w-full flex-1 min-h-0 rounded-lg sm:rounded-xl border border-zinc-800/80 overflow-hidden shadow-inner flex flex-col md:flex-row items-center justify-between p-3 sm:p-6 lg:p-7 gap-4 sm:gap-6"
         style={{ backgroundColor: "#0D0D10" }} // 100% solid, fully opaque
       >
         {/* Left Side: Artwork Visual with scrubbed micro-animations */}
-        <div className="relative w-full md:w-1/2 h-full flex items-center justify-center min-h-0">
+        <div className="relative w-full md:w-[54%] lg:w-[56%] h-full flex items-center justify-center min-h-0">
           <motion.div
             style={innerAnimations.artStyle || {}}
-            className="relative h-full max-h-[220px] sm:max-h-[260px] aspect-square rounded-xl bg-[#FAF7F2] border-2 border-zinc-900 p-2 overflow-hidden flex items-center justify-center shadow-md"
+            className="relative w-full h-full max-h-[260px] sm:max-h-[320px] lg:max-h-[350px] aspect-square rounded-xl bg-[#FAF7F2] border-2 border-zinc-900 p-2 sm:p-3 overflow-hidden flex items-center justify-center shadow-md"
           >
             {/* Step 1: Pulsing 5km radar ring */}
             {stepIndex === 0 && (
               <motion.div
                 style={innerAnimations.radarStyle || {}}
-                className="absolute w-40 h-40 rounded-full border-2 border-dashed border-[#E65A1E] bg-[#E65A1E]/15 pointer-events-none"
+                className="absolute w-44 h-44 rounded-full border-2 border-dashed border-[#E65A1E] bg-[#E65A1E]/15 pointer-events-none"
               />
             )}
 
@@ -126,13 +126,13 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
               <>
                 <motion.div
                   style={innerAnimations.shieldStyle || {}}
-                  className="absolute top-2 right-2 z-20 border border-zinc-900 bg-amber-200 px-2 py-0.5 text-[9px] font-black uppercase text-black shadow-[1.5px_1.5px_0px_#121212]"
+                  className="absolute top-2.5 right-2.5 z-20 border border-zinc-900 bg-amber-200 px-2 py-0.5 text-[9.5px] font-black uppercase text-black shadow-[1.5px_1.5px_0px_#121212]"
                 >
                   🛡️ MILESTONE ESCROW
                 </motion.div>
                 <motion.div
                   style={innerAnimations.bannerStyle || {}}
-                  className="absolute bottom-2 inset-x-2 z-20 border border-zinc-900 bg-[#E65A1E] text-white py-1 px-2 text-[10px] font-black uppercase text-center shadow-[1.5px_1.5px_0px_#121212]"
+                  className="absolute bottom-2.5 inset-x-2.5 z-20 border border-zinc-900 bg-[#E65A1E] text-white py-1 px-2 text-[10px] sm:text-[11px] font-black uppercase text-center shadow-[1.5px_1.5px_0px_#121212]"
                 >
                   0% COMMISSION · KEEP 100%
                 </motion.div>
@@ -144,7 +144,7 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
               alt={step.artAlt}
               loading={stepIndex === 0 ? "eager" : "lazy"}
               decoding="async"
-              className="relative z-10 w-full h-full object-contain pointer-events-none"
+              className="relative z-10 w-full h-full object-contain pointer-events-none scale-105"
             />
           </motion.div>
         </div>
@@ -152,7 +152,7 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
         {/* Right Side: Step Description & Feature Chips */}
         <motion.div
           style={innerAnimations.copyStyle || {}}
-          className="w-full md:w-1/2 flex flex-col justify-center text-left"
+          className="w-full md:w-[46%] lg:w-[44%] flex flex-col justify-center text-left"
         >
           <div
             className={`inline-flex items-center gap-1.5 border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider w-max ${
