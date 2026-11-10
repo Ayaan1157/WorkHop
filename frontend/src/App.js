@@ -44,13 +44,38 @@ function ProfileRoute() {
 function EmployerRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  // All authenticated users and visitors can access employer views and post gigs
+  if (!user) return children;
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
+  );
+  if (isAdmin) return children;
+
+  const role = (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase();
+  const isEmployer = role.includes("employ") || role.includes("client");
+  if (!isEmployer) {
+    return <Navigate to="/freelancer/jobs" replace />;
+  }
   return children;
 }
 
 function FreelancerRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
+  if (!user) return children;
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(user?.email?.toLowerCase())
+  );
+  if (isAdmin) return children;
+
+  const role = (user.role || localStorage.getItem("workhop_auth_role") || "freelancer").toLowerCase();
+  const isEmployer = role.includes("employ") || role.includes("client");
+  if (isEmployer) {
+    return <Navigate to="/employer" replace />;
+  }
   return children;
 }
 

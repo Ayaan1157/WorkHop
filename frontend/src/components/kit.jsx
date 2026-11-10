@@ -157,16 +157,13 @@ export function GlobalNav() {
   const currentHops = userWallet?.balance ?? 0;
   const plansPath = isFreelancerUser ? "/plans?tab=freelancer" : "/plans?tab=employer";
 
-  const handleToggleRole = () => {
-    const next = isEmployerUser ? "freelancer" : "employer";
-    if (switchActiveRole) switchActiveRole(next);
-    if (next === "employer") nav("/employer");
-    else nav("/freelancer/jobs");
-  };
-
   const desktopLinks = [
-    { label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users },
-    { label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs", icon: Briefcase },
+    ...((!user || isAdmin || isEmployerUser)
+      ? [{ label: "EXPLORE PROS", path: "/employer", testId: "nav-pros", icon: Users }]
+      : []),
+    ...((!user || isAdmin || isFreelancerUser)
+      ? [{ label: "FIND GIGS", path: "/freelancer/jobs", testId: "nav-gigs", icon: Briefcase }]
+      : []),
     { label: "LIVE MAP", path: "/map", testId: "nav-map", icon: MapPin },
     { label: "CATEGORIES", path: "/categories", testId: "nav-categories", icon: Grid3x3 },
     { label: "PLANS", path: plansPath, testId: "nav-plans", icon: Coins },
@@ -251,24 +248,6 @@ export function GlobalNav() {
                 {isDark ? <Sun size={15} className="text-brand" /> : <Moon size={15} className="text-ink dark:text-white" />}
               </button>
             </div>
-
-            {/* 1-Click Role Switcher */}
-            {user && (
-              <button
-                type="button"
-                data-testid="nav-switch-role-btn"
-                onClick={handleToggleRole}
-                title={isEmployerUser ? "Switch to Pro / Freelancer workspace" : "Switch to Employer / Hiring workspace"}
-                className={`hidden lg:inline-flex h-10 items-center gap-1.5 border-2 border-ink dark:border-white px-2.5 text-[11px] font-black uppercase tracking-wide transition shadow-[2px_2px_0px_#121212] dark:shadow-[2px_2px_0px_#ffffff] whitespace-nowrap shrink-0 active:translate-y-0.5 ${
-                  isEmployerUser
-                    ? "bg-[#008744] dark:bg-[#007038] text-white !text-white hover:bg-[#007038]"
-                    : "bg-[#D97706] dark:bg-[#B45309] text-white !text-white hover:bg-[#B45309]"
-                }`}
-              >
-                <RefreshCw size={12} className="shrink-0 text-white animate-[spin_10s_linear_infinite]" />
-                <span className="text-white !text-white font-black">{isEmployerUser ? "HIRING MODE" : "PRO MODE"}</span>
-              </button>
-            )}
 
             {/* Post Job Button (Always accessible to all users) */}
             <button
@@ -380,23 +359,6 @@ export function GlobalNav() {
                       <span>SIGN OUT</span>
                     </button>
                   </div>
-
-                  {/* 1-Click Mobile Role Switcher */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleToggleRole();
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-center gap-2 border-2 border-ink dark:border-white py-2 text-xs font-black uppercase tracking-wider transition shadow-[2px_2px_0px_#121212] active:translate-y-0.5 text-white !text-white ${
-                      isEmployerUser
-                        ? "bg-[#008744] dark:bg-[#007038]"
-                        : "bg-[#D97706] dark:bg-[#B45309]"
-                    }`}
-                  >
-                    <RefreshCw size={13} className="shrink-0 text-white" />
-                    <span className="text-white !text-white font-black">{isEmployerUser ? "Switch to Pro / Work Mode" : "Switch to Employer / Hire Mode"}</span>
-                  </button>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2 text-center">
