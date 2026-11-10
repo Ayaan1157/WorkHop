@@ -4161,90 +4161,44 @@ export function updateProfessionSuggestionStatus(sugId, status, notes = null) {
   return list.find((s) => s.id === sugId || s.suggestion_id === sugId);
 }
 
-// ============================================================================
-// CITY WAITLIST STORAGE (Users outside Bengaluru e.g. Mysore, Mangalore)
-// ============================================================================
 const CITY_WAITLIST_KEY = "workhop_city_waitlist";
 
-const DEFAULT_SEED_WAITLIST = [
-  {
-    waitlist_id: "wl_calicut_seed_01",
-    id: "wl_calicut_seed_01",
-    email: "calicut.expansion@gmail.com",
-    contact: "calicut.expansion@gmail.com",
-    city: "Calicut",
-    role: "employer",
-    created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-    note: "Interested in hiring verified developers in Calicut / Kozhikode region.",
-    status: "pending",
-  },
-  {
-    waitlist_id: "wl_mysore_seed_02",
-    id: "wl_mysore_seed_02",
-    email: "rohit.mysore@techcorp.in",
-    contact: "rohit.mysore@techcorp.in",
-    city: "Mysore",
-    role: "employer",
-    created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-    note: "Looking for UI/UX designers and content writers in Mysore.",
-    status: "pending",
-  },
-  {
-    waitlist_id: "wl_mangalore_seed_03",
-    id: "wl_mangalore_seed_03",
-    email: "ananya.mng@freelancehub.io",
-    contact: "ananya.mng@freelancehub.io",
-    city: "Mangalore",
-    role: "freelancer",
-    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
-    note: "Full stack developer based in Mangalore eager to accept remote & local gigs.",
-    status: "pending",
-  },
-  {
-    waitlist_id: "wl_kochi_seed_04",
-    id: "wl_kochi_seed_04",
-    email: "kochi.ventures@gmail.com",
-    contact: "kochi.ventures@gmail.com",
-    city: "Kochi",
-    role: "employer",
-    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
-    note: "Kochi startup hub looking to hire talent.",
-    status: "pending",
-  },
-  {
-    waitlist_id: "wl_hubli_seed_05",
-    id: "wl_hubli_seed_05",
-    email: "vikram.hubli@innovate.co",
-    contact: "vikram.hubli@innovate.co",
-    city: "Hubli",
-    role: "user",
-    created_at: new Date(Date.now() - 3600000 * 96).toISOString(),
-    note: "Please launch WorkHop services in Hubli-Dharwad.",
-    status: "pending",
-  },
-];
+const FAKE_SEED_EMAILS = new Set([
+  "calicut.expansion@gmail.com",
+  "mysore.design@gmail.com",
+  "mangalore.hire@outlook.com",
+  "kochi.techlead@gmail.com",
+  "hubli.creatives@gmail.com",
+  "rohit.mysore@techcorp.in",
+  "ananya.mng@freelancehub.io",
+  "kochi.ventures@gmail.com",
+  "vikram.hubli@innovate.co",
+]);
+
+const DEFAULT_SEED_WAITLIST = [];
 
 export function getStoredCityWaitlist() {
   const raw = localStorage.getItem(CITY_WAITLIST_KEY);
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // Merge user-submitted items with default seed entries
-        const seen = new Set();
-        const merged = [];
-        for (const item of [...parsed, ...DEFAULT_SEED_WAITLIST]) {
-          const key = (item.waitlist_id || item.id || `${item.email}_${item.city}`).toLowerCase().trim();
-          if (!seen.has(key)) {
-            seen.add(key);
-            merged.push(item);
-          }
+      if (Array.isArray(parsed)) {
+        // Filter out any mock/seed dummy emails so only genuine user submissions remain
+        const realUsersOnly = parsed.filter(
+          (item) =>
+            item &&
+            !FAKE_SEED_EMAILS.has((item.email || "").toLowerCase().trim()) &&
+            !String(item.waitlist_id || item.id || "").includes("seed")
+        );
+        // Resave cleansed list if fake entries were stripped
+        if (realUsersOnly.length !== parsed.length) {
+          localStorage.setItem(CITY_WAITLIST_KEY, JSON.stringify(realUsersOnly));
         }
-        return merged;
+        return realUsersOnly;
       }
     } catch { /* ignore */ }
   }
-  return DEFAULT_SEED_WAITLIST;
+  return [];
 }
 
 export function saveCityWaitlistEntry(data) {

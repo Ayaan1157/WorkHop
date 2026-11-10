@@ -49,12 +49,28 @@ export default function CityWaitlistTab({ adminFetch }) {
       // 2. Also read locally captured waitlist entries from clientStore (e.g. Calicut submission)
       const localEntries = getStoredCityWaitlist() || [];
 
-      // 3. Merge entries by id/email+city ensuring no duplicates
+      const FAKE_EMAILS = new Set([
+        "calicut.expansion@gmail.com",
+        "mysore.design@gmail.com",
+        "mangalore.hire@outlook.com",
+        "kochi.techlead@gmail.com",
+        "hubli.creatives@gmail.com",
+        "rohit.mysore@techcorp.in",
+        "ananya.mng@freelancehub.io",
+        "kochi.ventures@gmail.com",
+        "vikram.hubli@innovate.co",
+      ]);
+
+      // 3. Merge entries by id/email+city ensuring no duplicates and only genuine user entries
       const seen = new Set();
       const merged = [];
 
       for (const entry of [...backendEntries, ...localEntries]) {
-        const key = (entry.waitlist_id || entry.id || `${entry.email}_${entry.city}`).toLowerCase().trim();
+        const emailLower = (entry.email || entry.contact || "").toLowerCase().trim();
+        if (FAKE_EMAILS.has(emailLower) || String(entry.waitlist_id || entry.id || "").includes("seed")) {
+          continue;
+        }
+        const key = (entry.waitlist_id || entry.id || `${emailLower}_${entry.city}`).toLowerCase().trim();
         if (!seen.has(key)) {
           seen.add(key);
           merged.push(entry);

@@ -41,60 +41,21 @@ function rzpRequest(method, path, data = null) {
   });
 }
 
-const DEFAULT_WAITLIST = [
-  {
-    waitlist_id: "wl_calicut_1",
-    id: "wl_calicut_1",
-    city: "Calicut",
-    email: "calicut.expansion@gmail.com",
-    contact: "calicut.expansion@gmail.com",
-    role: "employer",
-    note: "Looking to hire verified freelancers in Calicut / Kozhikode region",
-    created_at: "2026-11-08T12:00:00.000Z",
-  },
-  {
-    waitlist_id: "wl_mysore_1",
-    id: "wl_mysore_1",
-    city: "Mysore",
-    email: "mysore.design@gmail.com",
-    contact: "mysore.design@gmail.com",
-    role: "freelancer",
-    note: "Graphic designer and UI/UX pro interested in WorkHop Mysore gigs",
-    created_at: "2026-11-07T14:30:00.000Z",
-  },
-  {
-    waitlist_id: "wl_mangalore_1",
-    id: "wl_mangalore_1",
-    city: "Mangalore",
-    email: "mangalore.hire@outlook.com",
-    contact: "mangalore.hire@outlook.com",
-    role: "employer",
-    note: "E-commerce agency hiring video editors and content creators",
-    created_at: "2026-11-06T09:15:00.000Z",
-  },
-  {
-    waitlist_id: "wl_kochi_1",
-    id: "wl_kochi_1",
-    city: "Kochi",
-    email: "kochi.techlead@gmail.com",
-    contact: "kochi.techlead@gmail.com",
-    role: "employer",
-    note: "React and Python fullstack developers wanted",
-    created_at: "2026-11-05T16:45:00.000Z",
-  },
-  {
-    waitlist_id: "wl_hubli_1",
-    id: "wl_hubli_1",
-    city: "Hubli",
-    email: "hubli.creatives@gmail.com",
-    contact: "hubli.creatives@gmail.com",
-    role: "freelancer",
-    note: "Architectural drafts and interior renders",
-    created_at: "2026-11-04T11:20:00.000Z",
-  },
-];
+const FAKE_SEED_EMAILS = new Set([
+  "calicut.expansion@gmail.com",
+  "mysore.design@gmail.com",
+  "mangalore.hire@outlook.com",
+  "kochi.techlead@gmail.com",
+  "hubli.creatives@gmail.com",
+  "rohit.mysore@techcorp.in",
+  "ananya.mng@freelancehub.io",
+  "kochi.ventures@gmail.com",
+  "vikram.hubli@innovate.co",
+]);
 
-let inMemoryWaitlist = [...DEFAULT_WAITLIST];
+const DEFAULT_WAITLIST = [];
+
+let inMemoryWaitlist = [];
 const deletedWaitlistIds = new Set();
 
 module.exports = async function handler(req, res) {
@@ -207,7 +168,9 @@ module.exports = async function handler(req, res) {
 
     for (const item of [...inMemoryWaitlist, ...rzpWaitlist]) {
       if (deletedWaitlistIds.has(item.waitlist_id) || deletedWaitlistIds.has(item.id)) continue;
-      const key = `${(item.email || "").toLowerCase()}_${(item.city || "").toLowerCase()}`;
+      const emailLower = (item.email || "").toLowerCase().trim();
+      if (FAKE_SEED_EMAILS.has(emailLower) || String(item.waitlist_id || item.id || "").includes("seed")) continue;
+      const key = `${emailLower}_${(item.city || "").toLowerCase()}`;
       if (!seen.has(key)) {
         seen.add(key);
         merged.push(item);
