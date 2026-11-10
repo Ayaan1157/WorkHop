@@ -207,8 +207,8 @@ try {
   }
 } catch { /* ignore */ }
 
-// One-time clean slate v8: purge stale demo gigs (e.g. Flutter Mobile App Developer, UI/UX Designer for Food App) from local custom jobs
-const CLEAN_SLATE_FLAG_V8 = "workhop_clean_slate_v8_purge_demo_gigs";
+// One-time clean slate v8: purge stale demo gigs (e.g. Flutter Mobile App Developer, UI/UX Designer for Mobile App, UI/UX Designer for Food App) from local custom jobs & mock chats
+const CLEAN_SLATE_FLAG_V8 = "workhop_clean_slate_v8_purge_demo_gigs_strict";
 try {
   if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V8)) {
     const rawJobs = localStorage.getItem("workhop_custom_jobs");
@@ -221,11 +221,29 @@ try {
             if (!j) return false;
             const t = (j.title || "").toLowerCase();
             const id = String(j.id || "");
-            if (id.startsWith("item_Tu5") || id === "job-sample-1") return false;
-            if (t.includes("flutter mobile app developer") || t.includes("ui/ux designer for food app")) return false;
-            return true;
+            if (id.startsWith("item_Tu5") || id === "job-sample-1" || id === "job-cloud-1" || id.startsWith("job-demo")) return false;
+            if (t.includes("flutter mobile app") || t.includes("ui/ux designer for food app") || t.includes("ui/ux designer for mobile app")) return false;
+            // A custom job must have been created with an employer_id or employer_email
+            return Boolean(j.employer_id || j.employer_email);
           });
           localStorage.setItem("workhop_custom_jobs", JSON.stringify(cleaned));
+        }
+      } catch {}
+    }
+    // Also clean any demo/mock chats that were seeded
+    const rawChats = localStorage.getItem("workhop_chats");
+    if (rawChats) {
+      try {
+        const chats = JSON.parse(rawChats);
+        if (Array.isArray(chats)) {
+          const cleanedChats = chats.filter((c) => {
+            const cid = String(c?.id || "");
+            const title = (c?.job_title || "").toLowerCase();
+            if (cid.includes("demo") || cid === "conv-1" || cid === "conv-2") return false;
+            if (title.includes("brand logo") || title.includes("next.js e-commerce")) return false;
+            return true;
+          });
+          localStorage.setItem("workhop_chats", JSON.stringify(cleanedChats));
         }
       } catch {}
     }

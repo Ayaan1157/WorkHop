@@ -92,7 +92,7 @@ export default function EmployerDashboard() {
         allJobs = getStoredJobs();
       }
 
-      // Filter to this employer's jobs
+      // Filter strictly to this employer's own posted jobs
       const myCompany = (companyName || user?.company_name || "").toLowerCase().trim();
       const myEmployerName = (employerName || user?.name || (user?.email ? user.email.split("@")[0] : "")).toLowerCase().trim();
       const myEmployerId = user?.id || user?.employer_id || employerId;
@@ -100,16 +100,16 @@ export default function EmployerDashboard() {
 
       const myJobs = allJobs.filter((j) => {
         if (!j) return false;
-        if (isAdmin) return true;
         const jId = j.employer_id ? String(j.employer_id) : "";
         const jEmail = (j.employer_email || "").toLowerCase().trim();
         const jComp = (j.company_name || "").toLowerCase().trim();
         const jEmp = (j.employer_name || "").toLowerCase().trim();
 
+        // Must match this specific employer's account
         if (myEmployerId && jId && (jId === String(myEmployerId) || jId === String(user?.id))) return true;
         if (myEmail && jEmail && jEmail === myEmail) return true;
-        if (myCompany && jComp && jComp === myCompany) return true;
-        if (myEmployerName && jEmp && jEmp === myEmployerName) return true;
+        if (myCompany && jComp && jComp === myCompany && myCompany !== "hyperlocal co." && myCompany !== "featured employer") return true;
+        if (myEmployerName && jEmp && jEmp === myEmployerName && myEmployerName !== "aya") return true;
         return false;
       });
       setJobs(myJobs);
@@ -120,11 +120,9 @@ export default function EmployerDashboard() {
         const chatsData = await apiGet("/chats");
         const rawChats = Array.isArray(chatsData) ? chatsData : getStoredChats();
         const relevantChats = rawChats.filter((c) => {
-          if (isAdmin) return true;
           if (c.job_id && myJobIds.has(String(c.job_id))) return true;
           const empMatch = (c.employer_name || "").toLowerCase().trim();
-          if (myCompany && empMatch === myCompany) return true;
-          if (myEmployerName && empMatch === myEmployerName) return true;
+          if (myCompany && empMatch === myCompany && myCompany !== "hyperlocal co.") return true;
           return false;
         });
         setChats(relevantChats);
@@ -138,11 +136,11 @@ export default function EmployerDashboard() {
       const savedIds = getSavedProIds();
       const allPros = getStoredLeads();
       const matched = allPros.filter((p) => savedIds.includes(String(p.id)));
-      setSavedPros(matched.length > 0 ? matched : allPros.slice(0, 3));
+      setSavedPros(matched);
     } finally {
       setLoading(false);
     }
-  }, [companyName, employerName, employerId, isAdmin, user]);
+  }, [companyName, employerName, employerId, user]);
 
   const handleJobCardClick = (j) => {
     const nextCompleted = !j.is_completed;
