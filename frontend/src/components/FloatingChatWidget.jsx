@@ -6,13 +6,20 @@ import {
   ExternalLink, Maximize2
 } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
-import { getStoredChats } from "@/lib/clientStore";
+import { getStoredChats, ADMIN_EMAILS } from "@/lib/clientStore";
+import { useAuth } from "@/context/AuthContext";
 import { getDistanceSuitability } from "@/lib/locationAreas";
 import { scanText, scanUploadFile } from "@/lib/contactScanner";
 import { formatMessageTime, formatMessageDate } from "@/lib/utils";
 
 export default function FloatingChatWidget({ role = "employer" }) {
   const nav = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -31,20 +38,28 @@ export default function FloatingChatWidget({ role = "employer" }) {
   const loadChats = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiGet("/chats");
+      const qs = new URLSearchParams();
+      if (role) qs.set("role", role);
+      if (role === "freelancer" && (user?.id || user?.freelancer_id)) {
+        qs.set("freelancer_id", user?.id || user?.freelancer_id);
+      }
+      if (role === "employer" && (user?.id || user?.employer_id)) {
+        qs.set("employer_id", user?.id || user?.employer_id);
+      }
+      const data = await apiGet(`/chats${qs.toString() ? `?${qs.toString()}` : ""}`);
       if (Array.isArray(data) && data.length > 0) {
         setChats(data);
       } else {
-        const stored = getStoredChats();
+        const stored = getStoredChats(user, role);
         setChats(stored || []);
       }
     } catch {
-      const stored = getStoredChats();
+      const stored = getStoredChats(user, role);
       setChats(stored || []);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [role, user]);
 
   useEffect(() => {
     loadChats();
@@ -197,8 +212,45 @@ export default function FloatingChatWidget({ role = "employer" }) {
     });
   };
 
-  // Filtered chats
+  // Filtered chats strictly restricted to current user
+  const myId = String(user?.id || user?.freelancer_id || user?.employer_id || "");
+  const myEmail = (user?.email || "").trim().toLowerCase();
+  const myName = (user?.name || "").trim().toLowerCase();
+  const myCompany = (user?.company_name || "").trim().toLowerCase();
+
   const filteredChats = chats.filter((c) => {
+    if (!c) return false;
+
+    // Strict privacy boundary: non-admins only see chats they belong to
+    if (!isAdmin) {
+      if (role === "freelancer") {
+        const fId = c.freelancer_id ? String(c.freelancer_id) : "";
+        const fEmail = (c.freelancer_email || "").trim().toLowerCase();
+        const fName = (c.freelancer_name || "").trim().toLowerCase();
+        const tId = c.target_user_id ? String(c.target_user_id) : "";
+        const tEmail = (c.target_email || "").trim().toLowerCase();
+
+        const matchesMe =
+          (myId && (fId === myId || tId === myId)) ||
+          (myEmail && (fEmail === myEmail || tEmail === myEmail)) ||
+          (myName && fName === myName);
+        if (!matchesMe) return false;
+      } else if (role === "employer") {
+        if (c.is_reminder || c.is_admin_notice || c.status === "system_notice") return false;
+        if (String(c.job_id).startsWith("lead-inquiry-") && !c.employer_id) return false;
+
+        const eId = c.employer_id ? String(c.employer_id) : "";
+        const eEmail = (c.employer_email || "").trim().toLowerCase();
+        const cComp = (c.company_name || "").trim().toLowerCase();
+
+        const matchesEmployer =
+          (myId && eId === myId) ||
+          (myEmail && eEmail === myEmail) ||
+          (myCompany && cComp === myCompany && myCompany !== "hyperlocal co." && myCompany !== "featured employer");
+        if (!matchesEmployer) return false;
+      }
+    }
+
     const query = searchQuery.trim().toLowerCase();
     const title = (c.job_title || "").toLowerCase();
     const name = (c.applicant_name || c.freelancer_name || c.employer_name || c.name || "").toLowerCase();
@@ -210,7 +262,7 @@ export default function FloatingChatWidget({ role = "employer" }) {
     return matchesQuery;
   });
 
-  const unreadCount = chats.length;
+  const unreadCount = filteredChats.length;
 
   return (
     <>

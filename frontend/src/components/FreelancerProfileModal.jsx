@@ -11,7 +11,9 @@ import {
   getSubmittedProfiles,
   getFreelancerProfile,
   sendProfileCompletionReminder,
+  ADMIN_EMAILS,
 } from "@/lib/clientStore";
+import { useAuth } from "@/context/AuthContext";
 import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
 import PortfolioGallery from "@/components/PortfolioGallery";
 
@@ -35,6 +37,12 @@ function formatImageSrc(img) {
 
 export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
   const nav = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
+  );
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const [lightboxImages, setLightboxImages] = useState([]);
   const [avatarFailed, setAvatarFailed] = useState(false);
@@ -128,13 +136,15 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
 
   const handleSendReminder = (e) => {
     e?.stopPropagation?.();
+    if (!isAdmin) return;
     try {
       const res = sendProfileCompletionReminder(pro);
-      setReminderSent(true);
-      setTimeout(() => {
-        onClose?.();
-        nav(`/chat/${res.convId}?role=employer`);
-      }, 750);
+      if (res?.ok) {
+        setReminderSent(true);
+        setTimeout(() => {
+          setReminderSent(false);
+        }, 3000);
+      }
     } catch (err) {
       console.error("Failed to send reminder", err);
     }
@@ -255,8 +265,8 @@ export default function FreelancerProfileModal({ isOpen, onClose, pro }) {
         {/* Scrollable Body Details */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           
-          {/* Incomplete Details / Profile Reminder Banner */}
-          {(!pro.approved || pro.status === "pending" || !pro.bio || pro.bio.includes("No bio") || portfolioProjects.length === 0) && (
+          {/* Incomplete Details / Profile Reminder Banner - ONLY visible to verified admin */}
+          {isAdmin && (!pro.approved || pro.status === "pending" || !pro.bio || pro.bio.includes("No bio") || portfolioProjects.length === 0) && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/40 p-3 shadow-[2px_2px_0px_#121212]">
               <div className="flex items-start gap-2.5 min-w-0">
                 <span className="text-base select-none mt-0.5">⚠️</span>

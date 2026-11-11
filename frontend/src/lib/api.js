@@ -1238,7 +1238,13 @@ async function mockRouter(path, method = "GET", body = null) {
       if (existing) return existing;
       return { id: convId, conversation_id: convId, job_title: "Gig Discussion", company_name: "Local Employer", freelancer_name: "You", status: "active" };
     }
-    return getStoredChats();
+    let roleParam = null;
+    try {
+      const sp = new URL(path, "http://localhost").searchParams;
+      roleParam = sp.get("role");
+    } catch {}
+    const currentUser = getStoredUser();
+    return getStoredChats(currentUser, roleParam);
   }
   if (cleanPath.includes("/messages") && method === "POST") {
     const convId = cleanPath.split("/")[2];

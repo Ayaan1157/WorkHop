@@ -251,6 +251,33 @@ try {
   }
 } catch { /* ignore */ }
 
+// One-time clean slate v9: purge leaked profile reminder chats & candidate inquiries from other users
+const CLEAN_SLATE_FLAG_V9 = "workhop_clean_slate_v9_purge_leaked_reminders_rev3";
+try {
+  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V9)) {
+    const raw = localStorage.getItem("workhop_chats");
+    if (raw) {
+      try {
+        const chats = JSON.parse(raw);
+        if (Array.isArray(chats)) {
+          const cleaned = chats.filter((c) => {
+            if (!c) return false;
+            const jid = String(c.job_id || "");
+            const lastMsg = String(c.last_message || "").toLowerCase();
+            // Purge reminder chats that leaked into general chats
+            if (jid.startsWith("lead-inquiry-")) return false;
+            if (c.is_reminder || c.is_admin_notice) return false;
+            if (lastMsg.includes("please complete your profile details")) return false;
+            return true;
+          });
+          localStorage.setItem("workhop_chats", JSON.stringify(cleaned));
+        }
+      } catch {}
+    }
+    localStorage.setItem(CLEAN_SLATE_FLAG_V9, "1");
+  }
+} catch { /* ignore */ }
+
 // ═══════════ CONNECTS & CREDITS SYSTEM KEYS ═══════════
 const CREDITS_WALLET_KEY = "workhop_credits_wallet";
 const CREDITS_TRANSACTIONS_KEY = "workhop_credits_transactions";
@@ -2629,16 +2656,81 @@ export function applyToJob(
   };
 }
 
-export function getStoredChats() {
+export function getStoredChats(userOverride = null, roleOverride = null) {
   try {
-    const chats = JSON.parse(localStorage.getItem(CHATS_KEY) || "[]");
-    if (Array.isArray(chats)) {
+    const raw = localStorage.getItem(CHATS_KEY) || "[]";
+    const chats = JSON.parse(raw);
+    if (!Array.isArray(chats)) return [];
+
+    const user = userOverride || getStoredUser();
+    const isAdmin = Boolean(
+      user?.is_admin ||
+      user?.role === "admin" ||
+      (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
+    );
+
+    // Admin can view all chats
+    if (isAdmin) {
       return chats.filter((c) => !["conv-demo-1", "conv-demo-2"].includes(c?.id));
     }
+
+    if (!user) {
+      return [];
+    }
+
+    const myId = String(user.id || user.freelancer_id || user.employer_id || "");
+    const myEmail = (user.email || "").trim().toLowerCase();
+    const myName = (user.name || "").trim().toLowerCase();
+    const myCompany = (user.company_name || "").trim().toLowerCase();
+    const role = (roleOverride || user.role || localStorage.getItem("workhop_auth_role") || "").toLowerCase();
+
+    return chats.filter((c) => {
+      if (!c) return false;
+      if (["conv-demo-1", "conv-demo-2"].includes(c.id)) return false;
+
+      const fId = c.freelancer_id ? String(c.freelancer_id) : "";
+      const fEmail = (c.freelancer_email || "").trim().toLowerCase();
+      const fName = (c.freelancer_name || "").trim().toLowerCase();
+      const tId = c.target_user_id ? String(c.target_user_id) : "";
+      const tEmail = (c.target_email || "").trim().toLowerCase();
+
+      const eId = c.employer_id ? String(c.employer_id) : "";
+      const eEmail = (c.employer_email || "").trim().toLowerCase();
+      const cComp = (c.company_name || "").trim().toLowerCase();
+
+      // If user is viewing as Freelancer:
+      if (role.includes("freelancer")) {
+        const matchesFreelancer =
+          (myId && (fId === myId || tId === myId)) ||
+          (myEmail && (fEmail === myEmail || tEmail === myEmail)) ||
+          (myName && fName === myName);
+        return matchesFreelancer;
+      }
+
+      // If user is viewing as Employer:
+      if (role.includes("employ") || role.includes("client")) {
+        // Employers must never see admin profile reminders or system notices sent to freelancers
+        if (c.is_reminder || c.is_admin_notice || c.status === "system_notice") return false;
+        if (String(c.job_id).startsWith("lead-inquiry-") && !c.employer_id) return false;
+
+        const matchesEmployer =
+          (myId && eId === myId) ||
+          (myEmail && eEmail === myEmail) ||
+          (myCompany && cComp === myCompany && myCompany !== "hyperlocal co." && myCompany !== "featured employer");
+        return matchesEmployer;
+      }
+
+      // Fallback: Must match user as either employer or freelancer participant
+      const isParticipant =
+        (myId && (fId === myId || tId === myId || eId === myId)) ||
+        (myEmail && (fEmail === myEmail || tEmail === myEmail || eEmail === myEmail)) ||
+        (myName && fName === myName);
+
+      return isParticipant;
+    });
   } catch {
-    /* ignore */
+    return [];
   }
-  return [];
 }
 
 export function setStoredChatStatus(conversationId, status) {
@@ -2723,50 +2815,79 @@ export function getOrCreateChatWithCandidate(candidate) {
 
 export function sendProfileCompletionReminder(candidate, customNote) {
   if (!candidate) return { ok: false, error: "No candidate provided" };
-  const convId = getOrCreateChatWithCandidate(candidate);
+
+  const user = getStoredUser();
+  const isAdmin = Boolean(
+    user?.is_admin ||
+    user?.role === "admin" ||
+    (user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase()))
+  );
+  if (!isAdmin) {
+    return { ok: false, error: "Unauthorized: Only administrators can send profile completion reminders." };
+  }
+
+  const candidateId = candidate.id || candidate.freelancer_id;
   const fullName = candidate.name || candidate.full_name || "there";
   const firstName = fullName.split(" ")[0] || "there";
+  const candidateEmail = candidate.email || candidate.contact || "";
+
+  const convId = `conv-admin-reminder-${candidateId || Date.now()}`;
   const reminderText =
     customNote ||
     `Hi ${firstName}, please complete your profile details (your bio, primary skills, and portfolio work samples) on WorkHop so we can approve your profile and start connecting you with clients!`;
 
   const nowIso = new Date().toISOString();
-  const user = getStoredUser();
+
+  const adminChat = {
+    id: convId,
+    conversation_id: convId,
+    job_id: `admin-reminder-${candidateId}`,
+    job_title: "Profile Completion Notice",
+    company_name: "WorkHop Administration",
+    employer_name: "WorkHop Admin",
+    employer_id: "admin",
+    employer_email: "support@workhop.in",
+    freelancer_name: fullName,
+    freelancer_id: candidateId,
+    freelancer_email: candidateEmail,
+    target_user_id: candidateId,
+    target_email: candidateEmail,
+    target_name: fullName,
+    status: "system_notice",
+    is_admin_notice: true,
+    is_reminder: true,
+    created_at: nowIso,
+    updated_at: nowIso,
+    last_message: reminderText,
+  };
+
   const reminderMsg = {
     id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     conversation_id: convId,
-    sender_role: user?.is_admin ? "admin" : (user?.role || "employer"),
-    sender_name: user?.name || "WorkHop Admin",
+    sender_role: "admin",
+    sender_name: "WorkHop Admin",
     text: reminderText,
     created_at: nowIso,
     timestamp: nowIso,
     is_reminder: true,
+    is_admin_notice: true,
   };
 
   try {
     const storageKey = `workhop_chat_messages_${convId}`;
     const legacyKey = `workhop_messages_${convId}`;
-    let existing = [];
-    try {
-      const parsed = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem(legacyKey) || "[]");
-      if (Array.isArray(parsed)) existing = parsed;
-    } catch {}
 
-    const updatedMsgs = [...existing, reminderMsg];
-    localStorage.setItem(storageKey, JSON.stringify(updatedMsgs));
-    localStorage.setItem(legacyKey, JSON.stringify(updatedMsgs));
+    localStorage.setItem(storageKey, JSON.stringify([reminderMsg]));
+    localStorage.setItem(legacyKey, JSON.stringify([reminderMsg]));
 
-    // Update conversation in chats list
+    // Update conversation in chats list without touching unrelated conversations
     try {
       const rawChats = localStorage.getItem(CHATS_KEY) || "[]";
       const chats = JSON.parse(rawChats);
       if (Array.isArray(chats)) {
-        const idx = chats.findIndex((c) => (c.id || c.conversation_id) === convId);
-        if (idx !== -1) {
-          chats[idx].last_message = reminderText;
-          chats[idx].updated_at = nowIso;
-          localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
-        }
+        const filtered = chats.filter((c) => (c.id || c.conversation_id) !== convId && c.job_id !== `lead-inquiry-${candidateId}`);
+        filtered.unshift(adminChat);
+        localStorage.setItem(CHATS_KEY, JSON.stringify(filtered));
       }
     } catch {}
 
