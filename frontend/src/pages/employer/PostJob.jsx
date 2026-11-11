@@ -232,8 +232,12 @@ export default function PostJob() {
       }
 
       // Standard job posting is 100% free!
+      const empEmail = (user?.email || localStorage.getItem("workhop_auth_email") || "").trim().toLowerCase();
+      const empName = user?.name || cleanCompany;
       const data = await apiPost("/employer/jobs", {
         employer_id: eid,
+        employer_email: empEmail || null,
+        employer_name: empName,
         company_name: cleanCompany,
         title: cleanTitle,
         bucket,

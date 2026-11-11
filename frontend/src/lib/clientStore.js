@@ -1401,7 +1401,7 @@ export function getStoredJobs() {
     if (!j || !j.title || j.title.startsWith("__WORKHOP_CONFIG_")) return false;
     if (j.is_dummy || j.is_curated || j.is_seed) return false;
     if (deletedIds.has(j.id)) return false;
-    return Boolean(j.employer_id || j.employer_email);
+    return Boolean(j.employer_id || j.employer_email || j.employer_name || j.company_name);
   });
 
   return validCustom.sort((a, b) => {
@@ -1420,6 +1420,10 @@ export function postCustomJob(jobData) {
   const isBoosted = Boolean(jobData.is_boosted);
   const boostExpiresAt = isBoosted ? new Date(Date.now() + 48 * 3600000).toISOString() : null;
 
+  const u = getStoredUser();
+  const empId = jobData.employer_id || u?.id || u?.employer_id || localStorage.getItem("workhop_employer_id") || `employer-${Date.now()}`;
+  const empEmail = (jobData.employer_email || u?.email || localStorage.getItem("workhop_auth_email") || "").toLowerCase().trim() || null;
+
   const newJob = {
     id: jobData.id || `job-custom-${Date.now()}`,
     title: jobData.title,
@@ -1429,9 +1433,9 @@ export function postCustomJob(jobData) {
     is_boosted: isBoosted,
     boost_expires_at: boostExpiresAt,
     company_name: jobData.company_name,
-    employer_name: jobData.employer_name || `${jobData.company_name} Lead`,
-    employer_id: jobData.employer_id || null,
-    employer_email: jobData.employer_email || null,
+    employer_name: jobData.employer_name || (u?.name ? u.name : `${jobData.company_name} Lead`),
+    employer_id: empId,
+    employer_email: empEmail,
     description: jobData.description,
     bucket: jobData.bucket || "Creative",
     category: jobData.bucket || "Graphics & Design",

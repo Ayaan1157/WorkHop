@@ -188,7 +188,14 @@ export default function Jobs() {
         fid ? apiGet(`/freelancer/${fid}/quota`).catch(() => null) : Promise.resolve(null),
       ]);
       const isRealEmployerGig = (j) =>
-        Boolean(j && !j.title?.startsWith("__WORKHOP_CONFIG_") && !j.is_dummy && !j.is_curated && !j.is_seed && (j.employer_id || j.employer_email));
+        Boolean(
+          j &&
+          !j.title?.startsWith("__WORKHOP_CONFIG_") &&
+          !j.is_dummy &&
+          !j.is_curated &&
+          !j.is_seed &&
+          (j.employer_id || j.employer_email || j.employer_name || j.company_name)
+        );
 
       if (Array.isArray(jobsRes) && jobsRes.length > 0) {
         setJobs(jobsRes.filter(isRealEmployerGig));
@@ -262,7 +269,7 @@ export default function Jobs() {
   const passes = (j) => {
     if (!j || !j.title || j.title.startsWith("__WORKHOP_CONFIG_")) return false;
     if (j.is_dummy || j.is_curated || j.is_seed) return false;
-    if (!j.employer_id && !j.employer_email) return false;
+    if (!j.employer_id && !j.employer_email && !j.employer_name && !j.company_name) return false;
     // Completed jobs are removed from public listings
     if (j.is_completed || j.status === "completed") return false;
     try {

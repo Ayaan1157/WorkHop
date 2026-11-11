@@ -200,6 +200,11 @@ module.exports = async function handler(req, res) {
 
         let sbInserted = null;
         try {
+          const isUuid = (val) =>
+            typeof val === "string" &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+          const validEmployerId = isUuid(metadata.employer_id) ? metadata.employer_id : null;
+
           sbInserted = await supabaseRequest("POST", "/rest/v1/jobs", {
             title,
             description: metadata.description,
@@ -211,7 +216,7 @@ module.exports = async function handler(req, res) {
             lng: metadata.lng,
             company_name: metadata.company_name,
             employer_name: metadata.employer_name,
-            employer_id: metadata.employer_id || null,
+            employer_id: validEmployerId,
             status: "open",
             is_boosted: metadata.is_boosted,
             keywords: [title, category, bucket, area],
@@ -286,9 +291,8 @@ module.exports = async function handler(req, res) {
       for (const sj of sbJobs) {
         if (!sj || !sj.title) continue;
         if (sj.title.startsWith("__WORKHOP_CONFIG_")) continue;
-        if (deletedJobIds.has(String(sj.id))) continue;
-        if (!sj.employer_id && !sj.employer_email) continue;
-        if (sj.is_dummy || sj.is_curated) continue;
+        if (!sj.employer_id && !sj.employer_email && !sj.company_name && !sj.employer_name) continue;
+        if (sj.is_dummy || sj.is_curated || sj.is_seed) continue;
 
         const liveEmp =
           (sj.employer_id && empLookup[sj.employer_id]) ||
