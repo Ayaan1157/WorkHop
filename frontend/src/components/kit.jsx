@@ -150,7 +150,7 @@ export function GlobalNav() {
   const isEmployerUser = Boolean(userRole.includes("employ") || userRole.includes("client"));
   const isFreelancerUser = Boolean(!isAdmin && !isEmployerUser);
 
-  const showPostJob = true;
+  const showPostJob = Boolean(!user || isAdmin || isEmployerUser);
 
   const currentFreelancerId = (isFreelancerUser ? (user?.id || user?.email) : null) || getFreelancerId?.() || "anon";
   const userWallet = getCreditsWallet(currentFreelancerId);
@@ -249,15 +249,17 @@ export function GlobalNav() {
               </button>
             </div>
 
-            {/* Post Job Button (Always accessible to all users) */}
-            <button
-              data-testid="nav-post-job-btn"
-              onClick={() => nav("/employer/post-job")}
-              className="inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-brand px-2.5 sm:px-3.5 text-xs font-black tracking-wide text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
-            >
-              <PlusCircle size={15} className="shrink-0" />
-              <span>POST A GIG</span>
-            </button>
+            {/* Post Job Button (Only for Employers and Admins, or guests) */}
+            {showPostJob && (
+              <button
+                data-testid="nav-post-job-btn"
+                onClick={() => nav("/employer/post-job")}
+                className="inline-flex h-10 items-center gap-1.5 border-2 border-ink bg-brand px-2.5 sm:px-3.5 text-xs font-black tracking-wide text-white shadow-[2px_2px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
+              >
+                <PlusCircle size={15} className="shrink-0" />
+                <span>POST A GIG</span>
+              </button>
+            )}
 
             {/* User Account or Sign In Button */}
             {user ? (

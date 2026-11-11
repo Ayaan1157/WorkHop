@@ -565,13 +565,6 @@ export default function Jobs() {
               >
                 BROWSE ALL GIGS
               </button>
-            ) : !hasAnyJobs ? (
-              <a
-                href="/employer/post-job"
-                className="inline-flex items-center gap-1.5 border-2 border-ink bg-brand px-5 py-2.5 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
-              >
-                <span>POST A GIG</span>
-              </a>
             ) : (
               <button
                 type="button"
