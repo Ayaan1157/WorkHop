@@ -1323,22 +1323,34 @@ export default function AuthCallback() {
               </div>
             ) : (
               <div className="space-y-4 pt-1">
-                {/* Business / Organization Name */}
+                {/* Business Type */}
                 <div>
                   <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
-                    Business / Organization Name: *
+                    Business / Entity Type: *
                   </label>
-                  <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
+                  <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white">
                     <Building size={16} className="text-[#FF5500] mr-2 shrink-0" />
-                    <input
-                      type="text"
-                      value={companyInput}
+                    <select
+                      value={companyInput || "Specialty Café / Roastery"}
                       onChange={(e) => setCompanyInput(e.target.value)}
-                      placeholder="e.g. Cobblestone Studio, Zenith Tech Pvt Ltd"
-                      data-testid="onboarding-company-input"
-                      className="w-full bg-transparent text-xs font-bold text-white placeholder-zinc-500 outline-none"
-                    />
+                      data-testid="onboarding-business-type-select"
+                      className="w-full bg-transparent text-xs font-bold text-white outline-none cursor-pointer"
+                    >
+                      <option value="Specialty Café / Roastery" className="bg-[#242424] text-white">☕ Specialty Café / Roastery</option>
+                      <option value="Boutique / Retail Store" className="bg-[#242424] text-white">🛍️ Boutique / Retail Store</option>
+                      <option value="Design / Spatial Studio" className="bg-[#242424] text-white">📐 Design / Spatial Studio</option>
+                      <option value="Tech Startup" className="bg-[#242424] text-white">🚀 Tech Startup</option>
+                      <option value="Marketing Agency" className="bg-[#242424] text-white">📈 Marketing Agency</option>
+                      <option value="Salon / Wellness Clinic" className="bg-[#242424] text-white">✨ Salon / Wellness Clinic</option>
+                      <option value="Restaurant / Kitchen" className="bg-[#242424] text-white">🍽️ Restaurant / Kitchen</option>
+                      <option value="Production / Media House" className="bg-[#242424] text-white">🎬 Production / Media House</option>
+                      <option value="Local Service Business" className="bg-[#242424] text-white">🏢 Local Service Business</option>
+                      <option value="Independent Employer" className="bg-[#242424] text-white">👤 Independent Employer</option>
+                    </select>
                   </div>
+                  <p className="mt-1 text-[10px] font-semibold text-zinc-400">
+                    🔒 Zero Brand Leaks: You will never be asked for your company name. Your business is identified only as &quot;{companyInput || "Specialty Café"} in {selectedArea}&quot;.
+                  </p>
                 </div>
 
                 {/* Type of Work They Hire For */}
@@ -1363,24 +1375,20 @@ export default function AuthCallback() {
                   </div>
                 </div>
 
-                {/* Optional GSTIN */}
+                {/* About Business (No names) */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300">
-                      GSTIN / GST Number (Optional):
-                    </label>
-                    <span className="text-[10px] text-zinc-400 font-bold">Optional</span>
-                  </div>
-                  <div className="flex items-center border-2 border-zinc-700 bg-[#242424] px-3 py-2.5 focus-within:border-white transition">
-                    <input
-                      type="text"
-                      maxLength={15}
-                      value={gstInput}
-                      onChange={(e) => setGstInput(e.target.value.toUpperCase())}
-                      placeholder="e.g. 29AAAAA0000A1Z5"
-                      className="w-full bg-transparent text-xs font-mono font-bold text-white placeholder-zinc-500 outline-none uppercase"
-                    />
-                  </div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 block mb-1">
+                    Briefly Describe What Your Business Does:
+                  </label>
+                  <textarea
+                    rows={2}
+                    maxLength={300}
+                    value={bioInput}
+                    onChange={(e) => setBioInput(e.target.value)}
+                    placeholder="e.g. Artisanal bakery and third-wave cafe. We need help with menu designs, social media reels, and local SEO..."
+                    data-testid="onboarding-about-business-input"
+                    className="w-full border-2 border-zinc-700 bg-[#242424] p-2.5 text-xs font-bold text-white outline-none placeholder-zinc-500 resize-none focus-within:border-white"
+                  />
                 </div>
               </div>
             )}

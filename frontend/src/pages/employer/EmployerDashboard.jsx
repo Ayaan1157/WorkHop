@@ -22,6 +22,7 @@ import EditModal from "@/components/EditModal";
 import EditJobModal from "@/components/EditJobModal";
 import ProfileLockedModal from "@/components/ProfileLockedModal";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
+import EmployerProfileWizard from "@/components/EmployerProfileWizard";
 
 const labelCls = "text-xs font-semibold text-inkmuted dark:text-[#888] mb-1.5 block";
 const inputCls = "w-full bg-[#f9f9f9] dark:bg-[#1a1a1a] border border-[#ddd] dark:border-[#333] rounded-lg px-3.5 py-2.5 text-sm text-ink dark:text-white placeholder:text-[#999] dark:placeholder:text-[#555] focus:outline-none focus:border-[#E65A1E] transition";
@@ -78,6 +79,13 @@ export default function EmployerDashboard() {
   const [loading, setLoading] = useState(true);
   const [jobCompletedNotice, setJobCompletedNotice] = useState(null);
   const [jobsTab, setJobsTab] = useState("active"); // "active" | "completed"
+
+  // Profile Wizard State
+  const isProfileCompleted =
+    user?.completion_status === "completed" ||
+    localStorage.getItem("workhop_employer_profile_completed") === "1" ||
+    (bio && bio.length >= 30 && area);
+  const [wizardOpen, setWizardOpen] = useState(!isProfileCompleted);
 
   // Load Employer Data
   const loadDashboardData = useCallback(async () => {
@@ -529,12 +537,79 @@ export default function EmployerDashboard() {
             {/* ═══════════ MAIN CONTENT ═══════════ */}
             <main className="flex-1 flex flex-col gap-6 min-w-0">
               
+              {/* Profile Completion Wizard Modal */}
+              {wizardOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm overflow-y-auto animate-in fade-in">
+                  <div className="w-full max-w-2xl my-8">
+                    <EmployerProfileWizard
+                      initialData={{
+                        business_category: industry,
+                        about_business: bio,
+                        area: area || "Koramangala",
+                      }}
+                      onComplete={(saved) => {
+                        setWizardOpen(false);
+                        setCompanyName(saved.public_label);
+                        setArea(saved.area);
+                        setBio(saved.about_business);
+                        setIndustry(saved.business_category);
+                      }}
+                      onSkip={() => setWizardOpen(false)}
+                      onNavigateToPostGig={(saved) => {
+                        setWizardOpen(false);
+                        nav("/employer/post-job", { state: { prefill: saved } });
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Persistent Profile Completion Progress Banner (If Incomplete) */}
+              {!isProfileCompleted && (
+                <div
+                  data-testid="employer-profile-progress-banner"
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-2 border-ink bg-[#FFF9E6] dark:bg-[#1e190e] p-5 shadow-[4px_4px_0px_#121212]"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-brand text-white shadow-[1.5px_1.5px_0px_#121212]">
+                      <Sparkles size={20} />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-black uppercase text-ink dark:text-white">
+                          Complete Your Employer Profile
+                        </h3>
+                        <span className="border border-ink bg-brand text-white px-1.5 py-0.2 text-[9px] font-black uppercase">
+                          Action Required
+                        </span>
+                      </div>
+                      <p className="text-xs font-semibold text-inkmuted dark:text-stone-300 mt-0.5">
+                        Describe what your business does to connect with verified Bangalore freelancers. Zero business names required.
+                      </p>
+                      <div className="w-48 bg-white dark:bg-stone-800 h-2 border border-ink mt-2 overflow-hidden">
+                        <div className="bg-brand h-full w-[40%]" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setWizardOpen(true)}
+                    data-testid="resume-profile-wizard-btn"
+                    className="flex items-center gap-1.5 border-2 border-ink bg-brand px-4 py-2 text-xs font-black uppercase text-white hover:bg-brand/90 transition shadow-[2px_2px_0px_#121212] shrink-0"
+                  >
+                    <span>Complete Profile (3 Mins)</span>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
+
               {/* 1. Header Card: Company Bio & Title */}
               <section className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl p-6 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <h1 className="text-xl font-bold text-ink dark:text-white">{companyName}</h1>
+                      <h1 className="text-xl font-bold text-ink dark:text-white">{companyName || "Bengaluru Client"}</h1>
                       <button
                         type="button"
                         onClick={() => {
@@ -1133,33 +1208,41 @@ export default function EmployerDashboard() {
           isOpen={editModalOpen}
           onClose={() => setEditModalOpen(false)}
           onSave={handleSaveProfile}
-          title="Edit Employer & Company Profile"
+          title="Edit Employer Profile"
           wide
         >
           <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+            <div className="rounded-lg border border-brand/30 bg-brand/5 p-3 text-xs text-ink dark:text-white flex items-center justify-between">
+              <div>
+                <p className="font-bold uppercase tracking-wider text-[11px] text-brand">🔒 Zero Business Name Leak</p>
+                <p className="text-[11px] text-inkmuted dark:text-[#888] mt-0.5">
+                  Your business identity is protected. Freelancers see: <strong>{companyName || "Bengaluru Business"}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditModalOpen(false);
+                  setShowProfileWizard(true);
+                }}
+                className="text-[11px] font-bold text-brand underline shrink-0 ml-3"
+              >
+                Re-run Profile Wizard
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Company / Business Name</label>
-                <input
-                  type="text"
-                  value={editForm.companyName}
-                  onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })}
-                  placeholder="e.g. Acme Tech Studio"
-                  className={inputCls}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className={labelCls}>Manager / Hiring Lead Name</label>
+                <label className={labelCls}>Manager / Hiring Lead First Name</label>
                 <input
                   type="text"
                   value={editForm.employerName}
                   onChange={(e) => setEditForm({ ...editForm, employerName: e.target.value })}
-                  placeholder="e.g. Rahul Sharma"
+                  placeholder="e.g. Rahul"
                   className={inputCls}
                   required
                 />
+                <span className="text-[10px] text-inkmuted mt-0.5 block">Visible to applicants as your first name only.</span>
               </div>
             </div>
 

@@ -1,5 +1,80 @@
 const https = require("https");
 
+function validateNoBusinessNameOrContact(text = "", context = {}) {
+  if (!text || typeof text !== "string") return { valid: true };
+  const clean = text
+    .normalize("NFKD")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[_\-*~`]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!clean) return { valid: true };
+
+  const lower = clean.toLowerCase();
+
+  // 1. URLs and Domains
+  const urlRegex = /(?:https?:\/\/|www\.)[^\s/$.?#].[^\s]*/i;
+  const domainRegex = /\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:com|in|co|org|io|net|ai|app|dev|biz|info|xyz|online|me)\b/i;
+  const obfuscatedDomainRegex = /\b[a-z0-9-]+\s*(?:\.|\[dot\]|\(dot\)|\s+dot\s+)\s*(?:com|in|co|org|io|net|ai|app|dev)\b/i;
+  if (urlRegex.test(clean) || domainRegex.test(clean) || obfuscatedDomainRegex.test(clean)) {
+    return {
+      valid: false,
+      reason: "Links, websites, and domain names are not allowed in public text. Describe what your business does without URLs."
+    };
+  }
+
+  // 2. Email Addresses
+  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
+  const obfuscatedEmailRegex = /\b[A-Za-z0-9._%+-]+\s*(?:@|\[at\]|\(at\)|\s+at\s+)\s*[A-Za-z0-9.-]+\s*(?:\.|\[dot\]|\s+dot\s+)\s*(?:com|in|org|net|co)\b/i;
+  if (emailRegex.test(clean) || obfuscatedEmailRegex.test(clean)) {
+    return {
+      valid: false,
+      reason: "Email addresses cannot be shared before hiring. Contact details are securely shared after hiring."
+    };
+  }
+
+  // 3. Phone & WhatsApp Numbers
+  const strippedDigits = clean.replace(/\D/g, "");
+  const phonePattern = /(?:\+91[\s-]?)?(?:[6789]\d{9}|[6789]\d{4}[\s-]?\d{5}|[6789]\d{2}[\s-]?\d{3}[\s-]?\d{4})/;
+  if (phonePattern.test(clean) || (strippedDigits.length === 10 && /^[6-9]/.test(strippedDigits))) {
+    return {
+      valid: false,
+      reason: "Phone numbers and WhatsApp numbers cannot be shared before hiring."
+    };
+  }
+
+  // 4. Social Handles
+  const handleRegex = /(?:@[\w.]{3,30}|(?:t\.me|wa\.me|instagram\.com|linkedin\.com)\/[\w.]+)/i;
+  if (handleRegex.test(clean)) {
+    return {
+      valid: false,
+      reason: "Social handles and messaging links (@username, wa.me, t.me) cannot be included in public text."
+    };
+  }
+
+  // 5. Explicit Brand Declarations
+  const brandDeclPattern = /\b(?:we are called|called|known as|named)\s+([A-Z0-9][A-Za-z0-9'&.\s]{2,30})/i;
+  const match = clean.match(brandDeclPattern);
+  if (match && match[1]) {
+    return {
+      valid: false,
+      reason: `Please describe what your business does without naming it ("${match[1].trim()}").`
+    };
+  }
+
+  // 6. Corporate Suffixes
+  const corpPattern = /\b([A-Z0-9][a-zA-Z0-9'&.-]+\s+(?:pvt ltd|pvt\. ltd|private limited|ltd|llp|inc|corp))\b/i;
+  const corpMatch = clean.match(corpPattern);
+  if (corpMatch && corpMatch[1]) {
+    return {
+      valid: false,
+      reason: `Please remove corporate entity names like "${corpMatch[1].trim()}". Describe the business type instead.`
+    };
+  }
+
+  return { valid: true };
+}
+
 function rzpRequest(method, path, data = null) {
   const keyId = process.env.RAZORPAY_KEY_ID || process.env.REACT_APP_RAZORPAY_KEY_ID || "rzp_live_Tran4lUkI8SdOr";
   const keySecret = process.env.RAZORPAY_KEY_SECRET || "TTx70SMHAYmm9rONUAxbYOjV";
@@ -157,18 +232,32 @@ module.exports = async function handler(req, res) {
         const title = (body.title || "").trim();
         if (!title) return res.status(400).json({ detail: "Job title is required" });
 
-        const pay = Number(body.pay) || 0;
-        const company = body.company_name || body.employer_name || "Employer";
-        const employerName = body.employer_name || `${company} HR`;
+        const description = body.description || "Looking for a top freelancer in Bengaluru.";
         const category = body.category || body.bucket || "Graphics & Design";
         const bucket = body.bucket || body.category || "Creative";
         const area = body.area || "Bengaluru";
-        const description = body.description || "Looking for a top freelancer in Bengaluru.";
+
+        // Anti-leak check on title and description
+        const titleCheck = validateNoBusinessNameOrContact(title, { userEmail: body.employer_email || body.email });
+        if (!titleCheck.valid) {
+          return res.status(400).json({ detail: titleCheck.reason });
+        }
+        const descCheck = validateNoBusinessNameOrContact(description, { userEmail: body.employer_email || body.email });
+        if (!descCheck.valid) {
+          return res.status(400).json({ detail: descCheck.reason });
+        }
+
+        const pay = Number(body.pay) || 0;
+        const bType = body.business_type || "Business";
+        const publicLabel = body.public_label || (body.company_name && !body.company_name.toLowerCase().includes("ltd") ? body.company_name : `${bType} in ${area}`);
+        const company = publicLabel;
+        const employerName = body.employer_name ? body.employer_name.split(" ")[0] : "Employer";
         const isBoosted = Boolean(body.is_boosted);
         const boostExpiresAt = isBoosted ? new Date(Date.now() + 48 * 3600000).toISOString() : null;
 
         const metadata = {
-          company_name: company,
+          company_name: publicLabel,
+          public_label: publicLabel,
           employer_name: employerName,
           employer_id: body.employer_id || null,
           employer_email: (body.employer_email || body.email || "").trim().toLowerCase() || null,
@@ -491,7 +580,12 @@ module.exports = async function handler(req, res) {
         area,
         hiring_for,
         industry,
+        business_type,
+        business_category,
+        about_business,
         bio,
+        typical_help_needed,
+        team_size,
         picture,
         avatar_url,
         job_title,
@@ -499,27 +593,46 @@ module.exports = async function handler(req, res) {
         job_pay
       } = body;
 
-      const compName = (company_name || name || contact_name || "").trim();
-      if (!compName) return res.status(400).json({ detail: "Company name is required" });
+      const cleanArea = (area || "Bengaluru").trim();
+      const bType = (business_type || "Business").trim();
+      const bCategory = (business_category || hiring_for || industry || "General").trim();
+      const aboutText = (about_business || bio || "").trim();
 
-      const cleanEmail = (email || `${compName.toLowerCase().replace(/[^a-z0-9]/g, "")}@workhop.in`).trim().toLowerCase();
+      // Anti-leak validation on about_business / bio
+      if (aboutText) {
+        const leakCheck = validateNoBusinessNameOrContact(aboutText, { userEmail: email });
+        if (!leakCheck.valid) {
+          return res.status(400).json({ detail: leakCheck.reason });
+        }
+      }
+
+      // Generate anonymous public label
+      const publicLabel = `${bType} in ${cleanArea}`;
+      const compName = publicLabel;
+
+      const cleanEmail = (email || `${publicLabel.toLowerCase().replace(/[^a-z0-9]/g, "")}@workhop.in`).trim().toLowerCase();
       const phoneDigits = (phone || "").replace(/\D/g, "");
-      const contactPerson = contact_name || name || `${compName} Lead`;
-      const resolvedHiringFor = hiring_for || industry || job_category || "";
+      const contactPerson = (contact_name || name || "Employer").split(" ")[0]; // First name only
+      const resolvedHiringFor = bCategory;
 
       const cachedEmp = {
         ...(employerProfileCache[cleanEmail] || {}),
         employer_id: employer_id || id,
-        company_name: compName,
+        public_label: publicLabel,
+        company_name: publicLabel,
+        business_type: bType,
+        business_category: bCategory,
+        about_business: aboutText,
+        typical_help_needed: typical_help_needed || [],
+        team_size: team_size || null,
         employer_name: contactPerson,
         name: contactPerson,
         email: cleanEmail,
         phone: phoneDigits.length >= 10 ? `+91 ${phoneDigits.slice(-10, -5)} ${phoneDigits.slice(-5)}` : phone || "",
-        area: area || "Bengaluru",
+        area: cleanArea,
         hiring_for: resolvedHiringFor,
-        bio: bio || "",
-        picture: picture || avatar_url || null,
-        avatar_url: avatar_url || picture || null,
+        bio: aboutText,
+        completion_status: "completed",
         updated_at: new Date().toISOString(),
       };
       if (cleanEmail) employerProfileCache[cleanEmail] = cachedEmp;
@@ -533,15 +646,16 @@ module.exports = async function handler(req, res) {
           contact: phoneDigits.slice(-10) || undefined,
           notes: {
             role: "employer",
-            company_name: compName,
+            public_label: publicLabel,
+            company_name: publicLabel,
+            business_type: bType,
+            business_category: bCategory,
             hiring_for: resolvedHiringFor,
-            bio: (bio || "").slice(0, 240),
-            area: area || "Bengaluru",
+            about_business: aboutText.slice(0, 240),
+            area: cleanArea,
+            completion_status: "completed",
             source: "workhop_employer_registration",
             registered_at: new Date().toISOString(),
-            job_title: job_title || "",
-            job_category: job_category || resolvedHiringFor || "Graphics & Design",
-            job_pay: String(job_pay || ""),
           }
         });
       } catch (e) {
@@ -853,8 +967,10 @@ module.exports = async function handler(req, res) {
         {
           employer_id: "emp-cobblestone-studios",
           id: "emp-cobblestone-studios",
-          company_name: "Cobblestone Studios",
-          name: "Alia Mansoor",
+          public_label: "Spatial Design Studio in Frazer Town",
+          company_name: "Spatial Design Studio in Frazer Town",
+          private_business_name: "Cobblestone Studios",
+          name: "Alia",
           email: "alia.m@cobblestonedesigns.in",
           phone: "+91 97394 63546",
           area: "Frazer Town",
@@ -863,6 +979,7 @@ module.exports = async function handler(req, res) {
           spent_rupees: 45000,
           jobs_posted: 2,
           profile_status: "complete",
+          completion_status: "completed",
           missing_fields: [],
           created_at: "2026-10-15T10:00:00.000Z",
           source: "verified",
@@ -871,8 +988,10 @@ module.exports = async function handler(req, res) {
         {
           employer_id: "emp-brewblock-roasters",
           id: "emp-brewblock-roasters",
-          company_name: "BrewBlock Specialty Roasters",
-          name: "Karan Somani",
+          public_label: "Specialty Café in Koramangala",
+          company_name: "Specialty Café in Koramangala",
+          private_business_name: "BrewBlock Specialty Roasters",
+          name: "Karan",
           email: "karan@brewblock.in",
           phone: "+91 98451 22890",
           area: "Koramangala",
@@ -881,6 +1000,7 @@ module.exports = async function handler(req, res) {
           spent_rupees: 32000,
           jobs_posted: 1,
           profile_status: "complete",
+          completion_status: "completed",
           missing_fields: [],
           created_at: "2026-10-20T11:30:00.000Z",
           source: "verified",
@@ -889,8 +1009,10 @@ module.exports = async function handler(req, res) {
         {
           employer_id: "emp-apex-design",
           id: "emp-apex-design",
-          company_name: "Apex Design Studio",
-          name: "Rohan Verma",
+          public_label: "Tech Consultancy in Indiranagar",
+          company_name: "Tech Consultancy in Indiranagar",
+          private_business_name: "Apex Design Studio",
+          name: "Rohan",
           email: "hiring@apexdesign.in",
           phone: "+91 98765 43211",
           area: "Indiranagar",
@@ -899,6 +1021,7 @@ module.exports = async function handler(req, res) {
           spent_rupees: 68000,
           jobs_posted: 3,
           profile_status: "complete",
+          completion_status: "completed",
           missing_fields: [],
           created_at: "2026-10-25T14:15:00.000Z",
           source: "verified",

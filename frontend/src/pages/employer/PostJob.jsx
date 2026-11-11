@@ -13,6 +13,7 @@ import RecaptchaWidget from "@/components/RecaptchaWidget";
 import MarketPriceAdvisor from "@/components/MarketPriceAdvisor";
 import SuggestProfessionModal from "@/components/SuggestProfessionModal";
 import { sanitizeInput, checkSpamKeywords } from "@/lib/security";
+import { validateNoBusinessNameOrContact, generateEmployerPublicLabel } from "@/lib/antiLeakValidator";
 import { ADMIN_EMAILS, getCreditsConfig, calculateHopsForJob, blastFeaturedJobNotification, getStoredJobs, updateCustomJob } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 
@@ -31,13 +32,14 @@ export default function PostJob() {
   const { startPayment } = useRazorpay();
   const { coords, status: locStatus, requestLocation } = useUserLocation();
 
+  const prefill = location.state?.prefill || {};
   const [credits, setCredits] = useState(null);
-  const [company, setCompany] = useState(() => location.state?.prefillCompany || "");
+  const [company, setCompany] = useState(() => prefill.public_label || location.state?.prefillCompany || "");
   const [title, setTitle] = useState(() => location.state?.prefillTitle || "");
-  const [bucket, setBucket] = useState(() => location.state?.prefillCategory || "Graphics & Design");
+  const [bucket, setBucket] = useState(() => prefill.business_category || location.state?.prefillCategory || "Graphics & Design");
   const [pay, setPay] = useState(() => (location.state?.prefillPay ? String(location.state.prefillPay) : ""));
   const [isBoosted, setIsBoosted] = useState(() => Boolean(location.state?.boost));
-  const [area, setArea] = useState(() => location.state?.prefillArea || "Koramangala");
+  const [area, setArea] = useState(() => prefill.area || location.state?.prefillArea || "Koramangala");
   const [customCoords, setCustomCoords] = useState(null);
   const [description, setDescription] = useState(() => location.state?.prefillDescription || "");
   const [submitting, setSubmitting] = useState(false);
@@ -157,17 +159,31 @@ export default function PostJob() {
 
   const submit = async (retryAfterPay = true) => {
     setError("");
-    const cleanCompany = sanitizeInput(company);
     const cleanTitle = sanitizeInput(title);
     const cleanDesc = sanitizeInput(description);
     const cleanArea = sanitizeInput(area);
 
-    if (!cleanCompany || !cleanTitle || !cleanDesc || !pay) {
-      return setError("Fill in company, title, pay, and description.");
+    if (!cleanTitle || !cleanDesc || !pay) {
+      return setError("Fill in title, pay, and description.");
     }
 
+    // Anti-Leak Check: Never allow business names, links or contacts in title or description
+    const titleCheck = validateNoBusinessNameOrContact(cleanTitle, { userEmail: user?.email });
+    if (!titleCheck.valid) {
+      return setError(titleCheck.reason);
+    }
+    const descCheck = validateNoBusinessNameOrContact(cleanDesc, { userEmail: user?.email });
+    if (!descCheck.valid) {
+      return setError(descCheck.reason);
+    }
+
+    // Generate anonymous public label
+    const bType = user?.business_type || "Business";
+    const generatedCompany = user?.public_label || generateEmployerPublicLabel(bType, cleanArea, bucket);
+    const cleanCompany = generatedCompany;
+
     // Safety Measure: Content Moderation & Spam Keyword Scanner
-    const spamCheck = checkSpamKeywords(`${cleanTitle} ${cleanDesc} ${cleanCompany}`);
+    const spamCheck = checkSpamKeywords(`${cleanTitle} ${cleanDesc}`);
     if (spamCheck.isSpam) {
       return setError(`Safety filter notice: Job description contains flagged content (${spamCheck.matched.join(", ")}). Please remove before posting.`);
     }
@@ -358,15 +374,20 @@ export default function PostJob() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className={label}>COMPANY / EMPLOYER NAME</label>
-            <input
-              data-testid="postjob-company"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              placeholder="e.g. BrewBox Cafe, Studio 9, or Your Name"
-              className={inputCls}
-            />
+          {/* IDENTITY PROTECTED NOTICE */}
+          <div className="flex items-center justify-between border-2 border-ink bg-sand/30 p-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-mono text-[11px] font-bold text-inkmuted uppercase tracking-wider">
+                Posting As:
+              </span>
+              <span className="font-bold text-ink font-mono">
+                {company || (category && area ? `${category} Studio in ${area}` : "Bengaluru Employer (Identity Protected)")}
+              </span>
+            </div>
+            <span className="text-[10px] uppercase font-bold text-inkmuted tracking-wider">
+              🔒 Zero Name Leak Active
+            </span>
           </div>
 
           <div className="flex flex-col gap-1.5">
