@@ -100,6 +100,7 @@ export default function EmployerDashboard() {
 
       const myJobs = allJobs.filter((j) => {
         if (!j) return false;
+        if (j.is_curated || j.is_seed || j.is_dummy || (!j.employer_id && !j.employer_email)) return false;
         const jId = j.employer_id ? String(j.employer_id) : "";
         const jEmail = (j.employer_email || "").toLowerCase().trim();
         const jComp = (j.company_name || "").toLowerCase().trim();

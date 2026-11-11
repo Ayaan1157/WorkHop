@@ -1,8 +1,8 @@
 const https = require("https");
 
 function rzpRequest(method, path, data = null) {
-  const keyId = process.env.RAZORPAY_KEY_ID || process.env.REACT_APP_RAZORPAY_KEY_ID || "rzp_live_Tran4lUkI8SdOr";
-  const keySecret = process.env.RAZORPAY_KEY_SECRET || "TTx70SMHAYmm9rONUAxbYOjV";
+  const keyId = process.env.RAZORPAY_KEY_ID || process.env.REACT_APP_RAZORPAY_KEY_ID || "";
+  const keySecret = process.env.RAZORPAY_KEY_SECRET || "";
   const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
 
   return new Promise((resolve, reject) => {
@@ -41,8 +41,7 @@ function rzpRequest(method, path, data = null) {
   });
 }
 
-const DEFAULT_SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZnJia3hwdXdicnZoaWRpaHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMDEwNzMsImV4cCI6MjEwNjY3NzA3M30.uaXuh0iPqiHezrWt5zJA_bV1EnhP-XFI59GIs9RH7sk";
+const DEFAULT_SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY || "";
 
 function unpackPortfolioMeta(rawPortfolio) {
   if (!Array.isArray(rawPortfolio)) {
@@ -74,8 +73,7 @@ function unpackPortfolioMeta(rawPortfolio) {
   return { portfolioItems, portfolioImages, meta };
 }
 
-const DEFAULT_SUPABASE_SERVICE_ROLE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZnJia3hwdXdicnZoaWRpaHZqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTEwMTA3MywiZXhwIjoyMTA2Njc3MDczfQ.k1fdVhfk06yjA4K18iEfoNmIpxg5iRkdr3oSuiw4Q84";
+const DEFAULT_SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 function supabaseRequest(method, path, data = null, extraHeaders = {}) {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://kdfrbkxpuwbrvhidihvj.supabase.co";

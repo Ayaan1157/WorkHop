@@ -31,8 +31,7 @@ import {
   isLocationInBengaluru,
 } from "@/lib/locationAreas";
 import { JOB_CATEGORY_FILTERS } from "@/lib/catalogFilters";
-import { matchJobToTaxonomy } from "@/lib/keywordTaxonomy";
-import { apiGet, apiPost, getFreelancerId } from "@/lib/api";
+import { apiGet, apiPost, getFreelancerId, supabaseGetJobs } from "@/lib/api";
 import {
   getStoredJobs,
   getSavedJobIds,
@@ -188,8 +187,15 @@ export default function Jobs() {
         fid ? apiGet(`/freelancer/${fid}`).catch(() => null) : Promise.resolve(null),
         fid ? apiGet(`/freelancer/${fid}/quota`).catch(() => null) : Promise.resolve(null),
       ]);
-      if (Array.isArray(jobsRes)) {
-        setJobs(jobsRes);
+      if (Array.isArray(jobsRes) && jobsRes.length > 0) {
+        setJobs(jobsRes.filter((j) => !j?.title?.startsWith("__WORKHOP_CONFIG_")));
+      } else {
+        try {
+          const supa = await supabaseGetJobs();
+          if (Array.isArray(supa) && supa.length > 0) {
+            setJobs(supa.filter((j) => !j?.title?.startsWith("__WORKHOP_CONFIG_")));
+          }
+        } catch {}
       }
       setStatus(statusRes);
       setQuota(quotaRes);
@@ -247,6 +253,7 @@ export default function Jobs() {
   };
 
   const passes = (j) => {
+    if (!j || !j.title || j.title.startsWith("__WORKHOP_CONFIG_")) return false;
     // Completed jobs are removed from public listings
     if (j.is_completed || j.status === "completed") return false;
     try {

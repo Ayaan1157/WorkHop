@@ -48,20 +48,23 @@ export function AuthProvider({ children }) {
 
   const checkStoredSession = useCallback(async () => {
     const token = getToken();
-    const localUser = getStoredUser();
-    if (localUser) {
-      setUser(localUser);
+    if (!token) {
+      clearToken();
+      setUser(null);
+      return;
     }
-    if (!token) return;
     try {
       const u = await apiGet("/auth/me", true);
-      if (u) {
+      if (u && (u.email || u.user_id)) {
         saveStoredUser(u);
         setUser(u);
+      } else {
+        clearToken();
+        setUser(null);
       }
     } catch {
-      // If localUser exists, keep it
-      if (!localUser) clearToken();
+      clearToken();
+      setUser(null);
     }
   }, []);
 
@@ -174,24 +177,8 @@ export function AuthProvider({ children }) {
     };
   }, [processSessionId, checkStoredSession]);
 
-  const login = useCallback(async (customEmail = null, customName = null) => {
-    const email = (customEmail || "user@workhop.local").trim().toLowerCase();
-    const existing = getRegisteredUserByEmail(email);
-    const role = existing?.role || localStorage.getItem("workhop_pending_role") || localStorage.getItem("workhop_auth_role") || "freelancer";
-    const name = customName || existing?.name || (email.includes("@") ? email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "WorkHop User");
-    const session = createMockSession(email, {
-      ...(existing || {}),
-      name: name,
-      role: role,
-      area: existing?.area || localStorage.getItem("workhop_user_area") || "",
-      phone: (existing?.phone && existing.phone !== "9876543210") ? existing.phone : (localStorage.getItem("workhop_pro_phone") !== "9876543210" ? localStorage.getItem("workhop_pro_phone") : "") || "",
-      company_name: role === "employer" ? (existing?.company_name || (!["Hyperlocal Co.", "Hyperlocal Enterprises"].includes(localStorage.getItem("workhop_company_name")) ? localStorage.getItem("workhop_company_name") : "") || "") : "",
-      skill: existing?.skill || (!["UI/UX & Brand Designer", "Full Stack Pro", "Creative Pro", "Business Owner"].includes(localStorage.getItem("workhop_pro_skill")) ? localStorage.getItem("workhop_pro_skill") : "") || "",
-    });
-    setToken(session.session_token);
-    saveStoredUser(session.user);
-    setUser(session.user);
-    return session;
+  const login = useCallback(async () => {
+    throw new Error("Password or Google authentication is required to access WorkHop.");
   }, []);
 
   const logout = useCallback(async () => {
@@ -241,71 +228,69 @@ export function AuthProvider({ children }) {
   }, []);
 
   const adminLogin = useCallback(async (email, password) => {
-    try {
-      const data = await apiPost("/auth/admin-login", { email, password });
-      if (data?.session_token && data?.user) {
-        setToken(data.session_token);
-        saveStoredUser(data.user);
-        setUser(data.user);
-        return data;
-      }
-    } catch (e) {
-      // Secure admin authentication fallback (Strict verification)
-      const cleanEmail = (email || "").trim().toLowerCase();
-      const adminSecret = process.env.REACT_APP_ADMIN_PASSWORD || "ZenithAdmin@2026Secure";
-      if (
-        ["zenithdeveleoperss@gmail.com", "zenithdeveloperss@gmail.com", "manarastudio22@gmail.com"].includes(cleanEmail) &&
-        (password === adminSecret || password === "ZenithAdmin@2026Secure")
-      ) {
-        const session = createMockSession(cleanEmail, {
-          name: "Zenith Developers (Admin)",
-          role: "employer",
-          is_admin: true,
-        });
-        session.user.is_admin = true;
-        setToken(session.session_token);
-        saveStoredUser(session.user);
-        setUser(session.user);
-        return session;
-      }
-      throw e;
+    const data = await apiPost("/auth/admin-login", { email, password });
+    if (data?.session_token && data?.user) {
+      setToken(data.session_token);
+      saveStoredUser(data.user);
+      setUser(data.user);
+      return data;
     }
+    throw new Error("Invalid admin credentials.");
   }, []);
 
   const passwordLoginAuth = useCallback(async (email, password, role = "freelancer") => {
+    // 1. Try Supabase Auth password sign-in first
     try {
-      const data = await apiPost("/auth/login", { email, password });
-      if (data?.session_token && data?.user) {
-        setToken(data.session_token);
-        saveStoredUser(data.user);
-        setUser(data.user);
-        return data;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: (email || "").trim().toLowerCase(),
+        password,
+      });
+      if (!error && data?.session?.user) {
+        if (!data.session.user.email_confirmed_at) {
+          const err = new Error("Please verify your email before signing in.");
+          err.code = "email_not_confirmed";
+          throw err;
+        }
+        const userObj = {
+          id: data.session.user.id,
+          user_id: data.session.user.id,
+          email: data.session.user.email,
+          name: data.session.user.user_metadata?.full_name || data.session.user.user_metadata?.name || email.split("@")[0],
+          role: data.session.user.user_metadata?.role || role || "freelancer",
+          email_verified: true,
+        };
+        setToken(data.session.access_token);
+        saveStoredUser(userObj);
+        setUser(userObj);
+        return { user: userObj, session_token: data.session.access_token };
       }
-    } catch (e) {
-      if (e?.status === 404 || e?.message?.includes("Email not found") || e?.message?.includes("Incorrect password")) {
-        throw e;
+      if (error && error.message && error.message.toLowerCase().includes("email not confirmed")) {
+        const err = new Error("Please verify your email before signing in.");
+        err.code = "email_not_confirmed";
+        throw err;
+      }
+    } catch (sbErr) {
+      if (sbErr.code === "email_not_confirmed" || sbErr.message?.includes("verify your email")) {
+        throw sbErr;
       }
     }
-    // Fallback client check (throws "Email not found. Please register first." if unregistered)
-    const session = passwordLogin(email, password, role);
-    setToken(session.session_token);
-    saveStoredUser(session.user);
-    setUser(session.user);
-    return session;
+
+    // 2. Try backend server /auth/login
+    const data = await apiPost("/auth/login", { email, password });
+    if (data?.session_token && data?.user) {
+      setToken(data.session_token);
+      saveStoredUser(data.user);
+      setUser(data.user);
+      return data;
+    }
+    throw new Error("Incorrect email or password.");
   }, []);
 
   const signupWithDetails = useCallback(async (details) => {
     try {
-      saveRegisteredUser(details?.email, details?.password || "", details);
+      await apiPost("/users", details, false);
     } catch (_) {}
-    try {
-      apiPost("/users", details, false).catch(() => {});
-    } catch (_) {}
-    const session = createMockSession(details?.email || "user@workhop.local", details);
-    setToken(session.session_token);
-    saveStoredUser(session.user);
-    setUser(session.user);
-    return session;
+    return { ok: true, details };
   }, []);
 
   const updateUserProfile = useCallback((updates) => {

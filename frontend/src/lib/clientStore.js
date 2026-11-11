@@ -1340,6 +1340,10 @@ export function getStoredJobs() {
       lat: j.lat || (12.9716 + (idx % 6 - 3) * 0.015),
       lng: j.lng || (77.5946 + (idx % 5 - 2) * 0.015),
       keywords: j.keywords || [],
+      is_curated: true,
+      employer_id: j.employer_id || null,
+      employer_email: j.employer_email || null,
+      status: j.status || "open",
     };
   });
 

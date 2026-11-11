@@ -4567,17 +4567,10 @@ async def auth_login(req: LoginRequest):
             )
             user["password_hash"] = new_hash
             user.pop("password", None)
+        else:
+            raise HTTPException(status_code=401, detail="Incorrect email or password.")
     else:
-        new_hash = _hash_password(req.password)
-        user = {
-            "user_id": f"user_{uuid.uuid4().hex[:12]}",
-            "email": email,
-            "name": email.split("@")[0].replace(".", " ").title(),
-            "password_hash": new_hash,
-            "picture": None,
-            "created_at": _now_iso(),
-        }
-        await db.users.insert_one(dict(user))
+        raise HTTPException(status_code=401, detail="Incorrect email or password.")
 
     session_token = f"st_{uuid.uuid4().hex}{secrets.token_hex(8)}"
     await db.user_sessions.update_one(

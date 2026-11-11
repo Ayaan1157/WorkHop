@@ -7,7 +7,7 @@ import {
   Palette, Code2, Megaphone, PenTool, Video, Cpu, Music, Compass, MessageSquare, PhoneCall, Wallet, Lock
 } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
-import { getStoredLeads, isEmailRegistered } from "@/lib/clientStore";
+import { getStoredLeads, isEmailRegistered, saveStoredUser } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { BENGALURU_AREAS, findNearestArea, setSavedArea } from "@/lib/locationAreas";
@@ -272,35 +272,31 @@ export default function Landing() {
         skill: target !== "employer" ? (cleanSkill || undefined) : undefined,
       };
 
-      // Sync to real Supabase auth & backend
-      try {
-        if (passwordInput) {
-          const { data: sbAuth } = await supabase.auth.signUp({
+      let sessionUser = null;
+      if (passwordInput) {
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: passwordInput,
+        });
+        if (!signInErr && signInData?.session) {
+          setToken(signInData.session.access_token);
+          sessionUser = {
+            id: signInData.session.user.id,
+            user_id: signInData.session.user.id,
             email: cleanEmail,
-            password: passwordInput,
-            options: {
-              data: {
-                full_name: cleanName,
-                name: cleanName,
-                role: target,
-                area: areaInput,
-                phone: phoneDigits,
-              },
-            },
-          });
-          if (sbAuth?.session?.access_token) {
-            setToken(sbAuth.session.access_token);
-          }
+            role: target,
+            name: cleanName,
+            area: areaInput,
+            email_verified: true,
+          };
+          saveStoredUser(sessionUser);
         }
-      } catch (sbErr) {
-        console.warn("Supabase auth sync notice:", sbErr?.message);
       }
 
       await apiPost("/users", payload).catch(() => {});
       resetRateLimit(`landing_signup_${cleanEmail}`);
 
-      const session = await signupWithDetails(payload);
-      completeSessionAndRedirect(target, session?.user);
+      completeSessionAndRedirect(target, sessionUser);
     } catch (e) {
       setOtpError(e?.message || "Invalid verification code. Please check your inbox and try again.");
     } finally {

@@ -1,0 +1,509 @@
+{
+  "timestamp": "2026-11-11T00:33:43.907Z",
+  "users": [
+    {
+      "id": "9f41a6d8-2843-42d9-8720-1de8b8e067a7",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "brijeshnalluru@gmail.com",
+      "email_confirmed_at": "2026-11-06T16:43:32.148099Z",
+      "phone": "",
+      "confirmation_sent_at": "2026-11-06T16:38:25.696074Z",
+      "confirmed_at": "2026-11-06T16:43:32.148099Z",
+      "last_sign_in_at": "2026-11-06T16:49:52.821277Z",
+      "app_metadata": {
+        "provider": "google",
+        "providers": [
+          "google"
+        ]
+      },
+      "user_metadata": {
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocLtP-PNPUN_ZVjD7MbWCTjL9TTdG9_Wv5bb7dzC7hMP33Mz2Uk=s96-c",
+        "email": "brijeshnalluru@gmail.com",
+        "email_verified": true,
+        "full_name": "BRIJESH",
+        "iss": "https://accounts.google.com",
+        "name": "BRIJESH",
+        "phone_verified": false,
+        "picture": "https://lh3.googleusercontent.com/a/ACg8ocLtP-PNPUN_ZVjD7MbWCTjL9TTdG9_Wv5bb7dzC7hMP33Mz2Uk=s96-c",
+        "provider_id": "102100303037433355341",
+        "sub": "102100303037433355341"
+      },
+      "identities": null,
+      "created_at": "2026-11-06T16:38:25.59492Z",
+      "updated_at": "2026-11-06T16:49:52.829309Z",
+      "is_anonymous": false
+    },
+    {
+      "id": "023ca538-604c-4095-a19c-32dc6e4f8bfc",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "juskiddin.blr@gmail.com",
+      "email_confirmed_at": "2026-11-05T05:28:15.43867Z",
+      "phone": "",
+      "confirmed_at": "2026-11-05T05:28:15.43867Z",
+      "last_sign_in_at": "2026-11-05T05:28:15.450788Z",
+      "app_metadata": {
+        "provider": "google",
+        "providers": [
+          "google"
+        ]
+      },
+      "user_metadata": {
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocJW32-CnDZTo2ik2JgLGvuIp6MDoDRoQLVuzzj4Bkx1LeGZ--E=s96-c",
+        "email": "juskiddin.blr@gmail.com",
+        "email_verified": true,
+        "full_name": "Jus Kiddin",
+        "iss": "https://accounts.google.com",
+        "name": "Jus Kiddin",
+        "phone_verified": false,
+        "picture": "https://lh3.googleusercontent.com/a/ACg8ocJW32-CnDZTo2ik2JgLGvuIp6MDoDRoQLVuzzj4Bkx1LeGZ--E=s96-c",
+        "provider_id": "112646011149123395766",
+        "sub": "112646011149123395766"
+      },
+      "identities": null,
+      "created_at": "2026-11-05T05:28:15.338965Z",
+      "updated_at": "2026-11-05T05:28:15.496138Z",
+      "is_anonymous": false
+    },
+    {
+      "id": "ca912100-9a19-4a7f-9ec5-b181e5ea04ed",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "vishnuvardhanraju4050@gmail.com",
+      "email_confirmed_at": "2026-11-04T17:02:28.090907Z",
+      "phone": "",
+      "confirmed_at": "2026-11-04T17:02:28.090907Z",
+      "last_sign_in_at": "2026-11-04T17:05:41.842087Z",
+      "app_metadata": {
+        "provider": "google",
+        "providers": [
+          "google"
+        ]
+      },
+      "user_metadata": {
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocK8FcG_CXagx-nDfu0U9856aClydYFVhenUKI8PlpIAfZ059g=s96-c",
+        "email": "vishnuvardhanraju4050@gmail.com",
+        "email_verified": true,
+        "full_name": "vishnu vardhan raju",
+        "iss": "https://accounts.google.com",
+        "missing_fields": [
+          "Phone Number",
+          "Profession / Service Category",
+          "Skills",
+          "Experience",
+          "Bio",
+          "Location"
+        ],
+        "name": "vishnu vardhan raju",
+        "phone_verified": false,
+        "picture": "https://lh3.googleusercontent.com/a/ACg8ocK8FcG_CXagx-nDfu0U9856aClydYFVhenUKI8PlpIAfZ059g=s96-c",
+        "profile_status": "incomplete",
+        "provider_id": "106310009615296969190",
+        "role": "freelancer",
+        "sub": "106310009615296969190",
+        "workhop_registered": true
+      },
+      "identities": null,
+      "created_at": "2026-11-04T17:02:28.016116Z",
+      "updated_at": "2026-11-04T17:05:41.849146Z",
+      "is_anonymous": false
+    },
+    {
+      "id": "a5fadc1f-1fff-4ca8-93d3-d2f11c98e117",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "test.oauth.fl.1793713928017@workhop-test.in",
+      "email_confirmed_at": "2026-11-03T13:52:09.406946Z",
+      "phone": "",
+      "confirmed_at": "2026-11-03T13:52:09.406946Z",
+      "app_metadata": {
+        "provider": "google",
+        "providers": [
+          "google"
+        ]
+      },
+      "user_metadata": {
+        "email_verified": true,
+        "full_name": "Test OAuth Freelancer",
+        "provider": "google"
+      },
+      "identities": null,
+      "created_at": "2026-11-03T13:52:09.307136Z",
+      "updated_at": "2026-11-03T13:52:09.408213Z",
+      "is_anonymous": false
+    },
+    {
+      "id": "e2ef480e-ecd5-4fa0-b671-ed241131cae6",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "aliamansoor@gmail.com",
+      "email_confirmed_at": "2026-11-02T17:59:28.619914Z",
+      "phone": "",
+      "confirmed_at": "2026-11-02T17:59:28.619914Z",
+      "last_sign_in_at": "2026-11-09T10:04:05.984708Z",
+      "app_metadata": {
+        "provider": "google",
+        "providers": [
+          "google"
+        ]
+      },
+      "user_metadata": {
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocLvgv4siW8CZYVPnuMpKVb1QDUH8T5mmrX4pgQFvGtdJU5vfTRpoA=s96-c",
+        "email": "aliamansoor@gmail.com",
+        "email_verified": true,
+        "full_name": "Alia Mansoor",
+        "iss": "https://accounts.google.com",
+        "name": "Alia Mansoor",
+        "phone_verified": false,
+        "picture": "https://lh3.googleusercontent.com/a/ACg8ocLvgv4siW8CZYVPnuMpKVb1QDUH8T5mmrX4pgQFvGtdJU5vfTRpoA=s96-c",
+        "provider_id": "109418904830248855144",
+        "sub": "109418904830248855144"
+      },
+      "identities": null,
+      "created_at": "2026-11-02T17:59:28.596347Z",
+      "updated_at": "2026-11-09T10:04:06.003153Z",
+      "is_anonymous": false
+    },
+    {
+      "id": "d92f3c8b-c0e9-4382-90f3-e12b16386714",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "alia.m@cobblestonedesigns.in",
+      "email_confirmed_at": "2026-11-02T17:53:52.087587Z",
+      "phone": "",
+      "confirmed_at": "2026-11-02T17:53:52.087587Z",
+      "last_sign_in_at": "2026-11-03T06:12:06.395941Z",
+      "app_metadata": {
+        "provider": "google",
+        "providers": [
+          "google"
+        ]
+      },
+      "user_metadata": {
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocLBTAQSIp2ZLeahLmNZnUsx_rYGkDjwPZhYHcZglSkCvmtrKizF=s96-c",
+        "custom_claims": {
+          "hd": "cobblestonedesigns.in"
+        },
+        "email": "alia.m@cobblestonedesigns.in",
+        "email_verified": true,
+        "full_name": "Alia Mansoor",
+        "iss": "https://accounts.google.com",
+        "name": "Alia Mansoor",
+        "phone_verified": false,
+        "picture": "https://lh3.googleusercontent.com/a/ACg8ocLBTAQSIp2ZLeahLmNZnUsx_rYGkDjwPZhYHcZglSkCvmtrKizF=s96-c",
+        "provider_id": "105955812986529340555",
+        "sub": "105955812986529340555"
+      },
+      "identities": null,
+      "created_at": "2026-11-02T17:53:52.018082Z",
+      "updated_at": "2026-11-09T09:45:48.90369Z",
+      "is_anonymous": false
+    },
+    {
+      "id": "5f97835a-a1ae-46a5-8d89-ff5f395e00df",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "zenithdeveloperss@gmail.com",
+      "email_confirmed_at": "2026-11-02T15:54:21.389053Z",
+      "phone": "",
+      "confirmed_at": "2026-11-02T15:54:21.389053Z",
+      "last_sign_in_at": "2026-11-09T18:15:45.294728Z",
+      "app_metadata": {
+        "provider": "google",
+        "providers": [
+          "google"
+        ]
+      },
+      "user_metadata": {
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocK-EbDdMECZI0_Va5vmzrk4x2yS08kCPSb8V9L6qc0rTM9fHi0=s96-c",
+        "email": "zenithdeveloperss@gmail.com",
+        "email_verified": true,
+        "full_name": "Zenith",
+        "iss": "https://accounts.google.com",
+        "name": "Zenith",
+        "phone_verified": false,
+        "picture": "https://lh3.googleusercontent.com/a/ACg8ocK-EbDdMECZI0_Va5vmzrk4x2yS08kCPSb8V9L6qc0rTM9fHi0=s96-c",
+        "provider_id": "109490940071706774062",
+        "sub": "109490940071706774062"
+      },
+      "identities": null,
+      "created_at": "2026-11-02T15:54:21.375372Z",
+      "updated_at": "2026-11-10T00:00:02.508429Z",
+      "is_anonymous": false
+    },
+    {
+      "id": "0382d5c5-98f8-4e38-b510-8ec32c140571",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "ayaanwann@gmail.com",
+      "email_confirmed_at": "2026-11-02T15:35:30.642217Z",
+      "phone": "",
+      "confirmed_at": "2026-11-02T15:35:30.642217Z",
+      "last_sign_in_at": "2026-11-11T00:12:03.805621Z",
+      "app_metadata": {
+        "provider": "google",
+        "providers": [
+          "google"
+        ]
+      },
+      "user_metadata": {
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocJDddiA6QFu_3-85RgIBTvs8GniJLgFhD4-x4OyxWLaWoY1tQ=s96-c",
+        "email": "ayaanwann@gmail.com",
+        "email_verified": true,
+        "full_name": "Ayaan",
+        "iss": "https://accounts.google.com",
+        "name": "Ayaan",
+        "phone_verified": false,
+        "picture": "https://lh3.googleusercontent.com/a/ACg8ocJDddiA6QFu_3-85RgIBTvs8GniJLgFhD4-x4OyxWLaWoY1tQ=s96-c",
+        "provider_id": "100626299729690579942",
+        "sub": "100626299729690579942"
+      },
+      "identities": null,
+      "created_at": "2026-11-02T15:35:30.627125Z",
+      "updated_at": "2026-11-11T00:12:03.808411Z",
+      "is_anonymous": false
+    },
+    {
+      "id": "608ab01d-5893-48c3-bf90-da91ec666b89",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "ayaaan.vlogs@gmail.com",
+      "email_confirmed_at": "2026-11-02T15:28:20.279142Z",
+      "phone": "",
+      "confirmed_at": "2026-11-02T15:28:20.279142Z",
+      "last_sign_in_at": "2026-11-10T00:12:28.437387Z",
+      "app_metadata": {
+        "provider": "google",
+        "providers": [
+          "google"
+        ]
+      },
+      "user_metadata": {
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocIMMakunCfYqoM7sOAPE3MpBeKMhuREPD2Dw5ZQt698lf16ZAtBwg=s96-c",
+        "email": "ayaaan.vlogs@gmail.com",
+        "email_verified": true,
+        "full_name": "Mohammed Ayaan",
+        "iss": "https://accounts.google.com",
+        "name": "Mohammed Ayaan",
+        "phone_verified": false,
+        "picture": "https://lh3.googleusercontent.com/a/ACg8ocIMMakunCfYqoM7sOAPE3MpBeKMhuREPD2Dw5ZQt698lf16ZAtBwg=s96-c",
+        "provider_id": "104844225354861412638",
+        "sub": "104844225354861412638"
+      },
+      "identities": null,
+      "created_at": "2026-11-02T15:28:20.233716Z",
+      "updated_at": "2026-11-10T11:20:40.761277Z",
+      "is_anonymous": false
+    }
+  ],
+  "profiles": [
+    {
+      "id": "a5fadc1f-1fff-4ca8-93d3-d2f11c98e117",
+      "email": "test.oauth.fl.1793713928017@workhop-test.in",
+      "phone": null,
+      "name": "Test OAuth Freelancer",
+      "role": "freelancer",
+      "bio": null,
+      "skill": null,
+      "category": "AI & Smart Automations",
+      "area": "Bengaluru",
+      "lat": 12.9716,
+      "lng": 77.5946,
+      "portfolio": null,
+      "rating": 5,
+      "reviews_count": 0,
+      "total_hires": 0,
+      "total_spent_bucket": "₹0 spent",
+      "hops_balance": 50,
+      "phone_verified": true,
+      "avatar_url": null,
+      "created_at": "2026-11-03T13:52:09.305825+00:00",
+      "updated_at": "2026-11-03T13:52:09.305825+00:00"
+    },
+    {
+      "id": "e2ef480e-ecd5-4fa0-b671-ed241131cae6",
+      "email": "aliamansoor@gmail.com",
+      "phone": null,
+      "name": "Alia Mansoor",
+      "role": "freelancer",
+      "bio": null,
+      "skill": null,
+      "category": "AI & Smart Automations",
+      "area": "Bengaluru",
+      "lat": 12.9716,
+      "lng": 77.5946,
+      "portfolio": null,
+      "rating": 5,
+      "reviews_count": 0,
+      "total_hires": 0,
+      "total_spent_bucket": "₹0 spent",
+      "hops_balance": 50,
+      "phone_verified": true,
+      "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocLvgv4siW8CZYVPnuMpKVb1QDUH8T5mmrX4pgQFvGtdJU5vfTRpoA=s96-c",
+      "created_at": "2026-11-02T17:59:28.586457+00:00",
+      "updated_at": "2026-11-09T10:04:05.963922+00:00"
+    },
+    {
+      "id": "0382d5c5-98f8-4e38-b510-8ec32c140571",
+      "email": "ayaanwann@gmail.com",
+      "phone": null,
+      "name": "Ayaan",
+      "role": "freelancer",
+      "bio": null,
+      "skill": null,
+      "category": "AI & Smart Automations",
+      "area": "Bengaluru",
+      "lat": 12.9716,
+      "lng": 77.5946,
+      "portfolio": null,
+      "rating": 5,
+      "reviews_count": 0,
+      "total_hires": 0,
+      "total_spent_bucket": "₹0 spent",
+      "hops_balance": 50,
+      "phone_verified": true,
+      "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocJDddiA6QFu_3-85RgIBTvs8GniJLgFhD4-x4OyxWLaWoY1tQ=s96-c",
+      "created_at": "2026-11-02T15:35:30.623379+00:00",
+      "updated_at": "2026-11-11T00:12:03.801255+00:00"
+    },
+    {
+      "id": "d92f3c8b-c0e9-4382-90f3-e12b16386714",
+      "email": "alia.m@cobblestonedesigns.in",
+      "phone": "9739463546",
+      "name": "Alia Mansoor",
+      "role": "freelancer",
+      "bio": "Bengaluru-based architectural and spatial design studio specializing in architecture, space planning, AutoCAD floor plans, 3D visualization, and interior design.",
+      "skill": "Architecture & Interior Design",
+      "category": "Graphics & Design",
+      "area": "Indiranagar",
+      "lat": 12.9716,
+      "lng": 77.5946,
+      "portfolio": "[{\"title\":\"Spencer towers\",\"description\":\"Bangalore Interiors\",\"link\":\"\",\"images\":[{\"id\":\"local_1794218178073\",\"data\":\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218173718_qqedrng.jpeg\",\"url\":\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218173718_qqedrng.jpeg\",\"storage_path\":\"d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218173718_qqedrng.jpeg\",\"name\":\"bedroom.jpeg\",\"size\":\"185 KB\"},{\"id\":\"local_1794218181156\",\"data\":\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218178891_sovtm7w.jpeg\",\"url\":\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218178891_sovtm7w.jpeg\",\"storage_path\":\"d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218178891_sovtm7w.jpeg\",\"name\":\"kitchen.jpeg\",\"size\":\"74 KB\"},{\"id\":\"local_1794218184205\",\"data\":\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218181999_podpy46.jpeg\",\"url\":\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218181999_podpy46.jpeg\",\"storage_path\":\"d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218181999_podpy46.jpeg\",\"name\":\"kit.jpeg\",\"size\":\"98 KB\"},{\"id\":\"local_1794218187204\",\"data\":\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218185098_lszztzc.jpg\",\"url\":\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218185098_lszztzc.jpg\",\"storage_path\":\"d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218185098_lszztzc.jpg\",\"name\":\"shoerack.jpg\",\"size\":\"90 KB\"}],\"image_data\":\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218173718_qqedrng.jpeg\",\"image_name\":\"bedroom.jpeg\",\"image_size\":\"185 KB\",\"id\":\"id_1794218197890_2ckv\"},{\"_workhop_meta\":true,\"portfolio_images\":[\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218173718_qqedrng.jpeg\",\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218178891_sovtm7w.jpeg\",\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218181999_podpy46.jpeg\",\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/d92f3c8b-c0e9-4382-90f3-e12b16386714/1794218185098_lszztzc.jpg\"],\"rate_hr\":1200,\"skills\":[\"Architecture\",\"Architecture & Interior Design\",\"Interior Design\",\"AutoCAD\",\"Spatial Planning\",\"3D Architectural Rendering\"],\"category\":\"Graphics & Design\"}]",
+      "rating": 5,
+      "reviews_count": 0,
+      "total_hires": 0,
+      "total_spent_bucket": "₹0 spent",
+      "hops_balance": 50,
+      "phone_verified": true,
+      "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocLBTAQSIp2ZLeahLmNZnUsx_rYGkDjwPZhYHcZglSkCvmtrKizF=s96-c",
+      "created_at": "2026-11-02T17:53:51.955089+00:00",
+      "updated_at": "2026-11-09T09:57:38.987+00:00"
+    },
+    {
+      "id": "023ca538-604c-4095-a19c-32dc6e4f8bfc",
+      "email": "juskiddin.blr@gmail.com",
+      "phone": null,
+      "name": "Jus Kiddin",
+      "role": "freelancer",
+      "bio": null,
+      "skill": null,
+      "category": "AI & Smart Automations",
+      "area": "Bengaluru",
+      "lat": 12.9716,
+      "lng": 77.5946,
+      "portfolio": null,
+      "rating": 5,
+      "reviews_count": 0,
+      "total_hires": 0,
+      "total_spent_bucket": "₹0 spent",
+      "hops_balance": 50,
+      "phone_verified": true,
+      "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocJW32-CnDZTo2ik2JgLGvuIp6MDoDRoQLVuzzj4Bkx1LeGZ--E=s96-c",
+      "created_at": "2026-11-05T05:28:15.260712+00:00",
+      "updated_at": "2026-11-05T05:28:15.260712+00:00"
+    },
+    {
+      "id": "ca912100-9a19-4a7f-9ec5-b181e5ea04ed",
+      "email": "vishnuvardhanraju4050@gmail.com",
+      "phone": null,
+      "name": "vishnu vardhan raju",
+      "role": "freelancer",
+      "bio": null,
+      "skill": null,
+      "category": "AI & Smart Automations",
+      "area": "Bengaluru",
+      "lat": 12.9716,
+      "lng": 77.5946,
+      "portfolio": null,
+      "rating": 5,
+      "reviews_count": 0,
+      "total_hires": 0,
+      "total_spent_bucket": "₹0 spent",
+      "hops_balance": 50,
+      "phone_verified": true,
+      "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocK8FcG_CXagx-nDfu0U9856aClydYFVhenUKI8PlpIAfZ059g=s96-c",
+      "created_at": "2026-11-04T17:02:27.940468+00:00",
+      "updated_at": "2026-11-04T17:05:41.812606+00:00"
+    },
+    {
+      "id": "5f97835a-a1ae-46a5-8d89-ff5f395e00df",
+      "email": "zenithdeveloperss@gmail.com",
+      "phone": null,
+      "name": "Zenith",
+      "role": "freelancer",
+      "bio": null,
+      "skill": null,
+      "category": "AI & Smart Automations",
+      "area": "Bengaluru",
+      "lat": 12.9716,
+      "lng": 77.5946,
+      "portfolio": null,
+      "rating": 5,
+      "reviews_count": 0,
+      "total_hires": 0,
+      "total_spent_bucket": "₹0 spent",
+      "hops_balance": 50,
+      "phone_verified": true,
+      "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocK-EbDdMECZI0_Va5vmzrk4x2yS08kCPSb8V9L6qc0rTM9fHi0=s96-c",
+      "created_at": "2026-11-02T15:54:21.363048+00:00",
+      "updated_at": "2026-11-10T00:00:02.462667+00:00"
+    },
+    {
+      "id": "9f41a6d8-2843-42d9-8720-1de8b8e067a7",
+      "email": "brijeshnalluru@gmail.com",
+      "phone": null,
+      "name": "Brival",
+      "role": "freelancer",
+      "bio": null,
+      "skill": null,
+      "category": "AI & Smart Automations",
+      "area": "Koramangala",
+      "lat": 12.9716,
+      "lng": 77.5946,
+      "portfolio": null,
+      "rating": 5,
+      "reviews_count": 0,
+      "total_hires": 0,
+      "total_spent_bucket": "₹0 spent",
+      "hops_balance": 50,
+      "phone_verified": true,
+      "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocLtP-PNPUN_ZVjD7MbWCTjL9TTdG9_Wv5bb7dzC7hMP33Mz2Uk=s96-c",
+      "created_at": "2026-11-06T16:38:25.593617+00:00",
+      "updated_at": "2026-11-06T16:49:52.79213+00:00"
+    },
+    {
+      "id": "608ab01d-5893-48c3-bf90-da91ec666b89",
+      "email": "ayaaan.vlogs@gmail.com",
+      "phone": null,
+      "name": "Mohammed Ayaan",
+      "role": "freelancer",
+      "bio": "Web developer and Ai automation specialist",
+      "skill": "Web Developer",
+      "category": "AI & Smart Automations",
+      "area": "Bengaluru",
+      "lat": 12.9716,
+      "lng": 77.5946,
+      "portfolio": "[{\"id\":\"proj_real_1\",\"title\":\"With our vision\",\"images\":[\"https://kdfrbkxpuwbrvhidihvj.supabase.co/storage/v1/object/public/portfolios/608ab01d-5893-48c3-bf90-da91ec666b89/1794097729343_ddk1qqu.png\"]}]",
+      "rating": 5,
+      "reviews_count": 0,
+      "total_hires": 0,
+      "total_spent_bucket": "₹0 spent",
+      "hops_balance": 50,
+      "phone_verified": true,
+      "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocIMMakunCfYqoM7sOAPE3MpBeKMhuREPD2Dw5ZQt698lf16ZAtBwg=s96-c",
+      "created_at": "2026-11-02T15:28:20.21156+00:00",
+      "updated_at": "2026-11-10T11:20:40.712143+00:00"
+    }
+  ]
+}

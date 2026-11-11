@@ -198,7 +198,29 @@ module.exports = async function handler(req, res) {
           return null;
         });
 
-        const jobId = itemRes?.id || `job-cloud-${Date.now()}`;
+        let sbInserted = null;
+        try {
+          sbInserted = await supabaseRequest("POST", "/rest/v1/jobs", {
+            title,
+            description: metadata.description,
+            category: metadata.category,
+            bucket: metadata.bucket,
+            pay: metadata.pay || pay,
+            area: metadata.area,
+            lat: metadata.lat,
+            lng: metadata.lng,
+            company_name: metadata.company_name,
+            employer_name: metadata.employer_name,
+            employer_id: metadata.employer_id || null,
+            status: "open",
+            is_boosted: metadata.is_boosted,
+            keywords: [title, category, bucket, area],
+          }, { Prefer: "return=representation" });
+        } catch (err) {
+          console.warn("Supabase job insert fallback:", err);
+        }
+
+        const jobId = (Array.isArray(sbInserted) && sbInserted[0]?.id) || itemRes?.id || `job-cloud-${Date.now()}`;
         const savedJob = {
           id: jobId,
           title: title,
@@ -215,16 +237,18 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // 3. GET ALL GIGS IN REAL TIME (merged with latest Employer profile changes)
+    // 3. GET ALL GIGS IN REAL TIME (Supabase + Razorpay + Employer profiles)
     try {
-      const [itemsRes, customersRes, sbProfilesRes] = await Promise.all([
+      const [itemsRes, customersRes, sbProfilesRes, sbJobsRes] = await Promise.all([
         rzpRequest("GET", "/items?count=100").catch(() => ({ items: [] })),
         rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] })),
         supabaseRequest("GET", "/rest/v1/profiles?select=*&role=eq.employer").catch(() => []),
+        supabaseRequest("GET", "/rest/v1/jobs?select=*&order=is_boosted.desc,created_at.desc").catch(() => []),
       ]);
       const rawItems = Array.isArray(itemsRes?.items) ? itemsRes.items : [];
       const customers = Array.isArray(customersRes?.items) ? customersRes.items : [];
       const sbEmployers = Array.isArray(sbProfilesRes) ? sbProfilesRes : [];
+      const sbJobs = Array.isArray(sbJobsRes) ? sbJobsRes : [];
 
       const empLookup = {};
       for (const c of customers) {
@@ -257,6 +281,59 @@ module.exports = async function handler(req, res) {
 
       const jobs = [];
       const seenJobKeys = new Set();
+
+      // Process Supabase live jobs
+      for (const sj of sbJobs) {
+        if (!sj || !sj.title) continue;
+        if (sj.title.startsWith("__WORKHOP_CONFIG_")) continue;
+        if (deletedJobIds.has(String(sj.id))) continue;
+
+        const liveEmp =
+          (sj.employer_id && empLookup[sj.employer_id]) ||
+          null;
+
+        const resolvedCompany = liveEmp?.company_name || sj.company_name || "Featured Employer";
+        const resolvedEmployerName = liveEmp?.employer_name || sj.employer_name || resolvedCompany || "HR Lead";
+        const resolvedArea = liveEmp?.area || sj.area || "Bengaluru";
+
+        const key = `${(sj.title || "").trim().toLowerCase()}_${resolvedCompany.trim().toLowerCase()}`;
+        if (seenJobKeys.has(key)) continue;
+        seenJobKeys.add(key);
+
+        const payRupees = Number(sj.pay) || 5000;
+        const isBoosted = Boolean(sj.is_boosted);
+        const createdMs = sj.created_at ? new Date(sj.created_at).getTime() : Date.now();
+
+        jobs.push({
+          id: sj.id,
+          title: sj.title,
+          pay: payRupees,
+          pay_label: `₹${payRupees.toLocaleString("en-IN")}`,
+          credits_to_apply: calculateHops(payRupees),
+          is_boosted: isBoosted,
+          boost_expires_at: null,
+          company_name: resolvedCompany,
+          employer_name: resolvedEmployerName,
+          employer_id: sj.employer_id || null,
+          employer_picture: liveEmp?.picture || null,
+          description: sj.description || "",
+          category: sj.category || sj.bucket || "Graphics & Design",
+          bucket: sj.bucket || sj.category || "Creative",
+          area: resolvedArea,
+          distance_km: 0.8,
+          posted_minutes_ago: Math.max(1, Math.round((Date.now() - createdMs) / 60000)),
+          applicants_count: sj.applicants_count || 0,
+          employer_rating: "5.0",
+          employer_reviews: 1,
+          verified_employer: true,
+          created_at: sj.created_at || new Date().toISOString(),
+          lat: Number(sj.lat) || 12.9716,
+          lng: Number(sj.lng) || 77.5946,
+          keywords: Array.isArray(sj.keywords) && sj.keywords.length > 0 ? sj.keywords : [sj.title, sj.category || "", sj.bucket || "", resolvedArea, resolvedCompany].filter(Boolean),
+          status: sj.status || "open",
+          is_completed: sj.status === "completed",
+        });
+      }
 
       for (const it of rawItems) {
         if (it.type === "payment_page" && !it.description) continue;
@@ -325,6 +402,15 @@ module.exports = async function handler(req, res) {
         if (b.is_boosted !== a.is_boosted) return (b.is_boosted ? 1 : 0) - (a.is_boosted ? 1 : 0);
         return new Date(b.created_at) - new Date(a.created_at);
       });
+
+      if ((req.url || "").includes("/employer/jobs") || (req.url || "").includes("/employer-jobs")) {
+        const empId = req.query?.employer_id || req.query?.id;
+        let empJobs = jobs.filter((j) => !j.is_curated && j.employer_id);
+        if (empId) {
+          empJobs = empJobs.filter((j) => String(j.employer_id) === String(empId));
+        }
+        return res.status(200).json(empJobs);
+      }
 
       return res.status(200).json(jobs);
     } catch (err) {

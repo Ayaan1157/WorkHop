@@ -173,6 +173,17 @@ async function mockRouter(path, method = "GET", body = null) {
       }
     } catch {}
 
+    if (!Array.isArray(cloudJobs) || cloudJobs.length === 0) {
+      try {
+        if (isSupabaseConfigured()) {
+          const supa = await supabaseGetJobs();
+          if (Array.isArray(supa) && supa.length > 0) {
+            cloudJobs = supa.filter((j) => !j.title?.startsWith("__WORKHOP_CONFIG_"));
+          }
+        }
+      } catch {}
+    }
+
     const stored = getStoredJobs();
     let completedMap = {};
     try {
@@ -205,6 +216,7 @@ async function mockRouter(path, method = "GET", body = null) {
     ];
     const dedupeMap = new Map();
     for (const g of allGigs) {
+      if (!g || !g.title || g.title.startsWith("__WORKHOP_CONFIG_")) continue;
       if (g.is_completed || g.status === "completed" || completedMap[g.id] || completedCustomIds.has(g.id)) continue;
       const key = `${(g.title || "").trim().toLowerCase()}_${(g.company_name || "").trim().toLowerCase()}`;
       if (!dedupeMap.has(key)) {
@@ -388,95 +400,48 @@ async function mockRouter(path, method = "GET", body = null) {
   }
 
   // 5. Auth
-  if (cleanPath === "/auth/mobile/request-otp") {
-    const phone = body?.phone || "";
-    return { message: "Mobile OTP sent via SMS / WhatsApp", phone };
-  }
-  if (cleanPath === "/auth/mobile/verify-otp") {
-    const email = body?.email || "user@example.com";
-    saveRegisteredUser(email, body?.password, body);
-    try {
-      fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body || {}),
-      }).catch(() => {});
-    } catch {}
-    const session = createMockSession(email, { ...(body || {}), phone_verified: true });
-    setToken(session.session_token);
-    saveStoredUser(session.user);
-    return session;
+  if (cleanPath === "/auth/mobile/request-otp" || cleanPath === "/auth/mobile/verify-otp") {
+    const err = new Error("Mobile OTP auth is deprecated. Please sign in with Google or Email Verification.");
+    err.status = 400;
+    throw err;
   }
   if (cleanPath === "/auth/email/request-otp") {
     const email = (body?.email || "").trim().toLowerCase();
-    try {
-      const res = await fetch("/api/auth/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, action: "send", phone: body?.phone || "" }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.token) {
-          try { sessionStorage.setItem(`otp_token_${email}`, data.token); } catch {}
-        }
-        return {
-          message: data.message || "Code sent to your inbox",
-          ok: true,
-          emailSent: Boolean(data.emailSent),
-          dev_otp: data.dev_otp,
-          token: data.token,
-        };
-      }
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData?.detail || "Could not send verification email.");
-    } catch (e) {
-      if (e?.message && !e.message.includes("fetch")) throw e;
-      return { message: "Verification code sent to your email.", ok: true };
+    const res = await fetch("/api/auth/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, action: "send", phone: body?.phone || "" }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        message: data.message || "Code sent to your inbox",
+        ok: true,
+        emailSent: Boolean(data.emailSent),
+        token: data.token,
+      };
     }
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData?.detail || "Could not send verification email.");
   }
   if (cleanPath === "/auth/email/verify-otp" || cleanPath === "/freelancer/verify-email") {
-    const email = (body?.email || "user@example.com").trim().toLowerCase();
-    const code = String(body?.code || body?.otp || "").trim();
-    let token = null;
-    try { token = sessionStorage.getItem(`otp_token_${email}`); } catch {}
-    try {
-      const res = await fetch("/api/auth/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code, action: "verify", token }),
-      });
-      if (res.ok) {
-        const existing = getRegisteredUserByEmail(email);
-        const session = createMockSession(email, { ...(existing || {}), ...(body || {}), email_verified: true });
-        setToken(session.session_token);
-        return { ...session, ok: true, verified: true, status: "verified", email };
-      }
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData?.detail || "Invalid 6-digit verification code. Please check your inbox and try again.");
-    } catch (e) {
-      if (e?.message && !e.message.includes("fetch")) throw e;
-      const existing = getRegisteredUserByEmail(email);
-      const session = createMockSession(email, { ...(existing || {}), ...(body || {}), email_verified: true });
-      setToken(session.session_token);
-      return { ...session, ok: true, verified: true, status: "verified", email };
-    }
-  }
-  if (cleanPath === "/auth/login" || cleanPath === "/auth/admin-login") {
     const email = (body?.email || "").trim().toLowerCase();
-    const password = body?.password || "";
-    const session = passwordLogin(email, password, body?.role || "freelancer");
-    setToken(session.session_token);
-    saveStoredUser(session.user);
-    return session;
+    const code = String(body?.code || body?.otp || "").trim();
+    const res = await fetch("/api/auth/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code, action: "verify" }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData?.detail || "Invalid 6-digit verification code. Please check your inbox and try again.");
   }
-  if (cleanPath === "/auth/signup") {
-    const email = body?.email || "user@example.com";
-    saveRegisteredUser(email, body?.password, body);
-    const session = createMockSession(email, body || {});
-    setToken(session.session_token);
-    saveStoredUser(session.user);
-    return session;
+  if (cleanPath === "/auth/login" || cleanPath === "/auth/admin-login" || cleanPath === "/auth/signup") {
+    const err = new Error("Direct authentication required. Please sign in with verified credentials.");
+    err.status = 401;
+    throw err;
   }
   if (cleanPath === "/auth/session") {
     const err = new Error("Invalid session");

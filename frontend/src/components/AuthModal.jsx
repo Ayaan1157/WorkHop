@@ -11,7 +11,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import RecaptchaWidget from "@/components/RecaptchaWidget";
 import { supabase, supabaseSignInWithGoogle } from "@/lib/supabase";
 import { sanitizeInput, checkRateLimit, resetRateLimit } from "@/lib/security";
-import { isEmailRegistered } from "@/lib/clientStore";
+import { isEmailRegistered, saveStoredUser } from "@/lib/clientStore";
 
 export default function AuthModal({ isOpen, onClose, initialRole = null, initialMode = "signin" }) {
   const nav = useNavigate();
@@ -247,35 +247,32 @@ export default function AuthModal({ isOpen, onClose, initialRole = null, initial
         gst_number: isEmployer && gstNumber ? gstNumber.trim().toUpperCase() : undefined,
       };
 
-      // 2. Real-time sync to real Supabase auth & backend
-      try {
-        if (password) {
-          const { data: sbAuth } = await supabase.auth.signUp({
+      let sessionUser = null;
+      if (password) {
+        // Sign in with verified password to establish genuine session
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: password,
+        });
+        if (!signInErr && signInData?.session) {
+          setToken(signInData.session.access_token);
+          sessionUser = {
+            id: signInData.session.user.id,
+            user_id: signInData.session.user.id,
             email: cleanEmail,
-            password: password,
-            options: {
-              data: {
-                full_name: cleanName,
-                name: cleanName,
-                role: role,
-                area: area,
-                phone: phoneDigits,
-              },
-            },
-          });
-          if (sbAuth?.session?.access_token) {
-            setToken(sbAuth.session.access_token);
-          }
+            role: role,
+            name: cleanName,
+            area: area,
+            email_verified: true,
+          };
+          saveStoredUser(sessionUser);
         }
-      } catch (sbErr) {
-        console.warn("Supabase auth sync notice:", sbErr?.message);
       }
 
       await apiPost("/users", payload).catch(() => {});
       resetRateLimit(`signup_${cleanEmail}`);
 
-      const session = await signupWithDetails(payload);
-      completeAndRedirect(session?.user?.role || role, session?.user);
+      completeAndRedirect(role, sessionUser);
     } catch (e) {
       setError(e?.message || "Invalid verification code. Please check your inbox and try again.");
     } finally {
