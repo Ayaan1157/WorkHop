@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   CheckCircle2, ArrowRight, Check, Loader2, Sparkles,
   PlusCircle, ShieldCheck, Zap, Flame, Coins, Tag,
-  HelpCircle, Sliders, Info, ExternalLink, Award, ArrowUpRight
+  HelpCircle, Sliders, Info, ExternalLink, Award, ArrowUpRight,
+  RefreshCw, RotateCcw
 } from "lucide-react";
 import { Shell, TopBar, Spinner } from "@/components/kit";
 import CouponInput from "@/components/CouponInput";
@@ -15,6 +16,7 @@ import {
   getCreditsConfig,
   purchaseCreditPack,
   subscribeToCredits,
+  cancelCreditsSubscription,
 } from "@/lib/clientStore";
 import { useAuth } from "@/context/AuthContext";
 
@@ -72,6 +74,7 @@ export default function Plans() {
   const [paying, setPaying] = useState(false);
   const [paySuccess, setPaySuccess] = useState(false);
   const [coupon, setCoupon] = useState(null);
+  const [autopay, setAutopay] = useState(true);
   const { startPayment } = useRazorpay();
 
   const loadPurchases = useCallback(async () => {
@@ -116,7 +119,8 @@ export default function Plans() {
   };
 
   // Open Checkout for Freelancer Hops Pack
-  const openHopsPack = (pack) => {
+  const openHopsPack = (pack, defaultAutopay = false) => {
+    setAutopay(defaultAutopay);
     setSelected({
       plan_id: pack.id,
       name: `${pack.credits} Bidding Hops Pack`,
@@ -139,7 +143,8 @@ export default function Plans() {
   };
 
   // Open Checkout for Freelancer Monthly Pass
-  const openHopsPass = (plan) => {
+  const openHopsPass = (plan, defaultAutopay = true) => {
+    setAutopay(defaultAutopay);
     setSelected({
       plan_id: plan.id,
       name: plan.name,
@@ -204,12 +209,13 @@ export default function Plans() {
             pack_id: selected.plan_id,
             email: user?.email || undefined,
             full_name: user?.name || user?.full_name || "Freelancer",
+            autopay: Boolean(autopay),
           });
         } catch (apiErr) {
           console.warn("Backend credits sync notice:", apiErr);
         }
       } else if (selected.targetType === "hops_pass") {
-        const updated = subscribeToCredits(freelancerId, selected.plan_id);
+        const updated = subscribeToCredits(freelancerId, selected.plan_id, { autopay: Boolean(autopay) });
         setWallet({ ...updated });
         try {
           await apiPost("/credits/subscribe", {
@@ -217,6 +223,7 @@ export default function Plans() {
             plan_id: selected.plan_id,
             email: user?.email || undefined,
             full_name: user?.name || user?.full_name || "Freelancer",
+            autopay: Boolean(autopay),
           });
         } catch (apiErr) {
           console.warn("Backend pass sync notice:", apiErr);
@@ -351,6 +358,63 @@ export default function Plans() {
                   </button>
                 </div>
               </div>
+
+              {/* ACTIVE MEMBERSHIP STATUS BAR (IF ACTIVE) */}
+              {wallet.subscription_status === "active" && (
+                <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-2 border-ink bg-[#FFF9E6] dark:bg-[#1f190e] p-4 shadow-[3px_3px_0px_#121212]">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink bg-brand text-white shadow-[1.5px_1.5px_0px_#121212]">
+                      <Sparkles size={20} />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-black uppercase text-ink dark:text-white">
+                          Active Pass: {wallet.subscription_plan?.toUpperCase() || "PRO PASS"}
+                        </p>
+                        <span className={`border border-ink px-2 py-0.2 text-[9px] font-black uppercase ${
+                          wallet.autopay !== false
+                            ? "bg-ok text-white"
+                            : "bg-sand dark:bg-[#333] text-ink dark:text-stone-200"
+                        }`}>
+                          {wallet.autopay !== false ? "⚡ AutoPay Active" : "Manual Renewal"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-inkmuted dark:text-stone-300 font-semibold mt-0.5">
+                        {wallet.autopay !== false
+                          ? "Renews automatically every 30 days. Unused Hops roll over indefinitely."
+                          : "Expires after 30 days. Enable AutoPay anytime for uninterrupted rollover."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    {wallet.autopay !== false ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = cancelCreditsSubscription(freelancerId);
+                          setWallet({ ...updated });
+                        }}
+                        className="border border-ink bg-white dark:bg-[#2a2a2a] px-3 py-1.5 text-[11px] font-black uppercase text-ink dark:text-white hover:bg-sand transition"
+                      >
+                        Cancel AutoPay
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const matchedPass = creditsConfig.subscription_plans.find(
+                            (p) => p.id === wallet.subscription_plan
+                          ) || creditsConfig.subscription_plans[1];
+                          openHopsPass(matchedPass, true);
+                        }}
+                        className="border border-ink bg-brand px-3 py-1.5 text-[11px] font-black uppercase text-white hover:bg-brand/90 transition"
+                      >
+                        ⚡ Re-Enable AutoPay
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* 1 HOP = 15 RS INTERACTIVE LIVE CALCULATOR */}
               <div className="mb-10 border-2 border-ink bg-white dark:bg-[#161618] p-5 sm:p-7 shadow-[4px_4px_0px_#121212]">
@@ -565,8 +629,13 @@ export default function Plans() {
                           </span>
                         </div>
 
-                        <div className="my-2.5 inline-flex items-center gap-1.5 border border-ink/30 bg-ok/10 text-ok px-2.5 py-1 text-[11px] font-black">
-                          <span>★ Effective Rate: {pass.effective_per_credit} / Hop</span>
+                        <div className="my-2.5 flex items-center justify-between gap-1 flex-wrap">
+                          <span className="inline-flex items-center gap-1 border border-ink/30 bg-ok/10 text-ok px-2 py-0.5 text-[10px] font-black">
+                            ★ Effective: {pass.effective_per_credit}/Hop
+                          </span>
+                          <span className="inline-flex items-center gap-1 border border-brand/40 bg-brand/10 text-brand px-2 py-0.5 text-[10px] font-black uppercase">
+                            ⚡ AutoPay Available
+                          </span>
                         </div>
 
                         <div className="my-4 flex flex-col gap-2.5">
@@ -581,15 +650,25 @@ export default function Plans() {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        data-testid={`buy-pass-${pass.id}`}
-                        onClick={() => openHopsPass(pass)}
-                        className="mt-4 flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3.5 text-xs font-black tracking-wider uppercase text-white hover:bg-brand/90 transition active:translate-y-0.5 shadow-[2px_2px_0px_#121212]"
-                      >
-                        <span>Activate {pass.name}</span>
-                        <ArrowRight size={14} />
-                      </button>
+                      <div className="mt-4 flex flex-col gap-2">
+                        <button
+                          type="button"
+                          data-testid={`buy-pass-${pass.id}`}
+                          onClick={() => openHopsPass(pass, true)}
+                          className="flex w-full items-center justify-center gap-2 border-2 border-ink bg-brand py-3 text-xs font-black tracking-wider uppercase text-white hover:bg-brand/90 transition active:translate-y-0.5 shadow-[2px_2px_0px_#121212]"
+                        >
+                          <RefreshCw size={13} className="text-white" />
+                          <span>Activate with AutoPay</span>
+                          <ArrowRight size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openHopsPass(pass, false)}
+                          className="text-[10px] font-bold text-inkmuted dark:text-stone-400 hover:text-ink dark:hover:text-white underline text-center py-1 transition"
+                        >
+                          or Pay Once (No Auto-Renew)
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -844,6 +923,51 @@ export default function Plans() {
                     ))}
                   </div>
                 </div>
+
+                {/* AutoPay Option for Passes & Subscriptions */}
+                {selected.targetType === "hops_pass" && (
+                  <div
+                    onClick={() => setAutopay(!autopay)}
+                    data-testid="autopay-toggle"
+                    className={`my-3 cursor-pointer border-2 p-3 transition flex items-center justify-between gap-3 ${
+                      autopay
+                        ? "border-brand bg-[#FFF9E6] dark:bg-[#231b0e]"
+                        : "border-ink/30 bg-sand/40 dark:bg-[#1f1f22]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center border-2 border-ink ${
+                        autopay ? "bg-brand text-white" : "bg-white dark:bg-zinc-800 text-inkmuted"
+                      }`}>
+                        <RefreshCw size={15} className={autopay ? "animate-spin-slow" : ""} />
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-black uppercase text-ink dark:text-white">
+                            Enable Monthly AutoPay
+                          </p>
+                          <span className={`px-1.5 py-0.2 text-[9px] font-black uppercase ${
+                            autopay ? "bg-brand text-white" : "bg-zinc-200 dark:bg-zinc-700 text-inkmuted"
+                          }`}>
+                            {autopay ? "ON" : "OFF"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-semibold text-inkmuted dark:text-stone-300">
+                          {autopay
+                            ? "Renews every 30 days via UPI / Card · Unused Hops roll over · Cancel anytime"
+                            : "One-time pass for 30 days · No recurring debit"}
+                        </p>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={autopay}
+                      onChange={(e) => setAutopay(e.target.checked)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-5 w-5 accent-brand cursor-pointer shrink-0"
+                    />
+                  </div>
+                )}
 
                 <div className="mb-3">
                   <CouponInput

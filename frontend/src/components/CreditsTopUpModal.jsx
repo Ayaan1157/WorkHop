@@ -18,6 +18,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
   const [tab, setTab] = useState("packs"); // "packs" | "subscriptions"
   const [selectedPackId, setSelectedPackId] = useState("pack-40");
   const [selectedPlanId, setSelectedPlanId] = useState("pro_pass");
+  const [autopay, setAutopay] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
 
@@ -131,6 +132,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
           plan_id: planId,
           email: userEmail || undefined,
           full_name: userName,
+          autopay: Boolean(autopay),
         });
         if (res?.invoice_number) invoiceNo = res.invoice_number;
       } catch (apiErr) {
@@ -138,7 +140,7 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
       }
 
       // 3. Update local client store
-      const updated = subscribeToCredits(freelancerId, planId);
+      const updated = subscribeToCredits(freelancerId, planId, { autopay: Boolean(autopay) });
       setWallet({ ...updated });
 
       const emailNote = userEmail
@@ -402,9 +404,52 @@ export default function CreditsTopUpModal({ open, onClose, onUpdated, requiredCr
               })}
             </div>
 
-            <div className="mt-2 rounded border border-ink/30 bg-sand dark:bg-[#1e1e1e] p-2 text-[10px] text-inkmuted dark:text-stone-400">
+            {/* AutoPay Toggle Option */}
+            <div
+              onClick={() => setAutopay(!autopay)}
+              data-testid="topup-autopay-toggle"
+              className={`cursor-pointer border-2 p-3 transition flex items-center justify-between gap-3 ${
+                autopay
+                  ? "border-brand bg-[#FFF9E6] dark:bg-[#231b0e]"
+                  : "border-ink/30 bg-sand/40 dark:bg-[#1a1a1a]"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className={`flex h-7 w-7 shrink-0 items-center justify-center border border-ink ${
+                  autopay ? "bg-brand text-white" : "bg-white dark:bg-zinc-800 text-inkmuted"
+                }`}>
+                  <RefreshCw size={13} className={autopay ? "animate-spin-slow" : ""} />
+                </span>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[11px] font-black uppercase text-ink dark:text-white">
+                      Enable Monthly AutoPay
+                    </p>
+                    <span className={`px-1.5 py-0.2 text-[8px] font-black uppercase ${
+                      autopay ? "bg-brand text-white" : "bg-zinc-200 dark:bg-zinc-700 text-inkmuted"
+                    }`}>
+                      {autopay ? "Active" : "Off"}
+                    </span>
+                  </div>
+                  <p className="text-[9px] font-semibold text-inkmuted dark:text-stone-300">
+                    {autopay
+                      ? "Renews every 30 days via UPI / Card · Unused Hops roll over · Cancel anytime"
+                      : "Pay once for 30 days · No automatic recurring charge"}
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={autopay}
+                onChange={(e) => setAutopay(e.target.checked)}
+                onClick={(e) => e.stopPropagation()}
+                className="h-4 w-4 accent-brand cursor-pointer shrink-0"
+              />
+            </div>
+
+            <div className="mt-1 rounded border border-ink/30 bg-sand dark:bg-[#1e1e1e] p-2 text-[10px] text-inkmuted dark:text-stone-400">
               <p>
-                <strong>Renewal & Rollover Policy:</strong> Subscriptions renew automatically every 30 days. Unused subscription Hops roll over to the following month (up to 2x monthly allocation). Cancel anytime from settings with zero penalty.
+                <strong>Renewal & Rollover Policy:</strong> {autopay ? "Subscriptions renew automatically every 30 days." : "Pass expires after 30 days."} Unused subscription Hops roll over to the following month (up to 2x monthly allocation). Cancel anytime from settings with zero penalty.
               </p>
             </div>
 

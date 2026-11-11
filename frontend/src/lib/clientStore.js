@@ -2532,7 +2532,7 @@ export function purchaseCreditPack(userId, packId) {
   });
 }
 
-export function subscribeToCredits(userId, planId) {
+export function subscribeToCredits(userId, planId, { autopay = true } = {}) {
   const id = userId || "freelancer-demo";
   const config = getCreditsConfig();
   const plan = config.subscription_plans.find((p) => p.id === planId) || config.subscription_plans[1];
@@ -2545,6 +2545,7 @@ export function subscribeToCredits(userId, planId) {
   wallet.subscription_status = "active";
   wallet.subscription_plan_id = plan.id;
   wallet.subscription_renews_at = renewsAt;
+  wallet.autopay = Boolean(autopay);
 
   // Add subscription credit bundle
   wallet.balance += plan.credits_per_cycle;
@@ -2562,6 +2563,7 @@ export function subscribeToCredits(userId, planId) {
     credits_per_cycle: plan.credits_per_cycle,
     price_inr: plan.price_inr,
     status: "active",
+    autopay: Boolean(autopay),
     renews_at: renewsAt,
     created_at: new Date().toISOString(),
     rollover_enabled: config.rollover_unused_credits,
@@ -2572,9 +2574,25 @@ export function subscribeToCredits(userId, planId) {
     type: "subscription",
     amount: plan.credits_per_cycle,
     balance_after: wallet.balance,
-    description: `Subscribed to ${plan.name} (+${plan.credits_per_cycle} credits, ₹${plan.price_inr}/mo)`,
+    description: `Subscribed to ${plan.name} (+${plan.credits_per_cycle} credits, ₹${plan.price_inr}/mo${autopay ? " · AutoPay Enabled" : ""})`,
   });
 
+  return wallet;
+}
+
+export function cancelCreditsSubscription(userId) {
+  const id = userId || "freelancer-demo";
+  const allWallets = JSON.parse(localStorage.getItem(CREDITS_WALLET_KEY) || "{}");
+  const wallet = getCreditsWallet(id);
+  wallet.subscription_status = "cancelled";
+  wallet.autopay = false;
+  wallet.updated_at = new Date().toISOString();
+  allWallets[id] = wallet;
+  localStorage.setItem(CREDITS_WALLET_KEY, JSON.stringify(allWallets));
+
+  const allSubs = JSON.parse(localStorage.getItem(SUBSCRIPTIONS_KEY) || "[]");
+  const updatedSubs = allSubs.map((s) => (s.user_id === id && s.status === "active" ? { ...s, status: "cancelled", autopay: false, cancelled_at: new Date().toISOString() } : s));
+  localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(updatedSubs));
   return wallet;
 }
 
