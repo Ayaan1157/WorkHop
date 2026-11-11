@@ -296,11 +296,19 @@ module.exports = async function handler(req, res) {
 
         const liveEmp =
           (sj.employer_id && empLookup[sj.employer_id]) ||
+          (sj.company_name && empLookup[sj.company_name.trim().toLowerCase()]) ||
+          (sj.employer_name && empLookup[sj.employer_name.trim().toLowerCase()]) ||
           null;
 
         const resolvedCompany = liveEmp?.company_name || sj.company_name || "Featured Employer";
         const resolvedEmployerName = liveEmp?.employer_name || sj.employer_name || resolvedCompany || "HR Lead";
         const resolvedArea = liveEmp?.area || sj.area || "Bengaluru";
+        const resolvedEmployerId = sj.employer_id || liveEmp?.employer_id || (
+          resolvedCompany.toLowerCase().includes("cobblestone") ? "emp-cobblestone-studios" :
+          resolvedCompany.toLowerCase().includes("brewblock") ? "emp-brewblock-roasters" :
+          resolvedCompany.toLowerCase().includes("apex") ? "emp-apex-design" :
+          null
+        );
 
         const key = `${(sj.title || "").trim().toLowerCase()}_${resolvedCompany.trim().toLowerCase()}`;
         if (seenJobKeys.has(key)) continue;
@@ -320,7 +328,7 @@ module.exports = async function handler(req, res) {
           boost_expires_at: null,
           company_name: resolvedCompany,
           employer_name: resolvedEmployerName,
-          employer_id: sj.employer_id || null,
+          employer_id: resolvedEmployerId,
           employer_picture: liveEmp?.picture || null,
           description: sj.description || "",
           category: sj.category || sj.bucket || "Graphics & Design",
@@ -607,17 +615,19 @@ module.exports = async function handler(req, res) {
 
   // 3. GET All Employers in Real Time (merged with Supabase profiles)
   try {
-    const [customersRes, paymentsRes, itemsRes, sbProfilesRes] = await Promise.all([
+    const [customersRes, paymentsRes, itemsRes, sbProfilesRes, sbJobsRes] = await Promise.all([
       rzpRequest("GET", "/customers?count=100").catch(() => ({ items: [] })),
       rzpRequest("GET", "/payments?count=100").catch(() => ({ items: [] })),
       rzpRequest("GET", "/items?count=100").catch(() => ({ items: [] })),
       supabaseRequest("GET", "/rest/v1/profiles?select=*").catch(() => []),
+      supabaseRequest("GET", "/rest/v1/jobs?select=*").catch(() => []),
     ]);
 
     const customers = Array.isArray(customersRes?.items) ? customersRes.items : [];
     const payments = Array.isArray(paymentsRes?.items) ? paymentsRes.items : [];
     const rawItems = Array.isArray(itemsRes?.items) ? itemsRes.items : [];
     const sbProfiles = Array.isArray(sbProfilesRes) ? sbProfilesRes : [];
+    const sbJobs = Array.isArray(sbJobsRes) ? sbJobsRes : [];
 
     const sbByEmail = {};
     for (const sb of sbProfiles) {
@@ -625,8 +635,17 @@ module.exports = async function handler(req, res) {
       if (em && !sbByEmail[em]) sbByEmail[em] = sb;
     }
 
-    // Map live gigs count per employer from active items
+    // Map live gigs count per employer from active items and Supabase jobs
     const gigsCountMap = {};
+    for (const sj of sbJobs) {
+      if (!sj || !sj.title || sj.title.startsWith("__WORKHOP_CONFIG_")) continue;
+      if (sj.status === "completed" || sj.is_completed) continue;
+      const comp = (sj.company_name || sj.employer_name || "").toLowerCase().trim();
+      const empId = (sj.employer_id || "").toLowerCase().trim();
+      if (comp) gigsCountMap[comp] = (gigsCountMap[comp] || 0) + 1;
+      if (empId) gigsCountMap[empId] = (gigsCountMap[empId] || 0) + 1;
+    }
+
     for (const it of rawItems) {
       if (it.type === "payment_page" && !it.description) continue;
       if (deletedJobIds.has(it.id)) continue;

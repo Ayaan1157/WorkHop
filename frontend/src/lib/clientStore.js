@@ -278,26 +278,160 @@ try {
   }
 } catch { /* ignore */ }
 
-// One-time clean slate v10: purge all fake, demo, and seed gigs from client storage
-const CLEAN_SLATE_FLAG_V10 = "workhop_clean_slate_v10_purge_fake_seed_gigs_rev1";
+// ════════════ VERIFIED EMPLOYER GIGS SEED ════════════
+export const VERIFIED_EMPLOYER_GIGS = [
+  {
+    id: "a891d52d-aa84-4abb-a530-0d379ad4ee65",
+    employer_id: "emp-cobblestone-studios",
+    employer_name: "Alia Mansoor",
+    employer_email: "alia.m@cobblestonedesigns.in",
+    company_name: "Cobblestone Studios",
+    title: "2BHK AutoCAD Floor Plan & 3D Interior Elevations",
+    description: "Looking for a skilled AutoCAD and SketchUp / 3ds Max visualizer for residential space planning, detailed joinery drawings, and photorealistic living/kitchen renders in Frazer Town.",
+    category: "Graphics & Design",
+    bucket: "Creative",
+    pay: 28000,
+    pay_label: "₹28,000",
+    credits_to_apply: 6,
+    area: "Frazer Town",
+    lat: 12.9982,
+    lng: 77.6158,
+    keywords: ["AutoCAD", "Interior Design", "3D Visualization", "Frazer Town", "Architecture"],
+    status: "open",
+    is_boosted: true,
+    applicants_count: 0,
+    created_at: "2026-11-11T13:56:10.827Z",
+  },
+  {
+    id: "a334f494-402b-474e-9a23-5bb0b7e33dee",
+    employer_id: "emp-cobblestone-studios",
+    employer_name: "Alia Mansoor",
+    employer_email: "alia.m@cobblestonedesigns.in",
+    company_name: "Cobblestone Studios",
+    title: "Brand Identity & Spatial Signage Guidelines",
+    description: "Create brand identity guidelines, material board presentations, and bespoke brass wayfinding signage layouts for our boutique architectural studio projects.",
+    category: "Graphics & Design",
+    bucket: "Creative",
+    pay: 18000,
+    pay_label: "₹18,000",
+    credits_to_apply: 4,
+    area: "Frazer Town",
+    lat: 12.9982,
+    lng: 77.6158,
+    keywords: ["Brand Identity", "Graphic Design", "Signage", "Frazer Town", "Creative"],
+    status: "open",
+    is_boosted: false,
+    applicants_count: 0,
+    created_at: "2026-11-11T13:56:10.827Z",
+  },
+  {
+    id: "b346688c-d02a-4d83-95e7-0575179d35a8",
+    employer_id: "emp-brewblock-roasters",
+    employer_name: "Karan Somani",
+    employer_email: "karan@brewblock.in",
+    company_name: "BrewBlock Specialty Roasters",
+    title: "Brand Identity, Cafe Menu & Packaging Sleeve Design",
+    description: "Looking for an experienced Bengaluru brand designer to design coffee pouch packaging labels, kraft paper takeaway cup sleeves, and dine-in specialty brew menu layouts for our Koramangala roastery.",
+    category: "Graphics & Design",
+    bucket: "Creative",
+    pay: 16000,
+    pay_label: "₹16,000",
+    credits_to_apply: 4,
+    area: "Koramangala",
+    lat: 12.9352,
+    lng: 77.6245,
+    keywords: ["Packaging", "Menu Design", "Brand Identity", "Koramangala", "Graphic Design"],
+    status: "open",
+    is_boosted: true,
+    applicants_count: 0,
+    created_at: "2026-11-11T13:56:10.827Z",
+  },
+  {
+    id: "9799fea8-a02b-4a39-94fe-21a17fad7ea7",
+    employer_id: "emp-apex-design",
+    employer_name: "Rohan Verma",
+    employer_email: "hiring@apexdesign.in",
+    company_name: "Apex Design Studio",
+    title: "Figma UI/UX Redesign for Fintech Mobile App",
+    description: "Redesign our flagship fintech app onboarding flow and interactive portfolio dashboard with clean Figma design system components, micro-interactions, and developer specs.",
+    category: "Programming & Tech",
+    bucket: "Tech",
+    pay: 25000,
+    pay_label: "₹25,000",
+    credits_to_apply: 6,
+    area: "Indiranagar",
+    lat: 12.9784,
+    lng: 77.6408,
+    keywords: ["UI/UX Design", "Figma", "Mobile App", "Fintech", "Indiranagar"],
+    status: "open",
+    is_boosted: true,
+    applicants_count: 0,
+    created_at: "2026-11-11T13:56:10.827Z",
+  },
+  {
+    id: "13683a6f-9c93-4e57-ad35-6fb0387d80da",
+    employer_id: "emp-apex-design",
+    employer_name: "Rohan Verma",
+    employer_email: "hiring@apexdesign.in",
+    company_name: "Apex Design Studio",
+    title: "Responsive React + Tailwind SaaS Dashboard",
+    description: "Build clean, reusable React components with Tailwind CSS for our analytics dashboard. Needs clean state management, responsive charts, and API integrations.",
+    category: "Programming & Tech",
+    bucket: "Tech",
+    pay: 24000,
+    pay_label: "₹24,000",
+    credits_to_apply: 6,
+    area: "Indiranagar",
+    lat: 12.9784,
+    lng: 77.6408,
+    keywords: ["React", "Tailwind CSS", "Frontend Dev", "JavaScript", "Indiranagar"],
+    status: "open",
+    is_boosted: false,
+    applicants_count: 0,
+    created_at: "2026-11-11T13:56:10.827Z",
+  },
+  {
+    id: "451a3a2c-2026-4455-b4b4-113709522c30",
+    employer_id: "emp-apex-design",
+    employer_name: "Rohan Verma",
+    employer_email: "hiring@apexdesign.in",
+    company_name: "Apex Design Studio",
+    title: "Custom Webhook & API Automation Scripts",
+    description: "Develop Python automation scripts and webhook listeners to sync CRM leads with payment gateway webhooks and automated client notifications.",
+    category: "Programming & Tech",
+    bucket: "Tech",
+    pay: 19000,
+    pay_label: "₹19,000",
+    credits_to_apply: 4,
+    area: "Indiranagar",
+    lat: 12.9784,
+    lng: 77.6408,
+    keywords: ["Python", "API", "Webhooks", "Automation", "Indiranagar"],
+    status: "open",
+    is_boosted: false,
+    applicants_count: 0,
+    created_at: "2026-11-11T13:56:10.827Z",
+  },
+];
+
+// One-time clean slate v11: seed the exact 6 verified employer gigs for Cobblestone Studios, BrewBlock Roasters, & Apex Design Studio
+const CLEAN_SLATE_FLAG_V11 = "workhop_clean_slate_v11_seed_verified_employer_gigs_rev1";
 try {
-  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V10)) {
+  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V11)) {
     const raw = localStorage.getItem("workhop_custom_jobs");
-    if (raw) {
-      try {
-        const cjobs = JSON.parse(raw);
-        if (Array.isArray(cjobs)) {
-          const onlyReal = cjobs.filter((j) => {
-            if (!j || !j.title) return false;
-            if (j.is_dummy || j.is_curated || j.is_seed) return false;
-            if (j.title.startsWith("__WORKHOP_CONFIG_")) return false;
-            return Boolean(j.employer_id || j.employer_email);
-          });
-          localStorage.setItem("workhop_custom_jobs", JSON.stringify(onlyReal));
-        }
-      } catch {}
+    let cjobs = [];
+    try {
+      cjobs = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(cjobs)) cjobs = [];
+    } catch {
+      cjobs = [];
     }
-    localStorage.setItem(CLEAN_SLATE_FLAG_V10, "1");
+    const existingTitles = new Set(cjobs.map((j) => (j?.title || "").toLowerCase().trim()));
+    const toAdd = VERIFIED_EMPLOYER_GIGS.filter((v) => !existingTitles.has(v.title.toLowerCase().trim()));
+    if (toAdd.length > 0) {
+      localStorage.setItem("workhop_custom_jobs", JSON.stringify([...cjobs, ...toAdd]));
+    }
+    localStorage.setItem(CLEAN_SLATE_FLAG_V11, "1");
   }
 } catch { /* ignore */ }
 
@@ -1404,7 +1538,11 @@ export function getStoredJobs() {
     return Boolean(j.employer_id || j.employer_email || j.employer_name || j.company_name);
   });
 
-  return validCustom.sort((a, b) => {
+  const resolvedJobs = validCustom.length > 0
+    ? validCustom
+    : VERIFIED_EMPLOYER_GIGS.filter((j) => !deletedIds.has(j.id));
+
+  return resolvedJobs.sort((a, b) => {
     const aBoost = a.is_boosted && (!a.boost_expires_at || new Date(a.boost_expires_at) > now) ? 1 : 0;
     const bBoost = b.is_boosted && (!b.boost_expires_at || new Date(b.boost_expires_at) > now) ? 1 : 0;
     if (bBoost !== aBoost) return bBoost - aBoost;

@@ -631,8 +631,31 @@ async function mockRouter(path, method = "GET", body = null) {
       const res = await fetch("/api/jobs");
       if (res.ok) cloudJobs = await res.json();
     } catch {}
+
+    if (!Array.isArray(cloudJobs) || cloudJobs.length === 0) {
+      try {
+        if (isSupabaseConfigured()) {
+          const supa = await supabaseGetJobs();
+          if (Array.isArray(supa) && supa.length > 0) {
+            cloudJobs = supa.filter((j) => !j.title?.startsWith("__WORKHOP_CONFIG_"));
+          }
+        }
+      } catch {}
+    }
+
+    const normalizedCloud = (Array.isArray(cloudJobs) ? cloudJobs : []).map((j) => {
+      const comp = (j.company_name || j.employer_name || "").toLowerCase().trim();
+      let empId = j.employer_id;
+      if (!empId) {
+        if (comp.includes("cobblestone")) empId = "emp-cobblestone-studios";
+        else if (comp.includes("brewblock")) empId = "emp-brewblock-roasters";
+        else if (comp.includes("apex")) empId = "emp-apex-design";
+      }
+      return { ...j, employer_id: empId || j.employer_id };
+    });
+
     const stored = getStoredJobs();
-    const merged = [...(Array.isArray(cloudJobs) ? cloudJobs : [])];
+    const merged = [...normalizedCloud];
     const seen = new Set(merged.map((j) => String(j.id)));
     for (const s of stored) {
       if (!seen.has(String(s.id))) {
