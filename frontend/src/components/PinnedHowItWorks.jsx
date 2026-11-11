@@ -57,7 +57,7 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
 
   return (
     <div
-      className={`relative w-full max-w-5xl h-full max-h-[500px] aspect-[16/9.5] rounded-xl sm:rounded-2xl border-2 ${step.accentBorder} bg-[#141418] p-2.5 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] flex flex-col overflow-hidden select-none`}
+      className={`relative w-full max-w-5xl h-auto md:h-full md:max-h-[500px] md:aspect-[16/9.5] rounded-xl sm:rounded-2xl border-2 ${step.accentBorder} bg-[#141418] p-3 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] flex flex-col select-none`}
       style={{
         boxShadow: `0 25px 60px -15px rgba(0,0,0,0.95), 0 0 40px ${step.glowColor}`,
         backgroundColor: "#141418", // 100% solid, fully opaque
@@ -74,11 +74,11 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="border border-zinc-700 bg-zinc-900 px-2 py-0.5 text-[9px] sm:text-[10px] font-mono font-bold text-zinc-300">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <span className="border border-zinc-700 bg-zinc-900 px-1.5 sm:px-2 py-0.5 text-[8.5px] sm:text-[10px] font-mono font-bold text-zinc-300">
             {step.tag}
           </span>
-          <span className="border border-[#E65A1E]/40 bg-[#E65A1E]/20 px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase text-[#E65A1E]">
+          <span className="border border-[#E65A1E]/40 bg-[#E65A1E]/20 px-1.5 sm:px-2 py-0.5 text-[8.5px] sm:text-[10px] font-black uppercase text-[#E65A1E]">
             STEP {step.num}
           </span>
         </div>
@@ -86,20 +86,20 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
 
       {/* 2. Inner Canvas Screen - 100% Solid Dark Background */}
       <div
-        className="relative w-full flex-1 min-h-0 rounded-lg sm:rounded-xl border border-zinc-800/80 overflow-hidden shadow-inner flex flex-col md:flex-row items-center justify-between p-3 sm:p-6 lg:p-7 gap-4 sm:gap-6"
+        className="relative w-full flex-1 rounded-lg sm:rounded-xl border border-zinc-800/80 overflow-hidden shadow-inner flex flex-col md:flex-row items-center justify-between p-3.5 sm:p-6 lg:p-7 gap-4 sm:gap-6"
         style={{ backgroundColor: "#0D0D10" }} // 100% solid, fully opaque
       >
-        {/* Left Side: Artwork Visual with scrubbed micro-animations */}
-        <div className="relative w-full md:w-[54%] lg:w-[56%] h-full flex items-center justify-center min-h-0">
+        {/* Artwork Visual with scrubbed micro-animations */}
+        <div className="relative w-full md:w-[52%] lg:w-[54%] flex items-center justify-center shrink-0">
           <motion.div
             style={innerAnimations.artStyle || {}}
-            className="relative w-full h-full max-h-[260px] sm:max-h-[320px] lg:max-h-[350px] aspect-square rounded-xl bg-[#FAF7F2] border-2 border-zinc-900 p-2 sm:p-3 overflow-hidden flex items-center justify-center shadow-md"
+            className="relative w-full max-w-[280px] xs:max-w-[320px] sm:max-w-[340px] md:max-w-none md:h-full max-h-[220px] xs:max-h-[260px] sm:max-h-[300px] lg:max-h-[340px] aspect-[4/3] xs:aspect-[16/10] md:aspect-square rounded-xl bg-[#FAF7F2] border-2 border-zinc-900 p-2 sm:p-3 overflow-hidden flex items-center justify-center shadow-md"
           >
             {/* Step 1: Pulsing 5km radar ring */}
             {stepIndex === 0 && (
               <motion.div
                 style={innerAnimations.radarStyle || {}}
-                className="absolute w-44 h-44 rounded-full border-2 border-dashed border-[#E65A1E] bg-[#E65A1E]/15 pointer-events-none"
+                className="absolute w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-dashed border-[#E65A1E] bg-[#E65A1E]/15 pointer-events-none"
               />
             )}
 
@@ -108,13 +108,13 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
               <>
                 <motion.div
                   style={innerAnimations.bubble1Style || {}}
-                  className="absolute top-2 left-2 z-20 border border-zinc-900 bg-white px-2.5 py-1 text-[9.5px] font-black text-zinc-900 shadow-[1.5px_1.5px_0px_#121212] rounded"
+                  className="absolute top-2 left-2 z-20 border border-zinc-900 bg-white px-2 py-0.5 sm:px-2.5 sm:py-1 text-[8.5px] sm:text-[9.5px] font-black text-zinc-900 shadow-[1.5px_1.5px_0px_#121212] rounded"
                 >
                   💬 "Are you available in Koramangala today?"
                 </motion.div>
                 <motion.div
                   style={innerAnimations.bubble2Style || {}}
-                  className="absolute bottom-2 right-2 z-20 border border-zinc-900 bg-emerald-100 px-2.5 py-1 text-[9.5px] font-black text-emerald-950 shadow-[1.5px_1.5px_0px_#121212] rounded"
+                  className="absolute bottom-2 right-2 z-20 border border-zinc-900 bg-emerald-100 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[8.5px] sm:text-[9.5px] font-black text-emerald-950 shadow-[1.5px_1.5px_0px_#121212] rounded"
                 >
                   ✓ "Yes! Unlocking phone & WhatsApp now."
                 </motion.div>
@@ -126,13 +126,13 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
               <>
                 <motion.div
                   style={innerAnimations.shieldStyle || {}}
-                  className="absolute top-2.5 right-2.5 z-20 border border-zinc-900 bg-amber-200 px-2 py-0.5 text-[9.5px] font-black uppercase text-black shadow-[1.5px_1.5px_0px_#121212]"
+                  className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-20 border border-zinc-900 bg-amber-200 px-1.5 py-0.5 sm:px-2 text-[8.5px] sm:text-[9.5px] font-black uppercase text-black shadow-[1.5px_1.5px_0px_#121212]"
                 >
                   🛡️ MILESTONE ESCROW
                 </motion.div>
                 <motion.div
                   style={innerAnimations.bannerStyle || {}}
-                  className="absolute bottom-2.5 inset-x-2.5 z-20 border border-zinc-900 bg-[#E65A1E] text-white py-1 px-2 text-[10px] sm:text-[11px] font-black uppercase text-center shadow-[1.5px_1.5px_0px_#121212]"
+                  className="absolute bottom-2 inset-x-2 sm:bottom-2.5 sm:inset-x-2.5 z-20 border border-zinc-900 bg-[#E65A1E] text-white py-0.5 sm:py-1 px-2 text-[9px] sm:text-[11px] font-black uppercase text-center shadow-[1.5px_1.5px_0px_#121212]"
                 >
                   0% COMMISSION · KEEP 100%
                 </motion.div>
@@ -149,13 +149,13 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
           </motion.div>
         </div>
 
-        {/* Right Side: Step Description & Feature Chips */}
+        {/* Step Description & Feature Chips */}
         <motion.div
           style={innerAnimations.copyStyle || {}}
-          className="w-full md:w-[46%] lg:w-[44%] flex flex-col justify-center text-left"
+          className="w-full md:w-[48%] lg:w-[46%] flex flex-col justify-center text-left"
         >
           <div
-            className={`inline-flex items-center gap-1.5 border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider w-max ${
+            className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-[9.5px] sm:text-[10px] font-black uppercase tracking-wider w-max ${
               stepIndex === 1
                 ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-400"
                 : "border-[#E65A1E]/40 bg-[#E65A1E]/20 text-[#E65A1E]"
@@ -165,21 +165,21 @@ function WindowFrame({ step, stepIndex, innerAnimations = {}, dimOverlayOpacity 
             <span>STEP {step.num} · {step.tag}</span>
           </div>
 
-          <h3 className="mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
+          <h3 className="mt-1.5 sm:mt-2 text-lg sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
             {step.title}
           </h3>
 
-          <p className="mt-1.5 text-xs sm:text-sm text-zinc-300 leading-relaxed font-medium">
+          <p className="mt-1 sm:mt-1.5 text-xs sm:text-sm text-zinc-300 leading-relaxed font-medium">
             {step.desc}
           </p>
 
           <div
-            className={`mt-3 pt-2.5 border-t border-zinc-800 flex items-center gap-2 text-[11px] font-black ${
+            className={`mt-2.5 sm:mt-3 pt-2 sm:pt-2.5 border-t border-zinc-800 flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-black ${
               stepIndex === 1 ? "text-emerald-400" : "text-[#E65A1E]"
             }`}
           >
-            <ChipIcon size={14} className="shrink-0" />
-            <span>{step.chipText}</span>
+            <ChipIcon size={13} className="shrink-0" />
+            <span className="truncate">{step.chipText}</span>
           </div>
         </motion.div>
 
@@ -327,42 +327,42 @@ export default function PinnedHowItWorks() {
     return (
       <section
         id="how-it-works"
-        className="relative w-full bg-[#0A0A0C] text-white border-b-2 border-zinc-800 py-10 px-4 sm:px-8"
+        className="relative w-full bg-[#0A0A0C] text-white border-b-2 border-zinc-800 py-8 xs:py-10 px-3.5 xs:px-4 sm:px-8 pb-20 sm:pb-12"
       >
         <div className="mx-auto max-w-5xl">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
             <div>
               <div className="inline-flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.22em] text-[#E65A1E]">
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] text-[#E65A1E]">
                   HOW IT WORKS
                 </span>
                 <span className="h-1.5 w-1.5 rounded-full bg-[#E65A1E]" />
               </div>
-              <h2 className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-white">
+              <h2 className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
                 From pin drop to payout in{" "}
                 <span className="font-serif italic text-[#E65A1E] font-normal text-3xl sm:text-4xl">
                   3 steps.
                 </span>
               </h2>
             </div>
-            <div className="flex items-center gap-2 border border-zinc-800 bg-[#141418] px-3 py-1.5 shadow-[2px_2px_0px_#000] self-start sm:self-auto">
+            <div className="flex items-center gap-2 border border-zinc-800 bg-[#141418] px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-[2px_2px_0px_#000] self-start sm:self-auto">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              <span className="text-[10px] font-black uppercase tracking-wider text-zinc-300">
+              <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-wider text-zinc-300">
                 AVERAGE MATCH TIME: &lt; 5 MINS
               </span>
             </div>
           </div>
 
           {/* Vertical Stack of Windows */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5 sm:gap-6">
             {STEPS_DATA.map((step, idx) => (
               <motion.div
                 key={step.num}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.4 }}
               >
                 <WindowFrame step={step} stepIndex={idx} />
               </motion.div>
