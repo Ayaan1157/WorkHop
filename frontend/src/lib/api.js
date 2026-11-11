@@ -217,6 +217,8 @@ async function mockRouter(path, method = "GET", body = null) {
     const dedupeMap = new Map();
     for (const g of allGigs) {
       if (!g || !g.title || g.title.startsWith("__WORKHOP_CONFIG_")) continue;
+      if (g.is_dummy || g.is_curated || g.is_seed) continue;
+      if (!g.employer_id && !g.employer_email) continue;
       if (g.is_completed || g.status === "completed" || completedMap[g.id] || completedCustomIds.has(g.id)) continue;
       const key = `${(g.title || "").trim().toLowerCase()}_${(g.company_name || "").trim().toLowerCase()}`;
       if (!dedupeMap.has(key)) {

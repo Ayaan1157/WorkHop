@@ -187,15 +187,22 @@ export default function Jobs() {
         fid ? apiGet(`/freelancer/${fid}`).catch(() => null) : Promise.resolve(null),
         fid ? apiGet(`/freelancer/${fid}/quota`).catch(() => null) : Promise.resolve(null),
       ]);
+      const isRealEmployerGig = (j) =>
+        Boolean(j && !j.title?.startsWith("__WORKHOP_CONFIG_") && !j.is_dummy && !j.is_curated && !j.is_seed && (j.employer_id || j.employer_email));
+
       if (Array.isArray(jobsRes) && jobsRes.length > 0) {
-        setJobs(jobsRes.filter((j) => !j?.title?.startsWith("__WORKHOP_CONFIG_")));
+        setJobs(jobsRes.filter(isRealEmployerGig));
       } else {
         try {
           const supa = await supabaseGetJobs();
           if (Array.isArray(supa) && supa.length > 0) {
-            setJobs(supa.filter((j) => !j?.title?.startsWith("__WORKHOP_CONFIG_")));
+            setJobs(supa.filter(isRealEmployerGig));
+          } else {
+            setJobs([]);
           }
-        } catch {}
+        } catch {
+          setJobs([]);
+        }
       }
       setStatus(statusRes);
       setQuota(quotaRes);
@@ -254,6 +261,8 @@ export default function Jobs() {
 
   const passes = (j) => {
     if (!j || !j.title || j.title.startsWith("__WORKHOP_CONFIG_")) return false;
+    if (j.is_dummy || j.is_curated || j.is_seed) return false;
+    if (!j.employer_id && !j.employer_email) return false;
     // Completed jobs are removed from public listings
     if (j.is_completed || j.status === "completed") return false;
     try {
@@ -519,12 +528,27 @@ export default function Jobs() {
       );
     }
     if (filtered.length === 0) {
+      const hasAnyJobs = jobs.length > 0;
       return (
         <EmptyBlock
           testID="empty-state"
           icon={viewTab === "saved" ? <Heart size={32} className="text-brand fill-brand" /> : <Search size={28} className="text-ink" />}
-          title={viewTab === "saved" ? "No liked gigs yet" : term ? `No matches for "${search.trim()}"` : "No gigs match your active filters"}
-          sub={viewTab === "saved" ? "Tap the heart icon on any gig card to save and track all the gigs you like." : "Try resetting your filters or searching for another keyword."}
+          title={
+            viewTab === "saved"
+              ? "No liked gigs yet"
+              : !hasAnyJobs
+              ? "No gigs posted yet"
+              : term
+              ? `No matches for "${search.trim()}"`
+              : "No gigs match your active filters"
+          }
+          sub={
+            viewTab === "saved"
+              ? "Tap the heart icon on any gig card to save and track all the gigs you like."
+              : !hasAnyJobs
+              ? "Real gigs posted by verified employers in Bengaluru will appear here live in real time."
+              : "Try resetting your filters or searching for another keyword."
+          }
           action={
             viewTab === "saved" ? (
               <button
@@ -534,6 +558,13 @@ export default function Jobs() {
               >
                 BROWSE ALL GIGS
               </button>
+            ) : !hasAnyJobs ? (
+              <a
+                href="/employer/post-job"
+                className="inline-flex items-center gap-1.5 border-2 border-ink bg-brand px-5 py-2.5 text-xs font-black uppercase text-white shadow-[2px_2px_0px_#121212] hover:bg-black transition active:translate-y-0.5"
+              >
+                <span>POST A GIG</span>
+              </a>
             ) : (
               <button
                 type="button"

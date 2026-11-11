@@ -278,6 +278,29 @@ try {
   }
 } catch { /* ignore */ }
 
+// One-time clean slate v10: purge all fake, demo, and seed gigs from client storage
+const CLEAN_SLATE_FLAG_V10 = "workhop_clean_slate_v10_purge_fake_seed_gigs_rev1";
+try {
+  if (typeof window !== "undefined" && window.localStorage && !localStorage.getItem(CLEAN_SLATE_FLAG_V10)) {
+    const raw = localStorage.getItem("workhop_custom_jobs");
+    if (raw) {
+      try {
+        const cjobs = JSON.parse(raw);
+        if (Array.isArray(cjobs)) {
+          const onlyReal = cjobs.filter((j) => {
+            if (!j || !j.title) return false;
+            if (j.is_dummy || j.is_curated || j.is_seed) return false;
+            if (j.title.startsWith("__WORKHOP_CONFIG_")) return false;
+            return Boolean(j.employer_id || j.employer_email);
+          });
+          localStorage.setItem("workhop_custom_jobs", JSON.stringify(onlyReal));
+        }
+      } catch {}
+    }
+    localStorage.setItem(CLEAN_SLATE_FLAG_V10, "1");
+  }
+} catch { /* ignore */ }
+
 // ═══════════ CONNECTS & CREDITS SYSTEM KEYS ═══════════
 const CREDITS_WALLET_KEY = "workhop_credits_wallet";
 const CREDITS_TRANSACTIONS_KEY = "workhop_credits_transactions";
@@ -1374,12 +1397,14 @@ export function getStoredJobs() {
     };
   });
 
-  const allJobs = [
-    ...custom.filter((j) => !deletedIds.has(j.id)),
-    ...base.filter((j) => !deletedIds.has(j.id) && !customIds.has(j.id)),
-  ];
-  // Requirement 4: Boosted jobs appear higher in job listing/search results
-  return allJobs.sort((a, b) => {
+  const validCustom = custom.filter((j) => {
+    if (!j || !j.title || j.title.startsWith("__WORKHOP_CONFIG_")) return false;
+    if (j.is_dummy || j.is_curated || j.is_seed) return false;
+    if (deletedIds.has(j.id)) return false;
+    return Boolean(j.employer_id || j.employer_email);
+  });
+
+  return validCustom.sort((a, b) => {
     const aBoost = a.is_boosted && (!a.boost_expires_at || new Date(a.boost_expires_at) > now) ? 1 : 0;
     const bBoost = b.is_boosted && (!b.boost_expires_at || new Date(b.boost_expires_at) > now) ? 1 : 0;
     if (bBoost !== aBoost) return bBoost - aBoost;

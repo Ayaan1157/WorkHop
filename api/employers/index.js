@@ -282,11 +282,13 @@ module.exports = async function handler(req, res) {
       const jobs = [];
       const seenJobKeys = new Set();
 
-      // Process Supabase live jobs
+      // Process Supabase live jobs - strictly real gigs posted by real registered employers
       for (const sj of sbJobs) {
         if (!sj || !sj.title) continue;
         if (sj.title.startsWith("__WORKHOP_CONFIG_")) continue;
         if (deletedJobIds.has(String(sj.id))) continue;
+        if (!sj.employer_id && !sj.employer_email) continue;
+        if (sj.is_dummy || sj.is_curated) continue;
 
         const liveEmp =
           (sj.employer_id && empLookup[sj.employer_id]) ||
@@ -349,6 +351,8 @@ module.exports = async function handler(req, res) {
         } catch {
           meta = { description: it.description || "" };
         }
+        if (!meta.employer_id && !meta.employer_email) continue;
+        if (meta.is_dummy || meta.is_curated) continue;
 
         const liveEmp =
           (meta.employer_id && empLookup[meta.employer_id]) ||
