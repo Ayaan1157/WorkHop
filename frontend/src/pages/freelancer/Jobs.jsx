@@ -686,6 +686,17 @@ export default function Jobs() {
             <IconBtn testID="jobs-map-btn" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "Show Map"}>
               <MapIcon size={16} className={showMap ? "text-brand" : ""} />
             </IconBtn>
+            <button
+              type="button"
+              onClick={() => setCreditsModalOpen(true)}
+              data-testid="topbar-hops-btn"
+              className="inline-flex h-9 items-center gap-1.5 border-2 border-ink bg-amber-400 px-2.5 sm:px-3 text-xs font-black tracking-wider text-ink shadow-[1.5px_1.5px_0px_#121212] transition hover:bg-amber-300 active:translate-y-0.5"
+              title="Your Hops Balance - Click to Top Up"
+            >
+              <Coins size={14} className="text-ink" />
+              <span>{wallet?.balance ?? 0} HOPS</span>
+              <span className="bg-ink text-white px-1 py-0.2 text-[9px] font-black">+ TOP UP</span>
+            </button>
             <span
               data-testid="verify-status-badge"
               className={`hidden xs:inline-flex h-9 items-center gap-1.5 border-2 border-ink px-3 text-xs font-black tracking-wider text-white shadow-[1.5px_1.5px_0px_#121212] ${
@@ -801,26 +812,7 @@ export default function Jobs() {
         </div>
       </div>
 
-      {/* Quota Bar */}
-      {isVerified && quota && (
-        <div className="border-b-2 border-ink bg-brand" data-testid="quota-bar">
-          <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-4 py-2 sm:px-8">
-            <div className="flex items-center gap-2">
-              {hasBoost ? <Rocket size={15} className="text-white" /> : <Zap size={15} className="text-white" />}
-              <span className="text-xs font-black tracking-wider text-white">
-                {hasBoost ? `${Math.max(quotaLimit - quotaUsed, 0)} of ${quotaLimit} APPLIES LEFT · 24H BOOST ACTIVE` : `${Math.max(quotaLimit - quotaUsed, 0)} of ${quotaLimit} FREE APPLIES REMAINING TODAY`}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {!hasBoost && (
-                <button data-testid="quota-upgrade-btn" onClick={() => setPaywallOpen(true)} className="border-2 border-ink bg-ink px-3 py-1 text-[10px] font-black text-white hover:bg-black transition shadow-[1.5px_1.5px_0px_#FFFFFF]">
-                  +5 APPLIES ₹149
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* View Switcher Tabs: All Gigs vs Liked Gigs */}
       <div className="border-b-2 border-ink dark:border-zinc-800 bg-white dark:bg-[#121212]">

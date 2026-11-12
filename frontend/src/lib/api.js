@@ -1170,9 +1170,9 @@ async function mockRouter(path, method = "GET", body = null) {
     const isAdmin = Boolean(u?.is_admin || u?.role === "admin" || (u?.email && ADMIN_EMAILS.includes(u.email.trim().toLowerCase())));
     return {
       applies_used_today: 0,
-      applies_limit_today: isAdmin ? 9999 : 3,
+      applies_limit_today: isAdmin ? 9999 : 0,
       quota_used: 0,
-      quota_limit: isAdmin ? 9999 : 3,
+      quota_limit: isAdmin ? 9999 : 0,
       has_boost: isAdmin,
       is_admin: isAdmin,
     };

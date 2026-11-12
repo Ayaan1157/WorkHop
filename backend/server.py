@@ -360,7 +360,7 @@ class PlanPurchase(BaseModel):
     expires_at: Optional[str] = None
 
 
-FREE_APPLY_LIMIT = 3
+FREE_APPLY_LIMIT = 0
 BOOST_EXTRA_APPLIES = 5
 BOOST_DURATION_HOURS = 24
 BOOST_PRICE = 149
