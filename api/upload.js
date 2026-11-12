@@ -1,8 +1,5 @@
 const https = require("https");
 
-const DEFAULT_SUPABASE_SERVICE_ROLE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZnJia3hwdXdicnZoaWRpaHZqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTEwMTA3MywiZXhwIjoyMTA2Njc3MDczfQ.k1fdVhfk06yjA4K18iEfoNmIpxg5iRkdr3oSuiw4Q84";
-
 module.exports = async function handler(req, res) {
   // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -40,9 +37,7 @@ module.exports = async function handler(req, res) {
       process.env.REACT_APP_SUPABASE_URL ||
       "https://kdfrbkxpuwbrvhidihvj.supabase.co";
 
-    const serviceKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      DEFAULT_SUPABASE_SERVICE_ROLE_KEY;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
     const urlObj = new URL(`/storage/v1/object/${folder}/${storagePath}`, supabaseUrl);
 
