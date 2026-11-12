@@ -31,6 +31,7 @@ import {
   isLocationInBengaluru,
 } from "@/lib/locationAreas";
 import { JOB_CATEGORY_FILTERS } from "@/lib/catalogFilters";
+import { matchJobToTaxonomy } from "@/lib/keywordTaxonomy";
 import { apiGet, apiPost, getFreelancerId, supabaseGetJobs } from "@/lib/api";
 import {
   getStoredJobs,
