@@ -466,12 +466,36 @@ async function mockRouter(path, method = "GET", body = null) {
 
   // Admin Dashboard endpoints
   if (cleanPath === "/admin/overview") {
-    const jobs = getStoredJobs();
-    const leads = getStoredLeads({ includeDeclined: true });
     const grievances = getStoredGrievances();
-    const employers = getStoredEmployers();
+    const suggestions = getStoredProfessionSuggestions();
 
-    // 1. Fetch live Razorpay captured payments
+    // 1. Single source for Employers & Gigs
+    let employersList = [];
+    try {
+      employersList = await apiGet("/admin/employers", true);
+    } catch {
+      employersList = getStoredEmployers();
+    }
+    const safeEmployers = Array.isArray(employersList) ? employersList : [];
+
+    let gigsList = [];
+    try {
+      gigsList = await apiGet("/admin/gigs", true);
+    } catch {
+      gigsList = getStoredJobs();
+    }
+    const safeGigs = Array.isArray(gigsList) ? gigsList : [];
+
+    // 2. Single source for Freelancers
+    let freelancersList = [];
+    try {
+      freelancersList = await apiGet("/admin/freelancers", true);
+    } catch {
+      freelancersList = getStoredLeads({ includeDeclined: true });
+    }
+    const safeFreelancers = Array.isArray(freelancersList) ? freelancersList : [];
+
+    // 3. Fetch live Razorpay captured payments
     let livePayments = [];
     try {
       const res = await fetch("/api/payments/list");
@@ -481,10 +505,10 @@ async function mockRouter(path, method = "GET", body = null) {
       }
     } catch {}
 
-    // 2. Retrieve local verified payment transactions ledger
+    // 4. Retrieve local verified payment transactions ledger
     const localPayments = getStoredPaymentTransactions();
 
-    // 3. Deduplicate payments by payment_id and exclude any mock/dummy entries
+    // 5. Deduplicate payments by payment_id and exclude any mock/dummy entries
     const combinedPayments = [];
     const seenPids = new Set();
     const dummyNames = new Set(["rohan verma", "arjun mehta", "nikhil kamath", "ananya deshmukh", "deepa joshi", "pooja sharma"]);
@@ -499,7 +523,7 @@ async function mockRouter(path, method = "GET", body = null) {
       combinedPayments.push(p);
     }
 
-    // 4. Total revenue strictly from valid captured/paid transactions
+    // 6. Total revenue strictly from valid captured/paid transactions
     const validPayments = combinedPayments.filter(
       (p) => (!p.status || p.status === "captured" || p.status === "paid" || p.status === "authorized") &&
              Number(p.amount || p.amount_inr) > 0
@@ -507,14 +531,15 @@ async function mockRouter(path, method = "GET", body = null) {
     const totalRev = validPayments.reduce((acc, p) => acc + (Number(p.amount || p.amount_inr) || 0), 0);
 
     return {
-      users: leads.length + employers.length,
-      employers: employers.length,
-      freelancers: leads.length,
-      gigs: jobs.length,
+      users: safeFreelancers.length + safeEmployers.length,
+      employers: safeEmployers.length,
+      freelancers: safeFreelancers.length,
+      gigs: safeGigs.length,
       payments_paid: validPayments.length,
       revenue_rupees: totalRev,
       escrow_held: 0,
       complaints: grievances.length,
+      tab_requests: suggestions.length,
     };
   }
   if ((cleanPath === "/site-settings" || cleanPath === "/admin/site-settings") && method === "GET") {

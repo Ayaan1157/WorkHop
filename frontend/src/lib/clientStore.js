@@ -3489,7 +3489,7 @@ export function addAdminGig(jobData) {
 }
 
 // 15. Admin-managed & Registered Employers on the website
-const ADMIN_EMPLOYERS_KEY = "workhop_admin_employers_v2";
+const ADMIN_EMPLOYERS_KEY = "workhop_admin_employers_v3";
 const DELETED_EMPLOYERS_KEY = "workhop_deleted_employers_v1";
 
 export const SEED_EMPLOYERS = [
@@ -3657,48 +3657,9 @@ export function getStoredEmployers() {
     }
   } catch {}
 
-  // 3. Current logged-in user or active employer session
-  try {
-    const currentUser = getStoredUser();
-    const storedRole = localStorage.getItem("workhop_auth_role");
-    const storedCompany = localStorage.getItem("workhop_company_name");
-    const storedPhone = localStorage.getItem("workhop_pro_phone");
-    const storedArea = localStorage.getItem("workhop_user_area");
-    const isEmployerSession = (currentUser && currentUser.role === "employer") || storedRole === "employer";
-
-    if (isEmployerSession) {
-      const company = (currentUser?.company_name && currentUser.company_name !== "Hyperlocal Co."
-        ? currentUser.company_name
-        : (storedCompany && storedCompany !== "Hyperlocal Co." ? storedCompany : (currentUser?.name || "Independent Employer"))).trim();
-      const key = (currentUser?.email || currentUser?.phone || storedPhone || company).toLowerCase();
-      const empId = currentUser?.id || localStorage.getItem("workhop_employer_id") || `emp-${key.replace(/[^a-z0-9]/g, "") || "session"}`;
-      if (!deleted.has(key) && !deleted.has(String(empId).toLowerCase())) {
-        if (!employersMap.has(key)) {
-          employersMap.set(key, {
-            employer_id: empId,
-            company_name: company,
-            name: currentUser?.name || company,
-            email: currentUser?.email || "",
-            phone: currentUser?.phone || storedPhone || "",
-            area: currentUser?.area || storedArea || "Bengaluru",
-            spent_rupees: 0,
-            created_at: currentUser?.created_at || new Date().toISOString(),
-            source: "session",
-          });
-        } else {
-          const existing = employersMap.get(key);
-          if (currentUser?.name && (!existing.name || existing.name.includes("Hiring Team"))) {
-            existing.name = currentUser.name;
-          }
-          if (!existing.email && currentUser?.email) existing.email = currentUser.email;
-          if (!existing.phone && (currentUser?.phone || storedPhone)) existing.phone = currentUser?.phone || storedPhone;
-        }
-      }
-    }
-  } catch {}
-
-  // 4. Employers who posted jobs
+  // 3. Employers who posted jobs
   for (const j of jobs) {
+    if (j.is_dummy || j.is_curated || j.is_seed) continue;
     const company = (j.company_name || j.company || j.employer_name || "").trim();
     if (company) {
       const key = company.toLowerCase();
@@ -3709,7 +3670,7 @@ export function getStoredEmployers() {
             employer_id: empId,
             company_name: company,
             name: j.employer_name || company,
-            email: "",
+            email: j.employer_email || "",
             phone: "",
             area: j.area || "Bengaluru",
             spent_rupees: 0,
@@ -3721,7 +3682,7 @@ export function getStoredEmployers() {
     }
   }
 
-  // Default verified seed employers if no active employers exist
+  // 4. Default verified seed employers if no active employers exist
   if (employersMap.size === 0) {
     for (const se of SEED_EMPLOYERS) {
       if (!deleted.has(se.employer_id) && !deleted.has(se.company_name.toLowerCase())) {
@@ -3729,14 +3690,6 @@ export function getStoredEmployers() {
       }
     }
   }
-
-  // Self-heal / backfill to ADMIN_EMPLOYERS_KEY so admin table and direct queries always stay synchronized
-  try {
-    const list = Array.from(employersMap.values());
-    if (adminEmps.length < list.length) {
-      localStorage.setItem(ADMIN_EMPLOYERS_KEY, JSON.stringify(list));
-    }
-  } catch {}
 
   // Calculate jobs_posted count for each employer
   return Array.from(employersMap.values()).map((e) => {

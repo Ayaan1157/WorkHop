@@ -98,10 +98,15 @@ function Badge({ text, tone = "gray" }) {
   );
 }
 
-function StatTile({ label, value, sub, accent, icon: Icon }) {
+function StatTile({ label, value, sub, accent, icon: Icon, onClick }) {
   return (
     <div
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
       className={`flex flex-1 min-w-[130px] flex-col justify-between border-2 border-ink p-3.5 shadow-[3px_3px_0px_#121212] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none ${
+        onClick ? "cursor-pointer select-none" : ""
+      } ${
         accent ? "bg-brand text-white" : "bg-white text-ink"
       }`}
     >
@@ -4650,21 +4655,6 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
         list = [...(data.devices || []), ...(data.accounts || [])];
       }
 
-      // Also merge local stored employers so incomplete Google signups appear immediately
-      try {
-        const localEmps = getStoredEmployers();
-        const existingKeys = new Set(
-          list.map((emp) => (emp.email || emp.employer_id || emp.company_name || "").toLowerCase().trim()).filter(Boolean)
-        );
-        for (const le of localEmps) {
-          const lKey = (le.email || le.employer_id || le.company_name || "").toLowerCase().trim();
-          if (lKey && !existingKeys.has(lKey)) {
-            list.push(le);
-            existingKeys.add(lKey);
-          }
-        }
-      } catch {}
-
       if (list.length === 0) {
         list = [...SEED_EMPLOYERS];
       }
@@ -4811,11 +4801,17 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2 border-2 border-ink bg-[#FFF3C4] p-4 shadow-[3px_3px_0px_#121212]">
         <div>
-          <p className="flex items-center gap-1.5 text-xs font-black uppercase text-ink">
-            <Coins size={14} className="text-brand" /> Employers on the Website
-          </p>
-          <p className="mt-0.5 text-[10px] font-semibold text-inkmuted">
-            Add or remove employers. Removing an employer also takes down all of their gigs immediately.
+          <div className="flex items-center gap-2">
+            <Coins size={16} className="text-brand" />
+            <p className="text-xs font-black uppercase text-ink">
+              Employers on the Website
+            </p>
+            <span className="border border-ink bg-ink text-brand px-2 py-0.5 text-[10px] font-black uppercase shadow-[1px_1px_0px_#121212]">
+              Total Employers: {employers.length}
+            </span>
+          </div>
+          <p className="mt-1 text-[10px] font-semibold text-inkmuted">
+            Single Source of Truth: Matches EMPLOYERS stat card ({employers.length}) 1:1.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -5446,8 +5442,13 @@ export default function Admin() {
   }, [adminFetch]);
 
   useEffect(() => {
-    if (user?.is_admin) load(tab);
-  }, [user?.is_admin, tab, load]);
+    if (!user?.is_admin) return;
+    load(tab);
+    const interval = setInterval(() => {
+      adminFetch("/overview").then(setOverview).catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [user?.is_admin, tab, load, adminFetch]);
 
   if (authLoading) {
     return (
@@ -5796,45 +5797,52 @@ export default function Admin() {
           <StatTile
             label="GROSS REVENUE"
             value={`₹${Number(overview?.revenue_rupees ?? 0).toLocaleString("en-IN")}`}
-            sub="Platform Volume"
+            sub="Live Captured"
             accent
             icon={TrendingUp}
+            onClick={() => setTab("ESCROW")}
           />
           <StatTile
             label="ESCROW SECURED"
-            value={`₹${Number(overview?.escrow_held ?? 0).toLocaleString("en-IN")}`}
-            sub="Coming Soon"
+            value="₹0 (Coming Soon)"
+            sub="Trust & Safety"
             icon={ShieldCheck}
+            onClick={() => setTab("ESCROW")}
           />
           <StatTile
             label="ACTIVE GIGS"
             value={overview?.gigs ?? 0}
             sub="Live in Bengaluru"
             icon={Briefcase}
+            onClick={() => setTab("GIGS")}
           />
           <StatTile
             label="VERIFIED PROS"
-            value={overview?.freelancers ?? 6}
+            value={overview?.freelancers ?? 0}
             sub="ID + Portfolio"
             icon={Award}
+            onClick={() => setTab("PROS")}
           />
           <StatTile
             label="EMPLOYERS"
             value={overview?.employers ?? 0}
             sub="Hiring Accounts"
             icon={Users}
+            onClick={() => setTab("EMPLOYERS")}
           />
           <StatTile
             label="ISSUES / TICKETS"
             value={overview?.complaints ?? 0}
             sub="Pending Action"
             icon={AlertTriangle}
+            onClick={() => setTab("ISSUES")}
           />
           <StatTile
             label="TAB REQUESTS"
-            value={getStoredProfessionSuggestions().length}
+            value={overview?.tab_requests ?? getStoredProfessionSuggestions().length}
             sub="Community Taxonomy"
             icon={Sparkles}
+            onClick={() => setTab("ISSUES")}
           />
         </div>
       </div>
