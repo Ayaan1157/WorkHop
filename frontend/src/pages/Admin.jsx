@@ -4651,8 +4651,8 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
         list = data;
       } else if (data && Array.isArray(data.employers)) {
         list = data.employers;
-      } else if (data && (Array.isArray(data.accounts) || Array.isArray(data.devices))) {
-        list = [...(data.devices || []), ...(data.accounts || [])];
+      } else if (data && Array.isArray(data.accounts)) {
+        list = [...data.accounts];
       }
 
       if (list.length === 0) {

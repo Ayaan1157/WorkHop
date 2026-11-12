@@ -864,12 +864,17 @@ async function mockRouter(path, method = "GET", body = null) {
     const seen = new Set();
     const merged = [];
 
+    // Only treat genuine accounts/profiles as employers (never raw anonymous hardware devices)
     for (const e of cloudEmps) {
-      const email = e.email || "";
+      if (e.source === "cloud_device" || !e.email) continue;
+      const email = (e.email || "").trim().toLowerCase();
+      if (email.startsWith("deleted.") || email.startsWith("archived.") || email.endsWith("@workhop.invalid")) continue;
+      if (e.name === "Deleted Account" || e.name === "Active Employer") continue;
       const comp = e.company_name || e.name || (email ? email.split("@")[0] : "Employer Account");
-      const empId = e.employer_id || e.id || `emp-${(email || comp || Math.random().toString(36).slice(2)).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
-      const key = (email || comp || empId).toLowerCase().trim();
-      if (key && !seen.has(key)) {
+      const empId = e.employer_id || e.id || `emp-${email.replace(/[^a-z0-9]/g, "")}`;
+      const normComp = comp.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const key = email || normComp || empId.toLowerCase().trim();
+      if (key && !seen.has(key) && !seen.has(normComp)) {
         merged.push({
           ...e,
           employer_id: empId,
@@ -878,15 +883,17 @@ async function mockRouter(path, method = "GET", body = null) {
           name: e.name || comp,
         });
         seen.add(key);
+        if (normComp) seen.add(normComp);
       }
     }
 
     for (const s of stored) {
-      const email = s.email || "";
+      const email = (s.email || "").trim().toLowerCase();
       const comp = s.company_name || s.name || (email ? email.split("@")[0] : "Employer Account");
-      const empId = s.employer_id || s.id || `emp-${(email || comp || Math.random().toString(36).slice(2)).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
-      const key = (email || comp || empId).toLowerCase().trim();
-      if (key && !seen.has(key)) {
+      const empId = s.employer_id || s.id || `emp-${(email || comp).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+      const normComp = comp.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const key = email || normComp || empId.toLowerCase().trim();
+      if (key && !seen.has(key) && !seen.has(normComp)) {
         merged.push({
           ...s,
           employer_id: empId,
@@ -895,21 +902,25 @@ async function mockRouter(path, method = "GET", body = null) {
           name: s.name || comp,
         });
         seen.add(key);
+        if (normComp) seen.add(normComp);
       }
     }
 
     for (const [em, u] of Object.entries(regUsers)) {
       if (u.role === "employer") {
-        const key = (em || u.company_name || "").toLowerCase().trim();
-        if (key && !seen.has(key)) {
-          const comp = u.company_name || u.name || em.split("@")[0];
-          const empId = u.id || `emp-${(em || comp).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+        const cleanEm = (em || "").trim().toLowerCase();
+        if (cleanEm.startsWith("deleted.") || cleanEm.startsWith("archived.") || cleanEm.endsWith("@workhop.invalid")) continue;
+        const comp = u.company_name || u.name || cleanEm.split("@")[0];
+        const normComp = comp.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const key = cleanEm || normComp;
+        if (key && !seen.has(key) && !seen.has(normComp)) {
+          const empId = u.id || `emp-${(cleanEm || normComp).replace(/[^a-z0-9]/g, "")}`;
           merged.push({
             employer_id: empId,
             id: empId,
             company_name: comp,
             name: u.name || comp,
-            email: em,
+            email: cleanEm,
             phone: u.phone || "",
             area: u.area || "Bengaluru",
             spent_rupees: 0,
@@ -919,6 +930,7 @@ async function mockRouter(path, method = "GET", body = null) {
             role: "employer",
           });
           seen.add(key);
+          if (normComp) seen.add(normComp);
         }
       }
     }
