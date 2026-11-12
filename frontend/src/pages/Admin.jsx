@@ -39,6 +39,7 @@ import {
   restoreDefaultEmployers,
 } from "@/lib/clientStore";
 import FreelancerProfileModal from "@/components/FreelancerProfileModal";
+import JobDetailsModal from "@/components/JobDetailsModal";
 import { formatWhatsAppUrl, isVerifiedPro } from "@/lib/utils";
 
 const TABS = [
@@ -4637,6 +4638,7 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
   const [msg, setMsg] = useState(null);
   const [allGigs, setAllGigs] = useState([]);
   const [selectedEmployerForGigs, setSelectedEmployerForGigs] = useState(null);
+  const [previewGig, setPreviewGig] = useState(null);
   const [busyGigId, setBusyGigId] = useState(null);
 
   const refresh = useCallback(async (showSpinner = false) => {
@@ -5248,13 +5250,21 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
                         </div>
 
                         <div className="flex items-center gap-2 sm:self-start">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewGig(g)}
+                            className="flex items-center gap-1 border-2 border-ink bg-white px-2.5 py-1 text-xs font-black text-ink shadow-[2px_2px_0px_#121212] hover:bg-neutral-100 transition whitespace-nowrap"
+                          >
+                            <Eye size={12} /> View
+                          </button>
                           <a
                             href={`/freelancer/jobs?q=${encodeURIComponent(g.title)}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center gap-1 border-2 border-ink bg-white px-2.5 py-1 text-xs font-black text-ink shadow-[2px_2px_0px_#121212] hover:bg-neutral-100 transition whitespace-nowrap"
+                            className="flex items-center gap-1 border-2 border-ink bg-sand px-2 py-1 text-xs font-black text-ink shadow-[2px_2px_0px_#121212] hover:bg-white transition whitespace-nowrap"
+                            title="Open in Gigs Feed"
                           >
-                            <ExternalLink size={12} /> View
+                            <ExternalLink size={12} />
                           </a>
                           <button
                             type="button"
@@ -5307,6 +5317,13 @@ function EmployersTab({ adminFetch, onChanged, goToCredits }) {
           </div>
         </div>
       )}
+
+      {/* Direct in-place Job Details Preview */}
+      <JobDetailsModal
+        isOpen={Boolean(previewGig)}
+        onClose={() => setPreviewGig(null)}
+        job={previewGig}
+      />
     </div>
   );
 }

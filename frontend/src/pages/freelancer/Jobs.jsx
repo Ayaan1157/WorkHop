@@ -228,6 +228,32 @@ export default function Jobs() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Keep search state in sync with URL ?q=
+  useEffect(() => {
+    const qVal = sp.get("q");
+    if (qVal !== null) {
+      setSearch(qVal);
+    }
+  }, [sp]);
+
+  // Auto-open job modal when user navigates directly with a query matching a specific gig
+  useEffect(() => {
+    const qVal = (sp.get("q") || "").trim().toLowerCase();
+    if (!qVal || jobs.length === 0) return;
+    const matched = jobs.find(
+      (j) =>
+        (j.title || "").toLowerCase() === qVal ||
+        (j.id && String(j.id).toLowerCase() === qVal) ||
+        (j.title || "").toLowerCase().includes(qVal)
+    );
+    if (matched) {
+      setActiveJob(matched);
+      setProposedRateType(matched.price_type === "hourly" ? "hourly" : "fixed");
+      setProposedQuote(matched.pay || 1000);
+      setApplyOpen(true);
+    }
+  }, [sp, jobs]);
+
   const handleToggleSave = (id, e) => {
     e.stopPropagation();
     const wasSaved = savedJobIds.includes(id);
