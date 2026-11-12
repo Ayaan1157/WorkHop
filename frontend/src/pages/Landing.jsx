@@ -20,6 +20,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { Logo, MobileBottomNav } from "@/components/kit";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import LiveNeighborhoodRadar from "@/components/LiveNeighborhoodRadar";
+import CommuteVsHireVisual from "@/components/CommuteVsHireVisual";
 import PinnedHowItWorks from "@/components/PinnedHowItWorks";
 
 export default function Landing() {
@@ -1323,13 +1324,10 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Right Column: Option 1 — The "Live Neighborhood Radar" Hero (Bengaluru 5km Geofence + Hotspots + Live Connection Cards) */}
-          <div className="lg:col-span-6 relative flex items-center justify-center">
-            <LiveNeighborhoodRadar
-              onSelectArea={(areaName) => {
-                setAreaInput(areaName);
-                setSavedArea(areaName);
-              }}
+          {/* Right Column: Hyperlocal Commute vs Hire Visual */}
+          <div className="lg:col-span-6 relative flex items-center justify-center w-full">
+            <CommuteVsHireVisual
+              onChooseRole={(role) => chooseRole(role)}
             />
           </div>
         </div>
